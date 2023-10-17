@@ -1,0 +1,343 @@
+#include "Simulation.h"
+#include "SimulationServer.h"
+#include "System.h"
+#include "Events.h"
+
+#include "Message/Message.h"
+
+#include <godot_cpp/variant/utility_functions.hpp>
+
+#include <godot_cpp/core/error_macros.hpp>
+
+#include <chrono>
+
+namespace sim
+{
+	// Called when a simulation is stopping execution
+	struct RequestStopMessage : Message
+	{
+		explicit RequestStopMessage(const MessageSender& sender) : Message(sender) {}
+	};
+
+	// Called when a simulation is stopping execution and will delete itself afterwards
+	struct RequestStopDeleteMessage : Message
+	{
+		explicit RequestStopDeleteMessage(const MessageSender& sender) : Message(sender) {}
+	};
+
+	Simulation::Simulation(UUID id, double ticks_per_second) :
+		ThreadMessager(id),
+		m_running(false),
+		m_ticks_per_second(ticks_per_second),
+		m_time_per_tick(std::chrono::duration_cast<Clock::duration>(1s / m_ticks_per_second)),
+		m_current_ticks(0),
+		m_total_ticks(0),
+		m_total_run_time(0),
+		m_current_run_time(0)
+	{
+		ERR_FAIL_COND_MSG(m_ticks_per_second <= 0.0, "The ticks per second should be positive");
+
+		Subscribe(cb::Bind<&Simulation::OnRequestStop>(*this));
+		Subscribe(cb::Bind<&Simulation::OnRequestStopDelete>(*this));
+		Subscribe(cb::Bind<&Simulation::OnMessagerStop>(*this));
+	}
+
+	Simulation::~Simulation()
+	{
+		ERR_FAIL_COND_MSG(m_running, "This simulation should have been stopped before destroying it");
+
+		m_thread.join();
+
+		Unsubscribe(cb::Bind<&Simulation::OnMessagerStop>(*this));
+		Unsubscribe(cb::Bind<&Simulation::OnRequestStopDelete>(*this));
+		Unsubscribe(cb::Bind<&Simulation::OnRequestStop>(*this));
+	}
+	
+	void Simulation::AddSystem(const SystemEmitter& emitter)
+	{
+		ERR_FAIL_COND_MSG(m_running, "This simulation should not be running when trying to add a system");
+		
+		m_systems.push_back(std::move(emitter(*this)));
+	}
+
+	void Simulation::Start()
+	{
+		ERR_FAIL_COND_MSG(m_running, "This simulation should not be running when trying to start it");
+		ERR_FAIL_COND_MSG(ObjectOwned(), "This simulation should not be owned by a thread when start is called on it");
+
+		m_thread = std::thread(&Simulation::ThreadLoop, this);
+	}
+
+	void Simulation::Stop()
+	{
+		ERR_FAIL_COND_MSG(!m_running, "This simulation should be running when trying to stop it");
+		ERR_FAIL_COND_MSG(!ObjectOwned(), "This simulation should be owned by a thread when stop is called on it");
+
+		if (ThreadOwnsObject())
+		{
+			PostEvent(RequestStopMessage(*this));
+		}
+		else
+		{
+			PostMessageFromUnattested(std::make_shared<RequestStopMessage>(*this)); // Queue a message to stop this simulation
+		}
+	}
+
+	void Simulation::StopAndDelete()
+	{
+		ERR_FAIL_COND_MSG(!ObjectOwned(), "This simulation should be owned by a thread when stop and delete is called on it");
+
+		if (m_running)
+		{
+			if (ThreadOwnsObject())
+			{
+				PostEvent(RequestStopDeleteMessage(*this));
+			}
+			else
+			{
+				PostMessageFromUnattested(std::make_shared<RequestStopDeleteMessage>(*this)); // Queue a message to stop this simulation
+			}
+		}
+		else // We already stopped so delete it now
+		{
+			delete this; // Will wait for thread to join
+		}
+	}
+
+	bool Simulation::IsRunning() const
+	{
+		return m_running;
+	}
+
+	double Simulation::GetTicksPerSecond() const
+	{
+		return m_ticks_per_second;
+	}
+
+	size_t Simulation::GetTotalTicks() const
+	{
+		std::shared_lock lock(m_timings_mutex);
+
+		return m_total_ticks;
+	}
+
+	size_t Simulation::GetTotalTicks()
+	{
+		ERR_FAIL_COND_V_MSG(!ThreadOwnsObject(), 0, "Called non const getter without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
+
+		return m_total_ticks;
+	}
+
+	size_t Simulation::GetCurrentTicks() const
+	{
+		std::shared_lock lock(m_timings_mutex);
+
+		return m_current_ticks;
+	}
+
+	size_t Simulation::GetCurrentTicks()
+	{
+		ERR_FAIL_COND_V_MSG(!ThreadOwnsObject(), 0, "Called non const getter without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
+
+		return m_current_ticks;
+	}
+
+	Clock::duration Simulation::GetTotalRunTime() const
+	{
+		std::shared_lock lock(m_timings_mutex);
+
+		return m_total_run_time;
+	}
+
+	Clock::duration Simulation::GetTotalRunTime()
+	{
+		ERR_FAIL_COND_V_MSG(!ThreadOwnsObject(), 0s, "Called non const getter without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
+
+		return m_total_run_time;
+	}
+
+	Clock::time_point Simulation::GetCurrentStartTime() const
+	{
+		std::shared_lock lock(m_timings_mutex);
+
+		return m_current_start_time;
+	}
+
+	Clock::time_point Simulation::GetCurrentStartTime()
+	{
+		ERR_FAIL_COND_V_MSG(!ThreadOwnsObject(), {}, "Called non const getter without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
+
+		return m_current_start_time;
+	}
+
+	Clock::duration Simulation::GetCurrentRunTime() const
+	{
+		std::shared_lock lock(m_timings_mutex);
+
+		return m_current_run_time;
+	}
+
+	Clock::duration Simulation::GetCurrentRunTime()
+	{
+		ERR_FAIL_COND_V_MSG(!ThreadOwnsObject(), 0s, "Called non const getter without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
+
+		return m_current_run_time;
+	}
+
+	bool Simulation::Link(UUID simulation_id)
+	{
+		ERR_FAIL_COND_V_MSG(!ThreadOwnsObject(), false, "Called link without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
+
+		return SimulationServer::GetSingleton()->ApplyToSimulation(simulation_id, [this](Simulation& simulation)
+		{
+			LinkMessager(simulation);
+		});
+	}
+
+	bool Simulation::Unlink(UUID simulation_id)
+	{
+		ERR_FAIL_COND_V_MSG(!ThreadOwnsObject(), false, "Called unlink without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
+
+		return SimulationServer::GetSingleton()->ApplyToSimulation(simulation_id, [this](Simulation& simulation)
+		{
+			UnlinkMessager(simulation);
+		});
+	}
+
+	entt::registry& Simulation::GetRegistry()
+	{
+		ERR_FAIL_COND_V_MSG(!ThreadOwnsObject(), m_registry, "Called non const getter without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
+
+		return m_registry;
+	}
+
+	UUID Simulation::GenerateUUID()
+	{
+		ERR_FAIL_COND_V_MSG(!ThreadOwnsObject(), UUID(), "Called non const generator without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
+
+		return UUID(m_uuid_gen);
+	}
+
+	void Simulation::ThreadLoop()
+	{
+		InternalStart();
+
+		// The ideal time for the next tick to begin
+		Clock::time_point next_tick_start = Clock::now();
+
+		while (m_running)
+		{
+			Clock::time_point tick_start = Clock::now();
+
+			// If the ticks per second is 0 then don't do any time processing
+			if (m_ticks_per_second > 0.0f)
+			{
+				// Get the ideal time for the next frame
+				next_tick_start = next_tick_start + m_time_per_tick;
+
+				// If we actually passed the next frames start time then set the next variable to now and skip sleeping
+				if (tick_start > next_tick_start)
+				{
+					next_tick_start = tick_start;
+				}
+				else
+				{
+					std::this_thread::sleep_until(next_tick_start);
+
+					// Get now again after sleeping
+					tick_start = Clock::now();
+				}
+			}
+
+			// TODO : Remove
+			if (m_total_ticks % size_t(m_ticks_per_second * 10) == 0)
+			{
+				auto id = m_thread.get_id();
+				godot::UtilityFunctions::print(godot::vformat("Thread %d on tick %d", *(unsigned int*)&id, m_total_ticks));
+			}
+
+			InternalTick(tick_start);
+		}
+
+		InternalStop();
+	}
+
+	void Simulation::InternalStart()
+	{
+		DipatcherStart();
+
+		// Set running to true before the start callback so that IsRunning() works
+		m_running = true;
+
+		{
+			std::unique_lock lock(m_timings_mutex);
+
+			m_current_start_time = Clock::now();
+			m_current_ticks = 0;
+			m_last_tick_time = Clock::now();
+		}
+
+		PostEvent(SimulationStartEvent());
+	}
+
+	void Simulation::InternalTick(Clock::time_point tick_start)
+	{
+		Clock::duration timestep;
+
+		{
+			std::unique_lock lock(m_timings_mutex);
+
+			timestep = tick_start - m_last_tick_time;
+			m_total_run_time += timestep;
+			m_current_run_time += timestep;
+			m_last_tick_time = tick_start;
+
+			m_total_ticks++;
+			m_current_ticks++;
+		}
+
+		// Process incomming messages first in case there is an unlink message in
+		// there to remove the queue. We don't want to send to a messager that no longer exists
+		ProcessIncommingMessages();
+
+		PostEvent(SimulationTickEvent(tick_start, timestep));
+
+		// Send all outgoing messages that may have been queued during the tick event.
+		ProcessOutgoingMessages();
+	}
+
+	void Simulation::InternalStop()
+	{
+		PostEvent(SimulationStopEvent());
+
+		{
+			std::unique_lock lock(m_timings_mutex);
+
+			m_current_start_time = Clock::time_point{};
+			m_current_ticks = 0;
+			m_current_run_time = Clock::duration{};
+		}
+
+		if (m_delete_on_stop)
+		{
+			delete this;
+		}
+	}
+
+	void Simulation::OnMessagerStop(const MessagerStopEvent& event)
+	{
+		m_running = false; // Set running to false that stops the thread
+	}
+
+	void Simulation::OnRequestStop(const RequestStopMessage& event)
+	{
+		DipatcherRequestStop(); // Send a unlink message too all that are linked. Once they all reply m_running is set to false.
+	}
+
+	void Simulation::OnRequestStopDelete(const RequestStopDeleteMessage& event)
+	{
+		m_delete_on_stop = true;
+
+		DipatcherRequestStop(); // Send a unlink message too all that are linked. Once they all reply m_running is set to false.
+	}
+}

@@ -30,3 +30,19 @@
 *.exe
 *.out
 *.app
+
+# Scons
+.sconsign.dblite
+build.bat
+
+# Visual studio
+.vs
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# Godot
+/demo
+/lib
+extension_api.json
