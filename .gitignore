@@ -44,5 +44,4 @@ build.bat
 
 # Godot
 /demo
-/lib
 extension_api.json
