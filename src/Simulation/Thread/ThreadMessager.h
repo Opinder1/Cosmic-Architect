@@ -20,7 +20,7 @@ namespace sim
 	struct MessagerException {};
 
 	// A messager that sends events to other messagers in this process. They could be in other threads
-	class ThreadMessager : public EventDispatcher, public MessageSender, public ThreadOwnable
+	class ThreadMessager : public ThreadOwnable, public MessageSender, public EventDispatcher
 	{
 	private:
 		struct LinkedMessager

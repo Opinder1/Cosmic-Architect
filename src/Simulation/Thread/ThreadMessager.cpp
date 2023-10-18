@@ -163,6 +163,11 @@ namespace sim
 
 			messager.queue.clear();
 		}
+
+		if (m_stopping && m_linked_messagers.size() == 0) // If we are stopping and we are not linked to anyone anymore
+		{
+			DipatcherFinalStop();
+		}
 	}
 
 	void ThreadMessager::DipatcherStart()
@@ -187,18 +192,10 @@ namespace sim
 		// from all connected messagers.
 		m_stopping = true;
 
-		if (m_linked_messagers.size() > 0)
+		// Send unlink requests to all linked dispatchers
+		for (auto&& [id, messager] : m_linked_messagers)
 		{
-			// Send unlink requests to all linked dispatchers
-			for (auto&& [id, messager] : m_linked_messagers)
-			{
-				messager.messager->PostMessageFromOther(ThreadMessage(ThreadMessage::Type::RequestUnlink, this, nullptr));
-			}
-		}
-		else
-		{
-			// If there are no connected messagers then just quit right now
-			DipatcherFinalStop();
+			messager.messager->PostMessageFromOther(ThreadMessage(ThreadMessage::Type::RequestUnlink, this, nullptr));
 		}
 	}
 
@@ -263,12 +260,6 @@ namespace sim
 			}
 
 			PostEvent(MessagerUnlinkEvent(thread_message.sender->GetUUID()));
-
-			// If we are the last unlink then stop
-			if (m_stopping && m_linked_messagers.size() == 0)
-			{
-				DipatcherFinalStop();
-			}
 			break;
 
 		case ThreadMessage::Type::Message:

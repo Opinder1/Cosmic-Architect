@@ -19,12 +19,6 @@ namespace sim
 		explicit RequestStopMessage(const MessageSender& sender) : Message(sender) {}
 	};
 
-	// Called when a simulation is stopping execution and will delete itself afterwards
-	struct RequestStopDeleteMessage : Message
-	{
-		explicit RequestStopDeleteMessage(const MessageSender& sender) : Message(sender) {}
-	};
-
 	Simulation::Simulation(UUID id, double ticks_per_second) :
 		ThreadMessager(id),
 		m_running(false),
@@ -38,7 +32,6 @@ namespace sim
 		ERR_FAIL_COND_MSG(m_ticks_per_second <= 0.0, "The ticks per second should be positive");
 
 		Subscribe(cb::Bind<&Simulation::OnRequestStop>(*this));
-		Subscribe(cb::Bind<&Simulation::OnRequestStopDelete>(*this));
 		Subscribe(cb::Bind<&Simulation::OnMessagerStop>(*this));
 	}
 
@@ -49,7 +42,6 @@ namespace sim
 		m_thread.join();
 
 		Unsubscribe(cb::Bind<&Simulation::OnMessagerStop>(*this));
-		Unsubscribe(cb::Bind<&Simulation::OnRequestStopDelete>(*this));
 		Unsubscribe(cb::Bind<&Simulation::OnRequestStop>(*this));
 	}
 	
@@ -80,27 +72,6 @@ namespace sim
 		else
 		{
 			PostMessageFromUnattested(std::make_shared<RequestStopMessage>(*this)); // Queue a message to stop this simulation
-		}
-	}
-
-	void Simulation::StopAndDelete()
-	{
-		ERR_FAIL_COND_MSG(!ObjectOwned(), "This simulation should be owned by a thread when stop and delete is called on it");
-
-		if (m_running)
-		{
-			if (ThreadOwnsObject())
-			{
-				PostEvent(RequestStopDeleteMessage(*this));
-			}
-			else
-			{
-				PostMessageFromUnattested(std::make_shared<RequestStopDeleteMessage>(*this)); // Queue a message to stop this simulation
-			}
-		}
-		else // We already stopped so delete it now
-		{
-			delete this; // Will wait for thread to join
 		}
 	}
 
@@ -317,16 +288,6 @@ namespace sim
 			m_current_ticks = 0;
 			m_current_run_time = Clock::duration{};
 		}
-
-		if (m_delete_on_stop)
-		{
-			delete this;
-		}
-	}
-
-	void Simulation::OnMessagerStop(const MessagerStopEvent& event)
-	{
-		m_running = false; // Set running to false that stops the thread
 	}
 
 	void Simulation::OnRequestStop(const RequestStopMessage& event)
@@ -334,10 +295,8 @@ namespace sim
 		DipatcherRequestStop(); // Send a unlink message too all that are linked. Once they all reply m_running is set to false.
 	}
 
-	void Simulation::OnRequestStopDelete(const RequestStopDeleteMessage& event)
+	void Simulation::OnMessagerStop(const MessagerStopEvent& event)
 	{
-		m_delete_on_stop = true;
-
-		DipatcherRequestStop(); // Send a unlink message too all that are linked. Once they all reply m_running is set to false.
+		m_running = false; // Set running to false that stops the thread
 	}
 }

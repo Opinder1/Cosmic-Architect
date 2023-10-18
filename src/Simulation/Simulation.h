@@ -23,9 +23,8 @@ namespace sim
 	class Context;
 	class System;
 
-	struct MessagerStopEvent;
 	struct RequestStopMessage;
-	struct RequestStopDeleteMessage;
+	struct MessagerStopEvent;
 
 	// Simulates an environment by ticking every set timestep.
 	// Has SimulationSystems that define its behaviour. The systems allow dynamic adding of behavior.
@@ -91,9 +90,6 @@ namespace sim
 		// Stop this simulation (call from SimulationServer)
 		void Stop();
 
-		// Stop this simulation and delete itself when stopped (call from SimulationServer)
-		void StopAndDelete();
-
 	private:
 		// Main thread loop of this simulation that manages ticks and timings for the owner thread
 		void ThreadLoop();
@@ -107,18 +103,15 @@ namespace sim
 		// Internal stop that is called by the thread loop
 		void InternalStop();
 
-		void OnMessagerStop(const MessagerStopEvent& event);
-
 		void OnRequestStop(const RequestStopMessage& event);
 
-		void OnRequestStopDelete(const RequestStopDeleteMessage& event);
+		void OnMessagerStop(const MessagerStopEvent& event);
 
 	private:
 		// Threading
 		std::thread						m_thread;
 
 		std::atomic_bool				m_running; // Is this simulation running
-		std::atomic_bool				m_delete_on_stop; // Should we delete ourself when we stop
 
 		// Options
 		const double					m_ticks_per_second; // Ticks this simulation aims to execute per second

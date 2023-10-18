@@ -21,6 +21,8 @@ namespace sim
 		using SystemEmitter = cb::TempCallback<std::unique_ptr<System>(Simulation&)>;
 		using SimulationApplicator = cb::TempCallback<void(Simulation&)>;
 
+		using SimulationStorage = robin_hood::unordered_flat_map<UUID, std::unique_ptr<Simulation>>;
+
 	public:
 		static void Initialize();
 		static void Uninitialize();
@@ -73,13 +75,18 @@ namespace sim
 	private:
 		void AddSystem(UUID id, const SystemEmitter& emitter);
 
+		void DeleteThreadFunc();
+
 	private:
 		static std::unique_ptr<SimulationServer> s_singleton;
 
-		// Mutex to protect simulation map and stopped flag
+		std::thread m_deleter_thread; // Thread that deletes simulations added to the queue
+
+		// Mutex to protect the stopped flag, the simulation storage and the delete queue
 		mutable tkrzw::SpinSharedMutex m_mutex;
 
-		robin_hood::unordered_flat_map<UUID, std::unique_ptr<Simulation>> m_simulations;
 		bool m_stopped;
+		SimulationStorage m_simulations;
+		std::vector<std::unique_ptr<Simulation>> m_delete_queue;
 	};
 }

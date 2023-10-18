@@ -30,34 +30,35 @@ namespace sim
 	SimulationServer::SimulationServer() :
 		m_stopped(false)
 	{
-
+		m_deleter_thread = std::thread(&SimulationServer::DeleteThreadFunc, this);
 	}
 
 	SimulationServer::~SimulationServer()
 	{
+		// Set the stopped flag to true and add all the simulations to the delete queue
 		{
 			std::unique_lock lock(m_mutex);
+
 			m_stopped = true;
-		}
 
-		for (auto&& [id, simulation] : m_simulations)
-		{
-			if (simulation->IsRunning()) // If we are running and haven't already started to stop
+			for (auto&& [id, simulation] : m_simulations)
 			{
-				simulation->Stop();
+				if (simulation->IsRunning()) // If we are running and haven't already started to stop
+				{
+					simulation->Stop();
+				}
+
+				// Move the simulation into the delete queue
+				simulation.swap(m_delete_queue.emplace_back());
 			}
+
+			// Should be left with empty unique ptrs that we can clear
+			// No new simulations should be added
+			m_simulations.clear();
 		}
 
-		// Wait for all simulations to stop
-		for (auto&& [id, simulation] : m_simulations)
-		{
-			while (simulation->IsRunning())
-			{
-				std::this_thread::yield();
-			}
-		}
-
-		// When we delete the simulations each one will try to join its thread
+		// Wait until the deleter deletes all the simulations left
+		m_deleter_thread.join();
 	}
 
 	UUID SimulationServer::CreateSimulation(double ticks_per_second)
@@ -120,6 +121,9 @@ namespace sim
 		ERR_FAIL_COND_MSG(it == m_simulations.end(), "No simulation exists with the id " + id.ToGodotString());
 		ERR_FAIL_COND_MSG(it->second->IsRunning(), "Can't delete the simulation if its running");
 
+		// Move the simulation into the delete queue
+		it->second.swap(m_delete_queue.emplace_back());
+
 		m_simulations.erase(it);
 	}
 
@@ -131,11 +135,16 @@ namespace sim
 
 		ERR_FAIL_COND_MSG(it == m_simulations.end(), "No simulation exists with the id " + id.ToGodotString());
 
-		Simulation* sim = it->second.release(); // Release before erasing
+		// Stop the simulation if its running
+		if (it->second->IsRunning())
+		{
+			it->second->Stop();
+		}
+
+		// Move the simulation into the delete queue
+		it->second.swap(m_delete_queue.emplace_back());
 
 		m_simulations.erase(it);
-
-		sim->StopAndDelete(); // Call on the released which should delete itself
 	}
 
 	void SimulationServer::SendMessage(UUID id, const MessagePtr& message)
@@ -204,5 +213,28 @@ namespace sim
 		callback(*it->second);
 
 		return true;
+	}
+
+	void SimulationServer::DeleteThreadFunc()
+	{
+		std::unique_lock lock(m_mutex);
+
+		// Keep looping as long as we haven't stopped and the delete queue is not empty
+		while (!(m_stopped && m_delete_queue.empty()))
+		{
+			for (auto it = m_delete_queue.begin(); it != m_delete_queue.end(); it++)
+			{
+				if (!it->get()->IsRunning()) // If we are not running then we have stopped
+				{
+					it = m_delete_queue.erase(it); // Erase this simulation finally
+				}
+			}
+
+			// Every second we check if the simulations have stopped
+			// This should be plenty of time for the simulations to stop and makes us lock very rarely
+			lock.unlock();
+			std::this_thread::sleep_for(1s);
+			lock.lock();
+		}
 	}
 }
