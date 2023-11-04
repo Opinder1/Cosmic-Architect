@@ -1,4 +1,4 @@
-#include "SimulationSystem.h"
+#include "LinkedSimulationSystem.h"
 
 #include "Simulation/Simulation.h"
 #include "Simulation/Components.h"
@@ -6,18 +6,18 @@
 
 namespace sim
 {
-	SimulationSystem::SimulationSystem(Simulation& simulation) :
+	LinkedSimulationSystem::LinkedSimulationSystem(Simulation& simulation) :
 		System(simulation)
 	{
-		Sim().Subscribe(cb::Bind<&SimulationSystem::OnTick>(*this));
+		Subscribe<&LinkedSimulationSystem::OnTick>();
 	}
 
-	SimulationSystem::~SimulationSystem()
+	LinkedSimulationSystem::~LinkedSimulationSystem()
 	{
-		Sim().Unsubscribe(cb::Bind<&SimulationSystem::OnTick>(*this));
+
 	}
 
-	void SimulationSystem::OnTick(const TickEvent& event)
+	void LinkedSimulationSystem::OnTick(const TickEvent& event)
 	{
 		for (auto&& [entity, linked_messager] : Registry().view<LinkedMessagerComponent, LinkedSimulationComponent>().each())
 		{

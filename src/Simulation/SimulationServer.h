@@ -18,8 +18,8 @@ namespace sim
 	class SimulationServer : public MessageRegistry
 	{
 	public:
-		using SystemEmitter = cb::TempCallback<std::unique_ptr<System>(Simulation&)>;
-		using SimulationApplicator = cb::TempCallback<void(Simulation&)>;
+		using SystemEmitter = cb::Callback<std::unique_ptr<System>(Simulation&)>;
+		using SimulationApplicator = cb::Callback<void(Simulation&)>;
 
 		using SimulationStorage = robin_hood::unordered_flat_map<UUID, std::unique_ptr<Simulation>>;
 

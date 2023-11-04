@@ -202,7 +202,7 @@ namespace sim
 		});
 	}
 
-	entt::registry& Simulation::GetRegistry()
+	entt::registry& Simulation::Registry()
 	{
 		DEBUG_ASSERT(ThreadOwnsObject(), "Called non const getter without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
 

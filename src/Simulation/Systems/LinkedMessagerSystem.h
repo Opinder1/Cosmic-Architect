@@ -6,6 +6,7 @@ namespace sim
 {
 	struct Message;
 	struct TickEvent;
+	struct LinkedMessagerComponent;
 
 	using MessagePtr = std::shared_ptr<Message>;
 	using MessageQueue = std::vector<MessagePtr>;
@@ -16,11 +17,11 @@ namespace sim
 		LinkedMessagerSystem(Simulation& simulation);
 		~LinkedMessagerSystem();
 
+		static void SendMessage(Simulation& simulation, LinkedMessagerComponent& linked_messager, const MessagePtr& message);
+
+		static void SendMessage(Simulation& simulation, LinkedMessagerComponent& linked_messager, const MessageQueue& messages);
+
 	private:
 		void OnTick(const TickEvent& event);
 	};
-
-	void SendMessage(Simulation& simulation, LinkedMessagerComponent& linked_messager, const MessagePtr& message);
-
-	void SendMessage(Simulation& simulation, LinkedMessagerComponent& linked_messager, const MessageQueue& messages);
 }

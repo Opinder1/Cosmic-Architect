@@ -6,11 +6,11 @@ namespace sim
 {
 	struct TickEvent;
 
-	class SimulationSystem : public System
+	class LinkedSimulationSystem : public System
 	{
 	public:
-		SimulationSystem(Simulation& simulation);
-		~SimulationSystem();
+		LinkedSimulationSystem(Simulation& simulation);
+		~LinkedSimulationSystem();
 
 	private:
 		void OnTick(const TickEvent& event);

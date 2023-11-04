@@ -7,14 +7,17 @@ namespace sim
 {
 	System::System(Simulation& simulation) :
 		m_simulation(simulation),
-		m_registry(simulation.GetRegistry())
+		m_registry(simulation.Registry())
 	{
 
 	}
 
 	System::~System()
 	{
-
+		for (CallbackEntry& entry : m_callbacks)
+		{
+			Sim().UnsubscribeGeneric(entry.callback, entry.type);
+		}
 	}
 
 	Simulation& System::Sim()

@@ -26,11 +26,12 @@ namespace sim
 	class Simulation final : public ThreadMessager
 	{
 		friend class SimulationServer;
+		friend class System;
 
 		using SystemStorage = std::vector<std::unique_ptr<System>>;
 
 	public:
-		using SystemEmitter = cb::TempCallback<std::unique_ptr<System>(Simulation&)>;
+		using SystemEmitter = cb::Callback<std::unique_ptr<System>(Simulation&)>;
 
 	public:
 		Simulation(UUID id, double ticks_per_second);
@@ -72,7 +73,11 @@ namespace sim
 		bool Unlink(UUID simulation);
 
 		// Get the entity registry
-		entt::registry& GetRegistry();
+		entt::registry& Registry();
+
+		// Get a global object 
+		template<class T>
+		T& Global() { return Registry().ctx().emplace<T>(); }
 
 		// Generate a uuid
 		UUID GenerateUUID();
@@ -132,10 +137,10 @@ namespace sim
 		Clock::duration					m_current_run_time; // Current time this simulation has run since calling Start()
 
 		// Data
+		Random							m_uuid_gen;
+
 		entt::registry					m_registry;
 
 		SystemStorage					m_systems;
-
-		Random							m_uuid_gen;
 	};
 }

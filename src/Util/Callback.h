@@ -6,90 +6,25 @@ namespace cb
 {
 	// A callback to the () operator of a struct
 	template<class Callable, class Ret, class... Args>
-	Ret ObjectCallback(const void* ptr, Args... args)
+	Ret ObjectCallback(void* data, Args... args)
 	{
-		const Callable* c = reinterpret_cast<const Callable*>(ptr);
+		Callable* obj = reinterpret_cast<Callable*>(data);
 
-		return c->operator()(std::forward<Args>(args)...);
+		return obj->operator()(std::forward<Args>(args)...);
 	}
 
 	// A callback to a function pointer
 	template<auto Func, class Ret, class... Args>
-	Ret ConstFuncCallback(const void* ptr, Args... args)
+	Ret FuncCallback(void* data, Args... args)
 	{
 		return Func(std::forward<Args>(args)...);
 	}
 
 	// A callback to a method of a class
 	template<auto Method, class Class, class Ret, class... Args>
-	Ret ConstMethodCallback(const void* ptr, Args... args)
+	Ret MethodCallback(void* data, Args... args)
 	{
-		Class* instance = const_cast<Class*>(reinterpret_cast<const Class*>(ptr));
-
-		return (instance->*Method)(std::forward<Args>(args)...);
-	}
-
-	// Forward definition required
-	template<class Function>
-	class TempCallback;
-
-	// A callback that requires a class or function pointer to be initialized and can always be called
-	// Intended to be used for callbacks to temporary objects which define operator() like a lambda
-	// Should not be stored since it doesn't store its callbacks data
-	template<class Ret, class... Args>
-	class TempCallback<Ret(Args...)>
-	{
-	private:
-		using PtrType = Ret(*)(Args...);
-
-		using CallbackType = Ret(&)(const void*, Args...);
-
-	public:
-		explicit TempCallback(const void* instance, CallbackType callback) :
-			m_ptr(instance),
-			m_callback(callback)
-		{}
-
-		// Bind a function pointer
-		TempCallback(PtrType f) :
-			m_ptr(reinterpret_cast<const void*>(f)),
-			m_callback(PtrCallback)
-		{}
-
-		// Bind a struct object that defines operator()
-		template<class Callable>
-		TempCallback(const Callable& c) :
-			TempCallback<Ret(Args...)>(reinterpret_cast<const void*>(&c), ObjectCallback<Callable, Ret, Args...>)
-		{}
-
-		Ret operator()(Args... args) const
-		{
-			return m_callback(m_ptr, std::forward<Args>(args)...);
-		}
-
-	private:
-		static Ret PtrCallback(const void* ptr, Args... args)
-		{
-			return reinterpret_cast<PtrType>(ptr)(std::forward<Args>(args)...);
-		}
-
-	private:
-		const void* m_ptr;
-		CallbackType m_callback;
-	};
-
-	// A callback to a function pointer
-	template<auto Func, class Ret, class... Args>
-	Ret FuncCallback(void* ptr, Args... args)
-	{
-		return Func(std::forward<Args>(args)...);
-	}
-
-	// A callback to a method of a class
-	template<auto Method, class Class, class Ret, class... Args>
-	Ret MethodCallback(void* ptr, Args... args)
-	{
-		Class* instance = reinterpret_cast<Class*>(ptr);
+		Class* instance = reinterpret_cast<Class*>(data);
 
 		return (instance->*Method)(std::forward<Args>(args)...);
 	}
@@ -110,29 +45,38 @@ namespace cb
 
 	public:
 		Callback() :
-			m_ptr(nullptr),
-			m_callback(nullptr)
+			m_callback(nullptr),
+			m_data(nullptr)
 		{}
 
 		Callback(std::nullptr_t) :
-			m_ptr(nullptr),
-			m_callback(nullptr)
+			m_callback(nullptr),
+			m_data(nullptr)
 		{}
 
-		explicit Callback(void* instance, CallbackType callback) :
-			m_ptr(instance),
-			m_callback(callback)
+		// Bind a function pointer that doesn't take data
+		explicit Callback(PtrType callback) :
+			m_callback(PtrCallback),
+			m_data(callback)
 		{}
 
-		// Bind a function pointer
-		Callback(PtrType f) :
-			m_ptr(reinterpret_cast<void*>(f)),
-			m_callback(PtrCallback)
+		// Bind a function pointer that takes data
+		explicit Callback(CallbackType callback, void* data) :
+			m_callback(callback),
+			m_data(data)
 		{}
+
+		// Initialize with an object that has operator()
+		template<class Object>
+		Callback(const Object& object)
+		{
+			m_callback = ObjectCallback<Object, Ret, Args...>;
+			m_data = const_cast<void*>(reinterpret_cast<const void*>(&object));
+		}
 
 		bool operator==(const Callback& other) const
 		{
-			return m_ptr == other.m_ptr && m_callback == other.m_callback;
+			return m_callback == other.m_callback && m_data == other.m_data;
 		}
 
 		bool IsValid() const
@@ -142,60 +86,41 @@ namespace cb
 
 		Ret operator()(Args... args) const
 		{
-			return m_callback(m_ptr, std::forward<Args>(args)...);
+			return m_callback(m_data, std::forward<Args>(args)...);
 		}
 
 	private:
-		static Ret PtrCallback(void* ptr, Args... args)
+		static Ret PtrCallback(void* data, Args... args)
 		{
-			return reinterpret_cast<PtrType>(ptr)(std::forward<Args>(args)...);
+			return reinterpret_cast<PtrType>(data)(std::forward<Args>(args)...);
 		}
 
 	private:
-		void* m_ptr;
 		CallbackType m_callback;
+		void* m_data;
 	};
 
 	/* Helpers for the actual functions. These can't be used by themselves */
-	template<auto Func, class Ret, class... Args>
-	auto TempBindHelper(Ret(*)(Args...))
-	{
-		return TempCallback<Ret(Args...)>(nullptr, ConstFuncCallback<Func, Ret, Args...>);
-	}
-
-	template<auto Method, class Class, class Ret, class... Args>
-	auto TempBindHelper(Class& c, Ret(Class::*)(Args...))
-	{
-		return TempCallback<Ret(Args...)>(&c, ConstMethodCallback<Method, Class, Ret, Args...>);
-	}
 
 	template<auto Func, class Ret, class... Args>
 	auto BindHelper(Ret(*)(Args...))
 	{
-		return Callback<Ret(Args...)>(nullptr, FuncCallback<Func, Ret, Args...>);
+		return Callback<Ret(Args...)>(FuncCallback<Func, Ret, Args...>, nullptr);
 	}
 
 	template<auto Method, class Class, class Ret, class... Args>
-	auto BindHelper(Class& c, Ret(Class::*)(Args...))
+	auto BindHelper(Ret(Class::*)(Args...), Class* instance)
 	{
-		return Callback<Ret(Args...)>(reinterpret_cast<void*>(&c), MethodCallback<Method, Class, Ret, Args...>);
+		return Callback<Ret(Args...)>(MethodCallback<Method, Class, Ret, Args...>, reinterpret_cast<void*>(instance));
+	}
+
+	template<auto Method, class Class, class Ret, class... Args>
+	auto BindHelper(Ret(Class::*)(Args...) const, Class* instance)
+	{
+		return Callback<Ret(Args...)>(MethodCallback<Method, Class, Ret, Args...>, reinterpret_cast<void*>(instance));
 	}
 
 	/* The bind functions */
-
-	// Temporarily bind a function
-	template<auto Func>
-	auto TBind()
-	{
-		return TempBindHelper<Func>(Func);
-	}
-
-	// Temporarily bind a method of a class
-	template<auto Method, class Class>
-	auto TBind(Class& c)
-	{
-		return TempBindHelper<Method, Class>(c, Method);
-	}
 
 	// Bind a function
 	template<auto Func>
@@ -206,8 +131,15 @@ namespace cb
 
 	// Bind the method of a class
 	template<auto Method, class Class>
-	auto Bind(Class& c)
+	auto Bind(Class& instance)
 	{
-		return BindHelper<Method, Class>(c, Method);
+		return BindHelper<Method, std::remove_cv_t<Class>>(Method, const_cast<std::remove_cv_t<Class*>>(&instance));
+	}
+
+	// Bind the method of a class
+	template<auto Method, class Class>
+	auto Bind(Class* instance)
+	{
+		return BindHelper<Method, std::remove_cv_t<Class>>(Method, const_cast<std::remove_cv_t<Class>*>(instance));
 	}
 }

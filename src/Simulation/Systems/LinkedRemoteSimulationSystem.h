@@ -10,7 +10,7 @@ namespace sim
 	class LinkedRemoteSimulationSystem : public System
 	{
 	public:
-		LinkedRemoteSimulationSystem(Simulation& simulation);
+		LinkedRemoteSimulationSystem(Simulation& simulation, UUID network_simulation);
 		~LinkedRemoteSimulationSystem();
 
 	private:

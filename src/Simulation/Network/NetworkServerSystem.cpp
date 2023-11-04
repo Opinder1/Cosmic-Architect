@@ -26,20 +26,16 @@ namespace sim
 	NetworkServerSystem::NetworkServerSystem(Simulation& simulation) :
 		System(simulation)
 	{
-		Sim().Subscribe(cb::Bind<&NetworkServerSystem::OnTick>(*this));
-		Sim().Subscribe(cb::Bind<&NetworkServerSystem::OnSimulationRequestStop>(*this));
-		Sim().Subscribe(cb::Bind<&NetworkServerSystem::OnSimulationStop>(*this));
-		Sim().Subscribe(cb::Bind<&NetworkServerSystem::OnStartNetworkServer>(*this));
-		Sim().Subscribe(cb::Bind<&NetworkServerSystem::OnStopNetworkServer>(*this));
+		Subscribe<&NetworkServerSystem::OnTick>();
+		Subscribe<&NetworkServerSystem::OnSimulationRequestStop>();
+		Subscribe<&NetworkServerSystem::OnSimulationStop>();
+		Subscribe<&NetworkServerSystem::OnStartNetworkServer>();
+		Subscribe<&NetworkServerSystem::OnStopNetworkServer>();
 	}
 
 	NetworkServerSystem::~NetworkServerSystem()
 	{
-		Sim().Unsubscribe(cb::Bind<&NetworkServerSystem::OnTick>(*this));
-		Sim().Unsubscribe(cb::Bind<&NetworkServerSystem::OnSimulationRequestStop>(*this));
-		Sim().Unsubscribe(cb::Bind<&NetworkServerSystem::OnSimulationStop>(*this));
-		Sim().Unsubscribe(cb::Bind<&NetworkServerSystem::OnStartNetworkServer>(*this));
-		Sim().Unsubscribe(cb::Bind<&NetworkServerSystem::OnStopNetworkServer>(*this));
+
 	}
 
 	void NetworkServerSystem::OnTick(const TickEvent& event)

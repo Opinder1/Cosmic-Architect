@@ -9,7 +9,7 @@ namespace sim
 	TickSystem::TickSystem(Simulation& simulation) :
 		System(simulation)
 	{
-
+		Subscribe<&TickSystem::OnSimulationTick>();
 	}
 
 	TickSystem::~TickSystem()

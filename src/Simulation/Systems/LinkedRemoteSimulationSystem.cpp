@@ -6,21 +6,20 @@
 
 #include "Simulation/Message/Message.h"
 
-#include "Simulation/Network/NetworkMessager.h"
 #include "Simulation/Network/Events.h"
 
 namespace sim
 {
-	LinkedRemoteSimulationSystem::LinkedRemoteSimulationSystem(Simulation& simulation) :
+	LinkedRemoteSimulationSystem::LinkedRemoteSimulationSystem(Simulation& simulation, UUID network_simulation) :
 		System(simulation),
-		m_network_simulation(NetworkMessager::GetSimulation())
+		m_network_simulation(network_simulation)
 	{
-		Sim().Subscribe(cb::Bind<&LinkedRemoteSimulationSystem::OnTick>(*this));
+		Subscribe<&LinkedRemoteSimulationSystem::OnTick>();
 	}
 
 	LinkedRemoteSimulationSystem::~LinkedRemoteSimulationSystem()
 	{
-		Sim().Unsubscribe(cb::Bind<&LinkedRemoteSimulationSystem::OnTick>(*this));
+
 	}
 
 	void LinkedRemoteSimulationSystem::OnTick(const TickEvent& event)
