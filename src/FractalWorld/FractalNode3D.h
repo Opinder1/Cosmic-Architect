@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Simulation/Time.h"
-
 #include "FractalCoord3D.h"
+
+#include "Util/Time.h"
 
 namespace voxel_world
 {

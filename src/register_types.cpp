@@ -1,8 +1,8 @@
 #include "register_types.h"
 
 #include "Simulation/SimulationServer.h"
-#include "Simulation/Message/MessageRegistry.h"
-#include "Network/NetworkMessager.h"
+
+#include "Simulation/Network/NetworkMessager.h"
 
 #include "VoxelWorld.h"
 
@@ -17,9 +17,11 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 	{
 		godot::UtilityFunctions::print("Loading voxel world extension");
 
-		sim::MessageRegistry::Initialize();
 		sim::SimulationServer::Initialize();
+
 		sim::NetworkMessager::Initialize();
+
+		// 
 
 		//ClassDB::register_class<voxel_world::VoxelWorldNode>();
 
@@ -34,8 +36,8 @@ void uninitialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 		godot::UtilityFunctions::print("Unloading voxel world extension");
 
 		sim::NetworkMessager::Uninitialize();
+
 		sim::SimulationServer::Uninitialize();
-		sim::MessageRegistry::Uninitialize();
 
 		godot::UtilityFunctions::print("Unloaded voxel world extension");
 	}

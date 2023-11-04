@@ -2,9 +2,9 @@
 
 #include "MessageSender.h"
 
-#include <godot_cpp/variant/variant.hpp>
+#include "Util/Debug.h"
 
-#include <godot_cpp/core/error_macros.hpp>
+#include <godot_cpp/variant/variant.hpp>
 
 namespace sim
 {
@@ -22,12 +22,14 @@ namespace sim
 
 	bool Message::Serialize(ByteStream& stream) const
 	{
-		ERR_FAIL_V_MSG(false, godot::vformat("Serialize() was called on a message of type '%s' that does not override it.", typeid(*this).name()));
+		DEBUG_PRINT_ERROR(godot::vformat("Serialize() was called on a message of type '%s' that does not override it.", typeid(*this).name()));
+		return false;
 	};
 
 	bool Message::Deserialize(ByteStream& stream)
 	{
-		ERR_FAIL_V_MSG(false, godot::vformat("Deserialize() was called on a message of type '%s' that does not override it.", typeid(*this).name()));
+		DEBUG_PRINT_ERROR(godot::vformat("Deserialize() was called on a message of type '%s' that does not override it.", typeid(*this).name()));
+		return false;
 	};
 
 	Event::Type GetMessageType(const Message& message)

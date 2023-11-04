@@ -1,13 +1,8 @@
 #pragma once
 
-#include "Time.h"
-
-#include "Message/MessageSender.h"
-
-#include "Event/EventDispatcher.h"
-
 #include "Thread/ThreadMessager.h"
 
+#include "Util/Time.h"
 #include "Util/Callback.h"
 
 #include <TKRZW/tkrzw_thread_util.h>
@@ -20,10 +15,9 @@
 
 namespace sim
 {
-	class Context;
 	class System;
 
-	struct RequestStopMessage;
+	struct SimulationRequestStopMessage;
 	struct MessagerStopEvent;
 
 	// Simulates an environment by ticking every set timestep.
@@ -44,6 +38,9 @@ namespace sim
 
 		// Is this simulation currently running (not including short time when stopping)
 		bool IsRunning() const;
+
+		// Is this simulation currently stopping (cached value that is not updated during tick)
+		bool IsStoppingCached() const;
 
 		// Get the amount of ticks this simulation aims to complete per second (only relevant in threaded mode)
 		double GetTicksPerSecond() const;
@@ -83,6 +80,7 @@ namespace sim
 	private:
 		// Add a system to this simulation. Don't call when the simulation is running
 		void AddSystem(const SystemEmitter& emitter);
+		void AddSystem(std::unique_ptr<System>&& system);
 
 		// Start this simulation
 		void Start();
@@ -90,7 +88,6 @@ namespace sim
 		// Stop this simulation (call from SimulationServer)
 		void Stop();
 
-	private:
 		// Main thread loop of this simulation that manages ticks and timings for the owner thread
 		void ThreadLoop();
 
@@ -103,15 +100,20 @@ namespace sim
 		// Internal stop that is called by the thread loop
 		void InternalStop();
 
-		void OnRequestStop(const RequestStopMessage& event);
+	private:
+		void OnRequestStop(const SimulationRequestStopMessage& event);
 
 		void OnMessagerStop(const MessagerStopEvent& event);
+
+		void OnAttemptFreeMemory(const AttemptFreeMemoryEvent& event);
 
 	private:
 		// Threading
 		std::thread						m_thread;
 
 		std::atomic_bool				m_running; // Is this simulation running
+
+		bool							m_stopping_cached;
 
 		// Options
 		const double					m_ticks_per_second; // Ticks this simulation aims to execute per second

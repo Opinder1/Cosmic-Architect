@@ -1,8 +1,8 @@
 #include "EventDispatcher.h"
 
-#include <godot_cpp/variant/string.hpp>
+#include "Util/Debug.h"
 
-#include <godot_cpp/core/error_macros.hpp>
+#include <godot_cpp/variant/string.hpp>
 
 namespace sim
 {
@@ -13,12 +13,12 @@ namespace sim
 
 	EventDispatcher::~EventDispatcher()
 	{
-#if _DEBUG
+#if DEBUG
 		for (auto&& [type, callback_list] : m_callback_lists)
 		{
 			if (!callback_list.empty())
 			{
-				WARN_PRINT("The callback list for the type '" + godot::String::num_uint64(type) + "' was not empty on destruction");
+				DEBUG_PRINT_ERROR("The callback list for the type '" + godot::String::num_uint64(type) + "' was not empty on destruction");
 			}
 		}
 #endif
@@ -28,13 +28,13 @@ namespace sim
 	{
 		for (QueueEntry& entry : m_queue)
 		{
-			PostEvent(*entry.event, entry.type);
+			PostEventGeneric(*entry.event, entry.type);
 		}
 
 		m_queue.clear();
 	}
 
-	void EventDispatcher::PostEvent(const Event& event, Event::Type event_type)
+	void EventDispatcher::PostEventGeneric(const Event& event, Event::Type event_type)
 	{
 		auto it = m_callback_lists.find(event_type);
 
@@ -44,7 +44,7 @@ namespace sim
 		}
 	}
 
-	void EventDispatcher::PostQueuedEvent(EventPtr&& event, Event::Type event_type)
+	void EventDispatcher::PostQueuedEventGeneric(EventPtr&& event, Event::Type event_type)
 	{
 		m_queue.emplace_back(QueueEntry{ std::move(event), event_type });
 	}
@@ -58,7 +58,11 @@ namespace sim
 	{
 		auto it = m_callback_lists.find(event_type);
 
-		ERR_FAIL_COND_MSG(it == m_callback_lists.end(), "Event type '" + godot::String::num_uint64(event_type) + "' has no observers so unsubscribe failed");
+		if (it == m_callback_lists.end())
+		{
+			DEBUG_PRINT_ERROR("Event type '" + godot::String::num_uint64(event_type) + "' has no observers so unsubscribe failed");
+			return;
+		}
 
 		UnsubscribeInternal(it->second, callback);
 
@@ -90,7 +94,11 @@ namespace sim
 	{
 		auto find_it = std::find_if(list.begin(), list.end(), [&](CallbackEntry& other) { return other.callback == callback; });
 
-		ERR_FAIL_COND_MSG(find_it == list.end(), "Event type does not have the observer");
+		if (find_it == list.end())
+		{
+			DEBUG_PRINT_ERROR("Event type does not have the observer");
+			return;
+		}
 
 		list.erase(find_it);
 	}

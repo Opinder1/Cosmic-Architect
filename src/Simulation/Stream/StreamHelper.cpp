@@ -2,7 +2,7 @@
 
 #include "Simulation/UUID.h"
 
-#include <godot_cpp/core/error_macros.hpp>
+#include "Util/Debug.h"
 
 namespace sim
 {
@@ -41,16 +41,35 @@ namespace sim
 			switch (type)
 			{
 			case ByteStream::GroupMagnitude::Short:
-				return ReadRaw<uint8_t>(src, (uint8_t*)&size, 1) == 1;
+				if (ReadRaw<uint8_t>(src, (uint8_t*)&size, 1) != 1)
+				{
+					DEBUG_PRINT_ERROR("Failed to read short size");
+					return false;
+				}
+
+				return true;
 
 			case ByteStream::GroupMagnitude::Medium:
-				return ReadRaw<uint16_t>(src, (uint16_t*)&size, 1) == 1;
+				if (ReadRaw<uint16_t>(src, (uint16_t*)&size, 1) != 1)
+				{
+					DEBUG_PRINT_ERROR("Failed to read medium size");
+					return false;
+				}
+
+				return true;
 
 			case ByteStream::GroupMagnitude::Long:
-				return ReadRaw<uint32_t>(src, (uint32_t*)&size, 1) == 1;
+				if (ReadRaw<uint32_t>(src, (uint32_t*)&size, 1) != 1)
+				{
+					DEBUG_PRINT_ERROR("Failed to read long size");
+					return false;
+				}
+
+				return true;
 
 			default:
-				ERR_FAIL_V_MSG(false, "Invalid size magnitude");
+				DEBUG_PRINT_ERROR("Invalid size magnitude");
+				return false;
 			}
 		}
 
@@ -59,43 +78,71 @@ namespace sim
 			switch (magnitude)
 			{
 			case ByteStream::GroupMagnitude::Short:
-				ERR_FAIL_COND_V_MSG(size > UINT8_MAX, false, "The size was larger than a short group can handle");
+				if (size > UINT8_MAX)
+				{
+					DEBUG_PRINT_ERROR("The size was larger than a short group can handle");
+					return false;
+				}
 
-				return WriteRaw<uint8_t>(dest, (const uint8_t*)&size, 1) == 1;
+				if (WriteRaw<uint8_t>(dest, (const uint8_t*)&size, 1) != 1)
+				{
+					DEBUG_PRINT_ERROR("Failed to write short size");
+					return false;
+				}
+
+				return true;
 
 			case ByteStream::GroupMagnitude::Medium:
-				ERR_FAIL_COND_V_MSG(size > UINT16_MAX, false, "The size was larger than a medium group can handle");
+				if (size > UINT16_MAX)
+				{
+					DEBUG_PRINT_ERROR("The size was larger than a medium group can handle");
+					return false;
+				}
 
-				return WriteRaw<uint16_t>(dest, (const uint16_t*)&size, 1) == 1;
+				if (WriteRaw<uint16_t>(dest, (const uint16_t*)&size, 1) != 1)
+				{
+					DEBUG_PRINT_ERROR("Failed to write medium size");
+					return false;
+				}
+
+				return true;
 
 			case ByteStream::GroupMagnitude::Long:
-				ERR_FAIL_COND_V_MSG(size > UINT32_MAX, false, "The size was larger than a long group can handle");
+				if (size > UINT32_MAX)
+				{
+					DEBUG_PRINT_ERROR("The size was larger than a long group can handle");
+					return false;
+				}
 
-				return WriteRaw<uint32_t>(dest, (const uint32_t*)&size, 1) == 1;
+				if (WriteRaw<uint32_t>(dest, (const uint32_t*)&size, 1) != 1)
+				{
+					DEBUG_PRINT_ERROR("Failed to write long size");
+					return false;
+				}
+
+				return true;
 
 			default:
-				ERR_FAIL_V_MSG(false, "Invalid size magnitude");
+				DEBUG_PRINT_ERROR("Invalid size magnitude");
+				return false;
 			}
-		}
-
-		size_t ReadString(ByteStream& src, std::string& output, ByteStream::GroupMagnitude magnitude)
-		{
-			size_t size;
-			ERR_FAIL_COND_V_MSG(!ReadSize(src, size, magnitude), 0, "Failed to read string size");
-
-			ERR_FAIL_COND_V_MSG(size > (src.GetSize() - src.GetPos()), 0, "The string size stored goes out of the streams bounds");
-
-			output.resize(size);
-
-			return ReadRaw<char>(src, output.data(), output.size());
 		}
 
 		bool ReadUUID(ByteStream& src, UUID& id)
 		{
 			uint64_t first, second;
 
-			ERR_FAIL_COND_V_MSG(Read<uint64_t>(src, first), false, "Failed to read first byte of uuid");
-			ERR_FAIL_COND_V_MSG(Read<uint64_t>(src, second), false, "Failed to read second byte of uuid");
+			if (!Read<uint64_t>(src, first))
+			{
+				DEBUG_PRINT_ERROR("Failed to read first byte of uuid");
+				return false;
+			}
+
+			if (!Read<uint64_t>(src, second))
+			{
+				DEBUG_PRINT_ERROR("Failed to read second byte of uuid");
+				return false;
+			}
 
 			id = UUID(first, second);
 
@@ -104,28 +151,95 @@ namespace sim
 
 		bool WriteUUID(ByteStream& src, const UUID& id)
 		{
-			ERR_FAIL_COND_V_MSG(Write<uint64_t>(src, id.GetFirst()), false, "Failed to read first byte of uuid");
-			ERR_FAIL_COND_V_MSG(Write<uint64_t>(src, id.GetSecond()), false, "Failed to read second byte of uuid");
+			if (!Write<uint64_t>(src, id.GetFirst()))
+			{
+				DEBUG_PRINT_ERROR("Failed to read first byte of uuid");
+				return false;
+			}
+
+			if (!Write<uint64_t>(src, id.GetSecond()))
+			{
+				DEBUG_PRINT_ERROR("Failed to read second byte of uuid");
+				return false;
+			}
 			
 			return true;
 		}
 
+		size_t ReadString(ByteStream& src, std::string& output, ByteStream::GroupMagnitude magnitude)
+		{
+			size_t size;
+			if (!ReadSize(src, size, magnitude))
+			{
+				DEBUG_PRINT_ERROR("Failed to read string size");
+				return 0;
+			}
+
+			if (size > (src.GetSize() - src.GetPos()))
+			{
+				DEBUG_PRINT_ERROR("The string size stored goes out of the streams bounds");
+				return 0;
+			}
+
+			output.resize(size);
+
+			size_t bytes_read = ReadRaw<char>(src, output.data(), output.size());
+
+			if (bytes_read != size)
+			{
+				DEBUG_PRINT_WARN("Failed to read whole of string data");
+				output.resize(bytes_read);
+			}
+
+			return bytes_read;
+		}
+
 		size_t WriteString(ByteStream& dest, const std::string& input, ByteStream::GroupMagnitude magnitude)
 		{
-			ERR_FAIL_COND_V_MSG(!WriteSize(dest, (uint32_t)input.size(), magnitude), 0, "Failed to write string size");
+			if (!WriteSize(dest, (uint32_t)input.size(), magnitude))
+			{
+				DEBUG_PRINT_ERROR("Failed to write string size");
+				return 0;
+			}
 
-			return WriteRaw<char>(dest, input.data(), input.size());
+			size_t bytes_written = WriteRaw<char>(dest, input.data(), input.size());
+
+			if (bytes_written != input.size())
+			{
+				DEBUG_PRINT_WARN("Failed to write string data");
+			}
+
+			return bytes_written;
 		}
 
 		size_t ReadString(ByteStream& src, char* output, uint32_t max_output, ByteStream::GroupMagnitude magnitude)
 		{
 			size_t size;
-			ERR_FAIL_COND_V_MSG(!ReadSize(src, size, magnitude), 0, "Failed to read string size");
 
-			ERR_FAIL_COND_V_MSG(size >= max_output, false, "The string size stored goes out of the requested max output size");
-			ERR_FAIL_COND_V_MSG(size > (src.GetSize() - src.GetPos()), false, "The string size stored goes out of the streams bounds");
+			if (!ReadSize(src, size, magnitude))
+			{
+				DEBUG_PRINT_ERROR("Failed to read string size");
+				return 0;
+			}
+
+			if (size >= max_output)
+			{
+				DEBUG_PRINT_ERROR("The string size stored goes out of the requested max output size");
+				return 0;
+			}
+
+			if (size > (src.GetSize() - src.GetPos()))
+			{
+				DEBUG_PRINT_ERROR("The string size stored goes out of the streams bounds");
+				return 0;
+			}
 
 			size_t bytes_read = ReadRaw<char>(src, output, size);
+
+			if (bytes_read != size)
+			{
+				DEBUG_PRINT_WARN("Failed to read whole of string data");
+			}
 
 			output[bytes_read] = '\0';
 
@@ -134,9 +248,20 @@ namespace sim
 
 		size_t WriteString(ByteStream& dest, const char* input, uint32_t input_size, ByteStream::GroupMagnitude type)
 		{
-			ERR_FAIL_COND_V_MSG(!WriteSize(dest, input_size, type), 0, "Failed to write string data");
+			if (!WriteSize(dest, input_size, type))
+			{
+				DEBUG_PRINT_ERROR("Failed to write string data");
+				return 0;
+			}
 			
-			return WriteRaw<char>(dest, input, input_size);
+			size_t bytes_written = WriteRaw<char>(dest, input, input_size);
+
+			if (bytes_written != input_size)
+			{
+				DEBUG_PRINT_WARN("Failed to write string data");
+			}
+
+			return bytes_written;
 		}
 	}
 }

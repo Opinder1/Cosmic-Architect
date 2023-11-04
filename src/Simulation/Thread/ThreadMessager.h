@@ -17,6 +17,8 @@ namespace sim
 {
 	class EventDispatcher;
 
+	struct AttemptFreeMemoryEvent;
+
 	struct MessagerException {};
 
 	// A messager that sends events to other messagers in this process. They could be in other threads
@@ -80,7 +82,10 @@ namespace sim
 		void PostMessagesFromOther(const ThreadMessageQueue& messages);
 
 		// On recieving a thread message. The message can be from this messager or send from another by a queue
-		void OnThreadMessage(const ThreadMessage& message);
+		void ProcessThreadMessage(const ThreadMessage& message);
+
+	private:
+		void OnAttemptFreeMemory(const AttemptFreeMemoryEvent& event);
 
 	private:
 		// Mutex to protect m_in_queue

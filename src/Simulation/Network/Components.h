@@ -25,10 +25,6 @@ namespace sim
 		std::vector<entt::entity> child_peers;
 	};
 
-	struct NewServerComponent {};
-
-	struct DeletedServerComponent {};
-
 	// This component makes this entity a peer
 	struct PeerComponent
 	{
@@ -37,10 +33,6 @@ namespace sim
 
 		std::vector<entt::entity> child_remote_simulations;
 	};
-
-	struct NewPeerComponent {};
-
-	struct DeletedPeerComponent {};
 
 	struct ChildPeerComponent
 	{
@@ -61,8 +53,4 @@ namespace sim
 
 		MessageQueue queue;
 	};
-
-	struct NewRemoteSimulationComponent {};
-
-	struct DeletedRemoteSimulationComponent {};
 }

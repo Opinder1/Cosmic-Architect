@@ -2,9 +2,7 @@
 
 #include "Simulation/Events.h"
 
-#include "Simulation/Event/EventDispatcher.h"
-
-#include <godot_cpp/core/error_macros.hpp>
+#include "Util/Debug.h"
 
 namespace sim
 {
@@ -23,9 +21,19 @@ namespace sim
 
 	void ThreadMessager::LinkMessager(ThreadMessager& target)
 	{
-		ERR_FAIL_COND_MSG(!ThreadOwnsObject(), "The owning thread should be linking for this messager");
-		ERR_FAIL_COND_MSG(&target == this, "Don't link to self");
-		ERR_FAIL_COND_MSG(m_stopping, "This messager is stopping");
+		DEBUG_ASSERT(ThreadOwnsObject(), "The owning thread should be linking for this messager");
+
+		if (&target == this)
+		{
+			DEBUG_PRINT_ERROR("Don't link to self");
+			return;
+		}
+
+		if (m_stopping)
+		{
+			DEBUG_PRINT_ERROR("This messager is stopping");
+			return;
+		}
 			
 		// Post to the target. This must not fail
 		target.PostMessageFromOther(ThreadMessage(ThreadMessage::Type::RequestLink, this, nullptr));
@@ -33,8 +41,13 @@ namespace sim
 
 	void ThreadMessager::UnlinkMessager(ThreadMessager& target)
 	{
-		ERR_FAIL_COND_MSG(!ThreadOwnsObject(), "The owning thread should be unlinking for this messager");
-		ERR_FAIL_COND_MSG(&target == this, "Don't unlink from self");
+		DEBUG_ASSERT(ThreadOwnsObject(), "The owning thread should be unlinking for this messager");
+
+		if (&target == this)
+		{
+			DEBUG_PRINT_ERROR("Don't unlink to self");
+			return;
+		}
 
 		// Post to the target. This must not fail
 		target.PostMessageFromOther(ThreadMessage(ThreadMessage::Type::RequestUnlink, this, nullptr));
@@ -42,13 +55,22 @@ namespace sim
 
 	void ThreadMessager::PostMessageToOther(UUID target_id, const MessagePtr& message)
 	{
-		ERR_FAIL_COND_MSG(!ThreadOwnsObject(), "The owning thread should be posting messages for this messager");
-		ERR_FAIL_COND_MSG(target_id == GetUUID(), "Don't send to self");
+		DEBUG_ASSERT(ThreadOwnsObject(), "The owning thread should be posting messages for this messager");
+
+		if (target_id == GetUUID())
+		{
+			DEBUG_PRINT_ERROR("Don't send to self");
+			return;
+		}
 
 		auto it = m_linked_messagers.find(target_id);
 
 		// Target should send to this
-		ERR_FAIL_COND_MSG(it == m_linked_messagers.end(), "Target dispatcher not linked");
+		if (it == m_linked_messagers.end())
+		{
+			DEBUG_PRINT_ERROR("Target dispatcher not linked");
+			return;
+		}
 
 		ThreadMessageQueue& queue = it->second.queue;
 
@@ -58,13 +80,22 @@ namespace sim
 
 	void ThreadMessager::PostMessagesToOther(UUID target_id, const MessageQueue& messages)
 	{
-		ERR_FAIL_COND_MSG(!ThreadOwnsObject(), "The owning thread should be posting messages for this messager");
-		ERR_FAIL_COND_MSG(target_id == GetUUID(), "Don't send to self");
+		DEBUG_ASSERT(ThreadOwnsObject(), "The owning thread should be posting messages for this messager");
+
+		if (target_id == GetUUID())
+		{
+			DEBUG_PRINT_ERROR("Don't send to self");
+			return;
+		}
 
 		auto it = m_linked_messagers.find(target_id);
 
 		// Target should send to this
-		ERR_FAIL_COND_MSG(it == m_linked_messagers.end(), "Target dispatcher not linked");
+		if (it == m_linked_messagers.end())
+		{
+			DEBUG_PRINT_ERROR("Target dispatcher not linked");
+			return;
+		}
 
 		ThreadMessageQueue& queue = it->second.queue;
 
@@ -95,8 +126,13 @@ namespace sim
 
 	void ThreadMessager::PostMessageFromOther(const ThreadMessage& message)
 	{
-		ERR_FAIL_COND_MSG(ThreadOwnsObject(), "Should be called by another dispatcher. That dispatcher should be linked to call this");
-		ERR_FAIL_COND_MSG(m_stopping, "This messager is stopping");
+		DEBUG_ASSERT(!ThreadOwnsObject(), "Should be called by another dispatcher. That dispatcher should be linked to call this");
+
+		if (m_stopping)
+		{
+			DEBUG_PRINT_ERROR("This messager is stopping");
+			return;
+		}
 
 		std::unique_lock lock(m_mutex);
 
@@ -106,24 +142,31 @@ namespace sim
 
 	void ThreadMessager::PostMessagesFromOther(const ThreadMessageQueue& messages)
 	{
-		ERR_FAIL_COND_MSG(ThreadOwnsObject(), "Should be called by another dispatcher. That dispatcher should be linked to call this");
-		ERR_FAIL_COND_MSG(m_stopping, "This messager is stopping");
+		DEBUG_ASSERT(!ThreadOwnsObject(), "Should be called by another dispatcher. That dispatcher should be linked to call this");
 
-		if (!messages.empty()) // Don't lock mutex if there are no messages
+		if (m_stopping)
 		{
-			std::unique_lock lock(m_mutex);
-
-			// Push only to the in queue so that this dispatcher can still run without blocking
-			for (const ThreadMessage& message : messages)
-			{
-				m_in_queue.push_back(message);
-			}
+			DEBUG_PRINT_ERROR("This messager is stopping");
+			return;
 		}
+
+		if (messages.empty()) // Don't lock mutex if there are no messages
+		{
+			return;
+		}
+
+		std::unique_lock lock(m_mutex);
+
+		// Push only to the in queue so that this dispatcher can still run without blocking
+		m_in_queue.insert(m_in_queue.end(), messages.begin(), messages.end());
 	}
 
 	void ThreadMessager::ProcessIncommingMessages()
 	{
-		ERR_FAIL_COND_MSG(!ThreadOwnsObject(), "The owning thread should be processing messages for this messager");
+		DEBUG_ASSERT(ThreadOwnsObject(), "The owning thread should be processing messages for this messager");
+
+		// Process the events sent to ourself first before messages sent from other messagers
+		ProcessEventQueue();
 
 		// Used exclusively by this messager and wont be blocked by other messagers sending to this
 		ThreadMessageQueue process_queue;
@@ -142,7 +185,7 @@ namespace sim
 			// Process all messages in newly filled out queue that wont block other dispatchers adding to the in queue
 			for (ThreadMessage& message : process_queue)
 			{
-				OnThreadMessage(message);
+				ProcessThreadMessage(message);
 			}
 		}
 
@@ -151,10 +194,7 @@ namespace sim
 
 	void ThreadMessager::ProcessOutgoingMessages()
 	{
-		ERR_FAIL_COND_MSG(!ThreadOwnsObject(), "The owning thread should be processing messages for this messager");
-
-		// Process the events sent to ourself because we may create outgoing messages in them
-		ProcessEventQueue();
+		DEBUG_ASSERT(ThreadOwnsObject(), "The owning thread should be processing messages for this messager");
 
 		// Forward all queues. This should also clear the queues when queues are posted
 		for (auto&& [id, messager] : m_linked_messagers)
@@ -164,7 +204,9 @@ namespace sim
 			messager.queue.clear();
 		}
 
-		if (m_stopping && m_linked_messagers.size() == 0) // If we are stopping and we are not linked to anyone anymore
+		// If we are stopping and we are not linked to anyone anymore then final stop
+		// We want to do this at the end of a tick so its the last thing that happens before the loop stops
+		if (m_stopping && m_linked_messagers.size() == 0)
 		{
 			DipatcherFinalStop();
 		}
@@ -174,17 +216,22 @@ namespace sim
 	{
 		ThreadClaimObject(); // Claim this object so that ScheduleMessage requires a thread other than this one
 
-		// Clear anything that was sent to us when we were not active as its invalid
-		m_in_queue.clear();
+		{
+			std::unique_lock lock(m_mutex);
+
+			// Clear anything that was sent to us when we were not active as its invalid
+			m_in_queue.clear();
+		}
 	}
 
 	void ThreadMessager::DipatcherRequestStop()
 	{
 		// Make sure we own this. This is also checked in ThreadReleaseObject()
-		ERR_FAIL_COND_MSG(!ThreadOwnsObject(), "The owning thread should be stopping this messager");
+		DEBUG_ASSERT(ThreadOwnsObject(), "The owning thread should be stopping this messager");
 
 		if (m_stopping) // If we are already stopping then ignore this call
 		{
+			DEBUG_PRINT_WARN("We are already stopping");
 			return;
 		}
 
@@ -209,18 +256,26 @@ namespace sim
 		ThreadReleaseObject(); // Unclaim this object
 	}
 
-	void ThreadMessager::OnThreadMessage(const ThreadMessage& thread_message)
+	void ThreadMessager::ProcessThreadMessage(const ThreadMessage& thread_message)
 	{
 		// Make sure we own this.
-		ERR_FAIL_COND_MSG(!ThreadOwnsObject(), "The owning thread should be handling messages for this messager");
+		DEBUG_ASSERT(ThreadOwnsObject(), "The owning thread should be handling messages for this messager");
 
 		switch (thread_message.type)
 		{
 		case ThreadMessage::Type::RequestLink:
 			// Don't make any new connections if we are stopping
-			ERR_FAIL_COND_MSG(m_stopping, "This dispatcher is stopping so will allow no new connections");
+			if (m_stopping)
+			{
+				DEBUG_PRINT_ERROR("This dispatcher is stopping so will allow no new connections");
+				break;
+			}
 
-			ERR_FAIL_COND_MSG(m_linked_messagers.find(thread_message.sender->GetUUID()) == m_linked_messagers.end(), "The target dispatcher is already linked");
+			if (m_linked_messagers.find(thread_message.sender->GetUUID()) == m_linked_messagers.end())
+			{
+				DEBUG_PRINT_ERROR("The target dispatcher is already linked");
+				break;
+			}
 
 			m_linked_messagers.emplace(thread_message.sender->GetUUID(), LinkedMessager{ thread_message.sender });
 
@@ -233,7 +288,11 @@ namespace sim
 			break;
 
 		case ThreadMessage::Type::ConfirmLink:
-			ERR_FAIL_COND_MSG(m_linked_messagers.find(thread_message.sender->GetUUID()) == m_linked_messagers.end(), "The target dispatcher is already linked");
+			if (m_linked_messagers.find(thread_message.sender->GetUUID()) == m_linked_messagers.end())
+			{
+				DEBUG_PRINT_ERROR("The target dispatcher is already linked");
+				break;
+			}
 
 			m_linked_messagers.emplace(thread_message.sender->GetUUID(), LinkedMessager{ thread_message.sender });
 
@@ -243,7 +302,8 @@ namespace sim
 		case ThreadMessage::Type::RequestUnlink:
 			if (m_linked_messagers.erase(thread_message.sender->GetUUID()) == 0)
 			{
-				ERR_FAIL_MSG("The target dispatcher was not linked");
+				DEBUG_PRINT_ERROR("The target dispatcher was not linked");
+				break;
 			}
 
 			PostEvent(MessagerUnlinkEvent(thread_message.sender->GetUUID()));
@@ -256,23 +316,31 @@ namespace sim
 		case ThreadMessage::Type::ConfirmUnlink:
 			if (m_linked_messagers.erase(thread_message.sender->GetUUID()) == 0)
 			{
-				ERR_FAIL_MSG("The target dispatcher was not linked");
+				DEBUG_PRINT_ERROR("The target dispatcher was not linked");
+				break;
 			}
 
 			PostEvent(MessagerUnlinkEvent(thread_message.sender->GetUUID()));
 			break;
 
 		case ThreadMessage::Type::Message:
-			PostEvent(*thread_message.message, GetMessageType(*thread_message.message));
+			PostEventGeneric(*thread_message.message, GetMessageType(*thread_message.message));
 			break;
 
 		case ThreadMessage::Type::DirectMessage:
-			PostEvent(*thread_message.message, GetMessageType(*thread_message.message));
+			PostEventGeneric(*thread_message.message, GetMessageType(*thread_message.message));
 			break;
 
 		default:
-			ERR_FAIL_MSG("Invalid ThreadMessage type");
+			DEBUG_PRINT_ERROR("Invalid ThreadMessage type");
 			break;
 		}
+	}
+
+	void ThreadMessager::OnAttemptFreeMemory(const AttemptFreeMemoryEvent& event)
+	{
+		std::unique_lock lock(m_mutex);
+
+		m_in_queue.shrink_to_fit();
 	}
 }

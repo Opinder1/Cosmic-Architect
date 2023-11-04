@@ -6,7 +6,7 @@ namespace sim
 {
 	class ByteStream;
 
-	struct SimulationTickEvent;
+	struct TickEvent;
 
 	class NetworkPeerSystem : public System
 	{
@@ -15,7 +15,7 @@ namespace sim
 		~NetworkPeerSystem();
 
 	private:
-		void OnSimulationTick(const SimulationTickEvent& event);
+		void OnTick(const TickEvent& event);
 
 	private:
 		bool LoadMessage(ByteStream& stream);

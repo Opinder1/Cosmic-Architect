@@ -1,6 +1,6 @@
 #include "ByteArrayStream.h"
 
-#include <godot_cpp/core/error_macros.hpp>
+#include "Util/Debug.h"
 
 #include <memory>
 
@@ -26,14 +26,28 @@ namespace sim
 
 	void ByteArrayStream::SetPos(size_t pos)
 	{
-		ERR_FAIL_COND_MSG(pos > m_data.size(), "New stream position out of bounds");
+		if (pos > m_data.size())
+		{
+			DEBUG_PRINT_ERROR("New stream position out of bounds");
+			return;
+		}
 		
 		m_stream_pos = pos;
 	}
 
 	void ByteArrayStream::MovePos(int32_t offset)
 	{
-		ERR_FAIL_COND_MSG(m_stream_pos + offset > m_data.size() || m_stream_pos < m_data.size(), "New stream position out of bounds");
+		if (m_stream_pos + offset > m_data.size())
+		{
+			DEBUG_PRINT_ERROR("New stream position out of bounds");
+			return;
+		} 
+		
+		if (m_stream_pos < m_data.size())
+		{
+			DEBUG_PRINT_ERROR("New stream position out of bounds");
+			return;
+		}
 
 		m_stream_pos += offset;
 	}
@@ -46,18 +60,22 @@ namespace sim
 	size_t ByteArrayStream::Read(void* void_buffer, size_t count)
 	{
 		char* buffer = static_cast<char*>(void_buffer);
-		ERR_FAIL_NULL_V_MSG(buffer, 0, "The buffer should be a valid pointer");
-
-		if (m_stream_pos + count > m_data.size())
+		if (buffer == nullptr)
 		{
-			WARN_PRINT("Buffer size greater than remaining stream size");
-			count = m_data.size() - m_stream_pos;
+			DEBUG_PRINT_ERROR("The buffer should be a valid pointer");
+			return 0;
 		}
 
 		if (count == 0) // If there is nothing to read then don't copy
 		{
-			WARN_PRINT("The read count was 0");
+			DEBUG_PRINT_INFO("The read count was 0");
 			return 0;
+		}
+
+		if (m_stream_pos + count > m_data.size())
+		{
+			DEBUG_PRINT_WARN("Buffer size greater than remaining stream size");
+			count = m_data.size() - m_stream_pos;
 		}
 
 		std::copy(m_data.ptr() + m_stream_pos, m_data.ptr() + m_stream_pos + count, buffer);
@@ -69,9 +87,17 @@ namespace sim
 	size_t ByteArrayStream::Write(const void* void_buffer, size_t count)
 	{
 		const char* buffer = static_cast<const char*>(void_buffer);
-		ERR_FAIL_NULL_V_MSG(buffer, 0, "The buffer should be a valid pointer");
+		if (buffer == nullptr)
+		{
+			DEBUG_PRINT_ERROR("The buffer should be a valid pointer");
+			return 0;
+		}
 
-		ERR_FAIL_COND_V_MSG(count == 0, 0, "The write count was 0");
+		if (count == 0) // If there is nothing to write then do nothing
+		{
+			DEBUG_PRINT_INFO("The write count was 0");
+			return 0;
+		}
 
 		m_data.resize(std::max(size_t(m_data.size()), m_stream_pos + count));
 		std::copy(buffer, buffer + count, m_data.ptrw() + m_stream_pos);
@@ -83,7 +109,7 @@ namespace sim
 
 	void ByteArrayStream::Flush()
 	{
-		WARN_PRINT("Vector streams do not support flushing");
+		DEBUG_PRINT_WARN("Vector streams do not support flushing");
 	}
 
 	bool ByteArrayStream::CanExtend() const

@@ -4,7 +4,9 @@
 #include "System.h"
 #include "Time.h"
 
-#include <godot_cpp/core/error_macros.hpp>
+#include "Systems/TickSystem.h"
+
+#include "Util/Debug.h"
 
 namespace sim
 {
@@ -12,7 +14,11 @@ namespace sim
 
 	void SimulationServer::Initialize()
 	{
-		CRASH_COND(s_singleton != nullptr);
+		if (s_singleton != nullptr)
+		{
+			DEBUG_PRINT_ERROR("Already initialised the message registry");
+			return;
+		}
 
 		s_singleton = std::make_unique<SimulationServer>();
 	}
@@ -61,17 +67,30 @@ namespace sim
 		m_deleter_thread.join();
 	}
 
-	UUID SimulationServer::CreateSimulation(double ticks_per_second)
+	UUID SimulationServer::CreateSimulation(double ticks_per_second, bool add_standard_systems)
 	{
 		UUID id = UUID::GenerateRandom();
 
 		std::unique_lock lock(m_mutex);
 
-		ERR_FAIL_COND_V_MSG(m_stopped, UUID(), "The application is stopped so no more simulations can be made");
+		if (m_stopped)
+		{
+			DEBUG_PRINT_ERROR("The application is stopped so no more simulations can be made");
+			return UUID();
+		}
 
 		auto&& [it, success] = m_simulations.emplace(id, std::make_unique<Simulation>(id, ticks_per_second));
 
-		ERR_FAIL_COND_V_MSG(!success, UUID(), "Failed to create a new simulation");
+		if (!success)
+		{
+			DEBUG_PRINT_ERROR("Failed to create a new simulation");
+			return UUID();
+		}
+
+		if (add_standard_systems)
+		{
+			it->second->AddSystem(std::make_unique<TickSystem>(*it->second));
+		};
 
 		return id;
 	}
@@ -82,8 +101,17 @@ namespace sim
 
 		auto it = m_simulations.find(id);
 
-		ERR_FAIL_COND_MSG(it == m_simulations.end(), "No simulation exists with the id " + id.ToGodotString());
-		ERR_FAIL_COND_MSG(it->second->IsRunning(), "Can't add a system to the simulation while its running");
+		if (it == m_simulations.end())
+		{
+			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
+			return;
+		}
+
+		if (it->second->IsRunning())
+		{
+			DEBUG_PRINT_ERROR("Can't add a system to the simulation while its running");
+			return;
+		}
 
 		it->second->AddSystem(emitter);
 	}
@@ -94,8 +122,17 @@ namespace sim
 
 		auto it = m_simulations.find(id);
 
-		ERR_FAIL_COND_MSG(it == m_simulations.end(), "No simulation exists with the id " + id.ToGodotString());
-		ERR_FAIL_COND_MSG(it->second->IsRunning(), "Can't start the simulation while its running");
+		if (it == m_simulations.end())
+		{
+			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
+			return;
+		}
+
+		if (it->second->IsRunning())
+		{
+			DEBUG_PRINT_ERROR("Can't start the simulation while its running");
+			return;
+		}
 
 		it->second->Start();
 	}
@@ -106,8 +143,17 @@ namespace sim
 
 		auto it = m_simulations.find(id);
 
-		ERR_FAIL_COND_MSG(it == m_simulations.end(), "No simulation exists with the id " + id.ToGodotString());
-		ERR_FAIL_COND_MSG(!it->second->IsRunning(), "Can't stop the simulation if its not running");
+		if (it == m_simulations.end())
+		{
+			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
+			return;
+		}
+
+		if (!it->second->IsRunning())
+		{
+			DEBUG_PRINT_ERROR("Can't stop the simulation if its not running");
+			return;
+		}
 
 		it->second->Stop();
 	}
@@ -118,8 +164,17 @@ namespace sim
 
 		auto it = m_simulations.find(id);
 
-		ERR_FAIL_COND_MSG(it == m_simulations.end(), "No simulation exists with the id " + id.ToGodotString());
-		ERR_FAIL_COND_MSG(it->second->IsRunning(), "Can't delete the simulation if its running");
+		if (it == m_simulations.end())
+		{
+			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
+			return;
+		}
+
+		if (it->second->IsRunning())
+		{
+			DEBUG_PRINT_ERROR("Can't delete the simulation if its running");
+			return;
+		}
 
 		// Move the simulation into the delete queue
 		it->second.swap(m_delete_queue.emplace_back());
@@ -133,7 +188,11 @@ namespace sim
 
 		auto it = m_simulations.find(id);
 
-		ERR_FAIL_COND_MSG(it == m_simulations.end(), "No simulation exists with the id " + id.ToGodotString());
+		if (it == m_simulations.end())
+		{
+			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
+			return;
+		}
 
 		// Stop the simulation if its running
 		if (it->second->IsRunning())
@@ -153,8 +212,17 @@ namespace sim
 
 		auto it = m_simulations.find(id);
 
-		ERR_FAIL_COND_MSG(it == m_simulations.end(), "No simulation exists with the id " + id.ToGodotString());
-		ERR_FAIL_COND_MSG(!it->second->IsRunning(), "Can't send a message if the simulation is not running");
+		if (it == m_simulations.end())
+		{
+			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
+			return;
+		}
+
+		if (!it->second->IsRunning())
+		{
+			DEBUG_PRINT_ERROR("Can't send a message if the simulation is not running");
+			return;
+		}
 
 		it->second->PostMessageFromUnattested(message);
 	}
@@ -165,8 +233,17 @@ namespace sim
 
 		auto it = m_simulations.find(id);
 
-		ERR_FAIL_COND_MSG(it == m_simulations.end(), "No simulation exists with the id " + id.ToGodotString());
-		ERR_FAIL_COND_MSG(!it->second->IsRunning(), "Can't send a message if the simulation is not running");
+		if (it == m_simulations.end())
+		{
+			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
+			return;
+		}
+
+		if (!it->second->IsRunning())
+		{
+			DEBUG_PRINT_ERROR("Can't send a message if the simulation is not running");
+			return;
+		}
 
 		it->second->PostMessagesFromUnattested(messages);
 	}
@@ -186,7 +263,11 @@ namespace sim
 
 		auto it = m_simulations.find(id);
 
-		ERR_FAIL_COND_V_MSG(it == m_simulations.end(), false, "No simulation exists with the id " + id.ToGodotString());
+		if (it == m_simulations.end())
+		{
+			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
+			return false;
+		}
 
 		return it->second->IsRunning();
 	}
@@ -197,7 +278,11 @@ namespace sim
 
 		auto it = m_simulations.find(id);
 
-		ERR_FAIL_COND_V_MSG(it == m_simulations.end(), false, "No simulation exists with the id " + id.ToGodotString());
+		if (it == m_simulations.end())
+		{
+			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
+			return false;
+		}
 
 		return it->second->IsStopping();
 	}
@@ -208,7 +293,11 @@ namespace sim
 
 		auto it = m_simulations.find(id);
 
-		ERR_FAIL_COND_V_MSG(it == m_simulations.end(), false, "No simulation exists with the id " + id.ToGodotString());
+		if (it == m_simulations.end())
+		{
+			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
+			return false;
+		}
 
 		callback(*it->second);
 
@@ -236,5 +325,8 @@ namespace sim
 			std::this_thread::sleep_for(1s);
 			lock.lock();
 		}
+
+		DEBUG_ASSERT(m_delete_queue.empty(), "Delete queue should be empty");
+		DEBUG_ASSERT(m_simulations.empty(), "Simulations should be empty");
 	}
 }

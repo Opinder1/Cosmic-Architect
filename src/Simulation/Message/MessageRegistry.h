@@ -15,12 +15,10 @@ namespace sim
 	class MessageFactoryBase;
 	class MessageSender;
 
-	// A producer of events of which their ids are incremental
+	// A producer of events of which their ids are incremental. Should be inherited by a class that will create message senders
 	class MessageRegistry
 	{
 	public:
-		static void Initialize();
-		static void Uninitialize();
 		static MessageRegistry* GetSingleton();
 
 		explicit MessageRegistry();
@@ -28,7 +26,7 @@ namespace sim
 
 		// Register a new event type that can be generated. Make sure to call this in order for each app that will communicate so ids are correct.
 		template<class MessageT>
-		void RegisterType()
+		void RegisterMessageType()
 		{
 			static_assert(std::is_base_of_v<Message, MessageT>);
 
@@ -51,10 +49,10 @@ namespace sim
 		MessagePtr UnpackMessage(ByteStream& stream, UUID& target) const;
 
 	private:
-		void RegisterGenericType(Message::Type type, std::unique_ptr<MessageFactoryBase>&& factory);
+		void RegisterGenericMessageType(Message::Type type, std::unique_ptr<MessageFactoryBase>&& factory);
 
 	private:
-		static std::unique_ptr<MessageRegistry> s_singleton;
+		static MessageRegistry* s_singleton;
 
 		mutable tkrzw::SpinSharedMutex m_mutex;
 

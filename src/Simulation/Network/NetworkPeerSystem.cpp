@@ -1,23 +1,23 @@
 #include "NetworkPeerSystem.h"
-#include "NetworkEvents.h"
-#include "NetworkComponents.h"
+#include "Events.h"
+#include "Components.h"
 
 #include "Simulation/Simulation.h"
 #include "Simulation/SimulationServer.h"
 #include "Simulation/Events.h"
 #include "Simulation/Components.h"
 
+#include "Simulation/Message/MessageRegistry.h"
+
 #include "Simulation/Stream/ByteArrayStream.h"
 #include "Simulation/Stream/StreamHelper.h"
 
-#include "Simulation/Message/MessageRegistry.h"
+#include "Util/Debug.h"
 
 #include <godot_cpp/classes/packet_peer_udp.hpp>
 #include <godot_cpp/classes/packet_peer_dtls.hpp>
 
 #include <godot_cpp/variant/utility_functions.hpp>
-
-#include <entt/entity/registry.hpp>
 
 namespace sim
 {
@@ -29,15 +29,15 @@ namespace sim
 	NetworkPeerSystem::NetworkPeerSystem(Simulation& simulation) :
 		System(simulation)
 	{
-		Sim().Subscribe(cb::Bind<&NetworkPeerSystem::OnSimulationTick>(*this));
+		Sim().Subscribe(cb::Bind<&NetworkPeerSystem::OnTick>(*this));
 	}
 
 	NetworkPeerSystem::~NetworkPeerSystem()
 	{
-		Sim().Unsubscribe(cb::Bind<&NetworkPeerSystem::OnSimulationTick>(*this));
+		Sim().Unsubscribe(cb::Bind<&NetworkPeerSystem::OnTick>(*this));
 	}
 
-	void NetworkPeerSystem::OnSimulationTick(const SimulationTickEvent& event)
+	void NetworkPeerSystem::OnTick(const TickEvent& event)
 	{
 		for (auto&& [peer_entity, peer] : Registry().view<PeerComponent>().each())
 		{
@@ -51,7 +51,11 @@ namespace sim
 
 				godot::Error error = peer.dtls_peer->get_packet_error();
 
-				ERR_CONTINUE_MSG(error != godot::Error::OK, godot::String("The packet had an error: ") + godot::UtilityFunctions::error_string(error));
+				if (error != godot::Error::OK)
+				{
+					DEBUG_PRINT_ERROR(godot::String("The packet had an error: ") + godot::UtilityFunctions::error_string(error));
+					continue;
+				}
 
 				ByteArrayStream stream{ packet_data };
 
@@ -68,7 +72,8 @@ namespace sim
 					break;
 
 				default:
-					ERR_PRINT("Invalid network message type");
+					DEBUG_PRINT_ERROR("Invalid network message type");
+					break;
 				}
 			}
 		}
@@ -80,7 +85,11 @@ namespace sim
 		UUID target;
 		MessagePtr message = MessageRegistry::GetSingleton()->UnpackMessage(stream, target);
 
-		ERR_FAIL_COND_V_MSG(!message, false, "No message could be unpacked from the packet data");
+		if (message == nullptr)
+		{
+			DEBUG_PRINT_ERROR("No message could be unpacked from the packet data");
+			return false;
+		}
 
 		Sim().PostMessageToOther(target, message);
 

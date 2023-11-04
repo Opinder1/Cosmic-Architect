@@ -1,6 +1,6 @@
 #include "MemoryStream.h"
 
-#include <godot_cpp/core/error_macros.hpp>
+#include "Util/Debug.h"
 
 #include <memory>
 
@@ -21,14 +21,28 @@ namespace sim
 
 	void MemoryStreamBase::SetPos(size_t pos)
 	{
-		ERR_FAIL_COND_MSG(pos > m_size, "New stream position out of bounds");
+		if (pos > m_size)
+		{
+			DEBUG_PRINT_ERROR("New stream position out of bounds");
+			return;
+		}
 
 		m_stream_pos = pos;
 	}
 
 	void MemoryStreamBase::MovePos(int32_t offset)
 	{
-		ERR_FAIL_COND_MSG(m_stream_pos + offset > m_size || m_stream_pos < m_size, "New stream position out of bounds");
+		if (m_stream_pos + offset > m_size)
+		{
+			DEBUG_PRINT_ERROR("New stream position out of bounds");
+			return;
+		}
+		
+		if (m_stream_pos < m_size)
+		{
+			DEBUG_PRINT_ERROR("New stream position out of bounds");
+			return;
+		}
 
 		m_stream_pos += offset;
 	}
@@ -42,16 +56,23 @@ namespace sim
 	{
 		char* buffer = static_cast<char*>(void_buffer);
 
-		ERR_FAIL_NULL_V_MSG(buffer, 0, "The buffer shoud be a valid pointer");
+		if (buffer == nullptr)
+		{
+			DEBUG_PRINT_ERROR("The buffer shoud be a valid pointer");
+			return 0;
+		}
+
+		if (count == 0) // If there is nothing to read then don't copy
+		{
+			DEBUG_PRINT_INFO("The read count was 0");
+			return 0;
+		}
 
 		if (m_stream_pos + count > m_size)
 		{
-			WARN_PRINT("Buffer size greater than remaining stream size");
+			DEBUG_PRINT_WARN("Buffer size greater than remaining stream size");
 			count = m_size - m_stream_pos;
 		}
-
-		// If there is nothing to read then don't copy
-		ERR_FAIL_COND_V_MSG(count == 0, 0, "The read count was 0");
 
 		std::copy(m_data + m_stream_pos, m_data + m_stream_pos + count, buffer);
 		m_stream_pos += count;
@@ -61,7 +82,7 @@ namespace sim
 
 	void MemoryStreamBase::Flush()
 	{
-		WARN_PRINT("Memory streams do not support flushing");
+		DEBUG_PRINT_WARN("Memory streams do not support flushing");
 	}
 
 	bool MemoryStreamBase::CanExtend() const
@@ -96,11 +117,24 @@ namespace sim
 	size_t MemoryStream::Write(const void* void_buffer, size_t count)
 	{
 		const char* buffer = static_cast<const char*>(void_buffer);
-		ERR_FAIL_NULL_V_MSG(buffer, 0, "the buffer should be a valid pointer");
 
-		ERR_FAIL_COND_V_MSG(count == 0, 0, "The write count was 0");
+		if (buffer == nullptr)
+		{
+			DEBUG_PRINT_ERROR("The buffer shoud be a valid pointer");
+			return 0;
+		}
 
-		ERR_FAIL_COND_V_MSG(GetStreamPos() + count > GetSize(), 0, "Buffer size greater than remaining stream size");
+		if (count == 0) // If there is nothing to write then do nothing
+		{
+			DEBUG_PRINT_INFO("The write count was 0");
+			return 0;
+		}
+
+		if (GetStreamPos() + count > GetSize())
+		{
+			DEBUG_PRINT_WARN("Buffer size greater than remaining stream size");
+			return 0;
+		}
 
 		std::copy(buffer, buffer + count, GetData() + GetStreamPos());
 
@@ -125,7 +159,8 @@ namespace sim
 
 	size_t ConstMemoryStream::Write(const void* buffer, size_t count)
 	{
-		ERR_FAIL_V_MSG(0, "Memory streams are read only");
+		DEBUG_PRINT_WARN("Memory streams are read only");
+		return 0;
 	}
 
 	bool ConstMemoryStream::CanWrite() const

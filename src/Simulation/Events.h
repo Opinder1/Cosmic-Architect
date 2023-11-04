@@ -1,14 +1,13 @@
 #pragma once
 
+#include "UUID.h"
+
 #include "Message/Message.h"
 
-#include "UUID.h"
-#include "Time.h"
+#include "Util/Time.h"
 
 namespace sim
 {
-	struct Message;
-
 	// Called when a thread messager has stopped execution
 	struct MessagerStopEvent : Event
 	{
@@ -41,6 +40,12 @@ namespace sim
 		explicit SimulationStartEvent() {}
 	};
 
+	// Called when a simulation is stopping execution
+	struct SimulationRequestStopMessage : Message
+	{
+		explicit SimulationRequestStopMessage(const MessageSender& sender) : Message(sender) {}
+	};
+
 	// Called when a simulation has stopped execution
 	struct SimulationStopEvent : Event
 	{
@@ -59,14 +64,34 @@ namespace sim
 		Clock::duration timestep;
 	};
 
+	struct PreTickEvent : Event
+	{
+		explicit PreTickEvent() {}
+	};
+
+	struct TickEvent : Event
+	{
+		explicit TickEvent() {}
+	};
+
+	struct PostTickEvent : Event
+	{
+		explicit PostTickEvent() {}
+	};
+
+	struct NewEntitiesEvent : Event
+	{
+		explicit NewEntitiesEvent() {}
+	};
+	
+	struct DeleteEntitiesEvent : Event
+	{
+		explicit DeleteEntitiesEvent() {}
+	};
+
 	// Try to free any long unused resources or shrink to fit any arrays
 	struct AttemptFreeMemoryEvent : Event
 	{
 		explicit AttemptFreeMemoryEvent() {}
-	};
-
-	struct ProcessMessageQueueEvent : Event
-	{
-		explicit ProcessMessageQueueEvent() {}
 	};
 }

@@ -9,6 +9,9 @@ namespace sim
 	class Simulation;
 	class UUID;
 
+	struct SimulationRequestStopMessage;
+	struct SimulationStopEvent;
+
 	class System : nocopy
 	{
 	public:

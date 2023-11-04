@@ -3,7 +3,7 @@
 #include "FractalWorld3D.h"
 #include "FractalNode3D.h"
 
-#include <godot_cpp/core/error_macros.hpp>
+#include "Util/Debug.h"
 
 namespace voxel_world
 {
@@ -21,7 +21,11 @@ namespace voxel_world
 
     void FractalCamera3D::AddToObserved(FractalNode3D& node)
     {
-        ERR_FAIL_COND(&node.world != &m_world);
+        if (&node.world != &m_world)
+        {
+            DEBUG_PRINT_ERROR("Tried to observe node that is not from our world");
+            return;
+        }
 
         m_observed.push_back(&node);
 
@@ -30,15 +34,22 @@ namespace voxel_world
 
     void FractalCamera3D::RemoveFromObserved(FractalNode3D& node)
     {
-        ERR_FAIL_COND(&node.world != &m_world);
+        if (&node.world != &m_world)
+        {
+            DEBUG_PRINT_ERROR("Tried to remove observed node that is not from our world");
+            return;
+        }
 
         auto it = std::find(m_observed.begin(), m_observed.end(), &node);
 
-        if (it != m_observed.end())
+        if (it == m_observed.end())
         {
-            node.num_observers--;
-
-            m_observed.erase(it);
+            DEBUG_PRINT_ERROR("We are not observing the node requested to be removed");
+            return;
         }
+
+        node.num_observers--;
+
+        m_observed.erase(it);
     }
 }

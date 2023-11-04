@@ -2,7 +2,7 @@
 
 #include "UUID.h"
 
-#include "Message/Message.h"
+#include "Message/MessageRegistry.h"
 
 #include "Util/Callback.h"
 
@@ -15,7 +15,7 @@ namespace sim
 	class Simulation;
 	class System;
 
-	class SimulationServer
+	class SimulationServer : public MessageRegistry
 	{
 	public:
 		using SystemEmitter = cb::TempCallback<std::unique_ptr<System>(Simulation&)>;
@@ -33,7 +33,7 @@ namespace sim
 		~SimulationServer();
 
 		// Create a new simulation and receive a handle to it
-		UUID CreateSimulation(double ticks_per_second);
+		UUID CreateSimulation(double ticks_per_second, bool add_standard_systems = true);
 
 		// Add a system to a simulation
 		template<class SystemT, class... Args>
@@ -73,8 +73,10 @@ namespace sim
 		bool ApplyToSimulation(UUID id, const SimulationApplicator& callback);
 
 	private:
+		// Add a system using an emmiter callback
 		void AddSystem(UUID id, const SystemEmitter& emitter);
 
+		// The main loop that the deleter thread will run
 		void DeleteThreadFunc();
 
 	private:

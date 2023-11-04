@@ -1,6 +1,7 @@
 #include "UUID.h"
 
-#include "Time.h"
+#include "Util/Time.h"
+#include "Util/Debug.h"
 
 #include <mutex>
 #include <random>
@@ -72,6 +73,7 @@ namespace sim
 			{
 				if (c != '-')
 				{
+					DEBUG_PRINT_ERROR("UUID should be in the format XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX");
 					return false;
 				}
 			}
@@ -79,6 +81,7 @@ namespace sim
 			{
 				if (!isxdigit(c))
 				{
+					DEBUG_PRINT_ERROR("UUID should be in the format XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX");
 					return false;
 				}
 				*out = (char)tolower(c);
@@ -170,6 +173,7 @@ namespace sim
 	{
 		if (!FromString(string))
 		{
+			DEBUG_PRINT_ERROR("Failed to load uuid from string");
 			m_first = 0;
 			m_second = 0;
 		}
@@ -179,6 +183,7 @@ namespace sim
 	{
 		if (!FromString(string))
 		{
+			DEBUG_PRINT_ERROR("Failed to load uuid from string");
 			m_first = 0;
 			m_second = 0;
 		}
@@ -221,6 +226,7 @@ namespace sim
 	{
 		if (string.size() != 36)
 		{
+			DEBUG_PRINT_ERROR("String length for uuid should be 36");
 			return false;
 		}
 
@@ -231,6 +237,7 @@ namespace sim
 	{
 		if (string.length() != 36)
 		{
+			DEBUG_PRINT_ERROR("String length for uuid should be 36");
 			return false;
 		}
 

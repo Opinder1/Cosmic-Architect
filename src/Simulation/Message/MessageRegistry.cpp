@@ -1,48 +1,49 @@
 #include "MessageRegistry.h"
+#include "MessageSender.h"
+#include "Message.h"
 
 #include "Simulation/Stream/StreamHelper.h"
 
-#include "Simulation/Message/MessageSender.h"
-#include "Simulation/Message/Message.h"
+#include "Util/Debug.h"
 
 #include <godot_cpp/variant/variant.hpp>
 
-#include <godot_cpp/core/error_macros.hpp>
-
 namespace sim
 {
-	std::unique_ptr<MessageRegistry> MessageRegistry::s_singleton;
-
-	void MessageRegistry::Initialize()
-	{
-		CRASH_COND(s_singleton != nullptr);
-
-		s_singleton = std::make_unique<MessageRegistry>();
-	}
-
-	void MessageRegistry::Uninitialize()
-	{
-		s_singleton.reset();
-	}
+	MessageRegistry* MessageRegistry::s_singleton;
 
 	MessageRegistry* MessageRegistry::GetSingleton()
 	{
-		return s_singleton.get();
+		return s_singleton;
 	}
 
 	MessageRegistry::MessageRegistry()
-	{}
+	{
+		if (s_singleton != nullptr)
+		{
+			DEBUG_PRINT_ERROR("Already initialised the message registry");
+			return;
+		}
+
+		s_singleton = this;
+	}
 
 	MessageRegistry::~MessageRegistry()
-	{}
+	{
+		s_singleton = nullptr;
+	}
 
-	void MessageRegistry::RegisterGenericType(Event::Type type, std::unique_ptr<MessageFactoryBase>&& generator)
+	void MessageRegistry::RegisterGenericMessageType(Event::Type type, std::unique_ptr<MessageFactoryBase>&& generator)
 	{
 		std::unique_lock lock(m_mutex);
 
 		auto&& [it, success] = m_factories.emplace(type, std::move(generator));
 
-		ERR_FAIL_COND_MSG(!success, "The message type '" + godot::String::num_uint64(type) + "' was already registered");
+		if (!success)
+		{
+			DEBUG_PRINT_ERROR("The message type '" + godot::String::num_uint64(type) + "' was already registered");
+			return;
+		}
 
 		m_factory_list.push_back(it->second.get());
 	}
@@ -53,7 +54,11 @@ namespace sim
 
 		auto&& [it, success] = m_message_senders.emplace(sender.GetUUID(), &sender);
 
-		ERR_FAIL_COND_MSG(!success, "A sender with the uuid already exists");
+		if (!success)
+		{
+			DEBUG_PRINT_ERROR("A sender with the uuid already exists");
+			return;
+		}
 	}
 
 	void MessageRegistry::UnregisterMessageSender(const MessageSender& sender)
@@ -62,7 +67,11 @@ namespace sim
 
 		size_t num_erased = m_message_senders.erase(sender.GetUUID());
 
-		ERR_FAIL_COND_MSG(num_erased != 1, "No sender with the requested uuid exists");
+		if (num_erased != 1)
+		{
+			DEBUG_PRINT_ERROR("No sender with the requested uuid exists");
+			return;
+		}
 	}
 
 	bool MessageRegistry::PackMessage(const Message& message, ByteStream& stream, const MessageSender& target) const
@@ -74,7 +83,12 @@ namespace sim
 			std::shared_lock lock(m_mutex);
 
 			auto it = m_factories.find(type);
-			ERR_FAIL_COND_V_MSG(it == m_factories.end(), false, "The message type '" + godot::String::num_uint64(type) + "' was not registered");
+
+			if (it == m_factories.end())
+			{
+				DEBUG_PRINT_ERROR("The message type '" + godot::String::num_uint64(type) + "' was not registered");
+				return false;
+			}
 
 			index = it->second->GetIndex();
 		}
@@ -83,44 +97,90 @@ namespace sim
 
 		UUID target_id = target.GetUUID();
 
-		ERR_FAIL_COND_V_MSG(!StreamHelper::Write(stream, index), false, "Failed to write message index");
+		if (!StreamHelper::Write(stream, index))
+		{
+			DEBUG_PRINT_ERROR("Failed to write message index");
+			return false;
+		}
 
-		ERR_FAIL_COND_V_MSG(!StreamHelper::WriteUUID(stream, sender_id), false, "Failed to write message sender uuid");
+		if (!StreamHelper::WriteUUID(stream, sender_id))
+		{
+			DEBUG_PRINT_ERROR("Failed to write message sender uuid");
+			return false;
+		}
 
-		ERR_FAIL_COND_V_MSG(!StreamHelper::WriteUUID(stream, target_id), false, "Failed to write message target uuid");
+		if (!StreamHelper::WriteUUID(stream, target_id))
+		{
+			DEBUG_PRINT_ERROR("Failed to write message target uuid");
+			return false;
+		}
 
-		return message.Serialize(stream);
+		if (!message.Serialize(stream))
+		{
+			DEBUG_PRINT_ERROR("Failed to serialise message");
+			return false;
+		}
+
+		return true;
 	}
 
 	MessagePtr MessageRegistry::UnpackMessage(ByteStream& stream, UUID& target) const
 	{
 		uint32_t index;
-		ERR_FAIL_COND_V_MSG(!StreamHelper::Read(stream, index), nullptr, "Failed to read message index");
+		if (!StreamHelper::Read(stream, index))
+		{
+			DEBUG_PRINT_ERROR("Failed to read message index");
+			return nullptr;
+		}
 
 		UUID sender_id;
-		ERR_FAIL_COND_V_MSG(!StreamHelper::ReadUUID(stream, sender_id), nullptr, "Failed to read message sender uuid");
+		if (!StreamHelper::ReadUUID(stream, sender_id))
+		{
+			DEBUG_PRINT_ERROR("Failed to read message sender uuid");
+			return nullptr;
+		}
 
 		UUID target_id;
-		ERR_FAIL_COND_V_MSG(!StreamHelper::ReadUUID(stream, target_id), nullptr, "Failed to read message index");
+		if (!StreamHelper::ReadUUID(stream, target_id))
+		{
+			DEBUG_PRINT_ERROR("Failed to read message target uuid");
+			return nullptr;
+		}
 
 		MessagePtr message;
 		{
 			std::shared_lock lock(m_mutex);
 
-			ERR_FAIL_COND_V_MSG(index >= m_factory_list.size(), nullptr, "The message index '" + godot::String::num_uint64(index) + "' is out of range");
+			if (index >= m_factory_list.size())
+			{
+				DEBUG_PRINT_ERROR("The message index '" + godot::String::num_uint64(index) + "' is out of range");
+				return nullptr;
+			}
 
 			auto sender_it = m_message_senders.find(sender_id);
-			ERR_FAIL_COND_V_MSG(sender_it == m_message_senders.end(), nullptr, "The messages sender uuid is invalid");
 
-			target = target_id;
+			if (sender_it == m_message_senders.end())
+			{
+				DEBUG_PRINT_ERROR("The messages sender uuid is invalid");
+				return nullptr;
+			}
 
 			message = m_factory_list[index]->CreateMessage(*sender_it->second);
 		}
 
-		if (!message->Deserialize(stream))
+		if (message == nullptr)
 		{
+			DEBUG_PRINT_ERROR("Factory returned invalid message");
 			return nullptr;
 		}
+
+		if (!message->Deserialize(stream))
+		{
+			DEBUG_PRINT_ERROR("Failed to deserialise message");
+			return nullptr;
+		}
+
+		target = target_id;
 
 		return message;
 	}

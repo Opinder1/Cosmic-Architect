@@ -6,7 +6,7 @@
 #include "Simulation/Simulation.h"
 #include "Simulation/SimulationServer.h"
 
-#include <godot_cpp/core/error_macros.hpp>
+#include "Util/Debug.h"
 
 namespace voxel_world
 {
@@ -28,7 +28,11 @@ namespace voxel_world
 
     const FractalNode3D* FractalRegion3D::GetNodeAtCoord(FractalCoord3D coord) const
     {
-        ERR_FAIL_INDEX_V_MSG(coord.GetScale(), k_max_scale, nullptr, "Invalid level of detail for node");
+        if (coord.GetScale() > k_max_scale)
+        {
+            DEBUG_PRINT_ERROR("Invalid level of detail for node");
+            return nullptr;
+        }
 
         auto& layer = m_nodes[coord.GetScale()];
 
@@ -44,7 +48,11 @@ namespace voxel_world
 
     FractalNode3D* FractalRegion3D::GetNodeAtCoord(FractalCoord3D coord)
     {
-        ERR_FAIL_INDEX_V_MSG(coord.GetScale(), k_max_scale, nullptr, "Invalid level of detail for node");
+        if (coord.GetScale() > k_max_scale)
+        {
+            DEBUG_PRINT_ERROR("Invalid level of detail for node");
+            return nullptr;
+        }
 
         auto& layer = m_nodes[coord.GetScale()];
 
@@ -89,20 +97,32 @@ namespace voxel_world
 
     void FractalRegion3D::AddToChanged(FractalNode3D& node)
     {
-        ERR_FAIL_COND(&node.world != &m_world);
+        if (&node.world != &m_world)
+        {
+            DEBUG_PRINT_ERROR("Tried to add node that is not from our world to changelist");
+            return;
+        }
 
         m_nodes_changed.insert(&node);
     }
 
     void FractalRegion3D::LoadNode(FractalCoord3D coord)
     {
-        CRASH_BAD_INDEX_MSG(coord.GetScale(), k_max_scale, "Invalid level of detail for node");
+        if (coord.GetScale() > k_max_scale)
+        {
+            DEBUG_PRINT_ERROR("Invalid level of detail for node");
+            return;
+        }
 
         auto& layer = m_nodes[coord.GetScale()];
 
         auto&& [it, success] = layer.emplace(coord.GetPos(), nullptr); // We should be guarenteed to at least get an item when calling this
 
-        ERR_FAIL_COND_MSG(!success, "The node that was loaded already existed");
+        if (!success)
+        {
+            DEBUG_PRINT_ERROR("The node that was loaded already existed");
+            return;
+        }
 
         FractalNode3D* node = it->second = GenerateNode(coord);
 
@@ -111,7 +131,11 @@ namespace voxel_world
         {
             FractalNode3D* parent = GetNodeAtCoord(coord.GetParent());
 
-            ERR_FAIL_COND_MSG(parent == nullptr, "Parent should exist before child");
+            if (parent == nullptr)
+            {
+                DEBUG_PRINT_ERROR("Parent should exist before child");
+                return;
+            }
 
             godot::Vector3i rel_pos = node->coord.GetParentRelPos();
 
@@ -122,7 +146,11 @@ namespace voxel_world
 
     void FractalRegion3D::UnloadNode(FractalCoord3D coord, bool update_parent)
     {
-        ERR_FAIL_INDEX_MSG(coord.GetScale(), k_max_scale, "Invalid level of detail for node");
+        if (coord.GetScale() > k_max_scale)
+        {
+            DEBUG_PRINT_ERROR("Invalid level of detail for node");
+            return;
+        }
 
         // If we are not the highest level of detail then unload children beforehand
         if (coord.GetScale() > 0)
@@ -137,7 +165,11 @@ namespace voxel_world
 
         auto it = layer.find(coord.GetPos());
 
-        ERR_FAIL_COND_MSG(it == layer.end(), "The requested node did not exist");
+        if (it == layer.end())
+        {
+            DEBUG_PRINT_ERROR("The requested node did not exist");
+            return;
+        }
 
         FractalNode3D* node = it->second;
 

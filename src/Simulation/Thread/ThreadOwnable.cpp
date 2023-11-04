@@ -1,6 +1,6 @@
 #include "ThreadOwnable.h"
 
-#include <godot_cpp/core/error_macros.hpp>
+#include "Util/Debug.h"
 
 namespace sim
 {
@@ -9,19 +9,19 @@ namespace sim
 
     ThreadOwnable::~ThreadOwnable()
     {
-        ERR_FAIL_COND_MSG(ObjectOwned(), "This object should not be owned when destroying it");
+        DEBUG_ASSERT(!ObjectOwned(), "This object should not be owned when destroying it");
     }
 
     void ThreadOwnable::ThreadClaimObject()
     {
-        ERR_FAIL_COND_MSG(ObjectOwned(), "This object should not be owned when claiming it");
+        DEBUG_ASSERT(!ObjectOwned(), "This object should not be owned when claiming it");
 
         m_owner_id = std::this_thread::get_id(); // This thread now owns 
     }
 
     void ThreadOwnable::ThreadReleaseObject()
     {
-        ERR_FAIL_COND_MSG(!ThreadOwnsObject(), "This object should be owned when releasing it");
+        DEBUG_ASSERT(ThreadOwnsObject(), "This object should be owned when releasing it");
 
         m_owner_id = std::thread::id{};
     }

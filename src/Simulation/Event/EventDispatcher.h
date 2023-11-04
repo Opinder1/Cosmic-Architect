@@ -43,7 +43,7 @@ namespace sim
 		{
 			static_assert(std::is_base_of_v<Event, EventT>);
 
-			return PostEvent(static_cast<const Event&>(event), GetEventType<EventT>());
+			return PostEventGeneric(static_cast<const Event&>(event), GetEventType<EventT>());
 		}
 
 		// Post a Event of any type
@@ -53,7 +53,7 @@ namespace sim
 		{
 			static_assert(std::is_base_of_v<Event, EventT>);
 
-			return PostQueuedEvent(std::make_unique<EventT>(std::move(event)), GetEventType<EventT>());
+			return PostQueuedEventGeneric(std::make_unique<EventT>(std::move(event)), GetEventType<EventT>());
 		}
 		
 		// Subscribe to an event with a callback
@@ -76,9 +76,9 @@ namespace sim
 		void ProcessEventQueue();
 
 		// Generic functions which use type variable instead of template
-		void PostEvent(const Event& event, Event::Type event_type);
+		void PostEventGeneric(const Event& event, Event::Type event_type);
 
-		void PostQueuedEvent(EventPtr&& event, Event::Type event_type);
+		void PostQueuedEventGeneric(EventPtr&& event, Event::Type event_type);
 
 		void SubscribeGeneric(const EventCallback<Event>& callback, Event::Type event_type, Priority priority);
 
