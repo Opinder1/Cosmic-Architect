@@ -8,7 +8,7 @@
 #define DEBUG 1
 
 #define DEBUG_CRASH() CRASH_NOW()
-#define DEBUG_ASSERT(m_cond, m_msg) CRASH_COND_MSG(!m_cond, m_msg)
+#define DEBUG_ASSERT(m_cond, m_msg) CRASH_COND_MSG(!(m_cond), m_msg)
 #define DEBUG_ONLY(m_cond) m_cond
 
 #define DEBUG_PRINT_INFO(m_msg) WARN_PRINT_ED(m_msg)

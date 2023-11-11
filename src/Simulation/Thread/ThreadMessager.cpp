@@ -258,7 +258,7 @@ namespace sim
 
 		if (m_stopping) // If we are already stopping then ignore this call
 		{
-			DEBUG_PRINT_WARN("We are already stopping");
+			DEBUG_PRINT_ERROR("We are already stopping");
 			return;
 		}
 

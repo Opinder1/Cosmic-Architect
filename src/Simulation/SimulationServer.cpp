@@ -48,34 +48,34 @@ namespace sim
 	SimulationServer::~SimulationServer()
 	{
 		// Set the stopped flag to true and add all the simulations to the delete queue
+		std::unique_lock lock(m_mutex);
+
+		m_stopped = true;
+
+		for (auto&& [id, simulation] : m_simulations)
 		{
-			std::unique_lock lock(m_mutex);
-
-			m_stopped = true;
-
-			for (auto&& [id, simulation] : m_simulations)
+			if (simulation->IsRunning()) // If we are running and haven't already started to stop
 			{
-				if (simulation->IsRunning()) // If we are running and haven't already started to stop
+				simulation->Stop();
+
+				// If we are manually ticked then give ownership to the deleter so it can keep ticking
+				// This is because that thread will no longer be able to tick it
+				if (simulation->IsManuallyTicked())
 				{
-					simulation->Stop();
-
-					// If we are manually ticked then give ownership to the deleter so it can keep ticking
-					// This is because that thread will no longer be able to tick it
-					if (simulation->IsManuallyTicked())
-					{
-						DEBUG_PRINT_ERROR("Manually ticked simulations should be fully stopped before they are deleted");
-						simulation->ThreadTransferObject(m_deleter_thread.get_id());
-					}
+					DEBUG_PRINT_ERROR("Manually ticked simulations should be fully stopped before they are deleted");
+					simulation->ThreadTransferObject(m_deleter_thread.get_id());
 				}
-
-				// Move the simulation into the delete queue
-				simulation.swap(m_delete_queue.emplace_back());
 			}
 
-			// Should be left with empty unique ptrs that we can clear
-			// No new simulations should be added
-			m_simulations.clear();
+			// Move the simulation into the delete queue
+			simulation.swap(m_delete_queue.emplace_back());
 		}
+
+		// Should be left with empty unique ptrs that we can clear
+		// No new simulations should be added
+		m_simulations.clear();
+
+		lock.unlock();
 
 		// Wait until the deleter deletes all the simulations left
 		m_deleter_thread.join();
@@ -140,30 +140,32 @@ namespace sim
 			return;
 		}
 
-		Simulation& simulation = *it->second;
+		SimulationPtr& simulation = it->second;
 
 		// Stop the simulation if its running
-		if (simulation.IsRunning())
+		if (simulation->IsRunning())
 		{
+			DEBUG_ASSERT(it->second.use_count() == 1, "All pointers to the simulation should have been cleared before stopping");
+
 			// Call stop first in case we transfer thread ownership
-			simulation.Stop();
+			simulation->Stop();
 
 			// If we are manually ticked then give ownership to the deleter so it can keep ticking
 			// This is because that thread will no longer be able to tick it
-			if (simulation.IsManuallyTicked())
+			if (simulation->IsManuallyTicked())
 			{
-				if (!simulation.ThreadOwnsObject())
+				if (!simulation->ThreadOwnsObject())
 				{
 					DEBUG_PRINT_ERROR("Manually ticked simulations should be stopped and deleted by the managing thread");
 					return;
 				}
 
-				simulation.ThreadTransferObject(m_deleter_thread.get_id());
+				simulation->ThreadTransferObject(m_deleter_thread.get_id());
 			}
 		}
 
 		// Move the simulation into the delete queue
-		it->second.swap(m_delete_queue.emplace_back());
+		simulation.swap(m_delete_queue.emplace_back());
 
 		m_simulations.erase(it);
 	}

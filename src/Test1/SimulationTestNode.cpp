@@ -76,9 +76,9 @@ void SimulationTestNode::_notification(int notification)
 
 		m_simulation_ptr->Unsubscribe(cb::BindParam<&SimulationTickCallback>(m_simulation_ptr.get()));
 
-		sim::SimulationServer::GetSingleton()->StopSimulation(m_simulation_id);
-
 		m_simulation_ptr.reset();
+
+		sim::SimulationServer::GetSingleton()->StopSimulation(m_simulation_id);
 		break;
 
 	case NOTIFICATION_MOVED_IN_PARENT:

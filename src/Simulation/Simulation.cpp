@@ -349,6 +349,11 @@ namespace sim
 
 	void Simulation::OnRequestStop(const SimulationRequestStopMessage& event)
 	{
+		if (IsStopping()) // If we are already stopping then ignore this event
+		{
+			return;
+		}
+
 		if (!m_running)
 		{
 			DEBUG_PRINT_ERROR("This simulation should be running when trying to stop it");
