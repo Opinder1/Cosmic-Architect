@@ -58,6 +58,13 @@ namespace sim
 				if (simulation->IsRunning()) // If we are running and haven't already started to stop
 				{
 					simulation->Stop();
+
+					// If we are manually ticked then give ownership to the deleter so it can keep ticking
+					// This is because that thread will no longer be able to tick it
+					if (simulation->IsManuallyTicked())
+					{
+						simulation->ThreadTransferObject(m_deleter_thread.get_id());
+					}
 				}
 
 				// Move the simulation into the delete queue
