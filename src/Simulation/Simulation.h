@@ -40,8 +40,8 @@ namespace sim
 		// Is this simulation currently running (not including short time when stopping)
 		bool IsRunning() const;
 
-		// Is this simulation currently stopping (cached value that is not updated during tick)
-		bool IsStoppingCached() const;
+		// This this simulation being ticked manually by a thread
+		bool IsManuallyTicked() const;
 
 		// Get the amount of ticks this simulation aims to complete per second (only relevant in threaded mode)
 		double GetTicksPerSecond() const;
@@ -88,10 +88,13 @@ namespace sim
 		void AddSystem(std::unique_ptr<System>&& system);
 
 		// Start this simulation
-		void Start();
+		void Start(bool manually_tick);
 
 		// Stop this simulation (call from SimulationServer)
 		void Stop();
+
+		// Manually tick from the current thread
+		bool ManualTick();
 
 		// Main thread loop of this simulation that manages ticks and timings for the owner thread
 		void ThreadLoop();
@@ -117,8 +120,9 @@ namespace sim
 		std::thread						m_thread;
 
 		std::atomic_bool				m_running; // Is this simulation running
+		bool							m_keep_looping; // Should we continue to loop
 
-		bool							m_stopping_cached;
+		std::atomic_bool				m_manually_ticked; // Is this simulation ticked manually by a thread
 
 		// Options
 		const double					m_ticks_per_second; // Ticks this simulation aims to execute per second

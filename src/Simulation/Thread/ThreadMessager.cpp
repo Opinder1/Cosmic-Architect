@@ -108,19 +108,36 @@ namespace sim
 
 	void ThreadMessager::PostMessageFromUnattested(const MessagePtr& message)
 	{
-		std::unique_lock lock(m_mutex);
+		if (ThreadOwnsObject()) // If we own this then don't bother queuing as we won't be reading the queue right now
+		{
+			PostEventGeneric(*message, GetMessageType(*message));
+		}
+		else
+		{
+			std::unique_lock lock(m_mutex);
 
-		m_in_queue.push_back(ThreadMessage(ThreadMessage::Type::DirectMessage, nullptr, message));
+			m_in_queue.push_back(ThreadMessage(ThreadMessage::Type::Message, nullptr, message));
+		}
 	}
 
 	void ThreadMessager::PostMessagesFromUnattested(const MessageQueue& messages)
 	{
-		std::unique_lock lock(m_mutex);
-
-		// Add to just this queue
-		for (const std::shared_ptr<Message>& message : messages)
+		if (ThreadOwnsObject()) // If we own this then don't bother queuing as we won't be reading the queue right now
 		{
-			m_in_queue.push_back(ThreadMessage(ThreadMessage::Type::DirectMessage, nullptr, message));
+			for (const std::shared_ptr<Message>& message : messages)
+			{
+				PostEventGeneric(*message, GetMessageType(*message));
+			}
+		}
+		else
+		{
+			std::unique_lock lock(m_mutex);
+
+			// Add to just this queue
+			for (const std::shared_ptr<Message>& message : messages)
+			{
+				m_in_queue.push_back(ThreadMessage(ThreadMessage::Type::Message, nullptr, message));
+			}
 		}
 	}
 
@@ -208,12 +225,15 @@ namespace sim
 		// We want to do this at the end of a tick so its the last thing that happens before the loop stops
 		if (m_stopping && m_linked_messagers.size() == 0)
 		{
-			DipatcherFinalStop();
+			// Tell the superclass we have stopped
+			PostEvent(MessagerStopEvent());
 		}
 	}
 
-	void ThreadMessager::DipatcherStart()
+	void ThreadMessager::MessagerStart()
 	{
+		DEBUG_ASSERT(m_stopping == false, "The dispatcher shouldn't be stopping");
+
 		ThreadClaimObject(); // Claim this object so that ScheduleMessage requires a thread other than this one
 
 		{
@@ -224,7 +244,14 @@ namespace sim
 		}
 	}
 
-	void ThreadMessager::DipatcherRequestStop()
+	void ThreadMessager::MessagerStop()
+	{
+		m_stopping = false;
+
+		ThreadReleaseObject(); // Unclaim this object
+	}
+
+	void ThreadMessager::MessagerRequestStop()
 	{
 		// Make sure we own this. This is also checked in ThreadReleaseObject()
 		DEBUG_ASSERT(ThreadOwnsObject(), "The owning thread should be stopping this messager");
@@ -244,16 +271,6 @@ namespace sim
 		{
 			messager.messager->PostMessageFromOther(ThreadMessage(ThreadMessage::Type::RequestUnlink, this, nullptr));
 		}
-	}
-
-	void ThreadMessager::DipatcherFinalStop()
-	{
-		// Tell the superclass we have stopped
-		PostEvent(MessagerStopEvent());
-
-		m_stopping = false;
-
-		ThreadReleaseObject(); // Unclaim this object
 	}
 
 	void ThreadMessager::ProcessThreadMessage(const ThreadMessage& thread_message)
@@ -324,10 +341,6 @@ namespace sim
 			break;
 
 		case ThreadMessage::Type::Message:
-			PostEventGeneric(*thread_message.message, GetMessageType(*thread_message.message));
-			break;
-
-		case ThreadMessage::Type::DirectMessage:
 			PostEventGeneric(*thread_message.message, GetMessageType(*thread_message.message));
 			break;
 

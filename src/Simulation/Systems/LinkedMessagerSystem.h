@@ -5,7 +5,7 @@
 namespace sim
 {
 	struct Message;
-	struct TickEvent;
+	struct PostTickEvent;
 	struct LinkedMessagerComponent;
 
 	using MessagePtr = std::shared_ptr<Message>;
@@ -22,6 +22,6 @@ namespace sim
 		static void SendMessage(Simulation& simulation, LinkedMessagerComponent& linked_messager, const MessageQueue& messages);
 
 	private:
-		void OnTick(const TickEvent& event);
+		void OnPostTick(const PostTickEvent& event);
 	};
 }

@@ -2,6 +2,8 @@
 import os
 import sys
 
+from SCons.Script import *
+
 def GlobRecursive(node, pattern):
     results = []
     for f in Glob(str(node) + "/*", source=True):
@@ -31,4 +33,18 @@ else:
         source=sources,
     )
 
-Default(library)
+if False: # VS project   
+    env2 = Environment()
+
+    str_sources = [path.get_path() for path in sources]
+
+    proj = env2.MSVSProject(
+        target = '#Bar' + env2['MSVSPROJECTSUFFIX'],
+        srcs = str_sources,
+        incs = ["src/", "lib/"],
+        buildtarget = "demo/bin/voxelgame{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
+        variant = 'Release')
+        
+    Default(proj)
+else:
+    Default(library)

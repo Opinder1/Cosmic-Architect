@@ -18,7 +18,6 @@ namespace sim
 			RequestUnlink,
 			ConfirmUnlink,
 			Unlink,
-			DirectMessage,
 			Message,
 			Invalid
 		};

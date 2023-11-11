@@ -9,7 +9,7 @@ namespace sim
 	LinkedSimulationSystem::LinkedSimulationSystem(Simulation& simulation) :
 		System(simulation)
 	{
-		Subscribe<&LinkedSimulationSystem::OnTick>();
+		Subscribe<&LinkedSimulationSystem::OnPostTick>();
 	}
 
 	LinkedSimulationSystem::~LinkedSimulationSystem()
@@ -17,7 +17,7 @@ namespace sim
 
 	}
 
-	void LinkedSimulationSystem::OnTick(const TickEvent& event)
+	void LinkedSimulationSystem::OnPostTick(const PostTickEvent& event)
 	{
 		for (auto&& [entity, linked_messager] : Registry().view<LinkedMessagerComponent, LinkedSimulationComponent>().each())
 		{

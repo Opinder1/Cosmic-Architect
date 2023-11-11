@@ -24,12 +24,12 @@ namespace sim
 		Sim().PostEvent(PostTickEvent());
 
 		// Process new entities then remove the new entity component flag
-		Sim().PostEvent(NewEntitiesEvent());
+		Sim().PostEvent(ProcessNewEntitiesEvent());
 
 		Registry().clear<NewEntityComponent>();
 
 		// Process deleted entities then remove them and their components from the registry
-		Sim().PostEvent(DeleteEntitiesEvent());
+		Sim().PostEvent(ProcessDeletedEntitiesEvent());
 
 		for (auto [entity] : Registry().view<DeletedEntityComponent>().each())
 		{

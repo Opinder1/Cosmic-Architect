@@ -9,7 +9,7 @@ namespace sim
 	LinkedMessagerSystem::LinkedMessagerSystem(Simulation& simulation) :
 		System(simulation)
 	{
-		Subscribe<&LinkedMessagerSystem::OnTick>();
+		Subscribe<&LinkedMessagerSystem::OnPostTick>();
 	}
 
 	LinkedMessagerSystem::~LinkedMessagerSystem()
@@ -17,7 +17,7 @@ namespace sim
 
 	}
 
-	void LinkedMessagerSystem::OnTick(const TickEvent& event)
+	void LinkedMessagerSystem::OnPostTick(const PostTickEvent& event)
 	{
 
 	}

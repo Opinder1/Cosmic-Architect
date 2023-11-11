@@ -7,8 +7,6 @@
 
 #include "Util/Debug.h"
 
-#include <godot_cpp/variant/utility_functions.hpp>
-
 #include <chrono>
 
 namespace sim
@@ -16,7 +14,8 @@ namespace sim
 	Simulation::Simulation(UUID id, double ticks_per_second) :
 		ThreadMessager(id),
 		m_running(false),
-		m_stopping_cached(false),
+		m_keep_looping(false),
+		m_manually_ticked(false),
 		m_ticks_per_second(ticks_per_second),
 		m_time_per_tick(std::chrono::duration_cast<Clock::duration>(1s / m_ticks_per_second)),
 		m_current_ticks(0),
@@ -42,7 +41,10 @@ namespace sim
 			Stop();
 		}
 
-		m_thread.join();
+		if (m_thread.joinable())
+		{
+			m_thread.join();
+		}
 
 		Unsubscribe(cb::Bind<&Simulation::OnMessagerStop>(*this));
 		Unsubscribe(cb::Bind<&Simulation::OnRequestStop>(*this));
@@ -55,6 +57,8 @@ namespace sim
 
 	void Simulation::AddSystem(std::unique_ptr<System>&& system)
 	{
+		DEBUG_ASSERT(!ObjectOwned(), "This simulation should not be owned by a thread when adding a system");
+
 		if (m_running)
 		{
 			DEBUG_PRINT_ERROR("This simulation should not be running when trying to add a system");
@@ -64,7 +68,7 @@ namespace sim
 		m_systems.push_back(std::move(system));
 	}
 
-	void Simulation::Start()
+	void Simulation::Start(bool manually_tick)
 	{
 		DEBUG_ASSERT(!ObjectOwned(), "This simulation should not be owned by a thread when start is called on it");
 
@@ -74,26 +78,44 @@ namespace sim
 			return;
 		}
 
-		m_thread = std::thread(&Simulation::ThreadLoop, this);
+		if (manually_tick)
+		{
+			m_manually_ticked = true;
+
+			InternalStart();
+		}
+		else
+		{
+			m_thread = std::thread(&Simulation::ThreadLoop, this);
+		}
 	}
 
 	void Simulation::Stop()
 	{
 		DEBUG_ASSERT(ObjectOwned(), "This simulation should be owned by a thread when stop is called on it");
 
-		if (!m_running)
+		PostMessageFromUnattested(std::make_shared<SimulationRequestStopMessage>(*this)); // Queue a message to stop this simulation
+	}
+
+	bool Simulation::ManualTick()
+	{
+		DEBUG_ASSERT(ThreadOwnsObject(), "This simulation is not owned by this thread so can't be manually ticked by it");
+
+		if (!m_manually_ticked)
 		{
-			DEBUG_PRINT_ERROR("This simulation should be running when trying to stop it");
-			return;
+			DEBUG_PRINT_ERROR("This simulation is not manually ticked by this thread");
+			return false;
 		}
 
-		if (ThreadOwnsObject())
+		if (m_keep_looping)
 		{
-			PostEvent(SimulationRequestStopMessage(*this));
+			InternalTick(Clock::now());
+
+			return true;
 		}
 		else
 		{
-			PostMessageFromUnattested(std::make_shared<SimulationRequestStopMessage>(*this)); // Queue a message to stop this simulation
+			return false;
 		}
 	}
 
@@ -102,14 +124,14 @@ namespace sim
 		return m_running;
 	}
 
-	bool Simulation::IsStoppingCached() const
+	bool Simulation::IsManuallyTicked() const
 	{
-		return m_stopping_cached;
+		return m_manually_ticked;
 	}
 
 	double Simulation::GetTicksPerSecond() const
 	{
-		return m_ticks_per_second;
+		return m_manually_ticked ? 0.0f : m_ticks_per_second;
 	}
 
 	size_t Simulation::GetTotalTicks() const
@@ -223,7 +245,7 @@ namespace sim
 		// The ideal time for the next tick to begin
 		Clock::time_point next_tick_start = Clock::now();
 
-		while (m_running)
+		while (m_keep_looping)
 		{
 			Clock::time_point tick_start = Clock::now();
 
@@ -247,15 +269,6 @@ namespace sim
 				}
 			}
 
-			// TODO : Remove
-			if (m_total_ticks % size_t(m_ticks_per_second * 10) == 0)
-			{
-				auto id = m_thread.get_id();
-				godot::UtilityFunctions::print(godot::vformat("Thread %d on tick %d", *(unsigned int*)&id, m_total_ticks));
-			}
-
-			m_stopping_cached = IsStopping();
-
 			InternalTick(tick_start);
 		}
 
@@ -264,10 +277,11 @@ namespace sim
 
 	void Simulation::InternalStart()
 	{
-		DipatcherStart();
+		MessagerStart();
 
 		// Set running to true before the start callback so that IsRunning() works
 		m_running = true;
+		m_keep_looping = true;
 
 		{
 			std::unique_lock lock(m_timings_mutex);
@@ -317,16 +331,32 @@ namespace sim
 			m_current_ticks = 0;
 			m_current_run_time = Clock::duration{};
 		}
+
+		m_manually_ticked = false;
+		m_running = false;
+
+		MessagerStop();
 	}
 
 	void Simulation::OnRequestStop(const SimulationRequestStopMessage& event)
 	{
-		DipatcherRequestStop(); // Send a unlink message too all that are linked. Once they all reply m_running is set to false.
+		if (!m_running)
+		{
+			DEBUG_PRINT_ERROR("This simulation should be running when trying to stop it");
+			return;
+		}
+
+		MessagerRequestStop(); // Send a unlink message too all that are linked. Once they all reply m_running is set to false.
 	}
 
 	void Simulation::OnMessagerStop(const MessagerStopEvent& event)
 	{
-		m_running = false; // Set running to false that stops the thread
+		m_keep_looping = false; // Set this to false so we exit the thread loop
+
+		if (m_manually_ticked) // If we are manually ticked we can stop here as we won't tick again
+		{
+			InternalStop();
+		}
 	}
 
 	void Simulation::OnAttemptFreeMemory(const AttemptFreeMemoryEvent& event)

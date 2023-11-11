@@ -22,6 +22,7 @@ namespace sim
 		using SimulationApplicator = cb::Callback<void(Simulation&)>;
 
 		using SimulationStorage = robin_hood::unordered_flat_map<UUID, std::unique_ptr<Simulation>>;
+		using DeleteQueue = std::vector<std::unique_ptr<Simulation>>;
 
 	public:
 		static void Initialize();
@@ -32,8 +33,11 @@ namespace sim
 		explicit SimulationServer();
 		~SimulationServer();
 
+		// Enable the ability to use networking features
+		void StartNetworking();
+
 		// Create a new simulation and receive a handle to it
-		UUID CreateSimulation(double ticks_per_second, bool add_standard_systems = true);
+		UUID CreateSimulation(double ticks_per_second, bool add_standard_systems);
 
 		// Add a system to a simulation
 		template<class SystemT, class... Args>
@@ -43,10 +47,13 @@ namespace sim
 		}
 
 		// Start this simulation
-		void StartSimulation(UUID id);
+		void StartSimulation(UUID id, bool manually_tick);
 
 		// Stop this simulation
 		void StopSimulation(UUID id);
+
+		// Manually tick this simulation
+		bool TickSimulation(UUID id);
 
 		// Delete this simulation and free up resources. The id handle is imediately invalid. Prefer to use StopAndDelete
 		void DeleteSimulation(UUID id);
@@ -66,6 +73,9 @@ namespace sim
 		// Is this simulation currently running. It can be stopping and still running
 		bool IsSimulationRunning(UUID id);
 
+		// Is this simulation manually being ticked by a thread.
+		bool IsSimulationManuallyTicked(UUID id);
+
 		// Is this simulation currently unlinking with all its peers
 		bool IsSimulationStopping(UUID id);
 
@@ -82,13 +92,14 @@ namespace sim
 	private:
 		static std::unique_ptr<SimulationServer> s_singleton;
 
+		UUID m_network_simulation;
+
 		std::thread m_deleter_thread; // Thread that deletes simulations added to the queue
 
-		// Mutex to protect the stopped flag, the simulation storage and the delete queue
-		mutable tkrzw::SpinSharedMutex m_mutex;
+		tkrzw::SpinSharedMutex m_mutex; // Mutex to protect the stopped flag, the simulation storage and the delete queue
 
-		bool m_stopped;
-		SimulationStorage m_simulations;
-		std::vector<std::unique_ptr<Simulation>> m_delete_queue;
+		bool m_stopped; // Have we called the SimulationServer destructor then stop creating new simulations
+		SimulationStorage m_simulations; // Simulations
+		DeleteQueue m_delete_queue; // Simulations that are being deleted
 	};
 }

@@ -40,11 +40,13 @@ namespace sim
 
 	void NetworkServerSystem::OnTick(const TickEvent& event)
 	{
+		bool sim_stopping = Sim().IsStopping();
+
 		for (auto [server_entity, server] : Registry().view<ServerComponent>().each())
 		{
 			server.udp_server->poll();
 
-			if (!Sim().IsStoppingCached())
+			if (!sim_stopping)
 			{
 				while (server.udp_server->is_connection_available())
 				{

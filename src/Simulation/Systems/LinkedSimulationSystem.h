@@ -4,7 +4,7 @@
 
 namespace sim
 {
-	struct TickEvent;
+	struct PostTickEvent;
 
 	class LinkedSimulationSystem : public System
 	{
@@ -13,6 +13,6 @@ namespace sim
 		~LinkedSimulationSystem();
 
 	private:
-		void OnTick(const TickEvent& event);
+		void OnPostTick(const PostTickEvent& event);
 	};
 }

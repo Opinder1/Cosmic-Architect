@@ -20,6 +20,15 @@ namespace cb
 		return Func(std::forward<Args>(args)...);
 	}
 
+	// A callback to a function pointer
+	template<auto Func, class Param, class Ret, class... Args>
+	Ret FuncParamCallback(void* data, Args... args)
+	{
+		Param* param = reinterpret_cast<Param*>(data);
+
+		return Func(param, std::forward<Args>(args)...);
+	}
+
 	// A callback to a method of a class
 	template<auto Method, class Class, class Ret, class... Args>
 	Ret MethodCallback(void* data, Args... args)
@@ -108,6 +117,12 @@ namespace cb
 		return Callback<Ret(Args...)>(FuncCallback<Func, Ret, Args...>, nullptr);
 	}
 
+	template<auto Func, class Param, class Ret, class... Args>
+	auto BindHelperParam(Ret(*)(Param*, Args...), Param* param)
+	{
+		return Callback<Ret(Args...)>(FuncParamCallback<Func, Param, Ret, Args...>, reinterpret_cast<void*>(param));
+	}
+
 	template<auto Method, class Class, class Ret, class... Args>
 	auto BindHelper(Ret(Class::*)(Args...), Class* instance)
 	{
@@ -127,6 +142,13 @@ namespace cb
 	auto Bind()
 	{
 		return BindHelper<Func>(Func);
+	}
+
+	// Bind a function
+	template<auto Func, class Param>
+	auto BindParam(Param* param)
+	{
+		return BindHelperParam<Func, Param>(Func, param);
 	}
 
 	// Bind the method of a class

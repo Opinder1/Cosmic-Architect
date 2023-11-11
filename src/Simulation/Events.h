@@ -64,29 +64,32 @@ namespace sim
 		Clock::duration timestep;
 	};
 
+	// All processing that should be done before TickEvent
 	struct PreTickEvent : Event
 	{
 		explicit PreTickEvent() {}
 	};
 
+	// All processing that doesn't need ordering can listen to this
 	struct TickEvent : Event
 	{
 		explicit TickEvent() {}
 	};
 
+	// All processing that should be done after TickEvent and requires TickEvent to be done
 	struct PostTickEvent : Event
 	{
 		explicit PostTickEvent() {}
 	};
 
-	struct NewEntitiesEvent : Event
+	struct ProcessNewEntitiesEvent : Event
 	{
-		explicit NewEntitiesEvent() {}
+		explicit ProcessNewEntitiesEvent() {}
 	};
 	
-	struct DeleteEntitiesEvent : Event
+	struct ProcessDeletedEntitiesEvent : Event
 	{
-		explicit DeleteEntitiesEvent() {}
+		explicit ProcessDeletedEntitiesEvent() {}
 	};
 
 	// Try to free any long unused resources or shrink to fit any arrays

@@ -20,6 +20,9 @@ namespace sim
 		// Call to release ownership
 		void ThreadReleaseObject();
 
+		// Call to transfer ownership
+		void ThreadTransferObject(std::thread::id thread);
+
 		// Does this object have a thread set as the owner
 		bool ObjectOwned() const;
 

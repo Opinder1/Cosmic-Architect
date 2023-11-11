@@ -22,7 +22,7 @@ namespace sim
 	struct MessagerException {};
 
 	// A messager that sends events to other messagers in this process. They could be in other threads
-	class ThreadMessager : public ThreadOwnable, public MessageSender, public EventDispatcher
+	class ThreadMessager : protected ThreadOwnable, public MessageSender, public EventDispatcher
 	{
 	private:
 		struct LinkedMessager
@@ -60,10 +60,13 @@ namespace sim
 		void UnlinkMessager(ThreadMessager& target);
 
 		// Should be called when the thread that will own the messager starts messaging
-		void DipatcherStart();
+		void MessagerStart();
+
+		// Should be called after MessagerStopEvent has been handled
+		void MessagerStop();
 
 		// Should be called when the thread that owns the messager will stop messaging
-		void DipatcherRequestStop();
+		void MessagerRequestStop();
 
 		// Process all incomming messages. Always call before ProcessOutgoingMessages() to handle unlinks first
 		void ProcessIncommingMessages();
@@ -72,9 +75,6 @@ namespace sim
 		void ProcessOutgoingMessages();
 
 	private:
-		// Will be called when this dispatcher has cleaned up everything and can delete itself
-		void DipatcherFinalStop();
-
 		// Post a message but queue it to be handled next tick. Called internally by another messager
 		void PostMessageFromOther(const ThreadMessage& message);
 
@@ -95,7 +95,7 @@ namespace sim
 		// Can be fought over by other messagers
 		ThreadMessageQueue m_in_queue;
 
-		// Is this messager stopping
+		// Is this messager stopping. Prevents new simulations from linking
 		std::atomic_bool m_stopping;
 
 		// We store a queue of messages to each linked messager to minimize thread locking

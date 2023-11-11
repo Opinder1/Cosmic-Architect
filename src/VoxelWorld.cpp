@@ -64,7 +64,7 @@ namespace voxel_world
 
 	VoxelWorldNode::VoxelWorldNode()
 	{
-		m_root_simulation = sim::SimulationServer::GetSingleton()->CreateSimulation(60);
+		m_root_simulation = sim::SimulationServer::GetSingleton()->CreateSimulation(60, true);
 
 		godot::UtilityFunctions::print("Created VoxelWorldNode");
 	}

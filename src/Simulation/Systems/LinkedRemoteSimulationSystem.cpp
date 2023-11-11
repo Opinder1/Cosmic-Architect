@@ -14,7 +14,7 @@ namespace sim
 		System(simulation),
 		m_network_simulation(network_simulation)
 	{
-		Subscribe<&LinkedRemoteSimulationSystem::OnTick>();
+		Subscribe<&LinkedRemoteSimulationSystem::OnPostTick>();
 	}
 
 	LinkedRemoteSimulationSystem::~LinkedRemoteSimulationSystem()
@@ -22,7 +22,7 @@ namespace sim
 
 	}
 
-	void LinkedRemoteSimulationSystem::OnTick(const TickEvent& event)
+	void LinkedRemoteSimulationSystem::OnPostTick(const PostTickEvent& event)
 	{
 		for (auto&& [entity, linked_messager] : Registry().view<LinkedMessagerComponent, LinkedSimulationComponent>().each())
 		{

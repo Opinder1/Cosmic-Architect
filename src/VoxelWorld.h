@@ -117,7 +117,7 @@ namespace voxel_world
 		explicit VoxelWorldNode();
 		~VoxelWorldNode();
 
-	protected:
+	private:
 		static void _bind_methods();
 
 	private:

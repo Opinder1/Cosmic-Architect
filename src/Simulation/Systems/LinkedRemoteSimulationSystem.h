@@ -5,7 +5,7 @@
 
 namespace sim
 {
-	struct TickEvent;
+	struct PostTickEvent;
 
 	class LinkedRemoteSimulationSystem : public System
 	{
@@ -14,7 +14,7 @@ namespace sim
 		~LinkedRemoteSimulationSystem();
 
 	private:
-		void OnTick(const TickEvent& event);
+		void OnPostTick(const PostTickEvent& event);
 
 	private:
 		UUID m_network_simulation;
