@@ -94,6 +94,15 @@ namespace sim
 	{
 		DEBUG_ASSERT(ObjectOwned(), "This simulation should be owned by a thread when stop is called on it");
 
+		if (m_manually_ticked)
+		{
+			if (!ThreadOwnsObject())
+			{
+				DEBUG_PRINT_ERROR("Manually ticked simulations can only be stopped by the owning thread");
+				return;
+			}
+		}
+
 		PostMessageFromUnattested(std::make_shared<SimulationRequestStopMessage>(*this)); // Queue a message to stop this simulation
 	}
 
@@ -208,9 +217,9 @@ namespace sim
 	{
 		DEBUG_ASSERT(ThreadOwnsObject(), "Called link without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
 
-		return SimulationServer::GetSingleton()->ApplyToSimulation(simulation_id, [this](Simulation& simulation)
+		return SimulationServer::GetSingleton()->ApplyToSimulation(simulation_id, [this](const SimulationPtr& simulation)
 		{
-			LinkMessager(simulation);
+			LinkMessager(*simulation);
 		});
 	}
 
@@ -218,9 +227,9 @@ namespace sim
 	{
 		DEBUG_ASSERT(ThreadOwnsObject(), "Called unlink without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
 
-		return SimulationServer::GetSingleton()->ApplyToSimulation(simulation_id, [this](Simulation& simulation)
+		return SimulationServer::GetSingleton()->ApplyToSimulation(simulation_id, [this](const SimulationPtr& simulation)
 		{
-			UnlinkMessager(simulation);
+			UnlinkMessager(*simulation);
 		});
 	}
 

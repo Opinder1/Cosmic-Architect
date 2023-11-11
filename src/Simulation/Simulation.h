@@ -66,6 +66,9 @@ namespace sim
 		Clock::duration GetCurrentRunTime() const;
 		Clock::duration GetCurrentRunTime();
 
+		// Manually tick from the current thread
+		bool ManualTick();
+
 		// Link to another simulation using its uuid
 		bool Link(UUID simulation);
 
@@ -92,9 +95,6 @@ namespace sim
 
 		// Stop this simulation (call from SimulationServer)
 		void Stop();
-
-		// Manually tick from the current thread
-		bool ManualTick();
 
 		// Main thread loop of this simulation that manages ticks and timings for the owner thread
 		void ThreadLoop();
@@ -147,4 +147,6 @@ namespace sim
 
 		SystemStorage					m_systems;
 	};
+
+	using SimulationPtr = std::shared_ptr<Simulation>;
 }

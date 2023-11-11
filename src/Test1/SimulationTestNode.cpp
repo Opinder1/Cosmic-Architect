@@ -23,24 +23,12 @@ SimulationTestNode::SimulationTestNode()
 	set_notify_transform(true);
 	set_notify_local_transform(true);
 
-	m_simulation = sim::SimulationServer::GetSingleton()->CreateSimulation(60, true);
-	
-	sim::SimulationServer::GetSingleton()->ApplyToSimulation(m_simulation, [](sim::Simulation& simulation)
-	{
-		simulation.Subscribe(cb::BindParam<&SimulationTickCallback>(&simulation));
-	});
-
-	sim::SimulationServer::GetSingleton()->StartSimulation(m_simulation, true);
+	m_simulation_id = sim::SimulationServer::GetSingleton()->CreateSimulation(60, true);
 }
 
 SimulationTestNode::~SimulationTestNode()
 {
-	sim::SimulationServer::GetSingleton()->ApplyToSimulation(m_simulation, [](sim::Simulation& simulation)
-	{
-		simulation.Unsubscribe(cb::BindParam<&SimulationTickCallback>(&simulation));
-	});
-
-	sim::SimulationServer::GetSingleton()->DeleteSimulation(m_simulation);
+	sim::SimulationServer::GetSingleton()->DeleteSimulation(m_simulation_id);
 }
 
 void SimulationTestNode::_input(const godot::Ref<godot::InputEvent>& event)
@@ -77,10 +65,20 @@ void SimulationTestNode::_notification(int notification)
 
 	case NOTIFICATION_ENTER_TREE:
 		godot::UtilityFunctions::print("NOTIFICATION_ENTER_TREE");
+
+		m_simulation_ptr = sim::SimulationServer::GetSingleton()->StartManualSimulation(m_simulation_id);
+
+		m_simulation_ptr->Subscribe(cb::BindParam<&SimulationTickCallback>(m_simulation_ptr.get()));
 		break;
 
 	case NOTIFICATION_EXIT_TREE:
 		godot::UtilityFunctions::print("NOTIFICATION_EXIT_TREE");
+
+		m_simulation_ptr->Unsubscribe(cb::BindParam<&SimulationTickCallback>(m_simulation_ptr.get()));
+
+		sim::SimulationServer::GetSingleton()->StopSimulation(m_simulation_id);
+
+		m_simulation_ptr.reset();
 		break;
 
 	case NOTIFICATION_MOVED_IN_PARENT:
@@ -101,7 +99,8 @@ void SimulationTestNode::_notification(int notification)
 
 	case NOTIFICATION_PHYSICS_PROCESS:
 		//godot::UtilityFunctions::print("NOTIFICATION_PHYSICS_PROCESS");
-		sim::SimulationServer::GetSingleton()->TickSimulation(m_simulation);
+
+		m_simulation_ptr->ManualTick();
 		break;
 
 	case NOTIFICATION_PROCESS:

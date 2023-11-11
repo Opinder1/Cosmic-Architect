@@ -5,6 +5,13 @@
 #include <godot_cpp/classes/input_event.hpp>
 #include <godot_cpp/classes/node3d.hpp>
 
+namespace sim
+{
+	class Simulation;
+
+	using SimulationPtr = std::shared_ptr<Simulation>;
+}
+
 class SimulationTestNode : public godot::Node3D
 {
 	GDCLASS(SimulationTestNode, godot::Node3D);
@@ -33,5 +40,7 @@ private:
 	static void _bind_methods();
 
 private:
-	sim::UUID m_simulation;
+	sim::UUID m_simulation_id;
+
+	sim::SimulationPtr m_simulation_ptr;
 };

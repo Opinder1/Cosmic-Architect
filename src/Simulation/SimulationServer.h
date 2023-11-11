@@ -15,14 +15,16 @@ namespace sim
 	class Simulation;
 	class System;
 
+	using SimulationPtr = std::shared_ptr<Simulation>;
+
 	class SimulationServer : public MessageRegistry
 	{
 	public:
 		using SystemEmitter = cb::Callback<std::unique_ptr<System>(Simulation&)>;
-		using SimulationApplicator = cb::Callback<void(Simulation&)>;
+		using SimulationApplicator = cb::Callback<void(const SimulationPtr&)>;
 
-		using SimulationStorage = robin_hood::unordered_flat_map<UUID, std::unique_ptr<Simulation>>;
-		using DeleteQueue = std::vector<std::unique_ptr<Simulation>>;
+		using SimulationStorage = robin_hood::unordered_flat_map<UUID, SimulationPtr>;
+		using DeleteQueue = std::vector<SimulationPtr>;
 
 	public:
 		static void Initialize();
@@ -39,21 +41,24 @@ namespace sim
 		// Create a new simulation and receive a handle to it
 		UUID CreateSimulation(double ticks_per_second, bool add_standard_systems);
 
+		// Delete this simulation. If the simulation is running it will be stopped and then deleted. The id handle is imediately invalid
+		void DeleteSimulation(UUID id);
+
 		// Add a system to a simulation
 		template<class SystemT, class... Args>
 		void AddSystem(UUID id, Args&&... args)
 		{
-			AddSystem(id, [=](Simulation& simulation) -> std::unique_ptr<System>{ return std::make_unique<SystemT>(simulation, std::forward<Args>(args)...); });
+			AddSystem(id, [args...](Simulation& simulation) -> std::unique_ptr<System>{ return std::make_unique<SystemT>(simulation, std::forward<Args>(args)...); });
 		}
 
 		// Start this simulation
-		void StartSimulation(UUID id, bool manually_tick);
+		void StartSimulation(UUID id);
+
+		// Start a simulation that is owned and managed by this thread. Don't give the pointer to other threads
+		SimulationPtr StartManualSimulation(UUID id);
 
 		// Stop this simulation
 		void StopSimulation(UUID id);
-
-		// Manually tick this simulation
-		bool TickSimulation(UUID id);
 
 		// Send a direct message to this simulation. Ideally messages should be sent between linked simulations
 		void SendMessage(UUID id, const MessagePtr& message);
@@ -75,9 +80,6 @@ namespace sim
 
 		// Run some code on a simulation. (Only use this if you know what you are doing)
 		bool ApplyToSimulation(UUID id, const SimulationApplicator& callback);
-
-		// Delete this simulation. If the simulation is running it will be stopped and then deleted. The id handle is imediately invalid
-		void DeleteSimulation(UUID id);
 
 	private:
 		// Add a system using an emmiter callback

@@ -63,6 +63,7 @@ namespace sim
 					// This is because that thread will no longer be able to tick it
 					if (simulation->IsManuallyTicked())
 					{
+						DEBUG_PRINT_ERROR("Manually ticked simulations should be fully stopped before they are deleted");
 						simulation->ThreadTransferObject(m_deleter_thread.get_id());
 					}
 				}
@@ -87,7 +88,7 @@ namespace sim
 		SimulationServer::GetSingleton()->AddSystem<NetworkServerSystem>(m_network_simulation);
 		SimulationServer::GetSingleton()->AddSystem<NetworkPeerSystem>(m_network_simulation);
 
-		SimulationServer::GetSingleton()->StartSimulation(m_network_simulation, false);
+		SimulationServer::GetSingleton()->StartSimulation(m_network_simulation);
 	}
 
 	UUID SimulationServer::CreateSimulation(double ticks_per_second, bool add_standard_systems)
@@ -127,132 +128,6 @@ namespace sim
 		return id;
 	}
 
-	void SimulationServer::AddSystem(UUID id, const SystemEmitter& emitter)
-	{
-		ApplyToSimulation(id, [&emitter](Simulation& simulation)
-		{
-			simulation.AddSystem(emitter);
-		});
-	}
-
-	void SimulationServer::StartSimulation(UUID id, bool manually_tick)
-	{
-		ApplyToSimulation(id, [manually_tick](Simulation& simulation)
-		{
-			simulation.Start(manually_tick);
-		});
-	}
-
-	void SimulationServer::StopSimulation(UUID id)
-	{
-		ApplyToSimulation(id, [](Simulation& simulation)
-		{
-			simulation.Stop();
-		});
-	}
-
-	bool SimulationServer::TickSimulation(UUID id)
-	{
-		bool success = false;
-
-		ApplyToSimulation(id, [&success](Simulation& simulation)
-		{
-			success = simulation.ManualTick();
-		});
-
-		return success;
-	}
-
-	void SimulationServer::SendMessage(UUID id, const MessagePtr& message)
-	{
-		ApplyToSimulation(id, [&message](Simulation& simulation)
-		{
-			if (!simulation.IsRunning())
-			{
-				DEBUG_PRINT_ERROR("Can't send a message if the simulation is not running");
-				return;
-			}
-
-			simulation.PostMessageFromUnattested(message);
-		});
-	}
-
-	void SimulationServer::SendMessages(UUID id, const MessageQueue& messages)
-	{
-		ApplyToSimulation(id, [&messages](Simulation& simulation)
-		{
-			if (!simulation.IsRunning())
-			{
-				DEBUG_PRINT_ERROR("Can't send a message if the simulation is not running");
-				return;
-			}
-
-			simulation.PostMessagesFromUnattested(messages);
-		});
-	}
-
-	bool SimulationServer::IsSimulation(UUID id)
-	{
-		std::shared_lock lock(m_mutex);
-
-		auto it = m_simulations.find(id);
-
-		return it != m_simulations.end();
-	}
-
-	bool SimulationServer::IsSimulationRunning(UUID id)
-	{
-		bool is_running = false;
-
-		ApplyToSimulation(id, [&is_running](Simulation& simulation)
-		{
-			is_running = simulation.IsRunning();
-		});
-
-		return is_running;
-	}
-
-	bool SimulationServer::IsSimulationManuallyTicked(UUID id)
-	{
-		bool is_manually_ticked = false;
-
-		ApplyToSimulation(id, [&is_manually_ticked](Simulation& simulation)
-		{
-			is_manually_ticked = simulation.IsManuallyTicked();
-		});
-
-		return is_manually_ticked;
-	}
-
-	bool SimulationServer::IsSimulationStopping(UUID id)
-	{
-		bool is_stopping = false;
-
-		ApplyToSimulation(id, [&is_stopping](Simulation& simulation)
-		{
-			is_stopping = simulation.IsStopping();
-		});
-
-		return is_stopping;
-	}
-
-	bool SimulationServer::ApplyToSimulation(UUID id, const SimulationApplicator& callback)
-	{
-		std::shared_lock lock(m_mutex);
-
-		auto it = m_simulations.find(id);
-
-		if (it == m_simulations.end())
-		{
-			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
-			return false;
-		}
-
-		callback(*it->second);
-
-		return true;
-	}
-
 	void SimulationServer::DeleteSimulation(UUID id)
 	{
 		std::unique_lock lock(m_mutex);
@@ -270,12 +145,19 @@ namespace sim
 		// Stop the simulation if its running
 		if (simulation.IsRunning())
 		{
+			// Call stop first in case we transfer thread ownership
 			simulation.Stop();
 
 			// If we are manually ticked then give ownership to the deleter so it can keep ticking
 			// This is because that thread will no longer be able to tick it
 			if (simulation.IsManuallyTicked())
 			{
+				if (!simulation.ThreadOwnsObject())
+				{
+					DEBUG_PRINT_ERROR("Manually ticked simulations should be stopped and deleted by the managing thread");
+					return;
+				}
+
 				simulation.ThreadTransferObject(m_deleter_thread.get_id());
 			}
 		}
@@ -284,6 +166,136 @@ namespace sim
 		it->second.swap(m_delete_queue.emplace_back());
 
 		m_simulations.erase(it);
+	}
+
+	void SimulationServer::AddSystem(UUID id, const SystemEmitter& emitter)
+	{
+		ApplyToSimulation(id, [&emitter](const SimulationPtr& simulation)
+		{
+			simulation->AddSystem(emitter);
+		});
+	}
+
+	void SimulationServer::StartSimulation(UUID id)
+	{
+		ApplyToSimulation(id, [](const SimulationPtr& simulation)
+		{
+			simulation->Start(false);
+		});
+	}
+
+	SimulationPtr SimulationServer::StartManualSimulation(UUID id)
+	{
+		SimulationPtr simulation_ptr;
+
+		ApplyToSimulation(id, [&simulation_ptr](const SimulationPtr& simulation)
+		{
+			simulation->Start(true);
+
+			simulation_ptr = simulation;
+		});
+
+		return simulation_ptr;
+	}
+
+	void SimulationServer::StopSimulation(UUID id)
+	{
+		ApplyToSimulation(id, [](const SimulationPtr& simulation)
+		{
+			DEBUG_ASSERT(simulation.use_count() == 1, "All pointers to the simulation should have been cleared before stopping");
+
+			simulation->Stop();
+		});
+	}
+
+	void SimulationServer::SendMessage(UUID id, const MessagePtr& message)
+	{
+		ApplyToSimulation(id, [&message](const SimulationPtr& simulation)
+		{
+			if (!simulation->IsRunning())
+			{
+				DEBUG_PRINT_ERROR("Can't send a message if the simulation is not running");
+				return;
+			}
+
+			simulation->PostMessageFromUnattested(message);
+		});
+	}
+
+	void SimulationServer::SendMessages(UUID id, const MessageQueue& messages)
+	{
+		ApplyToSimulation(id, [&messages](const SimulationPtr& simulation)
+		{
+			if (!simulation->IsRunning())
+			{
+				DEBUG_PRINT_ERROR("Can't send a message if the simulation is not running");
+				return;
+			}
+
+			simulation->PostMessagesFromUnattested(messages);
+		});
+	}
+
+	bool SimulationServer::IsSimulation(UUID id)
+	{
+		std::shared_lock lock(m_mutex);
+
+		auto it = m_simulations.find(id);
+
+		return it != m_simulations.end();
+	}
+
+	bool SimulationServer::IsSimulationRunning(UUID id)
+	{
+		bool is_running = false;
+
+		ApplyToSimulation(id, [&is_running](const SimulationPtr& simulation)
+		{
+			is_running = simulation->IsRunning();
+		});
+
+		return is_running;
+	}
+
+	bool SimulationServer::IsSimulationManuallyTicked(UUID id)
+	{
+		bool is_manually_ticked = false;
+
+		ApplyToSimulation(id, [&is_manually_ticked](const SimulationPtr& simulation)
+		{
+			is_manually_ticked = simulation->IsManuallyTicked();
+		});
+
+		return is_manually_ticked;
+	}
+
+	bool SimulationServer::IsSimulationStopping(UUID id)
+	{
+		bool is_stopping = false;
+
+		ApplyToSimulation(id, [&is_stopping](const SimulationPtr& simulation)
+		{
+			is_stopping = simulation->IsStopping();
+		});
+
+		return is_stopping;
+	}
+
+	bool SimulationServer::ApplyToSimulation(UUID id, const SimulationApplicator& callback)
+	{
+		std::shared_lock lock(m_mutex);
+
+		auto it = m_simulations.find(id);
+
+		if (it == m_simulations.end())
+		{
+			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
+			return false;
+		}
+
+		callback(it->second);
+
+		return true;
 	}
 
 	void SimulationServer::DeleteThreadFunc()
