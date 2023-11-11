@@ -156,64 +156,6 @@ namespace sim
 		return success;
 	}
 
-	void SimulationServer::DeleteSimulation(UUID id)
-	{
-		std::unique_lock lock(m_mutex);
-
-		auto it = m_simulations.find(id);
-
-		if (it == m_simulations.end())
-		{
-			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
-			return;
-		}
-
-		Simulation& simulation = *it->second;
-
-		if (simulation.IsRunning())
-		{
-			DEBUG_PRINT_ERROR("Can't delete the simulation if its running");
-			return;
-		}
-
-		// Move the simulation into the delete queue
-		it->second.swap(m_delete_queue.emplace_back());
-
-		m_simulations.erase(it);
-	}
-
-	void SimulationServer::StopAndDeleteSimulation(UUID id)
-	{
-		std::unique_lock lock(m_mutex);
-
-		auto it = m_simulations.find(id);
-
-		if (it == m_simulations.end())
-		{
-			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
-			return;
-		}
-
-		Simulation& simulation = *it->second;
-
-		// Stop the simulation if its running
-		if (simulation.IsRunning())
-		{
-			simulation.Stop();
-		}
-
-		// If we are manually ticked then give ownership to the deleter so it can keep ticking
-		if (simulation.IsManuallyTicked())
-		{
-			simulation.ThreadTransferObject(m_deleter_thread.get_id());
-		}
-
-		// Move the simulation into the delete queue
-		it->second.swap(m_delete_queue.emplace_back());
-
-		m_simulations.erase(it);
-	}
-
 	void SimulationServer::SendMessage(UUID id, const MessagePtr& message)
 	{
 		ApplyToSimulation(id, [&message](Simulation& simulation)
@@ -304,6 +246,39 @@ namespace sim
 		return true;
 	}
 
+	void SimulationServer::DeleteSimulation(UUID id)
+	{
+		std::unique_lock lock(m_mutex);
+
+		auto it = m_simulations.find(id);
+
+		if (it == m_simulations.end())
+		{
+			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
+			return;
+		}
+
+		Simulation& simulation = *it->second;
+
+		// Stop the simulation if its running
+		if (simulation.IsRunning())
+		{
+			simulation.Stop();
+
+			// If we are manually ticked then give ownership to the deleter so it can keep ticking
+			// This is because that thread will no longer be able to tick it
+			if (simulation.IsManuallyTicked())
+			{
+				simulation.ThreadTransferObject(m_deleter_thread.get_id());
+			}
+		}
+
+		// Move the simulation into the delete queue
+		it->second.swap(m_delete_queue.emplace_back());
+
+		m_simulations.erase(it);
+	}
+
 	void SimulationServer::DeleteThreadFunc()
 	{
 		std::unique_lock lock(m_mutex);
@@ -311,32 +286,34 @@ namespace sim
 		// Keep looping as long as we haven't stopped and the delete queue is not empty
 		while (!(m_stopped && m_delete_queue.empty()))
 		{
-			for (auto it = m_delete_queue.begin(); it != m_delete_queue.end();)
-			{
-				Simulation* simulation = it->get();
-
-				if (simulation->IsRunning()) 
-				{
-					// If we are manually ticked then make sure to keep ticking so that we handle unlinks
-					if (simulation->IsManuallyTicked())
-					{
-						simulation->ManualTick();
-					}
-
-					it++;
-				}
-				else
-				{
-					// If its not running then we can erase the simulation safely
-					it = m_delete_queue.erase(it);
-				}
-			}
-
 			// Every second we check if the simulations have stopped
 			// This should be plenty of time for the simulations to stop and makes us lock very rarely
 			lock.unlock();
 			std::this_thread::sleep_for(1s);
 			lock.lock();
+
+			for (auto it = m_delete_queue.begin(); it != m_delete_queue.end();)
+			{
+				Simulation* simulation = it->get();
+
+				if (!simulation->IsRunning())
+				{
+					// If its not running then we can erase the simulation safely
+					it = m_delete_queue.erase(it);
+					continue;
+				}
+
+				// If we are manually ticked then make sure to keep ticking so that we handle unlinks
+				if (simulation->IsManuallyTicked())
+				{
+					lock.unlock();
+					simulation->ManualTick();
+					lock.lock();
+					break; // Do one manual tick as in the time it took the delete queue could have reallocated
+				}
+
+				it++;
+			}
 		}
 
 		DEBUG_ASSERT(m_delete_queue.empty(), "Delete queue should be empty");

@@ -10,7 +10,7 @@ namespace
 {
 	void SimulationTickCallback(sim::Simulation* simulation, const sim::TickEvent& event)
 	{
-		if (simulation->GetTotalTicks() % size_t(simulation->GetTicksPerSecond() * 10) == 0)
+		if (simulation->GetTotalTicks() % 1000 == 0)
 		{
 			auto id = std::this_thread::get_id();
 			godot::UtilityFunctions::print(godot::vformat("Thread %d on tick %d", *(unsigned int*)&id, simulation->GetTotalTicks()));
@@ -40,7 +40,7 @@ SimulationTestNode::~SimulationTestNode()
 		simulation.Unsubscribe(cb::BindParam<&SimulationTickCallback>(&simulation));
 	});
 
-	sim::SimulationServer::GetSingleton()->StopAndDeleteSimulation(m_simulation);
+	sim::SimulationServer::GetSingleton()->DeleteSimulation(m_simulation);
 }
 
 void SimulationTestNode::_input(const godot::Ref<godot::InputEvent>& event)
@@ -100,12 +100,12 @@ void SimulationTestNode::_notification(int notification)
 		break;
 
 	case NOTIFICATION_PHYSICS_PROCESS:
-		godot::UtilityFunctions::print("NOTIFICATION_PHYSICS_PROCESS");
+		//godot::UtilityFunctions::print("NOTIFICATION_PHYSICS_PROCESS");
+		sim::SimulationServer::GetSingleton()->TickSimulation(m_simulation);
 		break;
 
 	case NOTIFICATION_PROCESS:
-		godot::UtilityFunctions::print("NOTIFICATION_PROCESS");
-		sim::SimulationServer::GetSingleton()->TickSimulation(m_simulation);
+		//godot::UtilityFunctions::print("NOTIFICATION_PROCESS");
 		break;
 
 	case NOTIFICATION_PARENTED:

@@ -55,12 +55,6 @@ namespace sim
 		// Manually tick this simulation
 		bool TickSimulation(UUID id);
 
-		// Delete this simulation and free up resources. The id handle is imediately invalid. Prefer to use StopAndDelete
-		void DeleteSimulation(UUID id);
-
-		// Stop this simulation and delete when stopped. The id handle is imediately invalid
-		void StopAndDeleteSimulation(UUID id);
-
 		// Send a direct message to this simulation. Ideally messages should be sent between linked simulations
 		void SendMessage(UUID id, const MessagePtr& message);
 
@@ -81,6 +75,9 @@ namespace sim
 
 		// Run some code on a simulation. (Only use this if you know what you are doing)
 		bool ApplyToSimulation(UUID id, const SimulationApplicator& callback);
+
+		// Delete this simulation. If the simulation is running it will be stopped and then deleted. The id handle is imediately invalid
+		void DeleteSimulation(UUID id);
 
 	private:
 		// Add a system using an emmiter callback

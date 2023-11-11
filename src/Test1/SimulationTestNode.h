@@ -15,6 +15,10 @@ public:
 	~SimulationTestNode();
 
 public:
+	void _process(double delta) override {}
+
+	void _physics_process(double delta) override {}
+
 	void _input(const godot::Ref<godot::InputEvent>& event) override;
 
 	void _shortcut_input(const godot::Ref<godot::InputEvent>& event) override;
