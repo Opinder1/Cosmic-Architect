@@ -140,61 +140,59 @@ namespace sim
 			return;
 		}
 
-		SimulationPtr& simulation = it->second;
+		Simulation& simulation = *it->second;
 
 		// Stop the simulation if its running
-		if (simulation->IsRunning())
+		if (simulation.IsRunning())
 		{
-			DEBUG_ASSERT(it->second.use_count() == 1, "All pointers to the simulation should have been cleared before stopping");
-
 			// Call stop first in case we transfer thread ownership
-			simulation->Stop();
+			simulation.Stop();
 
 			// If we are manually ticked then give ownership to the deleter so it can keep ticking
 			// This is because that thread will no longer be able to tick it
-			if (simulation->IsManuallyTicked())
+			if (simulation.IsManuallyTicked())
 			{
-				if (!simulation->ThreadOwnsObject())
+				if (!simulation.ThreadOwnsObject())
 				{
 					DEBUG_PRINT_ERROR("Manually ticked simulations should be stopped and deleted by the managing thread");
 					return;
 				}
 
-				simulation->ThreadTransferObject(m_deleter_thread.get_id());
+				simulation.ThreadTransferObject(m_deleter_thread.get_id());
 			}
 		}
 
 		// Move the simulation into the delete queue
-		simulation.swap(m_delete_queue.emplace_back());
+		it->second.swap(m_delete_queue.emplace_back());
 
 		m_simulations.erase(it);
 	}
 
 	void SimulationServer::AddSystem(UUID id, const SystemEmitter& emitter)
 	{
-		ApplyToSimulation(id, [&emitter](const SimulationPtr& simulation)
+		ApplyToSimulation(id, [&emitter](Simulation& simulation)
 		{
-			simulation->AddSystem(emitter);
+			simulation.AddSystem(emitter);
 		});
 	}
 
 	void SimulationServer::StartSimulation(UUID id)
 	{
-		ApplyToSimulation(id, [](const SimulationPtr& simulation)
+		ApplyToSimulation(id, [](Simulation& simulation)
 		{
-			simulation->Start(false);
+			simulation.Start(false);
 		});
 	}
 
-	SimulationPtr SimulationServer::StartManualSimulation(UUID id)
+	Simulation* SimulationServer::StartManualSimulation(UUID id)
 	{
-		SimulationPtr simulation_ptr;
+		Simulation* simulation_ptr;
 
-		ApplyToSimulation(id, [&simulation_ptr](const SimulationPtr& simulation)
+		ApplyToSimulation(id, [&simulation_ptr](Simulation& simulation)
 		{
-			simulation->Start(true);
+			simulation.Start(true);
 
-			simulation_ptr = simulation;
+			simulation_ptr = &simulation;
 		});
 
 		return simulation_ptr;
@@ -202,39 +200,37 @@ namespace sim
 
 	void SimulationServer::StopSimulation(UUID id)
 	{
-		ApplyToSimulation(id, [](const SimulationPtr& simulation)
+		ApplyToSimulation(id, [](Simulation& simulation)
 		{
-			DEBUG_ASSERT(simulation.use_count() == 1, "All pointers to the simulation should have been cleared before stopping");
-
-			simulation->Stop();
+			simulation.Stop();
 		});
 	}
 
 	void SimulationServer::SendMessage(UUID id, const MessagePtr& message)
 	{
-		ApplyToSimulation(id, [&message](const SimulationPtr& simulation)
+		ApplyToSimulation(id, [&message](Simulation& simulation)
 		{
-			if (!simulation->IsRunning())
+			if (!simulation.IsRunning())
 			{
 				DEBUG_PRINT_ERROR("Can't send a message if the simulation is not running");
 				return;
 			}
 
-			simulation->PostMessageFromUnattested(message);
+			simulation.PostMessageFromUnattested(message);
 		});
 	}
 
 	void SimulationServer::SendMessages(UUID id, const MessageQueue& messages)
 	{
-		ApplyToSimulation(id, [&messages](const SimulationPtr& simulation)
+		ApplyToSimulation(id, [&messages](Simulation& simulation)
 		{
-			if (!simulation->IsRunning())
+			if (!simulation.IsRunning())
 			{
 				DEBUG_PRINT_ERROR("Can't send a message if the simulation is not running");
 				return;
 			}
 
-			simulation->PostMessagesFromUnattested(messages);
+			simulation.PostMessagesFromUnattested(messages);
 		});
 	}
 
@@ -251,9 +247,9 @@ namespace sim
 	{
 		bool is_running = false;
 
-		ApplyToSimulation(id, [&is_running](const SimulationPtr& simulation)
+		ApplyToSimulation(id, [&is_running](Simulation& simulation)
 		{
-			is_running = simulation->IsRunning();
+			is_running = simulation.IsRunning();
 		});
 
 		return is_running;
@@ -263,9 +259,9 @@ namespace sim
 	{
 		bool is_manually_ticked = false;
 
-		ApplyToSimulation(id, [&is_manually_ticked](const SimulationPtr& simulation)
+		ApplyToSimulation(id, [&is_manually_ticked](Simulation& simulation)
 		{
-			is_manually_ticked = simulation->IsManuallyTicked();
+			is_manually_ticked = simulation.IsManuallyTicked();
 		});
 
 		return is_manually_ticked;
@@ -275,9 +271,9 @@ namespace sim
 	{
 		bool is_stopping = false;
 
-		ApplyToSimulation(id, [&is_stopping](const SimulationPtr& simulation)
+		ApplyToSimulation(id, [&is_stopping](Simulation& simulation)
 		{
-			is_stopping = simulation->IsStopping();
+			is_stopping = simulation.IsStopping();
 		});
 
 		return is_stopping;
@@ -295,7 +291,7 @@ namespace sim
 			return false;
 		}
 
-		callback(it->second);
+		callback(*it->second);
 
 		return true;
 	}
@@ -315,9 +311,9 @@ namespace sim
 
 			for (auto it = m_delete_queue.begin(); it != m_delete_queue.end();)
 			{
-				Simulation* simulation = it->get();
+				Simulation& simulation = **it;
 
-				if (!simulation->IsRunning())
+				if (!simulation.IsRunning())
 				{
 					// If its not running then we can erase the simulation safely
 					it = m_delete_queue.erase(it);
@@ -325,10 +321,10 @@ namespace sim
 				}
 
 				// If we are manually ticked then make sure to keep ticking so that we handle unlinks
-				if (simulation->IsManuallyTicked())
+				if (simulation.IsManuallyTicked())
 				{
 					lock.unlock();
-					simulation->ManualTick();
+					simulation.ManualTick();
 					lock.lock();
 					break; // Do one manual tick as in the time it took the delete queue could have reallocated
 				}

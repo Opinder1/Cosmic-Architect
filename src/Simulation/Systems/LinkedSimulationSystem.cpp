@@ -9,12 +9,12 @@ namespace sim
 	LinkedSimulationSystem::LinkedSimulationSystem(Simulation& simulation) :
 		System(simulation)
 	{
-		Subscribe<&LinkedSimulationSystem::OnPostTick>();
+		Sim().Subscribe(cb::Bind<&LinkedSimulationSystem::OnPostTick>(this));
 	}
 
 	LinkedSimulationSystem::~LinkedSimulationSystem()
 	{
-
+		Sim().Unsubscribe(cb::Bind<&LinkedSimulationSystem::OnPostTick>(this));
 	}
 
 	void LinkedSimulationSystem::OnPostTick(const PostTickEvent& event)

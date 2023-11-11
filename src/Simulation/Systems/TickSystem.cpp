@@ -9,12 +9,12 @@ namespace sim
 	TickSystem::TickSystem(Simulation& simulation) :
 		System(simulation)
 	{
-		Subscribe<&TickSystem::OnSimulationTick>();
+		Sim().Subscribe(cb::Bind<&TickSystem::OnSimulationTick>(this));
 	}
 
 	TickSystem::~TickSystem()
 	{
-
+		Sim().Unsubscribe(cb::Bind<&TickSystem::OnSimulationTick>(this));
 	}
 
 	void TickSystem::OnSimulationTick(const SimulationTickEvent& event)

@@ -8,8 +8,6 @@
 namespace sim
 {
 	class Simulation;
-
-	using SimulationPtr = std::shared_ptr<Simulation>;
 }
 
 class SimulationTestNode : public godot::Node3D
@@ -42,5 +40,5 @@ private:
 private:
 	sim::UUID m_simulation_id;
 
-	sim::SimulationPtr m_simulation_ptr;
+	sim::Simulation* m_simulation_ptr;
 };

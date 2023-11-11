@@ -15,14 +15,14 @@ namespace sim
 	class Simulation;
 	class System;
 
-	using SimulationPtr = std::shared_ptr<Simulation>;
-
 	class SimulationServer : public MessageRegistry
 	{
 	public:
-		using SystemEmitter = cb::Callback<std::unique_ptr<System>(Simulation&)>;
-		using SimulationApplicator = cb::Callback<void(const SimulationPtr&)>;
 
+		using SystemEmitter = cb::Callback<std::unique_ptr<System>(Simulation&)>;
+		using SimulationApplicator = cb::Callback<void(Simulation&)>;
+
+		using SimulationPtr = std::unique_ptr<Simulation>;
 		using SimulationStorage = robin_hood::unordered_flat_map<UUID, SimulationPtr>;
 		using DeleteQueue = std::vector<SimulationPtr>;
 
@@ -48,14 +48,14 @@ namespace sim
 		template<class SystemT, class... Args>
 		void AddSystem(UUID id, Args&&... args)
 		{
-			AddSystem(id, [args...](Simulation& simulation) -> std::unique_ptr<System>{ return std::make_unique<SystemT>(simulation, std::forward<Args>(args)...); });
+			AddSystem(id, [&args...](Simulation& simulation) -> std::unique_ptr<System>{ return std::make_unique<SystemT>(simulation, std::forward<Args>(args)...); });
 		}
 
 		// Start this simulation
 		void StartSimulation(UUID id);
 
 		// Start a simulation that is owned and managed by this thread. Don't give the pointer to other threads
-		SimulationPtr StartManualSimulation(UUID id);
+		Simulation* StartManualSimulation(UUID id);
 
 		// Stop this simulation
 		void StopSimulation(UUID id);

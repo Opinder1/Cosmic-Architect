@@ -29,8 +29,8 @@ namespace sim
 			return;
 		}
 
-		Subscribe(cb::Bind<&Simulation::OnRequestStop>(*this));
-		Subscribe(cb::Bind<&Simulation::OnMessagerStop>(*this));
+		Subscribe(cb::Bind<&Simulation::OnRequestStop>(this));
+		Subscribe(cb::Bind<&Simulation::OnMessagerStop>(this));
 	}
 
 	Simulation::~Simulation()
@@ -46,8 +46,8 @@ namespace sim
 			m_thread.join();
 		}
 
-		Unsubscribe(cb::Bind<&Simulation::OnMessagerStop>(*this));
-		Unsubscribe(cb::Bind<&Simulation::OnRequestStop>(*this));
+		Unsubscribe(cb::Bind<&Simulation::OnRequestStop>(this));
+		Unsubscribe(cb::Bind<&Simulation::OnMessagerStop>(this));
 	}
 	
 	void Simulation::AddSystem(const SystemEmitter& emitter)
@@ -217,9 +217,9 @@ namespace sim
 	{
 		DEBUG_ASSERT(ThreadOwnsObject(), "Called link without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
 
-		return SimulationServer::GetSingleton()->ApplyToSimulation(simulation_id, [this](const SimulationPtr& simulation)
+		return SimulationServer::GetSingleton()->ApplyToSimulation(simulation_id, [this](Simulation& simulation)
 		{
-			LinkMessager(*simulation);
+			LinkMessager(simulation);
 		});
 	}
 
@@ -227,9 +227,9 @@ namespace sim
 	{
 		DEBUG_ASSERT(ThreadOwnsObject(), "Called unlink without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
 
-		return SimulationServer::GetSingleton()->ApplyToSimulation(simulation_id, [this](const SimulationPtr& simulation)
+		return SimulationServer::GetSingleton()->ApplyToSimulation(simulation_id, [this](Simulation& simulation)
 		{
-			UnlinkMessager(*simulation);
+			UnlinkMessager(simulation);
 		});
 	}
 

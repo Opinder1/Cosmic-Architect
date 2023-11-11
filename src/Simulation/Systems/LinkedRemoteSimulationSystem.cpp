@@ -14,12 +14,12 @@ namespace sim
 		System(simulation),
 		m_network_simulation(network_simulation)
 	{
-		Subscribe<&LinkedRemoteSimulationSystem::OnPostTick>();
+		Sim().Subscribe(cb::Bind<&LinkedRemoteSimulationSystem::OnPostTick>(this));
 	}
 
 	LinkedRemoteSimulationSystem::~LinkedRemoteSimulationSystem()
 	{
-
+		Sim().Unsubscribe(cb::Bind<&LinkedRemoteSimulationSystem::OnPostTick>(this));
 	}
 
 	void LinkedRemoteSimulationSystem::OnPostTick(const PostTickEvent& event)

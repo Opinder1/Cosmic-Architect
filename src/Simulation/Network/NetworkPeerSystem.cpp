@@ -29,12 +29,12 @@ namespace sim
 	NetworkPeerSystem::NetworkPeerSystem(Simulation& simulation) :
 		System(simulation)
 	{
-		Subscribe<&NetworkPeerSystem::OnTick>();
+		Sim().Subscribe(cb::Bind<&NetworkPeerSystem::OnTick>(this));
 	}
 
 	NetworkPeerSystem::~NetworkPeerSystem()
 	{
-
+		Sim().Unsubscribe(cb::Bind<&NetworkPeerSystem::OnTick>(this));
 	}
 
 	void NetworkPeerSystem::OnTick(const TickEvent& event)

@@ -147,6 +147,4 @@ namespace sim
 
 		SystemStorage					m_systems;
 	};
-
-	using SimulationPtr = std::shared_ptr<Simulation>;
 }

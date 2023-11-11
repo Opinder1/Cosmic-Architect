@@ -18,7 +18,8 @@ namespace
 	}
 }
 
-SimulationTestNode::SimulationTestNode()
+SimulationTestNode::SimulationTestNode() :
+	m_simulation_ptr(nullptr)
 {
 	set_notify_transform(true);
 	set_notify_local_transform(true);
@@ -68,15 +69,15 @@ void SimulationTestNode::_notification(int notification)
 
 		m_simulation_ptr = sim::SimulationServer::GetSingleton()->StartManualSimulation(m_simulation_id);
 
-		m_simulation_ptr->Subscribe(cb::BindParam<&SimulationTickCallback>(m_simulation_ptr.get()));
+		m_simulation_ptr->Subscribe(cb::BindParam<&SimulationTickCallback>(m_simulation_ptr));
 		break;
 
 	case NOTIFICATION_EXIT_TREE:
 		godot::UtilityFunctions::print("NOTIFICATION_EXIT_TREE");
 
-		m_simulation_ptr->Unsubscribe(cb::BindParam<&SimulationTickCallback>(m_simulation_ptr.get()));
+		m_simulation_ptr->Unsubscribe(cb::BindParam<&SimulationTickCallback>(m_simulation_ptr));
 
-		m_simulation_ptr.reset();
+		m_simulation_ptr = nullptr;
 
 		sim::SimulationServer::GetSingleton()->StopSimulation(m_simulation_id);
 		break;
@@ -99,12 +100,12 @@ void SimulationTestNode::_notification(int notification)
 
 	case NOTIFICATION_PHYSICS_PROCESS:
 		//godot::UtilityFunctions::print("NOTIFICATION_PHYSICS_PROCESS");
-
-		m_simulation_ptr->ManualTick();
 		break;
 
 	case NOTIFICATION_PROCESS:
 		//godot::UtilityFunctions::print("NOTIFICATION_PROCESS");
+
+		m_simulation_ptr->ManualTick();
 		break;
 
 	case NOTIFICATION_PARENTED:

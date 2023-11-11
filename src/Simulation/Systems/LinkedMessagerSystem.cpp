@@ -9,12 +9,12 @@ namespace sim
 	LinkedMessagerSystem::LinkedMessagerSystem(Simulation& simulation) :
 		System(simulation)
 	{
-		Subscribe<&LinkedMessagerSystem::OnPostTick>();
+		Sim().Subscribe(cb::Bind<&LinkedMessagerSystem::OnPostTick>(this));
 	}
 
 	LinkedMessagerSystem::~LinkedMessagerSystem()
 	{
-
+		Sim().Unsubscribe(cb::Bind<&LinkedMessagerSystem::OnPostTick>(this));
 	}
 
 	void LinkedMessagerSystem::OnPostTick(const PostTickEvent& event)

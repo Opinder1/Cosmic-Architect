@@ -14,10 +14,7 @@ namespace sim
 
 	System::~System()
 	{
-		for (CallbackEntry& entry : m_callbacks)
-		{
-			Sim().UnsubscribeGeneric(entry.callback, entry.type);
-		}
+
 	}
 
 	Simulation& System::Sim()

@@ -155,7 +155,7 @@ namespace cb
 	template<auto Method, class Class>
 	auto Bind(Class& instance)
 	{
-		return BindHelper<Method, std::remove_cv_t<Class>>(Method, const_cast<std::remove_cv_t<Class*>>(&instance));
+		return BindHelper<Method, std::remove_cv_t<Class>>(Method, const_cast<std::remove_cv_t<Class>*>(&instance));
 	}
 
 	// Bind the method of a class
