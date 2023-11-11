@@ -41,7 +41,7 @@ build.bat
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
-.pdb
+*.pdb
 
 # Godot
 /demo
