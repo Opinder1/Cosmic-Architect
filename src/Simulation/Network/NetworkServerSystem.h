@@ -10,9 +10,8 @@ namespace sim
 	struct StartNetworkServerMessage;
 	struct StopNetworkServerMessage;
 
-	class NetworkServerSystem
+	struct NetworkServerSystem
 	{
-	public:
 		static void OnInitialize(Simulation& simulation);
 
 		static void OnShutdown(Simulation& simulation);

@@ -26,7 +26,7 @@ namespace sim
 		return false;
 	};
 
-	bool Message::Deserialize(ByteStream& stream)
+	bool Message::Deserialize(ByteStream& stream) const
 	{
 		DEBUG_PRINT_ERROR(godot::vformat("Deserialize() was called on a message of type '%s' that does not override it.", typeid(*this).name()));
 		return false;

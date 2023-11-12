@@ -23,17 +23,22 @@ namespace sim
 		UUID GetSender() const;
 
 		virtual bool Serialize(ByteStream& stream) const;
-		virtual bool Deserialize(ByteStream& stream);
+		virtual bool Deserialize(ByteStream& stream) const;
 
 	private:
 		UUID sender; // UUID of the MessageSender that sent this message
 	};
 
 	// A pointer to a message. Is a shared pointer since we may send it to multiple targets on different threads
-	using MessagePtr = std::shared_ptr<Message>;
-	using ConstMessagePtr = std::shared_ptr<const Message>;
+	struct MessagePtr : std::shared_ptr<const Message>
+	{
+		using shared_ptr<const Message>::shared_ptr;
+	};
 
-	using MessageQueue = std::vector<MessagePtr>;
+	struct MessageQueue : std::vector<MessagePtr>
+	{
+		using vector<MessagePtr>::vector;
+	};
 
 	// Get the message type from a generic message
 	Event::Type GetMessageType(const Message& message);

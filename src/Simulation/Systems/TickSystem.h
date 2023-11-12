@@ -6,9 +6,8 @@ namespace sim
 
 	struct SimulationTickEvent;
 
-	class TickSystem
+	struct TickSystem
 	{
-	public:
 		static void OnInitialize(Simulation& simulation);
 
 		static void OnShutdown(Simulation& simulation);

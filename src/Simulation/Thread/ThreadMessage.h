@@ -28,7 +28,7 @@ namespace sim
 			message(nullptr)
 		{}
 
-		explicit ThreadMessage(Type type, ThreadMessager* sender, const ConstMessagePtr& message) :
+		explicit ThreadMessage(Type type, ThreadMessager* sender, const MessagePtr& message) :
 			type(type),
 			sender(sender),
 			message(message)
@@ -36,7 +36,7 @@ namespace sim
 
 		Type type;
 		ThreadMessager* sender;
-		ConstMessagePtr message;
+		MessagePtr message;
 	};
 
 	struct ThreadMessageQueue : std::vector<ThreadMessage>

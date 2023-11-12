@@ -104,7 +104,7 @@ namespace sim
 		ThreadMessageQueue& queue = it->second.queue;
 
 		// Add to just this queue
-		for (const std::shared_ptr<Message>& message : messages)
+		for (const MessagePtr& message : messages)
 		{
 			queue.push_back(ThreadMessage(ThreadMessage::Type::Message, this, message));
 		}
@@ -128,7 +128,7 @@ namespace sim
 	{
 		if (ThreadOwnsObject()) // If we own this then don't bother queuing as we won't be reading the queue right now
 		{
-			for (const std::shared_ptr<Message>& message : messages)
+			for (const MessagePtr& message : messages)
 			{
 				PostEventGeneric(*message, GetMessageType(*message));
 			}
@@ -138,7 +138,7 @@ namespace sim
 			std::unique_lock lock(m_mutex);
 
 			// Add to just this queue
-			for (const std::shared_ptr<Message>& message : messages)
+			for (const MessagePtr& message : messages)
 			{
 				m_in_queue.push_back(ThreadMessage(ThreadMessage::Type::Message, nullptr, message));
 			}

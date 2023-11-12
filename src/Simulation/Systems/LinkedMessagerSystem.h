@@ -7,12 +7,10 @@ namespace sim
 {
 	class Simulation;
 
-	struct Message;
+	struct MessagePtr;
+	struct MessageQueue;
 	struct SimulationTickEvent;
 	struct LinkedMessagerComponent;
-
-	using MessagePtr = std::shared_ptr<Message>;
-	using MessageQueue = std::vector<MessagePtr>;
 
 	struct LinkedMessagerSystem
 	{

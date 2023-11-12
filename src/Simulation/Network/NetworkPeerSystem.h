@@ -7,9 +7,8 @@ namespace sim
 
 	struct SimulationTickEvent;
 
-	class NetworkPeerSystem
+	struct NetworkPeerSystem
 	{
-	public:
 		static void OnInitialize(Simulation& simulation);
 
 		static void OnShutdown(Simulation& simulation);
