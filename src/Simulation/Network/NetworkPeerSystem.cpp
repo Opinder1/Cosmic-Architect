@@ -26,20 +26,19 @@ namespace sim
 		Message,
 	};
 
-	NetworkPeerSystem::NetworkPeerSystem(Simulation& simulation) :
-		System(simulation)
+	void NetworkPeerSystem::OnInitialize(Simulation& simulation)
 	{
-		Sim().Subscribe(cb::Bind<&NetworkPeerSystem::OnTick>(this));
+		simulation.Subscribe(cb::BindParam<&NetworkPeerSystem::OnSimulationTick>(simulation));
 	}
 
-	NetworkPeerSystem::~NetworkPeerSystem()
+	void NetworkPeerSystem::OnShutdown(Simulation& simulation)
 	{
-		Sim().Unsubscribe(cb::Bind<&NetworkPeerSystem::OnTick>(this));
+		simulation.Unsubscribe(cb::BindParam<&NetworkPeerSystem::OnSimulationTick>(simulation));
 	}
 
-	void NetworkPeerSystem::OnTick(const TickEvent& event)
+	void NetworkPeerSystem::OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event)
 	{
-		for (auto&& [peer_entity, peer] : Registry().view<PeerComponent>().each())
+		for (auto&& [peer_entity, peer] : simulation.Registry().view<PeerComponent>().each())
 		{
 			peer.dtls_peer->poll();
 
@@ -68,7 +67,7 @@ namespace sim
 				switch (type)
 				{
 				case NetworkMessageType::Message:
-					LoadMessage(stream);
+					LoadMessage(simulation, stream);
 					break;
 
 				default:
@@ -79,7 +78,7 @@ namespace sim
 		}
 	}
 
-	bool NetworkPeerSystem::LoadMessage(ByteStream& stream)
+	bool NetworkPeerSystem::LoadMessage(Simulation& simulation, ByteStream& stream)
 	{
 		// Get the message and the target to send to
 		UUID target;
@@ -91,7 +90,7 @@ namespace sim
 			return false;
 		}
 
-		Sim().PostMessageToOther(target, message);
+		simulation.PostMessageToOther(target, message);
 
 		return true;
 	}

@@ -3,6 +3,7 @@
 #include "Simulation/Simulation.h"
 #include "Simulation/Components.h"
 #include "Simulation/Events.h"
+#include "Simulation/Globals.h"
 
 #include "Simulation/Message/Message.h"
 
@@ -10,30 +11,30 @@
 
 namespace sim
 {
-	LinkedRemoteSimulationSystem::LinkedRemoteSimulationSystem(Simulation& simulation, UUID network_simulation) :
-		System(simulation),
-		m_network_simulation(network_simulation)
+	void LinkedRemoteSimulationSystem::OnInitialize(Simulation& simulation)
 	{
-		Sim().Subscribe(cb::Bind<&LinkedRemoteSimulationSystem::OnPostTick>(this));
+		simulation.Subscribe(cb::BindParam<&LinkedRemoteSimulationSystem::OnSimulationTick>(simulation));
 	}
 
-	LinkedRemoteSimulationSystem::~LinkedRemoteSimulationSystem()
+	void LinkedRemoteSimulationSystem::OnShutdown(Simulation& simulation)
 	{
-		Sim().Unsubscribe(cb::Bind<&LinkedRemoteSimulationSystem::OnPostTick>(this));
+		simulation.Unsubscribe(cb::BindParam<&LinkedRemoteSimulationSystem::OnSimulationTick>(simulation));
 	}
 
-	void LinkedRemoteSimulationSystem::OnPostTick(const PostTickEvent& event)
+	void LinkedRemoteSimulationSystem::OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event)
 	{
-		for (auto&& [entity, linked_messager] : Registry().view<LinkedMessagerComponent, LinkedSimulationComponent>().each())
+		auto& network_simulation = simulation.Global<NetworkSimulationGlobal>();
+
+		for (auto&& [entity, linked_messager] : simulation.Registry().view<LinkedMessagerComponent, LinkedSimulationComponent>().each())
 		{
 			if (!linked_messager.id.IsEmpty())
 			{
-				auto message = std::make_shared<MessageRemoteSimulationMessage>(Sim(), linked_messager.id);
+				auto message = std::make_shared<MessageRemoteSimulationMessage>(simulation, linked_messager.id);
 
 				// This clears queued_messages and is only swapping pointers which is fast
 				message->messages.swap(linked_messager.queued_messages);
 
-				Sim().PostMessageToOther(m_network_simulation, message);
+				simulation.PostMessageToOther(network_simulation.id, message);
 			}
 		}
 	}

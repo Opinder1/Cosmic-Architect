@@ -1,6 +1,7 @@
 #include "NetworkServerSystem.h"
 #include "Events.h"
 #include "Components.h"
+#include "Globals.h"
 
 #include "Simulation/Simulation.h"
 #include "Simulation/Events.h"
@@ -23,30 +24,29 @@
 
 namespace sim
 {
-	NetworkServerSystem::NetworkServerSystem(Simulation& simulation) :
-		System(simulation)
+	void NetworkServerSystem::OnInitialize(Simulation& simulation)
 	{
-		Sim().Subscribe(cb::Bind<&NetworkServerSystem::OnTick>(this));
-		Sim().Subscribe(cb::Bind<&NetworkServerSystem::OnSimulationRequestStop>(this));
-		Sim().Subscribe(cb::Bind<&NetworkServerSystem::OnSimulationStop>(this));
-		Sim().Subscribe(cb::Bind<&NetworkServerSystem::OnStartNetworkServer>(this));
-		Sim().Subscribe(cb::Bind<&NetworkServerSystem::OnStopNetworkServer>(this));
+		simulation.Subscribe(cb::BindParam<&NetworkServerSystem::OnSimulationTick>(simulation));
+		simulation.Subscribe(cb::BindParam<&NetworkServerSystem::OnSimulationRequestStop>(simulation));
+		simulation.Subscribe(cb::BindParam<&NetworkServerSystem::OnSimulationStop>(simulation));
+		simulation.Subscribe(cb::BindParam<&NetworkServerSystem::OnStartNetworkServer>(simulation));
+		simulation.Subscribe(cb::BindParam<&NetworkServerSystem::OnStopNetworkServer>(simulation));
 	}
 
-	NetworkServerSystem::~NetworkServerSystem()
+	void NetworkServerSystem::OnShutdown(Simulation& simulation)
 	{
-		Sim().Unsubscribe(cb::Bind<&NetworkServerSystem::OnTick>(this));
-		Sim().Unsubscribe(cb::Bind<&NetworkServerSystem::OnSimulationRequestStop>(this));
-		Sim().Unsubscribe(cb::Bind<&NetworkServerSystem::OnSimulationStop>(this));
-		Sim().Unsubscribe(cb::Bind<&NetworkServerSystem::OnStartNetworkServer>(this));
-		Sim().Unsubscribe(cb::Bind<&NetworkServerSystem::OnStopNetworkServer>(this));
+		simulation.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnStopNetworkServer>(simulation));
+		simulation.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnStartNetworkServer>(simulation));
+		simulation.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnSimulationStop>(simulation));
+		simulation.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnSimulationRequestStop>(simulation));
+		simulation.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnSimulationTick>(simulation));
 	}
 
-	void NetworkServerSystem::OnTick(const TickEvent& event)
+	void NetworkServerSystem::OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event)
 	{
-		bool sim_stopping = Sim().IsStopping();
+		bool sim_stopping = simulation.IsStopping();
 
-		for (auto [server_entity, server] : Registry().view<ServerComponent>().each())
+		for (auto [server_entity, server] : simulation.Registry().view<ServerComponent>().each())
 		{
 			server.udp_server->poll();
 
@@ -63,31 +63,33 @@ namespace sim
 						continue;
 					}
 
-					entt::entity peer_entity = Registry().create();
+					entt::entity peer_entity = simulation.Registry().create();
 
-					Registry().emplace<NewEntityComponent>(peer_entity);
-					Registry().emplace<PeerComponent>(peer_entity, udp_peer, dtls_peer);
-					Registry().emplace<ChildPeerComponent>(peer_entity, server_entity);
+					simulation.Registry().emplace<NewEntityComponent>(peer_entity);
+					simulation.Registry().emplace<PeerComponent>(peer_entity, udp_peer, dtls_peer);
+					simulation.Registry().emplace<ChildPeerComponent>(peer_entity, server_entity);
 				}
 			}
 		}
 	}
 
-	void NetworkServerSystem::OnSimulationRequestStop(const SimulationRequestStopMessage& event)
+	void NetworkServerSystem::OnSimulationRequestStop(Simulation& simulation, const SimulationRequestStopMessage& event)
 	{
-		for (auto [server_entity, server] : Registry().view<ServerComponent>().each())
+		for (auto [server_entity, server] : simulation.Registry().view<ServerComponent>().each())
 		{
-			Registry().emplace<DeletedEntityComponent>(server_entity);
+			simulation.Registry().emplace<DeletedEntityComponent>(server_entity);
 		}
 	}
 
-	void NetworkServerSystem::OnSimulationStop(const SimulationStopEvent& event)
+	void NetworkServerSystem::OnSimulationStop(Simulation& simulation, const SimulationStopEvent& event)
 	{
 
 	}
 
-	void NetworkServerSystem::OnStartNetworkServer(const StartNetworkServerMessage& event)
+	void NetworkServerSystem::OnStartNetworkServer(Simulation& simulation, const StartNetworkServerMessage& event)
 	{
+		auto& server_entities = simulation.Global<ServersGlobal>().server_entities;
+
 		godot::Ref<godot::UDPServer> udp_server;
 		godot::Ref<godot::DTLSServer> dtls_server;
 
@@ -119,19 +121,21 @@ namespace sim
 			return;
 		}
 
-		entt::entity server_entity = Registry().create();
+		entt::entity server_entity = simulation.Registry().create();
 
-		Registry().emplace<NewEntityComponent>(server_entity);
-		Registry().emplace<ServerComponent>(server_entity, event.port, udp_server, dtls_server);
+		simulation.Registry().emplace<NewEntityComponent>(server_entity);
+		simulation.Registry().emplace<ServerComponent>(server_entity, event.port, udp_server, dtls_server);
 
-		m_servers.emplace(event.port, server_entity);
+		server_entities.emplace(event.port, server_entity);
 	}
 
-	void NetworkServerSystem::OnStopNetworkServer(const StopNetworkServerMessage& event)
+	void NetworkServerSystem::OnStopNetworkServer(Simulation& simulation, const StopNetworkServerMessage& event)
 	{
-		auto it = m_servers.find(event.port);
+		auto& server_entities = simulation.Global<ServersGlobal>().server_entities;
 
-		if (it == m_servers.end())
+		auto it = server_entities.find(event.port);
+
+		if (it == server_entities.end())
 		{
 			DEBUG_PRINT_WARN(godot::vformat("Failed to find the server with port %d", event.port));
 			return;
@@ -139,14 +143,14 @@ namespace sim
 
 		entt::entity server_entity = it->second;
 
-		for (auto [peer_entity, child_peer] : Registry().view<ChildPeerComponent>().each())
+		for (auto [peer_entity, child_peer] : simulation.Registry().view<ChildPeerComponent>().each())
 		{
 			if (child_peer.server_entity == server_entity)
 			{
-				Registry().emplace<DeletedEntityComponent>(peer_entity);
+				simulation.Registry().emplace<DeletedEntityComponent>(peer_entity);
 			}
 		}
 
-		Registry().emplace<DeletedEntityComponent>(server_entity);
+		simulation.Registry().emplace<DeletedEntityComponent>(server_entity);
 	}
 }

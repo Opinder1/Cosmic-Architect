@@ -1,23 +1,21 @@
 #pragma once
 
-#include "Simulation/System.h"
-
 namespace sim
 {
 	class ByteStream;
+	class Simulation;
 
-	struct TickEvent;
+	struct SimulationTickEvent;
 
-	class NetworkPeerSystem : public System
+	class NetworkPeerSystem
 	{
 	public:
-		NetworkPeerSystem(Simulation& simulation);
-		~NetworkPeerSystem();
+		static void OnInitialize(Simulation& simulation);
 
-	private:
-		void OnTick(const TickEvent& event);
+		static void OnShutdown(Simulation& simulation);
 
-	private:
-		bool LoadMessage(ByteStream& stream);
+		static void OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event);
+
+		static bool LoadMessage(Simulation& simulation, ByteStream& stream);
 	};
 }

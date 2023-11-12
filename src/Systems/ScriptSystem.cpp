@@ -6,13 +6,12 @@
 
 namespace sim
 {
-	ScriptSystem::ScriptSystem(Simulation& simulation) :
-		System(simulation)
+	void ScriptSystem::OnInitialize(Simulation& simulation)
 	{
 
 	}
 
-	ScriptSystem::~ScriptSystem()
+	void ScriptSystem::OnShutdown(Simulation& simulation)
 	{
 
 	}

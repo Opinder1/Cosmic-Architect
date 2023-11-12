@@ -22,9 +22,18 @@ namespace cb
 
 	// A callback to a function pointer
 	template<auto Func, class Param, class Ret, class... Args>
-	Ret FuncParamCallback(void* data, Args... args)
+	Ret FuncPtrParamCallback(void* data, Args... args)
 	{
 		Param* param = reinterpret_cast<Param*>(data);
+
+		return Func(param, std::forward<Args>(args)...);
+	}
+
+	// A callback to a function pointer
+	template<auto Func, class Param, class Ret, class... Args>
+	Ret FuncRefParamCallback(void* data, Args... args)
+	{
+		Param& param = *reinterpret_cast<Param*>(data);
 
 		return Func(param, std::forward<Args>(args)...);
 	}
@@ -64,7 +73,7 @@ namespace cb
 		{}
 
 		// Bind a function pointer that doesn't take data
-		explicit Callback(PtrType callback) :
+		Callback(PtrType callback) :
 			m_callback(PtrCallback),
 			m_data(callback)
 		{}
@@ -120,7 +129,13 @@ namespace cb
 	template<auto Func, class Param, class Ret, class... Args>
 	auto BindHelperParam(Ret(*)(Param*, Args...), Param* param)
 	{
-		return Callback<Ret(Args...)>(FuncParamCallback<Func, Param, Ret, Args...>, reinterpret_cast<void*>(param));
+		return Callback<Ret(Args...)>(FuncPtrParamCallback<Func, Param, Ret, Args...>, reinterpret_cast<void*>(param));
+	}
+
+	template<auto Func, class Param, class Ret, class... Args>
+	auto BindHelperParam(Ret(*)(Param&, Args...), Param& param)
+	{
+		return Callback<Ret(Args...)>(FuncRefParamCallback<Func, Param, Ret, Args...>, reinterpret_cast<void*>(&param));
 	}
 
 	template<auto Method, class Class, class Ret, class... Args>
@@ -144,13 +159,6 @@ namespace cb
 		return BindHelper<Func>(Func);
 	}
 
-	// Bind a function
-	template<auto Func, class Param>
-	auto BindParam(Param* param)
-	{
-		return BindHelperParam<Func, Param>(Func, param);
-	}
-
 	// Bind the method of a class
 	template<auto Method, class Class>
 	auto Bind(Class& instance)
@@ -163,5 +171,19 @@ namespace cb
 	auto Bind(Class* instance)
 	{
 		return BindHelper<Method, std::remove_cv_t<Class>>(Method, const_cast<std::remove_cv_t<Class>*>(instance));
+	}
+
+	// Bind a function with a parameter
+	template<auto Func, class Param>
+	auto BindParam(Param* param)
+	{
+		return BindHelperParam<Func, Param>(Func, param);
+	}
+
+	// Bind a function with a parameter
+	template<auto Func, class Param>
+	auto BindParam(Param& param)
+	{
+		return BindHelperParam<Func, Param>(Func, param);
 	}
 }

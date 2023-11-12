@@ -1,35 +1,30 @@
 #pragma once
 
-#include "Simulation/System.h"
-
-#include <robin_hood/robin_hood.h>
-
 namespace sim
 {
-	struct TickEvent;
+	class Simulation;
+
+	struct SimulationTickEvent;
 	struct SimulationRequestStopMessage;
 	struct SimulationStopEvent;
 	struct StartNetworkServerMessage;
 	struct StopNetworkServerMessage;
 
-	class NetworkServerSystem : public System
+	class NetworkServerSystem
 	{
 	public:
-		NetworkServerSystem(Simulation& simulation);
-		~NetworkServerSystem();
+		static void OnInitialize(Simulation& simulation);
 
-	private:
-		void OnTick(const TickEvent& event);
+		static void OnShutdown(Simulation& simulation);
 
-		void OnSimulationRequestStop(const SimulationRequestStopMessage& event);
+		static void OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event);
 
-		void OnSimulationStop(const SimulationStopEvent& event);
+		static void OnSimulationRequestStop(Simulation& simulation, const SimulationRequestStopMessage& event);
 
-		void OnStartNetworkServer(const StartNetworkServerMessage& event);
+		static void OnSimulationStop(Simulation& simulation, const SimulationStopEvent& event);
 
-		void OnStopNetworkServer(const StopNetworkServerMessage& event);
+		static void OnStartNetworkServer(Simulation& simulation, const StartNetworkServerMessage& event);
 
-	private:
-		robin_hood::unordered_flat_map<uint16_t, entt::entity> m_servers; // Map for ports to servers
+		static void OnStopNetworkServer(Simulation& simulation, const StopNetworkServerMessage& event);
 	};
 }

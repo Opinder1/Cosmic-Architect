@@ -1,22 +1,17 @@
 #pragma once
 
-#include "Simulation/System.h"
-#include "Simulation/UUID.h"
-
 namespace sim
 {
-	struct PostTickEvent;
+	class Simulation;
 
-	class LinkedRemoteSimulationSystem : public System
+	struct SimulationTickEvent;
+
+	struct LinkedRemoteSimulationSystem
 	{
-	public:
-		LinkedRemoteSimulationSystem(Simulation& simulation, UUID network_simulation);
-		~LinkedRemoteSimulationSystem();
+		static void OnInitialize(Simulation& simulation);
 
-	private:
-		void OnPostTick(const PostTickEvent& event);
+		static void OnShutdown(Simulation& simulation);
 
-	private:
-		UUID m_network_simulation;
+		static void OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event);
 	};
 }

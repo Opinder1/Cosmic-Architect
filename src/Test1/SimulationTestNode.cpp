@@ -8,7 +8,7 @@
 
 namespace
 {
-	void SimulationTickCallback(sim::Simulation* simulation, const sim::TickEvent& event)
+	void SimulationTickCallback(sim::Simulation* simulation, const sim::SimulationTickEvent& event)
 	{
 		if (simulation->GetTotalTicks() % 1000 == 0)
 		{
@@ -25,10 +25,16 @@ SimulationTestNode::SimulationTestNode() :
 	set_notify_local_transform(true);
 
 	m_simulation_id = sim::SimulationServer::GetSingleton()->CreateSimulation(60, true);
+
+	m_simulation_ptr = sim::SimulationServer::GetSingleton()->StartManualSimulation(m_simulation_id);
+
+	m_simulation_ptr->Subscribe(cb::BindParam<&SimulationTickCallback>(m_simulation_ptr));
 }
 
 SimulationTestNode::~SimulationTestNode()
 {
+	m_simulation_ptr->Unsubscribe(cb::BindParam<&SimulationTickCallback>(m_simulation_ptr));
+
 	sim::SimulationServer::GetSingleton()->DeleteSimulation(m_simulation_id);
 }
 
@@ -66,20 +72,10 @@ void SimulationTestNode::_notification(int notification)
 
 	case NOTIFICATION_ENTER_TREE:
 		godot::UtilityFunctions::print("NOTIFICATION_ENTER_TREE");
-
-		m_simulation_ptr = sim::SimulationServer::GetSingleton()->StartManualSimulation(m_simulation_id);
-
-		m_simulation_ptr->Subscribe(cb::BindParam<&SimulationTickCallback>(m_simulation_ptr));
 		break;
 
 	case NOTIFICATION_EXIT_TREE:
 		godot::UtilityFunctions::print("NOTIFICATION_EXIT_TREE");
-
-		m_simulation_ptr->Unsubscribe(cb::BindParam<&SimulationTickCallback>(m_simulation_ptr));
-
-		m_simulation_ptr = nullptr;
-
-		sim::SimulationServer::GetSingleton()->StopSimulation(m_simulation_id);
 		break;
 
 	case NOTIFICATION_MOVED_IN_PARENT:

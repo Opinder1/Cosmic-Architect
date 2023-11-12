@@ -1,6 +1,5 @@
 #include "Simulation.h"
 #include "SimulationServer.h"
-#include "System.h"
 #include "Events.h"
 
 #include "Message/Message.h"
@@ -31,6 +30,7 @@ namespace sim
 
 		Subscribe(cb::Bind<&Simulation::OnRequestStop>(this));
 		Subscribe(cb::Bind<&Simulation::OnMessagerStop>(this));
+		Subscribe(cb::Bind<&Simulation::OnAttemptFreeMemory>(this));
 	}
 
 	Simulation::~Simulation()
@@ -46,16 +46,17 @@ namespace sim
 			m_thread.join();
 		}
 
-		Unsubscribe(cb::Bind<&Simulation::OnRequestStop>(this));
+		for (auto& shutdown : m_system_shutdowns)
+		{
+			shutdown(*this);
+		}
+
+		Unsubscribe(cb::Bind<&Simulation::OnAttemptFreeMemory>(this));
 		Unsubscribe(cb::Bind<&Simulation::OnMessagerStop>(this));
-	}
-	
-	void Simulation::AddSystem(const SystemEmitter& emitter)
-	{
-		AddSystem(std::move(emitter(*this)));
+		Unsubscribe(cb::Bind<&Simulation::OnRequestStop>(this));
 	}
 
-	void Simulation::AddSystem(std::unique_ptr<System>&& system)
+	void Simulation::AddSystem(const SimulationApplicator& initialize, const SimulationApplicator& shutdown)
 	{
 		DEBUG_ASSERT(!ObjectOwned(), "This simulation should not be owned by a thread when adding a system");
 
@@ -65,7 +66,9 @@ namespace sim
 			return;
 		}
 
-		m_systems.push_back(std::move(system));
+		initialize(*this);
+
+		m_system_shutdowns.push_back(shutdown);
 	}
 
 	bool Simulation::Start(bool manually_tick)
@@ -380,5 +383,7 @@ namespace sim
 	void Simulation::OnAttemptFreeMemory(const AttemptFreeMemoryEvent& event)
 	{
 		m_registry.compact();
+
+		m_system_shutdowns.shrink_to_fit();
 	}
 }

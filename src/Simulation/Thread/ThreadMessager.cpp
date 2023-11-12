@@ -9,10 +9,14 @@ namespace sim
 	ThreadMessager::ThreadMessager(UUID id) :
 		MessageSender(id),
 		m_stopping(false)
-	{}
+	{
+		Subscribe(cb::Bind<&ThreadMessager::OnAttemptFreeMemory>(this));
+	}
 
 	ThreadMessager::~ThreadMessager()
-	{}
+	{
+		Unsubscribe(cb::Bind<&ThreadMessager::OnAttemptFreeMemory>(this));
+	}
 
 	bool ThreadMessager::IsStopping() const
 	{
@@ -355,5 +359,10 @@ namespace sim
 		std::unique_lock lock(m_mutex);
 
 		m_in_queue.shrink_to_fit();
+
+		for (auto&& [id, messager] : m_linked_messagers)
+		{
+			messager.queue.shrink_to_fit();
+		}
 	}
 }

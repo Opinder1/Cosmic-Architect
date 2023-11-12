@@ -6,13 +6,10 @@ namespace sim
 
 	struct SimulationTickEvent;
 
-	class TickSystem
+	class ScriptSystem
 	{
 	public:
 		static void OnInitialize(Simulation& simulation);
-
 		static void OnShutdown(Simulation& simulation);
-
-		static void OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event);
 	};
 }

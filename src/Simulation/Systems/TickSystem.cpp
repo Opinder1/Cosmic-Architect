@@ -6,34 +6,29 @@
 
 namespace sim
 {
-	TickSystem::TickSystem(Simulation& simulation) :
-		System(simulation)
+	void TickSystem::OnInitialize(Simulation& simulation)
 	{
-		Sim().Subscribe(cb::Bind<&TickSystem::OnSimulationTick>(this));
+		simulation.Subscribe(cb::BindParam<&TickSystem::OnSimulationTick>(simulation));
 	}
 
-	TickSystem::~TickSystem()
+	void TickSystem::OnShutdown(Simulation& simulation)
 	{
-		Sim().Unsubscribe(cb::Bind<&TickSystem::OnSimulationTick>(this));
+		simulation.Unsubscribe(cb::BindParam<&TickSystem::OnSimulationTick>(simulation));
 	}
 
-	void TickSystem::OnSimulationTick(const SimulationTickEvent& event)
+	void TickSystem::OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event)
 	{
-		Sim().PostEvent(PreTickEvent());
-		Sim().PostEvent(TickEvent());
-		Sim().PostEvent(PostTickEvent());
-
 		// Process new entities then remove the new entity component flag
-		Sim().PostEvent(ProcessNewEntitiesEvent());
+		simulation.PostEvent(ProcessNewEntitiesEvent());
 
-		Registry().clear<NewEntityComponent>();
+		simulation.Registry().clear<NewEntityComponent>();
 
 		// Process deleted entities then remove them and their components from the registry
-		Sim().PostEvent(ProcessDeletedEntitiesEvent());
+		simulation.PostEvent(ProcessDeletedEntitiesEvent());
 
-		for (auto [entity] : Registry().view<DeletedEntityComponent>().each())
+		for (auto [entity] : simulation.Registry().view<DeletedEntityComponent>().each())
 		{
-			Registry().destroy(entity);
+			simulation.Registry().destroy(entity);
 		}
 	}
 }

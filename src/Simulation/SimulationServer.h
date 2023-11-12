@@ -25,7 +25,6 @@ namespace sim
 			Invalid
 		};
 
-		using SystemEmitter = cb::Callback<std::unique_ptr<System>(Simulation&)>;
 		using SimulationApplicator = cb::Callback<void(Simulation&)>;
 
 		using SimulationPtr = std::unique_ptr<Simulation>;
@@ -51,11 +50,14 @@ namespace sim
 		void DeleteSimulation(UUID id);
 
 		// Add a system to a simulation
-		template<class SystemT, class... Args>
-		void AddSystem(UUID id, Args&&... args)
+		template<class SystemT>
+		void AddSystem(UUID id)
 		{
-			AddSystem(id, [&args...](Simulation& simulation) -> std::unique_ptr<System>{ return std::make_unique<SystemT>(simulation, std::forward<Args>(args)...); });
+			AddSystem(id, SystemT::OnInitialize, SystemT::OnShutdown);
 		}
+
+		// Add a system using an emmiter callback
+		void AddSystem(UUID id, const SimulationApplicator& initialize, const SimulationApplicator& shutdown);
 
 		// Start this simulation
 		bool StartSimulation(UUID id);
@@ -63,7 +65,7 @@ namespace sim
 		// Start a simulation that is owned and managed by this thread. Don't give the pointer to other threads
 		Simulation* StartManualSimulation(UUID id);
 
-		// Stop this simulation
+		// Stop this simulation. Manually managed simulations are immediately in the stopping state
 		void StopSimulation(UUID id);
 
 		// Send a direct message to this simulation. Ideally messages should be sent between linked simulations
@@ -88,9 +90,6 @@ namespace sim
 		bool ApplyToSimulation(UUID id, const SimulationApplicator& callback);
 
 	private:
-		// Add a system using an emmiter callback
-		void AddSystem(UUID id, const SystemEmitter& emitter);
-
 		// The main loop that the deleter thread will run
 		void DeleteThreadFunc();
 

@@ -6,24 +6,23 @@
 
 namespace sim
 {
-	LinkedSimulationSystem::LinkedSimulationSystem(Simulation& simulation) :
-		System(simulation)
+	void LinkedSimulationSystem::OnInitialize(Simulation& simulation)
 	{
-		Sim().Subscribe(cb::Bind<&LinkedSimulationSystem::OnPostTick>(this));
+		simulation.Subscribe(cb::BindParam<&LinkedSimulationSystem::OnSimulationTick>(simulation));
 	}
 
-	LinkedSimulationSystem::~LinkedSimulationSystem()
+	void LinkedSimulationSystem::OnShutdown(Simulation& simulation)
 	{
-		Sim().Unsubscribe(cb::Bind<&LinkedSimulationSystem::OnPostTick>(this));
+		simulation.Unsubscribe(cb::BindParam<&LinkedSimulationSystem::OnSimulationTick>(simulation));
 	}
 
-	void LinkedSimulationSystem::OnPostTick(const PostTickEvent& event)
+	void LinkedSimulationSystem::OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event)
 	{
-		for (auto&& [entity, linked_messager] : Registry().view<LinkedMessagerComponent, LinkedSimulationComponent>().each())
+		for (auto&& [entity, linked_messager] : simulation.Registry().view<LinkedMessagerComponent, LinkedSimulationComponent>().each())
 		{
 			if (!linked_messager.id.IsEmpty())
 			{
-				Sim().PostMessagesToOther(linked_messager.id, linked_messager.queued_messages);
+				simulation.PostMessagesToOther(linked_messager.id, linked_messager.queued_messages);
 
 				linked_messager.queued_messages.clear();
 			}

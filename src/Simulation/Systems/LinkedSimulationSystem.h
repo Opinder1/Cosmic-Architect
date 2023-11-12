@@ -1,18 +1,18 @@
 #pragma once
 
-#include "Simulation/System.h"
-
 namespace sim
 {
-	struct PostTickEvent;
+	class Simulation;
 
-	class LinkedSimulationSystem : public System
+	struct SimulationTickEvent;
+
+	class LinkedSimulationSystem
 	{
 	public:
-		LinkedSimulationSystem(Simulation& simulation);
-		~LinkedSimulationSystem();
+		static void OnInitialize(Simulation& simulation);
 
-	private:
-		void OnPostTick(const PostTickEvent& event);
+		static void OnShutdown(Simulation& simulation);
+
+		static void OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event);
 	};
 }

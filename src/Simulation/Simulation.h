@@ -28,10 +28,9 @@ namespace sim
 		friend class SimulationServer;
 		friend class System;
 
-		using SystemStorage = std::vector<std::unique_ptr<System>>;
+		using SimulationApplicator = cb::Callback<void(Simulation&)>;
 
-	public:
-		using SystemEmitter = cb::Callback<std::unique_ptr<System>(Simulation&)>;
+		using SystemDeleteStorage = std::vector<SimulationApplicator>;
 
 	public:
 		Simulation(UUID id, double ticks_per_second);
@@ -87,8 +86,7 @@ namespace sim
 
 	private:
 		// Add a system to this simulation. Don't call when the simulation is running
-		void AddSystem(const SystemEmitter& emitter);
-		void AddSystem(std::unique_ptr<System>&& system);
+		void AddSystem(const SimulationApplicator& initialize, const SimulationApplicator& shutdown);
 
 		// Start this simulation
 		bool Start(bool manually_tick);
@@ -145,6 +143,6 @@ namespace sim
 
 		entt::registry					m_registry;
 
-		SystemStorage					m_systems;
+		SystemDeleteStorage				m_system_shutdowns;
 	};
 }

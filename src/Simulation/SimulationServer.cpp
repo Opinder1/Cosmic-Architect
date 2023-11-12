@@ -1,7 +1,6 @@
 #include "SimulationServer.h"
 
 #include "Simulation.h"
-#include "System.h"
 #include "Time.h"
 
 #include "Systems/TickSystem.h"
@@ -115,13 +114,13 @@ namespace sim
 
 		if (add_standard_systems)
 		{
-			simulation.AddSystem(std::make_unique<TickSystem>(simulation));
-			simulation.AddSystem(std::make_unique<LinkedMessagerSystem>(simulation));
-			simulation.AddSystem(std::make_unique<LinkedSimulationSystem>(simulation));
+			simulation.AddSystem(&TickSystem::OnInitialize, &TickSystem::OnShutdown);
+			simulation.AddSystem(&LinkedMessagerSystem::OnInitialize, &LinkedMessagerSystem::OnShutdown);
+			simulation.AddSystem(&LinkedSimulationSystem::OnInitialize, &LinkedMessagerSystem::OnShutdown);
 
 			if (!m_network_simulation.IsEmpty())
 			{
-				simulation.AddSystem(std::make_unique<LinkedRemoteSimulationSystem>(simulation, m_network_simulation));
+				simulation.AddSystem(&LinkedRemoteSimulationSystem::OnInitialize, &LinkedMessagerSystem::OnShutdown);
 			}
 		};
 
@@ -168,11 +167,11 @@ namespace sim
 		m_simulations.erase(it);
 	}
 
-	void SimulationServer::AddSystem(UUID id, const SystemEmitter& emitter)
+	void SimulationServer::AddSystem(UUID id, const SimulationApplicator& initialize, const SimulationApplicator& shutdown)
 	{
-		ApplyToSimulation(id, [&emitter](Simulation& simulation)
+		ApplyToSimulation(id, [&initialize, &shutdown](Simulation& simulation)
 		{
-			simulation.AddSystem(emitter);
+			simulation.AddSystem(initialize, shutdown);
 		});
 	}
 
