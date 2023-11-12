@@ -68,14 +68,14 @@ namespace sim
 		m_systems.push_back(std::move(system));
 	}
 
-	void Simulation::Start(bool manually_tick)
+	bool Simulation::Start(bool manually_tick)
 	{
 		DEBUG_ASSERT(!ObjectOwned(), "This simulation should not be owned by a thread when start is called on it");
 
 		if (m_running)
 		{
 			DEBUG_PRINT_ERROR("This simulation should not be running when trying to start it");
-			return;
+			return false;
 		}
 
 		if (manually_tick)
@@ -88,9 +88,11 @@ namespace sim
 		{
 			m_thread = std::thread(&Simulation::ThreadLoop, this);
 		}
+
+		return true;
 	}
 
-	void Simulation::Stop()
+	bool Simulation::Stop()
 	{
 		DEBUG_ASSERT(ObjectOwned(), "This simulation should be owned by a thread when stop is called on it");
 
@@ -99,11 +101,13 @@ namespace sim
 			if (!ThreadOwnsObject())
 			{
 				DEBUG_PRINT_ERROR("Manually ticked simulations can only be stopped by the owning thread");
-				return;
+				return false;
 			}
 		}
 
 		PostMessageFromUnattested(std::make_shared<SimulationRequestStopMessage>(*this)); // Queue a message to stop this simulation
+
+		return true;
 	}
 
 	bool Simulation::ManualTick()
@@ -213,21 +217,21 @@ namespace sim
 		return m_current_run_time;
 	}
 
-	bool Simulation::Link(UUID simulation_id)
+	void Simulation::Link(UUID simulation_id)
 	{
 		DEBUG_ASSERT(ThreadOwnsObject(), "Called link without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
 
-		return SimulationServer::GetSingleton()->ApplyToSimulation(simulation_id, [this](Simulation& simulation)
+		SimulationServer::GetSingleton()->ApplyToSimulation(simulation_id, [this](Simulation& simulation)
 		{
 			LinkMessager(simulation);
 		});
 	}
 
-	bool Simulation::Unlink(UUID simulation_id)
+	void Simulation::Unlink(UUID simulation_id)
 	{
 		DEBUG_ASSERT(ThreadOwnsObject(), "Called unlink without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
 
-		return SimulationServer::GetSingleton()->ApplyToSimulation(simulation_id, [this](Simulation& simulation)
+		SimulationServer::GetSingleton()->ApplyToSimulation(simulation_id, [this](Simulation& simulation)
 		{
 			UnlinkMessager(simulation);
 		});

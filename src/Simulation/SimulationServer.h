@@ -18,6 +18,12 @@ namespace sim
 	class SimulationServer : public MessageRegistry
 	{
 	public:
+		enum class Result
+		{
+			True,
+			False,
+			Invalid
+		};
 
 		using SystemEmitter = cb::Callback<std::unique_ptr<System>(Simulation&)>;
 		using SimulationApplicator = cb::Callback<void(Simulation&)>;
@@ -52,7 +58,7 @@ namespace sim
 		}
 
 		// Start this simulation
-		void StartSimulation(UUID id);
+		bool StartSimulation(UUID id);
 
 		// Start a simulation that is owned and managed by this thread. Don't give the pointer to other threads
 		Simulation* StartManualSimulation(UUID id);
@@ -70,13 +76,13 @@ namespace sim
 		bool IsSimulation(UUID id);
 
 		// Is this simulation currently running. It can be stopping and still running
-		bool IsSimulationRunning(UUID id);
+		Result IsSimulationRunning(UUID id);
 
 		// Is this simulation manually being ticked by a thread.
-		bool IsSimulationManuallyTicked(UUID id);
+		Result IsSimulationManuallyTicked(UUID id);
 
 		// Is this simulation currently unlinking with all its peers
-		bool IsSimulationStopping(UUID id);
+		Result IsSimulationStopping(UUID id);
 
 		// Run some code on a simulation. (Only use this if you know what you are doing)
 		bool ApplyToSimulation(UUID id, const SimulationApplicator& callback);

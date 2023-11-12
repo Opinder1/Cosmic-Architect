@@ -70,10 +70,10 @@ namespace sim
 		bool ManualTick();
 
 		// Link to another simulation using its uuid
-		bool Link(UUID simulation);
+		void Link(UUID simulation);
 
 		// Unlink from another simulation using its uuid
-		bool Unlink(UUID simulation);
+		void Unlink(UUID simulation);
 
 		// Get the entity registry
 		entt::registry& Registry();
@@ -91,10 +91,10 @@ namespace sim
 		void AddSystem(std::unique_ptr<System>&& system);
 
 		// Start this simulation
-		void Start(bool manually_tick);
+		bool Start(bool manually_tick);
 
 		// Stop this simulation (call from SimulationServer)
-		void Stop();
+		bool Stop();
 
 		// Main thread loop of this simulation that manages ticks and timings for the owner thread
 		void ThreadLoop();

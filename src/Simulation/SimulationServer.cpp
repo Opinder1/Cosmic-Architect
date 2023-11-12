@@ -176,23 +176,28 @@ namespace sim
 		});
 	}
 
-	void SimulationServer::StartSimulation(UUID id)
+	bool SimulationServer::StartSimulation(UUID id)
 	{
-		ApplyToSimulation(id, [](Simulation& simulation)
+		bool success = false;
+
+		ApplyToSimulation(id, [&success](Simulation& simulation)
 		{
-			simulation.Start(false);
+			success = simulation.Start(false);
 		});
+
+		return success;
 	}
 
 	Simulation* SimulationServer::StartManualSimulation(UUID id)
 	{
-		Simulation* simulation_ptr;
+		Simulation* simulation_ptr = nullptr;
 
 		ApplyToSimulation(id, [&simulation_ptr](Simulation& simulation)
 		{
-			simulation.Start(true);
-
-			simulation_ptr = &simulation;
+			if (simulation.Start(true))
+			{
+				simulation_ptr = &simulation;
+			}
 		});
 
 		return simulation_ptr;
@@ -243,40 +248,40 @@ namespace sim
 		return it != m_simulations.end();
 	}
 
-	bool SimulationServer::IsSimulationRunning(UUID id)
+	SimulationServer::Result SimulationServer::IsSimulationRunning(UUID id)
 	{
-		bool is_running = false;
+		Result result = Result::Invalid;
 
-		ApplyToSimulation(id, [&is_running](Simulation& simulation)
+		ApplyToSimulation(id, [&result](Simulation& simulation)
 		{
-			is_running = simulation.IsRunning();
+			result = simulation.IsRunning() ? Result::True : Result::False;
 		});
 
-		return is_running;
+		return result;
 	}
 
-	bool SimulationServer::IsSimulationManuallyTicked(UUID id)
+	SimulationServer::Result SimulationServer::IsSimulationManuallyTicked(UUID id)
 	{
-		bool is_manually_ticked = false;
+		Result result = Result::Invalid;
 
-		ApplyToSimulation(id, [&is_manually_ticked](Simulation& simulation)
+		ApplyToSimulation(id, [&result](Simulation& simulation)
 		{
-			is_manually_ticked = simulation.IsManuallyTicked();
+			result = simulation.IsManuallyTicked() ? Result::True : Result::False;
 		});
 
-		return is_manually_ticked;
+		return result;
 	}
 
-	bool SimulationServer::IsSimulationStopping(UUID id)
+	SimulationServer::Result SimulationServer::IsSimulationStopping(UUID id)
 	{
-		bool is_stopping = false;
+		Result result = Result::Invalid;
 
-		ApplyToSimulation(id, [&is_stopping](Simulation& simulation)
+		ApplyToSimulation(id, [&result](Simulation& simulation)
 		{
-			is_stopping = simulation.IsStopping();
+			result = simulation.IsStopping() ? Result::True : Result::False;
 		});
 
-		return is_stopping;
+		return result;
 	}
 
 	bool SimulationServer::ApplyToSimulation(UUID id, const SimulationApplicator& callback)
