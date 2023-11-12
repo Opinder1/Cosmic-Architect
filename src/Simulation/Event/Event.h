@@ -8,26 +8,12 @@
 
 namespace sim
 {
-	// Priority for observers recieving packets. For each priority it is still handled in order of observer addition
-	enum class Priority : uint8_t
-	{
-		Lowest, // Lowest priorities when we dont want to handle if event was cancelled
-		VeryLow,
-		Low,
-		Normal, // Center which should be used by most
-		High,
-		VeryHigh,
-		Highest, // Higher prioritys should be when expecting to cancel the event
-	};
-
 	// An event that is immediately sent to its observers. Should only be sent from a simulation to itself. It can have any data members as they will be safely accessed by the simulations thread
 	struct Event
 	{
 		using Type = size_t; // The events C++ class type hash. This should not be serialised and instead the message index
 		explicit Event() {};
 	};
-
-	using EventPtr = std::unique_ptr<Event>;
 
 	// Get a unqiue type for each c++ event type
 	template<class EventT>

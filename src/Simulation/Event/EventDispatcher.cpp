@@ -26,9 +26,9 @@ namespace sim
 
 	void EventDispatcher::ProcessEventQueue()
 	{
-		for (QueueEntry& entry : m_queue)
+		for (QueuedEvent& entry : m_queue)
 		{
-			PostEventGeneric(*entry.event, entry.type);
+			PostEventGeneric(entry.GetEvent(), entry.GetType());
 		}
 
 		m_queue.clear();
@@ -44,9 +44,9 @@ namespace sim
 		}
 	}
 
-	void EventDispatcher::PostQueuedEventGeneric(EventPtr&& event, Event::Type event_type)
+	void EventDispatcher::PostQueuedEventGeneric(QueuedEvent&& event)
 	{
-		m_queue.emplace_back(QueueEntry{ std::move(event), event_type });
+		m_queue.emplace_back(std::move(event));
 	}
 
 	void EventDispatcher::SubscribeGeneric(const EventCallback<Event>& callback, Event::Type event_type, Priority priority)

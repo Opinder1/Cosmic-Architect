@@ -6,6 +6,52 @@
 
 namespace sim
 {
+	// Priority for observers recieving packets. For each priority it is still handled in order of observer addition
+	enum class Priority : uint8_t
+	{
+		Lowest, // Lowest priorities when we dont want to handle if event was cancelled
+		VeryLow,
+		Low,
+		Normal, // Center which should be used by most
+		High,
+		VeryHigh,
+		Highest, // Higher prioritys should be when expecting to cancel the event
+	};
+
+	// An event that can be queued to be processed later.
+	// This class is designed to be stored in a contiguous array so we can only store events of a max size of 4
+	class QueuedEvent
+	{
+	public:
+		static constexpr size_t k_max_size = 32;
+
+		QueuedEvent(QueuedEvent&&) = default;
+
+		template<class EventT>
+		explicit QueuedEvent(EventT&& event)
+		{
+			static_assert(sizeof(EventT) <= k_max_size, "Queued events can be max 4 bytes");
+			static_assert(std::is_trivially_destructible_v<EventT>, "Queued events must be trivially destructible");
+
+			Get<EventT>() = std::move(event);
+			m_type = GetEventType<EventT>();
+		}
+
+		Event& GetEvent()
+		{
+			return *reinterpret_cast<Event*>(m_memory);
+		}
+
+		Event::Type GetType()
+		{
+			return m_type;
+		}
+
+	private:
+		uint8_t m_memory[32];
+		Event::Type m_type;
+	};
+
 	// An event dispatcher which procedures can register callbacks for different event types
 	// Other procedures can then post events which will be handled by all registered callbacks for that type
 	class EventDispatcher
@@ -19,17 +65,12 @@ namespace sim
 		};
 
 		// A message that will be processed at a later point
-		struct QueueEntry
-		{
-			EventPtr event;
-			Event::Type type;
-		};
 
 		// A callback list that will be automatically sorted by priority on emplacement
 		using CallbackList = std::vector<CallbackEntry>;
 
 		// A list of messages that will be processed at a later point
-		using EventQueue = std::vector<QueueEntry>;
+		using EventQueue = std::vector<QueuedEvent>;
 
 	public:
 		explicit EventDispatcher();
@@ -53,7 +94,7 @@ namespace sim
 		{
 			static_assert(std::is_base_of_v<Event, EventT>);
 
-			return PostQueuedEventGeneric(std::make_unique<EventT>(std::move(event)), GetEventType<EventT>());
+			return PostQueuedEventGeneric(QueuedEvent{ std::move(event) });
 		}
 		
 		// Subscribe to an event with a callback
@@ -78,7 +119,7 @@ namespace sim
 		// Generic functions which use type variable instead of template
 		void PostEventGeneric(const Event& event, Event::Type event_type);
 
-		void PostQueuedEventGeneric(EventPtr&& event, Event::Type event_type);
+		void PostQueuedEventGeneric(QueuedEvent&& event);
 
 		void SubscribeGeneric(const EventCallback<Event>& callback, Event::Type event_type, Priority priority);
 
