@@ -13,7 +13,6 @@
 namespace sim
 {
 	class Simulation;
-	class System;
 
 	class SimulationServer : public MessageRegistry
 	{

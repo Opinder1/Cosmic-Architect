@@ -13,7 +13,7 @@ namespace sim
 	struct DeletedEntityComponent {};
 
 	// A component to give the entity a global unique identifier
-	struct UUIDComponent
+	struct IDComponent
 	{
 		UUID id;
 	};
@@ -21,20 +21,19 @@ namespace sim
 	// This entity has a messager that we can send messages to
 	struct LinkedMessagerComponent
 	{
-		UUID id;
-
+		UUID messager_id;
 		MessageQueue queued_messages;
 	};
 
-	// This component notes the linked messager is a simulation
-	struct LinkedSimulationComponent {};
+	// This component notes the linked messager is a simulation in another thread
+	struct LinkedThreadSimulationComponent {};
 
-	// The lifetime of the simulation is managed by this entity
-	struct OwnedSimulationComponent {};
+	// This component notes the linked messager is a simulation in another process
+	struct LinkedNetworkSimulationComponent {};
 
-	// This component notes the linked messager is a remote simulation
-	struct LinkedRemoteSimulationComponent {};
-
-	// The lifetime of the remote simulation is managed by this entity
-	struct OwnedRemoteSimulationComponent {};
+	// This entity has an owner that is the authority over it
+	struct OwnerComponent
+	{
+		UUID owner_simulation_id;
+	};
 }

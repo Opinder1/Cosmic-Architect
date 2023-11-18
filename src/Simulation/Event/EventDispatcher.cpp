@@ -49,9 +49,9 @@ namespace sim
 		m_queue.emplace_back(std::move(event));
 	}
 
-	void EventDispatcher::SubscribeGeneric(const EventCallback<Event>& callback, Event::Type event_type, Priority priority)
+	void EventDispatcher::SubscribeGeneric(const EventCallback<Event>& callback, Event::Type event_type, Priority priority, Ordering ordering)
 	{
-		SubscribeInternal(m_callback_lists[event_type], callback, priority);
+		SubscribeInternal(m_callback_lists[event_type], callback, priority, ordering);
 	}
 
 	void EventDispatcher::UnsubscribeGeneric(const EventCallback<Event>& callback, Event::Type event_type)
@@ -81,12 +81,22 @@ namespace sim
 		}
 	}
 
-	void EventDispatcher::SubscribeInternal(CallbackList& list, const EventCallback<Event>& callback, Priority priority)
+	void EventDispatcher::SubscribeInternal(CallbackList& list, const EventCallback<Event>& callback, Priority priority, Ordering ordering)
 	{
-		// Here we emplace after the first item we find that is higher priority than this callback
-		auto it = std::find_if(list.begin(), list.end(), [&](CallbackEntry& other) { return other.priority < priority; });
+		CallbackList::iterator it;
 
-		// We should always emplace even if we hit the end
+		if (ordering == Ordering::Last)
+		{
+			// Here we emplace before the first item we find that is lower priority than this callback
+			it = std::find_if(list.begin(), list.end(), [priority](CallbackEntry& other) { return other.priority < priority; });
+		}
+		else
+		{
+			// Here we emplace after the first item we find that is higher priority than this callback
+			it = std::find_if(list.rbegin(), list.rend(), [priority](CallbackEntry& other) { return other.priority > priority; }).base();
+		}
+
+		// We emplace before the iterator which works even if the iterator is at the end
 		list.emplace(it, CallbackEntry{ callback, priority });
 	}
 

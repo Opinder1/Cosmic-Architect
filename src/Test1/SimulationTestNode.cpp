@@ -4,6 +4,13 @@
 #include "Simulation/SimulationServer.h"
 #include "Simulation/Events.h"
 
+#include "Graphics/Events.h"
+#include "Graphics/DrawSystem.h"
+
+#include "Util/Debug.h"
+
+#include <godot_cpp/classes/resource_uid.hpp>
+#include <godot_cpp/classes/input_event_key.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
 namespace
@@ -26,7 +33,11 @@ SimulationTestNode::SimulationTestNode() :
 
 	m_simulation_id = sim::SimulationServer::GetSingleton()->CreateSimulation(60, true);
 
+	sim::SimulationServer::GetSingleton()->AddSystem<DrawSystem>(m_simulation_id);
+
 	m_simulation_ptr = sim::SimulationServer::GetSingleton()->StartManualSimulation(m_simulation_id);
+
+	DEBUG_ASSERT(m_simulation_ptr != nullptr, "The simulation should be valid since we just created it");
 
 	m_simulation_ptr->Subscribe(cb::BindParam<&SimulationTickCallback>(m_simulation_ptr));
 }
@@ -41,6 +52,14 @@ SimulationTestNode::~SimulationTestNode()
 void SimulationTestNode::_input(const godot::Ref<godot::InputEvent>& event)
 {
 	godot::UtilityFunctions::print("_input ", event->as_text());
+
+	if (godot::InputEventKey* key = godot::Object::cast_to<godot::InputEventKey>(event.ptr()))
+	{
+		if (key->get_keycode() == godot::KEY_ENTER && key->is_pressed())
+		{
+			// DrawSystem::CreateMeshInstance(*m_simulation_ptr, mesh_id)
+		}
+	}
 }
 
 void SimulationTestNode::_shortcut_input(const godot::Ref<godot::InputEvent>& event)
@@ -96,12 +115,15 @@ void SimulationTestNode::_notification(int notification)
 
 	case NOTIFICATION_PHYSICS_PROCESS:
 		//godot::UtilityFunctions::print("NOTIFICATION_PHYSICS_PROCESS");
+
+		m_simulation_ptr->ManualTick();
 		break;
 
 	case NOTIFICATION_PROCESS:
 		//godot::UtilityFunctions::print("NOTIFICATION_PROCESS");
 
-		m_simulation_ptr->ManualTick();
+		// Update events
+		m_simulation_ptr->PostEvent(RenderEvent());
 		break;
 
 	case NOTIFICATION_PARENTED:

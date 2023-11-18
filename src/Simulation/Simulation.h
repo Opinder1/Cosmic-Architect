@@ -7,7 +7,7 @@
 
 #include <TKRZW/tkrzw_thread_util.h>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 
 #include <atomic>
 #include <thread>
@@ -15,7 +15,7 @@
 
 namespace sim
 {
-	class System;
+	class SimulationServer;
 
 	struct SimulationRequestStopMessage;
 	struct MessagerStopEvent;
@@ -26,14 +26,13 @@ namespace sim
 	class Simulation final : public ThreadMessager
 	{
 		friend class SimulationServer;
-		friend class System;
 
 		using SimulationApplicator = cb::Callback<void(Simulation&)>;
 
 		using SystemDeleteStorage = std::vector<SimulationApplicator>;
 
 	public:
-		Simulation(UUID id, double ticks_per_second);
+		Simulation(SimulationServer& server, UUID id, double ticks_per_second);
 		~Simulation();
 
 		// Is this simulation currently running (not including short time when stopping)
@@ -114,6 +113,8 @@ namespace sim
 		void OnAttemptFreeMemory(const AttemptFreeMemoryEvent& event);
 
 	private:
+		SimulationServer&				m_server; // The server that created this simulation
+
 		// Threading
 		std::thread						m_thread;
 

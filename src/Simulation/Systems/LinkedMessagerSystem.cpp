@@ -21,12 +21,12 @@ namespace sim
 
 	}
 
-	void LinkedMessagerSystem::SendMessage(Simulation& simulation, LinkedMessagerComponent& linked_messager, const MessagePtr& message)
+	void LinkedMessagerSystem::SendMessage(LinkedMessagerComponent& linked_messager, const MessagePtr& message)
 	{
 		linked_messager.queued_messages.push_back(message);
 	}
 
-	void LinkedMessagerSystem::SendMessage(Simulation& simulation, LinkedMessagerComponent& linked_messager, const MessageQueue& messages)
+	void LinkedMessagerSystem::SendMessages(LinkedMessagerComponent& linked_messager, const MessageQueue& messages)
 	{
 		linked_messager.queued_messages.insert(linked_messager.queued_messages.end(), messages.begin(), messages.end());
 	}

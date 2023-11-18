@@ -102,7 +102,7 @@ namespace sim
 			return UUID();
 		}
 
-		auto&& [it, success] = m_simulations.emplace(id, std::make_unique<Simulation>(id, ticks_per_second));
+		auto&& [it, success] = m_simulations.emplace(id, std::make_unique<Simulation>(*this, id, ticks_per_second));
 
 		if (!success)
 		{

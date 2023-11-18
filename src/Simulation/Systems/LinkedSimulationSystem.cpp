@@ -18,11 +18,11 @@ namespace sim
 
 	void LinkedSimulationSystem::OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event)
 	{
-		for (auto&& [entity, linked_messager] : simulation.Registry().view<LinkedMessagerComponent, LinkedSimulationComponent>().each())
+		for (auto&& [entity, linked_messager] : simulation.Registry().view<LinkedMessagerComponent, LinkedNetworkSimulationComponent>().each())
 		{
-			if (!linked_messager.id.IsEmpty())
+			if (!linked_messager.messager_id.IsEmpty())
 			{
-				simulation.PostMessagesToOther(linked_messager.id, linked_messager.queued_messages);
+				simulation.PostMessagesToOther(linked_messager.messager_id, linked_messager.queued_messages);
 
 				linked_messager.queued_messages.clear();
 			}

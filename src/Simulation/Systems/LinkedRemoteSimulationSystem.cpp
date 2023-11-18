@@ -25,11 +25,11 @@ namespace sim
 	{
 		auto& network_simulation = simulation.Global<NetworkSimulationGlobal>();
 
-		for (auto&& [entity, linked_messager] : simulation.Registry().view<LinkedMessagerComponent, LinkedSimulationComponent>().each())
+		for (auto&& [entity, linked_messager] : simulation.Registry().view<LinkedMessagerComponent, LinkedThreadSimulationComponent>().each())
 		{
-			if (!linked_messager.id.IsEmpty())
+			if (!linked_messager.messager_id.IsEmpty())
 			{
-				auto message = std::make_shared<MessageRemoteSimulationMessage>(simulation, linked_messager.id);
+				auto message = std::make_shared<MessageRemoteSimulationMessage>(simulation, linked_messager.messager_id);
 
 				// This clears queued_messages and is only swapping pointers which is fast
 				message->messages.swap(linked_messager.queued_messages);

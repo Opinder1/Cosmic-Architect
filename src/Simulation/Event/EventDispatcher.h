@@ -7,7 +7,7 @@
 namespace sim
 {
 	// Priority for observers recieving packets. For each priority it is still handled in order of observer addition
-	enum class Priority : uint8_t
+	enum class Priority
 	{
 		Lowest, // Lowest priorities when we dont want to handle if event was cancelled
 		VeryLow,
@@ -16,6 +16,13 @@ namespace sim
 		High,
 		VeryHigh,
 		Highest, // Higher prioritys should be when expecting to cancel the event
+	};
+
+	// Ordering for observers being registered. First means that the event will be placed before all of its same priority
+	enum class Ordering
+	{
+		First,
+		Last
 	};
 
 	// An event that can be queued to be processed later.
@@ -99,9 +106,9 @@ namespace sim
 		
 		// Subscribe to an event with a callback
 		template<class EventT>
-		void Subscribe(const EventCallback<EventT>& callback, sim::Priority priority = sim::Priority::Normal)
+		void Subscribe(const EventCallback<EventT>& callback, Priority priority = Priority::Normal, Ordering ordering = Ordering::First)
 		{
-			SubscribeGeneric(GetGenericCallback(callback), GetEventType<EventT>(), priority);
+			SubscribeGeneric(GetGenericCallback(callback), GetEventType<EventT>(), priority, ordering);
 		}
 
 		// Unsubscribe from an event with a callback.
@@ -121,7 +128,7 @@ namespace sim
 
 		void PostQueuedEventGeneric(QueuedEvent&& event);
 
-		void SubscribeGeneric(const EventCallback<Event>& callback, Event::Type event_type, Priority priority);
+		void SubscribeGeneric(const EventCallback<Event>& callback, Event::Type event_type, Priority priority, Ordering ordering);
 
 		void UnsubscribeGeneric(const EventCallback<Event>& callback, Event::Type event_type);
 
@@ -129,7 +136,7 @@ namespace sim
 		// Internal functions which use a retrieved list which would have been obtained using the type
 		void PostEventInternal(CallbackList& list, const Event& event);
 
-		void SubscribeInternal(CallbackList& list, const EventCallback<Event>& callback, Priority priority);
+		void SubscribeInternal(CallbackList& list, const EventCallback<Event>& callback, Priority priority, Ordering ordering);
 
 		void UnsubscribeInternal(CallbackList& list, const EventCallback<Event>& callback);
 

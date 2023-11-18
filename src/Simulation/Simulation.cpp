@@ -10,8 +10,9 @@
 
 namespace sim
 {
-	Simulation::Simulation(UUID id, double ticks_per_second) :
+	Simulation::Simulation(SimulationServer& server, UUID id, double ticks_per_second) :
 		ThreadMessager(id),
+		m_server(server),
 		m_running(false),
 		m_keep_looping(false),
 		m_manually_ticked(false),
@@ -224,7 +225,7 @@ namespace sim
 	{
 		DEBUG_ASSERT(ThreadOwnsObject(), "Called link without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
 
-		SimulationServer::GetSingleton()->ApplyToSimulation(simulation_id, [this](Simulation& simulation)
+		m_server.ApplyToSimulation(simulation_id, [this](Simulation& simulation)
 		{
 			LinkMessager(simulation);
 		});
@@ -234,7 +235,7 @@ namespace sim
 	{
 		DEBUG_ASSERT(ThreadOwnsObject(), "Called unlink without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
 
-		SimulationServer::GetSingleton()->ApplyToSimulation(simulation_id, [this](Simulation& simulation)
+		m_server.ApplyToSimulation(simulation_id, [this](Simulation& simulation)
 		{
 			UnlinkMessager(simulation);
 		});

@@ -111,29 +111,21 @@ namespace sim
 	}
 
 	Random::Random() :
-		m_left_seed(TimeBasedUniqueInt()),
-		m_right_seed(TimeBasedUniqueInt())
+		m_generator(TimeBasedUniqueInt()),
+		m_distribution(std::numeric_limits<uint64_t>::min(), std::numeric_limits<uint64_t>::max())
 	{
 
 	}
 
-	Random::Random(uint64_t left_seed, uint64_t right_seed) :
-		m_left_seed(left_seed),
-		m_right_seed(right_seed)
+	Random::Random(uint64_t seed) :
+		m_generator(seed)
 	{
 
 	}
 
-	uint64_t Random::GenerateLeft()
+	uint64_t Random::Generate()
 	{
-		m_left_seed = 6364136223846793005 * m_left_seed + 1;
-		return m_left_seed;
-	}
-
-	uint64_t Random::GenerateRight()
-	{
-		m_right_seed = 6364136223846793005 * m_right_seed + 1;
-		return m_right_seed;
+		return m_distribution(m_generator);
 	}
 
 	const UUID UUID::k_empty_uuid;
@@ -163,8 +155,8 @@ namespace sim
 	}
 
 	UUID::UUID(Random& random) :
-		m_first(random.GenerateLeft()),
-		m_second(random.GenerateRight())
+		m_first(random.Generate()),
+		m_second(random.Generate())
 	{
 
 	}

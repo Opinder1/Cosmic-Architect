@@ -7,6 +7,7 @@
 #include <robin_hood/robin_hood.h>
 
 #include <cstdint>
+#include <random>
 
 namespace sim
 {
@@ -19,15 +20,14 @@ namespace sim
 		explicit Random();
 
 		// Initialise with supplied seed
-		explicit Random(uint64_t left_seed, uint64_t right_seed);
+		explicit Random(uint64_t seed);
 
 		// Get a new random number and step forward the seed.
-		uint64_t GenerateLeft();
-		uint64_t GenerateRight();
+		uint64_t Generate();
 
 	private:
-		uint64_t m_left_seed;
-		uint64_t m_right_seed;
+		std::mt19937_64 m_generator;
+		std::uniform_int_distribution<uint64_t> m_distribution;
 	};
 
 	// An id that should be unique regardless of how it was created or what system created it

@@ -20,8 +20,8 @@ namespace sim
 
 		static void OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event);
 
-		static void SendMessage(Simulation& simulation, LinkedMessagerComponent& linked_messager, const MessagePtr& message);
+		static void SendMessage(LinkedMessagerComponent& linked_messager, const MessagePtr& message);
 
-		static void SendMessage(Simulation& simulation, LinkedMessagerComponent& linked_messager, const MessageQueue& messages);
+		static void SendMessages(LinkedMessagerComponent& linked_messager, const MessageQueue& messages);
 	};
 }
