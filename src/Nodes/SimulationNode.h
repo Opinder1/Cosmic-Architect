@@ -7,17 +7,38 @@
 
 namespace sim
 {
-	class Simulation;
+	class SimulationMessager;
 }
 
-class SimulationTestNode : public godot::Node3D
+class SimulationNode : public godot::Node3D
 {
-	GDCLASS(SimulationTestNode, godot::Node3D);
+	GDCLASS(SimulationNode, godot::Node3D);
 
 public:
-	SimulationTestNode();
+	SimulationNode();
 
-	~SimulationTestNode();
+	~SimulationNode();
+
+	sim::UUID GetID();
+
+	void Start();
+
+	void StartManual();
+
+	void Stop();
+
+	bool IsValid();
+
+	bool IsManual();
+
+	bool IsRunning();
+
+	bool IsStopping();
+
+	static void AttemptFreeMemory();
+
+protected:
+	sim::SimulationMessager* GetManualSimulation();
 
 public:
 	void _process(double delta) override {}
@@ -25,12 +46,6 @@ public:
 	void _physics_process(double delta) override {}
 
 	void _input(const godot::Ref<godot::InputEvent>& event) override;
-
-	void _shortcut_input(const godot::Ref<godot::InputEvent>& event) override;
-
-	void _unhandled_input(const godot::Ref<godot::InputEvent>& event) override;
-
-	void _unhandled_key_input(const godot::Ref<godot::InputEvent>& event) override;
 
 private:
 	void _notification(int notification);
@@ -40,5 +55,5 @@ private:
 private:
 	sim::UUID m_simulation_id;
 
-	sim::Simulation* m_simulation_ptr;
+	sim::SimulationMessager* m_simulation_ptr;
 };

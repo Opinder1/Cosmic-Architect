@@ -6,16 +6,19 @@
 #include <mutex>
 #include <random>
 
-namespace sim
+namespace
 {
 	const char TOHEXCHAR[16] = { '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
+
+	std::mutex global_random_mutex;
+	sim::UUIDGenerator global_generator;
 
 	unsigned int HexChrToDec(char c)
 	{
 		return (unsigned char)((c) <= '9' ? ((c)-'0') : 10 + (c)-((c) <= 'F' ? 'A' : 'a'));
 	}
 
-	void UUIDToString(const unsigned char (&uuid_bytes)[16], char* buffer) // Buffer should be 36 in size
+	void UUIDToString(const unsigned char(&uuid_bytes)[16], char* buffer) // Buffer should be 36 in size
 	{
 		char* dest = buffer;
 
@@ -107,37 +110,21 @@ namespace sim
 		// Time that should not change in program execution
 		uint64_t local = Clock::now().time_since_epoch().count();
 
-		return sys * local;
+		uint64_t device = std::random_device{}();
+
+		return device + (sys * local);
 	}
+}
 
-	Random::Random() :
-		m_generator(TimeBasedUniqueInt()),
-		m_distribution(std::numeric_limits<uint64_t>::min(), std::numeric_limits<uint64_t>::max())
-	{
-
-	}
-
-	Random::Random(uint64_t seed) :
-		m_generator(seed)
-	{
-
-	}
-
-	uint64_t Random::Generate()
-	{
-		return m_distribution(m_generator);
-	}
-
+namespace sim
+{
 	const UUID UUID::k_empty_uuid;
-
-	Random global_random;
-	std::mutex global_random_mutex;
 
 	UUID UUID::GenerateRandom()
 	{
 		std::lock_guard lock(global_random_mutex);
 
-		return UUID(global_random);
+		return global_generator.Generate();
 	}
 
 	UUID::UUID() :
@@ -150,13 +137,6 @@ namespace sim
 	UUID::UUID(uint64_t m_first, uint64_t m_second) :
 		m_first(m_first),
 		m_second(m_second)
-	{
-
-	}
-
-	UUID::UUID(Random& random) :
-		m_first(random.Generate()),
-		m_second(random.Generate())
 	{
 
 	}
@@ -250,6 +230,27 @@ namespace sim
 	uint64_t UUID::GetSecond() const
 	{
 		return m_second;
+	}
+
+	UUIDGenerator::UUIDGenerator() :
+		m_generator(TimeBasedUniqueInt()),
+		m_distribution(std::numeric_limits<uint64_t>::min(), std::numeric_limits<uint64_t>::max())
+	{
+
+	}
+
+	UUIDGenerator::UUIDGenerator(uint64_t seed) :
+		m_generator(seed)
+	{
+
+	}
+
+	UUID UUIDGenerator::Generate()
+	{
+		uint64_t left = m_distribution(m_generator);
+		uint64_t right = m_distribution(m_generator);
+		
+		return UUID(left, right);
 	}
 }
 

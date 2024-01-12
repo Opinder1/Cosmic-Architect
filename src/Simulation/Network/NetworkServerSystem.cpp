@@ -26,27 +26,27 @@ namespace sim
 {
 	void NetworkServerSystem::OnInitialize(Simulation& simulation)
 	{
-		simulation.Subscribe(cb::BindParam<&NetworkServerSystem::OnSimulationTick>(simulation));
-		simulation.Subscribe(cb::BindParam<&NetworkServerSystem::OnSimulationRequestStop>(simulation));
-		simulation.Subscribe(cb::BindParam<&NetworkServerSystem::OnSimulationStop>(simulation));
-		simulation.Subscribe(cb::BindParam<&NetworkServerSystem::OnStartNetworkServer>(simulation));
-		simulation.Subscribe(cb::BindParam<&NetworkServerSystem::OnStopNetworkServer>(simulation));
+		simulation.messager.Subscribe(cb::BindParam<&NetworkServerSystem::OnSimulationTick>(simulation));
+		simulation.messager.Subscribe(cb::BindParam<&NetworkServerSystem::OnSimulationRequestStop>(simulation));
+		simulation.messager.Subscribe(cb::BindParam<&NetworkServerSystem::OnSimulationStop>(simulation));
+		simulation.messager.Subscribe(cb::BindParam<&NetworkServerSystem::OnStartNetworkServer>(simulation));
+		simulation.messager.Subscribe(cb::BindParam<&NetworkServerSystem::OnStopNetworkServer>(simulation));
 	}
 
 	void NetworkServerSystem::OnShutdown(Simulation& simulation)
 	{
-		simulation.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnStopNetworkServer>(simulation));
-		simulation.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnStartNetworkServer>(simulation));
-		simulation.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnSimulationStop>(simulation));
-		simulation.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnSimulationRequestStop>(simulation));
-		simulation.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnSimulationTick>(simulation));
+		simulation.messager.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnStopNetworkServer>(simulation));
+		simulation.messager.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnStartNetworkServer>(simulation));
+		simulation.messager.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnSimulationStop>(simulation));
+		simulation.messager.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnSimulationRequestStop>(simulation));
+		simulation.messager.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnSimulationTick>(simulation));
 	}
 
 	void NetworkServerSystem::OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event)
 	{
-		bool sim_stopping = simulation.IsStopping();
+		bool sim_stopping = simulation.messager.IsStopping();
 
-		for (auto [server_entity, server] : simulation.Registry().view<ServerComponent>().each())
+		for (auto [server_entity, server] : simulation.registry.view<ServerComponent>().each())
 		{
 			server.udp_server->poll();
 
@@ -63,11 +63,11 @@ namespace sim
 						continue;
 					}
 
-					entt::entity peer_entity = simulation.Registry().create();
+					entt::entity peer_entity = simulation.registry.create();
 
-					simulation.Registry().emplace<NewEntityComponent>(peer_entity);
-					simulation.Registry().emplace<PeerComponent>(peer_entity, udp_peer, dtls_peer);
-					simulation.Registry().emplace<ChildPeerComponent>(peer_entity, server_entity);
+					simulation.registry.emplace<NewEntityComponent>(peer_entity);
+					simulation.registry.emplace<PeerComponent>(peer_entity, udp_peer, dtls_peer);
+					simulation.registry.emplace<ChildPeerComponent>(peer_entity, server_entity);
 				}
 			}
 		}
@@ -75,9 +75,9 @@ namespace sim
 
 	void NetworkServerSystem::OnSimulationRequestStop(Simulation& simulation, const SimulationRequestStopMessage& event)
 	{
-		for (auto [server_entity, server] : simulation.Registry().view<ServerComponent>().each())
+		for (auto [server_entity, server] : simulation.registry.view<ServerComponent>().each())
 		{
-			simulation.Registry().emplace<DeletedEntityComponent>(server_entity);
+			simulation.registry.emplace<DeletedEntityComponent>(server_entity);
 		}
 	}
 
@@ -88,7 +88,7 @@ namespace sim
 
 	void NetworkServerSystem::OnStartNetworkServer(Simulation& simulation, const StartNetworkServerMessage& event)
 	{
-		auto& server_entities = simulation.Global<ServersGlobal>().server_entities;
+		auto& server_entities = simulation.globals.get<ServersGlobal>().server_entities;
 
 		godot::Ref<godot::UDPServer> udp_server;
 		godot::Ref<godot::DTLSServer> dtls_server;
@@ -121,17 +121,17 @@ namespace sim
 			return;
 		}
 
-		entt::entity server_entity = simulation.Registry().create();
+		entt::entity server_entity = simulation.registry.create();
 
-		simulation.Registry().emplace<NewEntityComponent>(server_entity);
-		simulation.Registry().emplace<ServerComponent>(server_entity, event.port, udp_server, dtls_server);
+		simulation.registry.emplace<NewEntityComponent>(server_entity);
+		simulation.registry.emplace<ServerComponent>(server_entity, event.port, udp_server, dtls_server);
 
 		server_entities.emplace(event.port, server_entity);
 	}
 
 	void NetworkServerSystem::OnStopNetworkServer(Simulation& simulation, const StopNetworkServerMessage& event)
 	{
-		auto& server_entities = simulation.Global<ServersGlobal>().server_entities;
+		auto& server_entities = simulation.globals.get<ServersGlobal>().server_entities;
 
 		auto it = server_entities.find(event.port);
 
@@ -143,14 +143,14 @@ namespace sim
 
 		entt::entity server_entity = it->second;
 
-		for (auto [peer_entity, child_peer] : simulation.Registry().view<ChildPeerComponent>().each())
+		for (auto [peer_entity, child_peer] : simulation.registry.view<ChildPeerComponent>().each())
 		{
 			if (child_peer.server_entity == server_entity)
 			{
-				simulation.Registry().emplace<DeletedEntityComponent>(peer_entity);
+				simulation.registry.emplace<DeletedEntityComponent>(peer_entity);
 			}
 		}
 
-		simulation.Registry().emplace<DeletedEntityComponent>(server_entity);
+		simulation.registry.emplace<DeletedEntityComponent>(server_entity);
 	}
 }

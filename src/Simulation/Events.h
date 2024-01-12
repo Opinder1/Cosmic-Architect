@@ -44,6 +44,7 @@ namespace sim
 	struct SimulationRequestStopMessage : Message
 	{
 		explicit SimulationRequestStopMessage(const MessageSender& sender) : Message(sender) {}
+		explicit SimulationRequestStopMessage() : Message(Unattested{}) {}
 	};
 
 	// Called when a simulation has stopped execution. Should be sent internally
@@ -74,9 +75,14 @@ namespace sim
 		explicit ProcessDeletedEntitiesEvent() {}
 	};
 
-	// Try to free any long unused resources or shrink to fit any arrays
-	struct AttemptFreeMemoryEvent : Event
+	struct ProcessDeletedParentsEvent : Event
 	{
-		explicit AttemptFreeMemoryEvent() {}
+		explicit ProcessDeletedParentsEvent() {}
+	};
+
+	// Try to free any long unused resources or shrink to fit any arrays
+	struct AttemptFreeMemoryMessage : Message
+	{
+		explicit AttemptFreeMemoryMessage() : Message(Unattested{}) {}
 	};
 }

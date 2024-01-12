@@ -17,7 +17,7 @@ namespace sim
 {
 	class EventDispatcher;
 
-	struct AttemptFreeMemoryEvent;
+	struct AttemptFreeMemoryMessage;
 
 	struct MessagerException {};
 
@@ -85,7 +85,7 @@ namespace sim
 		void ProcessThreadMessage(const ThreadMessage& message);
 
 	private:
-		void OnAttemptFreeMemory(const AttemptFreeMemoryEvent& event);
+		void OnAttemptFreeMemory(const AttemptFreeMemoryMessage& event);
 
 	private:
 		// Mutex to protect m_in_queue

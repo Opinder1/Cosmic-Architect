@@ -12,6 +12,9 @@ namespace sim
 		sender(sender.GetUUID())
 	{}
 
+	Message::Message(Unattested)
+	{}
+
 	Message::~Message()
 	{}
 

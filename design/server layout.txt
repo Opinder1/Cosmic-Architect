@@ -1,0 +1,32 @@
+SimulationTick
+
+	ProcessPlayerInput
+	
+	DoEntityPhysicsStep
+		...
+	ResolveEntityPhysics
+	
+	ProcessKilledEntities
+		...
+
+	PlayQueuedSounds
+
+	ProcessViewCameraTransforms
+		...
+
+	UpdateInstanceAnimations
+	UpdateInstanceTransforms
+	UpdateMultimeshData
+	UpdateRenderTransforms
+	
+	ProcessLocalSimulations
+	ProcessRemoteSimulations
+	
+	ProcessVectors
+	ProcessGroups
+
+	ProcessCreated
+		...
+		
+	ProcessDeleted
+		...

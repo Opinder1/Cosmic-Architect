@@ -12,11 +12,14 @@ namespace sim
 	class ByteStream;
 	class MessageSender;
 
+	struct Unattested {};
+
 	// A message that can be sent between unrelated objects with no direct pointer/reference of each other.
 	// Its members may be read by multiple threads at once so should be thread safe
 	struct Message : Event
 	{
 		explicit Message(const MessageSender& sender);
+		explicit Message(Unattested); // This message does not care about its sender
 
 		virtual ~Message() = 0;
 

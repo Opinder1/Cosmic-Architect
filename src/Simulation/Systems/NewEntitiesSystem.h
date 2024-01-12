@@ -6,7 +6,7 @@ namespace sim
 
 	struct SimulationTickEvent;
 
-	struct TickSystem
+	struct NewEntitiesSystem
 	{
 		static void OnInitialize(Simulation& simulation);
 

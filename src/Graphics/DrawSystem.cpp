@@ -1,6 +1,7 @@
 #include "DrawSystem.h"
-#include "Components.h"
 #include "Events.h"
+#include "Components.h"
+#include "Globals.h"
 
 #include "World/Components.h"
 
@@ -13,75 +14,77 @@
 
 void DrawSystem::OnInitialize(sim::Simulation& simulation)
 {
-	simulation.Subscribe(cb::BindParam<&DrawSystem::OnProcessNewEntities>(simulation));
-	simulation.Subscribe(cb::BindParam<&DrawSystem::OnProcessDeletedEntities>(simulation));
-	simulation.Subscribe(cb::BindParam<&DrawSystem::OnSimulationTick>(simulation));
-	simulation.Subscribe(cb::BindParam<&DrawSystem::OnRender>(simulation));
+	simulation.globals.emplace<RenderingGlobal>().server = godot::RenderingServer::get_singleton();
+
+	simulation.messager.Subscribe(cb::BindParam<&DrawSystem::OnProcessNewEntities>(simulation));
+	simulation.messager.Subscribe(cb::BindParam<&DrawSystem::OnProcessDeletedEntities>(simulation));
+	simulation.messager.Subscribe(cb::BindParam<&DrawSystem::OnSimulationTick>(simulation));
+	simulation.messager.Subscribe(cb::BindParam<&DrawSystem::OnRender>(simulation));
 }
 
 void DrawSystem::OnShutdown(sim::Simulation& simulation)
 {
-	simulation.Unsubscribe(cb::BindParam<&DrawSystem::OnRender>(simulation));
-	simulation.Unsubscribe(cb::BindParam<&DrawSystem::OnSimulationTick>(simulation));
-	simulation.Unsubscribe(cb::BindParam<&DrawSystem::OnProcessDeletedEntities>(simulation));
-	simulation.Unsubscribe(cb::BindParam<&DrawSystem::OnProcessNewEntities>(simulation));
+	simulation.messager.Unsubscribe(cb::BindParam<&DrawSystem::OnRender>(simulation));
+	simulation.messager.Unsubscribe(cb::BindParam<&DrawSystem::OnSimulationTick>(simulation));
+	simulation.messager.Unsubscribe(cb::BindParam<&DrawSystem::OnProcessDeletedEntities>(simulation));
+	simulation.messager.Unsubscribe(cb::BindParam<&DrawSystem::OnProcessNewEntities>(simulation));
 }
 
 void DrawSystem::OnProcessNewEntities(sim::Simulation& simulation, const sim::ProcessNewEntitiesEvent& event)
 {
-	auto* rendering_server = godot::RenderingServer::get_singleton();
+	auto& rendering = simulation.globals.get<RenderingGlobal>();
 
-	for (auto&& [entity, rendering_instance] : simulation.Registry().view<sim::NewEntityComponent, RenderingInstanceComponent>().each())
+	for (auto&& [entity, rendering_instance] : simulation.registry.view<sim::NewEntityComponent, RenderingInstanceComponent>().each())
 	{
-		rendering_instance.instance_id = rendering_server->instance_create();
+		rendering_instance.instance_id = rendering.server->instance_create();
 
-		simulation.Registry().emplace<InstanceChangedComponent>(entity);
+		simulation.registry.emplace<InstanceChangedComponent>(entity);
 	}
 }
 
 void DrawSystem::OnProcessDeletedEntities(sim::Simulation& simulation, const sim::ProcessDeletedEntitiesEvent& event)
 {
-	auto* rendering_server = godot::RenderingServer::get_singleton();
+	auto& rendering = simulation.globals.get<RenderingGlobal>();
 
-	for (auto&& [entity, rendering_instance] : simulation.Registry().view<sim::DeletedEntityComponent, RenderingInstanceComponent>().each())
+	for (auto&& [entity, rendering_instance] : simulation.registry.view<sim::DeletedEntityComponent, RenderingInstanceComponent>().each())
 	{
-		rendering_server->free_rid(rendering_instance.instance_id);
+		rendering.server->free_rid(rendering_instance.instance_id);
 	}
 }
 
 void DrawSystem::OnSimulationTick(sim::Simulation& simulation, const sim::SimulationTickEvent& event)
 {
-	auto* rendering_server = godot::RenderingServer::get_singleton();
+	auto& rendering = simulation.globals.get<RenderingGlobal>();
 
-	for (auto&& [entity, rendering_instance, transform] : simulation.Registry().view<RenderingInstanceComponent, Transform3DComponent, InstanceChangedComponent>().each())
+	for (auto&& [entity, rendering_instance, transform] : simulation.registry.view<RenderingInstanceComponent, Transform3DComponent, InstanceChangedComponent>().each())
 	{
-		rendering_server->instance_set_transform(rendering_instance.instance_id, transform.transform);
+		rendering.server->instance_set_transform(rendering_instance.instance_id, transform.transform);
 	}
 
-	for (auto&& [entity, rendering_instance, mesh] : simulation.Registry().view<RenderingInstanceComponent, MeshComponent, InstanceChangedComponent>().each())
+	for (auto&& [entity, rendering_instance, mesh] : simulation.registry.view<RenderingInstanceComponent, MeshComponent, InstanceChangedComponent>().each())
 	{
-		rendering_server->instance_set_base(rendering_instance.instance_id, mesh.mesh_id);
+		rendering.server->instance_set_base(rendering_instance.instance_id, mesh.mesh_id);
 	}
 
-	simulation.Registry().clear<InstanceChangedComponent>();
+	simulation.registry.clear<InstanceChangedComponent>();
 }
 
 void DrawSystem::OnRender(sim::Simulation& simulation, const RenderEvent& event)
 {
-	auto* rendering_server = godot::RenderingServer::get_singleton();
+	auto& rendering = simulation.globals.get<RenderingGlobal>();
 
 }
 
 sim::UUID DrawSystem::CreateMeshInstance(sim::Simulation& simulation, godot::RID mesh_id)
 {
-	entt::entity entity = simulation.Registry().create();
-	sim::UUID id = simulation.GenerateUUID();
+	entt::entity entity = simulation.registry.create();
+	sim::UUID id = simulation.uuid_gen.Generate();
 
-	simulation.Registry().emplace<sim::IDComponent>(entity, id);
-	simulation.Registry().emplace<sim::NewEntityComponent>(entity);
-	simulation.Registry().emplace<RenderingInstanceComponent>(entity);
-	simulation.Registry().emplace<Transform3DComponent>(entity);
-	simulation.Registry().emplace<MeshComponent>(entity);
+	simulation.registry.emplace<sim::IDComponent>(entity, id);
+	simulation.registry.emplace<sim::NewEntityComponent>(entity);
+	simulation.registry.emplace<RenderingInstanceComponent>(entity);
+	simulation.registry.emplace<Transform3DComponent>(entity);
+	simulation.registry.emplace<MeshComponent>(entity);
 
 	return id;
 }

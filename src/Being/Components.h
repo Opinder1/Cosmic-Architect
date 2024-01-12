@@ -112,12 +112,6 @@ struct CultivationComponent
     uint32_t external_energy;
 };
 
-struct AuraComponent
-{
-    entt::entity aura_type;
-    uint32_t aura_strength;
-};
-
 struct MartialSkillsComponent 
 {
     std::vector<entt::entity> martial_skills;
@@ -136,10 +130,12 @@ struct SoulComponent
     uint32_t soul_energy;
 };
 
-struct LeadershipComponent
+// Aura is the power eminating from the soul. It can be controlled and distilled into a weapon.
+// Untrained aura of strong beings tends to just eminate out in all directions like bloodlust
+struct AuraComponent
 {
-    uint32_t leadership;
-    uint32_t kingliness;
+    entt::entity aura_type;
+    uint32_t aura_strength;
 };
 
 struct DivinityComponent

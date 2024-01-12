@@ -1,0 +1,101 @@
+<<< Resource management >>>
+
+[Resource]
+A resource is any file data that is needed by the client and not the server.
+
+[Mods]
+When mods are loaded each one should have an id.
+If there two mods have the same id, the second one should have a number added to the end. This makes sure all mods are loaded since collisions can easily be avoided this way.
+
+[ID table]
+All the objects added by mods and the base vanilla objects will be put into an ordered table. Then ids will be given to each object and this will give an id table.
+If a mod is added then its objects will be added to the end. If a mod is removed then the ids will become blank.
+If a mod or the base is updated then any new ids will be added to the end which for older tables may cause lots of fragmentation but it should be handled.
+The ids will only be visible internally and will allow mods to easily add new content as well as modify existing content.
+
+The id table also holds the handle for the object as well as its internal id. This handle dictates the behavior of that object and related info like the mod that its from.
+The handle can be overriden by another mod. "override" can be used to replace the functionality and "extend" can be used to add additional functionality.
+
+There will be an id table generated for each galaxy based on the mods that are active on them.
+This id table will be valid for all planets in the galaxy since clients will need the mods loaded when connecting to the galaxy.
+
+
+
+<<< Scene >>>
+
+[Scene]
+A scene is an existence where entities are based. Clients can connect to a scene and they can navigate it by their avatar entity called a player.
+All entities near or within set contitions of the player will be visible to the player and will be sent via a network socket.
+
+[Entity stream types]
+There are three main categories of entity: Static, Dynamic and Stream.
+These are based off of the OpenGL buffer types and state how objects should be sent to clients.
+
+Static means that the object should be sent once and does not need to be resent.       (Example: a planets public seed)
+Dynamic means that the object will need to be resent occasionally.                     (Example: chunks nearby the player)
+Stream means the object will need to be resent frequently which is usually every tick. (Example: players and entities around player)
+
+
+
+<<< World Gen >>>
+
+[Seeds]
+A world map has a public and private seed.
+The public seed is sent to clients and allows them to generate "fake" chunks to fill in space.
+The private seed is only known by the server and is used to populate the chunks.
+
+[Chunks]
+Client chunks will have a "real" state which dictates whether the chunk was sent by the server or not. "fake" chunks were generated with only the public seed
+
+Client chunks will have a "ghost" state which dictates whether the chunk is constantly updated by the server or not.
+"ghost" chunks can be cached on the client meaning it wont ask the server for them again. There is an option to not cache "fake" chunks.
+
+[View Distance]
+The server view distance will usually be 8 and is constant between all players. It dictates the region around the player that chunks are loaded and constantly updated.
+The server will always send the view distance of chunks to clients regardless of their view distance.
+
+The client view distance dictates how far the client will render chunks. It will be minimised to the server distance if its too low.
+If the clients distance is greater than the server it can ask for "one time" chunks to fill in the surrounding area. There is an option to allow re asking "ghost" chunks. There is an option to allow "fake" chunks to be overwritten.
+
+The server will have a queue of all the recent "one time" chunks it sent to the client. There is an option to set its size.
+Every X ticks the earliest "one time" chunks is removed from the list. If the client reaches the limit it will have to start generating "fake" chunks.
+
+[Vertical slots]
+Server chunks will have a "blocks" value that stores how many blocks they have. 0 will indicate it is empty.
+Each vertical slot on a world map will have a "highest chunk". This is calculated by finding the first chunk down which is not empty. If a chunks "blocks" changes between 0 and 1 the "highest chunk" can be recalculated.
+
+When a client reaches a certain vertical slot if their velocity is greater than X then only the "highest chunk" will be sent. Then a timer will be started and if the velocity is lower than X by Y seconds the slot is fully loaded.
+
+
+
+<<< Galaxy >>>
+
+[Server]
+Each server area encompasses a single galaxy.
+
+[Galaxy]
+The galaxy contains many star systems that each are owned by different politicial groups.
+
+[Star system]
+A star system is star or a group of stars that orbit each other. This center group is the star system "nucleus".
+Many objects orbit the "nucleus" which include planets and their moons, asteroid belts, space stations, starship fleets and other potential objects.
+
+[Planets and moons]
+A planet or moon has a single main voxel space that defines the landmass. This voxel space also a loops in the x and z axis.
+They can have towns and cities which have citizens that live there.
+
+[Space station]
+A structure that is more or less a city in space.
+Can do many functions like act as a starship port, house citizens and hold farms.
+
+
+
+<<< Galaxy politics >>>
+
+[Galaxy politics]
+
+[Planet lord]
+
+[Starship fleet]
+
+[Interplanetary alliance]

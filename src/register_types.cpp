@@ -2,7 +2,8 @@
 
 #include "VoxelWorld.h"
 
-#include "Test1/SimulationTestNode.h"
+#include "Nodes/SimulationNode.h"
+#include "Nodes/SimulationTestNode.h"
 
 #include <godot_cpp/variant/utility_functions.hpp>
 
@@ -19,6 +20,7 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 
 		sim::SimulationServer::GetSingleton()->StartNetworking();
 
+		godot::ClassDB::register_class<SimulationNode>();
 		godot::ClassDB::register_class<SimulationTestNode>();
 
 		godot::UtilityFunctions::print("Loaded voxel world extension");

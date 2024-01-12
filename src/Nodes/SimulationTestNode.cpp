@@ -15,7 +15,7 @@
 
 namespace
 {
-	void SimulationTickCallback(sim::Simulation* simulation, const sim::SimulationTickEvent& event)
+	void SimulationTickCallback(sim::SimulationMessager* simulation, const sim::SimulationTickEvent& event)
 	{
 		if (simulation->GetTotalTicks() % 1000 == 0)
 		{

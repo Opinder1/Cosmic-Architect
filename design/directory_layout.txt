@@ -1,0 +1,55 @@
+app.exe
+local_galaxies.db
+remote_galaxies.db
+galaxies/
+	galaxy_[uuid]/
+		galaxy.json
+		
+		stars.db
+		
+		players/
+			player_[uuid].json
+			
+		playerfactions.db
+		
+		schematics/
+			schematic_[uuid]/
+				schematic.json
+				region.db
+			
+		worlds/
+			world_[uuid]/
+				world.json
+				entities.db
+				faction_claims.db
+				settlements/
+					settlement_[uuid]/
+						settlement.json
+						buildings.db
+				voxels/
+					region_[s][x][y][z].db
+					
+		virtual_spaces/
+			internet_[uuid]/
+				internet.json
+				sites.db
+				
+			metaverse_[uuid]/
+				metaverse.json
+				
+		species_cache.db
+		civilisations_cache.db
+		clans_cache.db
+		corporations_cache.db
+		factions_cache.db
+		cultures_cache.db
+		religions_cache.db
+		languages_cache.db
+		currencies_cache.db
+		jobs_cache.db
+		blocktypes_cache.db
+		itemtypes_cache.db
+		skilltypes_cache.db
+		spelltypes_cache.db
+		powertypes_cache.db
+		qitypes_cache.db

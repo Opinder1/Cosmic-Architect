@@ -12,7 +12,8 @@
 
 namespace sim
 {
-	class Simulation;
+	class SimulationMessager;
+	struct Simulation;
 
 	class SimulationServer : public MessageRegistry
 	{
@@ -24,6 +25,7 @@ namespace sim
 			Invalid
 		};
 
+		using MessagerApplicator = cb::Callback<void(SimulationMessager&)>;
 		using SimulationApplicator = cb::Callback<void(Simulation&)>;
 
 		using SimulationPtr = std::unique_ptr<Simulation>;
@@ -62,7 +64,7 @@ namespace sim
 		bool StartSimulation(UUID id);
 
 		// Start a simulation that is owned and managed by this thread. Don't give the pointer to other threads
-		Simulation* StartManualSimulation(UUID id);
+		SimulationMessager* StartManualSimulation(UUID id);
 
 		// Stop this simulation. Manually managed simulations are immediately in the stopping state
 		void StopSimulation(UUID id);
@@ -86,7 +88,10 @@ namespace sim
 		Result IsSimulationStopping(UUID id);
 
 		// Run some code on a simulation. (Only use this if you know what you are doing)
-		bool ApplyToSimulation(UUID id, const SimulationApplicator& callback);
+		bool ApplyToSimulation(UUID id, const MessagerApplicator& callback);
+
+		// Attempt to free memory
+		void AttemptFreeMemory();
 
 	private:
 		// The main loop that the deleter thread will run

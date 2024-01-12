@@ -1,0 +1,32 @@
+UUID: Player [unload on quit]
+{
+	World world,
+	Entity controllable_entity,
+}
+
+UUID: World [unload when 0 players]
+{
+	Player[] players,
+	Entity[] entities,
+	Faction[] factions,
+}
+
+UUID: Entity [unload when chunk is unloaded]
+{
+	ChunkMap owner,
+	
+	Faction[] factions,
+}
+
+UUID: Faction [do garbage collection for unloading, add to garbage if leader unloaded and all child factions unloaded]
+{
+	enum type {civilization, family, council, politics_group, department, army, army_division, army_fleet, planet, city, town, tribe, company, pack}
+
+	EntityInfo leader,
+	
+	(ref<Faction>, Allegiance) parent_faction, [Allegiance = 0.5 for player faction]
+	(ref<Faction[]>, Influence) child_factions, [Influence = 0.8 if this is player faction]
+	
+	World[] source_world,
+	
+}

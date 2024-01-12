@@ -7,10 +7,11 @@ namespace sim
 	// A source from which messages will be generated
 	class MessageSender
 	{
-	public:
+	protected:
 		explicit MessageSender(UUID id);
 		~MessageSender();
 
+	public:
 		UUID GetUUID() const;
 
 	private:

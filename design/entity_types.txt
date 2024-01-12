@@ -1,0 +1,172 @@
+#include <glm/glm.hpp>
+#include <glm/gtx/hash.hpp>
+
+#include <fmt/format.h>
+
+#include <entt/entt.hpp>
+
+#include <robin_hood/unordered_map.hpp>
+
+using namespace rh = robin_hood;
+
+class EntityType
+{
+public:
+	EntityType();
+	virtual ~EntityType();
+	
+	virtual entt::entity Create(World& world) { return world->GetRegistry().create(); }
+	virtual void Delete(entt::entity e, World& world) { world->GetRegistry().delete(e); }
+	
+	virtual void OnTick(entt::entity e) = 0;
+	
+	virtual void OnRender(entt::entity e) = 0;
+	
+private:
+	uint16_t id;
+};
+
+class BlockType
+{
+public:
+	EntityType();
+	virtual ~EntityType();
+	
+	virtual entt::entity Create(World& world) { return world->GetRegistry().create(); }
+	virtual void Delete(entt::entity e, World& world) { world->GetRegistry().delete(e); }
+	
+	virtual void OnTick(entt::entity e) = 0;
+	
+	virtual void OnRandomTick(entt::entity e) { OnTick(e); }
+	
+	virtual void OnUpdate(entt::entity e, UpdateReason r) = 0;
+	
+	virtual void OnPlace(entt::entity e) = 0;
+	
+	virtual void OnBreak(entt::entity e) = 0;
+	
+	virtual void OnInteract(entt::entity e) = 0;
+	
+private:
+	uint16_t id;
+};
+
+class Chunk
+{
+    rh::unordered_map<glm::u8vec3, entt::entity> map;
+};
+
+// Component is used by every high level game entity
+struct ObjectComponent
+{
+	UUID id;
+	
+	EntityType* type;
+};
+
+// Component is used by every block entity
+struct BlockComponent
+{
+	BlockType* type;
+	
+	glm::vec3 pos;
+	Chunk* chunk;
+	entt::entity parent; // ChunkMap
+};
+
+struct TransformComponent
+{	
+	glm::vec3 pos;
+	float rotation;
+	float scale;
+	
+	entt::entity parent; // ChunkMap
+	
+	Chunk* chunk; // Local chunk of root chunkmap
+};
+
+struct PhysicsComponent
+{
+	glm::vec3 velocity;
+	
+	float mass;
+	
+	CollisionBox* body; [ nullptr, Box, Sphere, Rect, Custom ]
+};
+
+struct RenderComponent
+{
+	glm::mat4 transform;
+	
+	bool visible;
+	
+	std::vector<Texture*> textures;
+};
+
+struct AIComponent
+{
+	
+};
+
+void physics(entt::registry& r)
+{
+    auto view = r.view<TransformComponent, PhysicsComponent>();
+
+    for (auto [entity, transform, physics] : view.each())
+    {
+        transform.pos += physics.velocity;
+		
+		if (transform.chunk)
+		{
+			for (auto other_entity : transform.chunk)
+			{
+				auto other_physics = view.get<PhysicsComponent>(other_entity);
+				if (physics.body.IsColliding(other_physics))
+				{
+					transform.pos -= physics.velocity;
+					physics.velocity = glm::vec3(0.0f);
+					other_physics.velocity = glm::vec3(0.0f);
+					
+					continue;
+				}
+			}
+		}
+
+        glm::ivec3 new_pos = glm::ivec3(transform.pos) % 16;
+
+        glm::ivec3 old_pos = transform.chunk->GetPos();
+
+        if (transform.chunk)
+        {
+            if (old_pos != new_pos)
+            {
+                transform.chunk->RemoveEntity(entity);
+                transform.chunk = transform.chunk->GetNeighbour((new_pos - old_pos) / 16);
+                transform.chunk->AddEntity(entity);
+            }
+        }
+        else
+        {
+            //transform.chunk = r.get<ChunkMap>(transform.parent).GetChunk(new_pos);
+        }
+    }
+}
+
+void tick(entt::registry& r)
+{
+	auto view = r.view<BlockComponent>();
+	
+	for (auto [entity, block] : view.each())
+	{
+		block.type->OnTick(entity);
+	}
+}
+
+int main()
+{
+    entt::registry r;
+
+    physics(r);
+
+    tick(r);
+}

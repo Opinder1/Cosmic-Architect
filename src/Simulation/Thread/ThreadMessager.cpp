@@ -112,6 +112,8 @@ namespace sim
 
 	void ThreadMessager::PostMessageFromUnattested(const MessagePtr& message)
 	{
+		DEBUG_ASSERT(message->GetSender() == UUID::k_empty_uuid, "Messages sent from unattested should have an unattested sender");
+
 		if (ThreadOwnsObject()) // If we own this then don't bother queuing as we won't be reading the queue right now
 		{
 			PostEventGeneric(*message, GetMessageType(*message));
@@ -126,6 +128,11 @@ namespace sim
 
 	void ThreadMessager::PostMessagesFromUnattested(const MessageQueue& messages)
 	{
+		for (const MessagePtr& message : messages)
+		{
+			DEBUG_ASSERT(message->GetSender() == UUID::k_empty_uuid, "Messages sent from unattested should have an unattested sender");
+		}
+
 		if (ThreadOwnsObject()) // If we own this then don't bother queuing as we won't be reading the queue right now
 		{
 			for (const MessagePtr& message : messages)
@@ -354,7 +361,7 @@ namespace sim
 		}
 	}
 
-	void ThreadMessager::OnAttemptFreeMemory(const AttemptFreeMemoryEvent& event)
+	void ThreadMessager::OnAttemptFreeMemory(const AttemptFreeMemoryMessage& event)
 	{
 		std::unique_lock lock(m_mutex);
 

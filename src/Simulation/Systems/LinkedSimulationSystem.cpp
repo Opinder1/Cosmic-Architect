@@ -8,21 +8,21 @@ namespace sim
 {
 	void LinkedSimulationSystem::OnInitialize(Simulation& simulation)
 	{
-		simulation.Subscribe(cb::BindParam<&LinkedSimulationSystem::OnSimulationTick>(simulation));
+		simulation.messager.Subscribe(cb::BindParam<&LinkedSimulationSystem::OnSimulationTick>(simulation));
 	}
 
 	void LinkedSimulationSystem::OnShutdown(Simulation& simulation)
 	{
-		simulation.Unsubscribe(cb::BindParam<&LinkedSimulationSystem::OnSimulationTick>(simulation));
+		simulation.messager.Unsubscribe(cb::BindParam<&LinkedSimulationSystem::OnSimulationTick>(simulation));
 	}
 
 	void LinkedSimulationSystem::OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event)
 	{
-		for (auto&& [entity, linked_messager] : simulation.Registry().view<LinkedMessagerComponent, LinkedNetworkSimulationComponent>().each())
+		for (auto&& [entity, linked_messager] : simulation.registry.view<LinkedMessagerComponent, LinkedThreadSimulationComponent>().each())
 		{
 			if (!linked_messager.messager_id.IsEmpty())
 			{
-				simulation.PostMessagesToOther(linked_messager.messager_id, linked_messager.queued_messages);
+				simulation.messager.PostMessagesToOther(linked_messager.messager_id, linked_messager.queued_messages);
 
 				linked_messager.queued_messages.clear();
 			}

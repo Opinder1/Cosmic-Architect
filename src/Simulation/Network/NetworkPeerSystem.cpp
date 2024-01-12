@@ -28,17 +28,17 @@ namespace sim
 
 	void NetworkPeerSystem::OnInitialize(Simulation& simulation)
 	{
-		simulation.Subscribe(cb::BindParam<&NetworkPeerSystem::OnSimulationTick>(simulation));
+		simulation.messager.Subscribe(cb::BindParam<&NetworkPeerSystem::OnSimulationTick>(simulation));
 	}
 
 	void NetworkPeerSystem::OnShutdown(Simulation& simulation)
 	{
-		simulation.Unsubscribe(cb::BindParam<&NetworkPeerSystem::OnSimulationTick>(simulation));
+		simulation.messager.Unsubscribe(cb::BindParam<&NetworkPeerSystem::OnSimulationTick>(simulation));
 	}
 
 	void NetworkPeerSystem::OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event)
 	{
-		for (auto&& [peer_entity, peer] : simulation.Registry().view<PeerComponent>().each())
+		for (auto&& [peer_entity, peer] : simulation.registry.view<PeerComponent>().each())
 		{
 			peer.dtls_peer->poll();
 
@@ -90,7 +90,7 @@ namespace sim
 			return false;
 		}
 
-		simulation.PostMessageToOther(target, message);
+		simulation.messager.PostMessageToOther(target, message);
 
 		return true;
 	}
