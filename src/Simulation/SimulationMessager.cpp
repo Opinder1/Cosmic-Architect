@@ -13,7 +13,7 @@ namespace sim
 		m_server(server),
 		m_running(false),
 		m_keep_looping(false),
-		m_manually_ticked(false),
+		m_thread_paused(false),
 		m_ticks_per_second(ticks_per_second),
 		m_time_per_tick(std::chrono::duration_cast<Clock::duration>(1s / m_ticks_per_second)),
 		m_current_ticks(0),
@@ -38,16 +38,16 @@ namespace sim
 			DEBUG_PRINT_ERROR("This simulation should have been stopped before destroying it");
 		}
 
-		if (m_thread.joinable())
+		if (m_internal_thread.joinable())
 		{
-			m_thread.join();
+			m_internal_thread.join();
 		}
 
 		Unsubscribe(cb::Bind<&SimulationMessager::OnMessagerStop>(this));
 		Unsubscribe(cb::Bind<&SimulationMessager::OnRequestStop>(this));
 	}
 
-	bool SimulationMessager::Start(bool manually_tick)
+	bool SimulationMessager::Start()
 	{
 		DEBUG_ASSERT(!ObjectOwned(), "This simulation should not be owned by a thread when start is called on it");
 
@@ -57,58 +57,85 @@ namespace sim
 			return false;
 		}
 
-		if (manually_tick)
-		{
-			m_manually_ticked = true;
-
-			InternalStart();
-		}
-		else
-		{
-			m_thread = std::thread(&SimulationMessager::ThreadLoop, this);
-		}
+		// Start our internal thread
+		m_internal_thread = std::thread(&SimulationMessager::ThreadLoop, this);
 
 		return true;
 	}
 
-	bool SimulationMessager::Stop()
+	void SimulationMessager::Stop()
 	{
 		DEBUG_ASSERT(ObjectOwned(), "This simulation should be owned by a thread when stop is called on it");
 
-		if (m_manually_ticked)
+		// If we are being externally ticked then release the thread so that the internal thread handles the stop message
+		if (IsExternallyTicked())
 		{
-			if (!ThreadOwnsObject())
-			{
-				DEBUG_PRINT_ERROR("Manually ticked simulations can only be stopped by the owning thread");
-				return false;
-			}
+			ThreadRelease();
 		}
 
 		PostMessageFromUnattested(std::make_shared<SimulationRequestStopMessage>()); // Queue a message to stop this simulation
+	}
+
+	bool SimulationMessager::ThreadAcquire()
+	{
+		DEBUG_ASSERT(ObjectOwned() && GetOwnerID() == m_internal_thread.get_id(), "This simulation should be owned by the internal thread when trying to acquire");
+
+		if (m_external_thread != std::thread::id{})
+		{
+			DEBUG_PRINT_ERROR("This simulation is already externally ticked");
+			return false;
+		}
+
+		if (!m_running)
+		{
+			DEBUG_PRINT_ERROR("This simulation should be running when trying to acquire");
+			return false;
+		}
+
+		if (IsStopping())
+		{
+			DEBUG_PRINT_ERROR("This simulation should not be stopping when we try to acquire");
+			return false;
+		}
+
+		// Set the external thread that will acquire and send a message for the internal thread to handle
+		m_external_thread = std::this_thread::get_id();
+		PostMessageFromUnattested(std::make_shared<SimulationThreadAcquireMessage>());
+
+		return true;
+	}
+
+	bool SimulationMessager::ThreadRelease()
+	{
+		DEBUG_ASSERT(ThreadOwnsObject() && GetOwnerID() == m_external_thread, "The simulation should be released by the external thread that owns it");
+
+		if (!IsExternallyTicked())
+		{
+			DEBUG_PRINT_ERROR("This simulation should be externally ticked");
+			return false;
+		}
+
+		// Unpause the internal thread and give ownership back to it
+		m_external_thread = std::thread::id{};
+		m_thread_paused = false;
+		ThreadTransferObject(m_internal_thread.get_id());
 
 		return true;
 	}
 
 	bool SimulationMessager::ManualTick()
 	{
-		DEBUG_ASSERT(ThreadOwnsObject(), "This simulation is not owned by this thread so can't be manually ticked by it");
+		DEBUG_ASSERT(ThreadOwnsObject() && GetOwnerID() == m_external_thread, "The simulation should be manually ticked by the external thread that owns it");
 
-		if (!m_manually_ticked)
+		if (!IsExternallyTicked())
 		{
 			DEBUG_PRINT_ERROR("This simulation is not manually ticked by this thread");
 			return false;
 		}
 
-		if (m_keep_looping)
-		{
-			InternalTick(Clock::now());
+		InternalTick(Clock::now());
 
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+		return true;
 	}
 
 	bool SimulationMessager::IsRunning() const
@@ -116,14 +143,14 @@ namespace sim
 		return m_running;
 	}
 
-	bool SimulationMessager::IsManuallyTicked() const
+	bool SimulationMessager::IsExternallyTicked() const
 	{
-		return m_manually_ticked;
+		return m_thread_paused;
 	}
 
 	double SimulationMessager::GetTicksPerSecond() const
 	{
-		return m_manually_ticked ? 0.0f : m_ticks_per_second;
+		return IsExternallyTicked() ? 0.0f : m_ticks_per_second;
 	}
 
 	size_t SimulationMessager::GetTotalTicks()
@@ -166,9 +193,9 @@ namespace sim
 		DEBUG_ASSERT(ThreadOwnsObject(), "Called link without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
 
 		m_server.ApplyToSimulation(simulation_id, [this](SimulationMessager& simulation)
-			{
-				LinkMessager(simulation);
-			});
+		{
+			LinkMessager(simulation);
+		});
 	}
 
 	void SimulationMessager::Unlink(UUID simulation_id)
@@ -176,9 +203,9 @@ namespace sim
 		DEBUG_ASSERT(ThreadOwnsObject(), "Called unlink without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
 
 		m_server.ApplyToSimulation(simulation_id, [this](SimulationMessager& simulation)
-			{
-				UnlinkMessager(simulation);
-			});
+		{
+			UnlinkMessager(simulation);
+		});
 	}
 
 	void SimulationMessager::ThreadLoop()
@@ -212,7 +239,17 @@ namespace sim
 				}
 			}
 
-			InternalTick(tick_start);
+			if (m_thread_paused)
+			{
+				if (ThreadOwnsObject()) // If we were just paused but still own this thread
+				{
+					ThreadTransferObject(m_external_thread);
+				}
+			}
+			else
+			{
+				InternalTick(tick_start);
+			}
 		}
 
 		InternalStop();
@@ -235,6 +272,8 @@ namespace sim
 
 	void SimulationMessager::InternalTick(Clock::time_point tick_start)
 	{
+		DEBUG_ASSERT(ThreadOwnsObject(), "This simulation should be owned by the object that is calling internal tick");
+
 		Clock::duration timestep = tick_start - m_last_tick_time;
 		m_total_run_time += timestep;
 		m_current_run_time += timestep;
@@ -261,7 +300,6 @@ namespace sim
 		m_current_ticks = 0;
 		m_current_run_time = Clock::duration{};
 
-		m_manually_ticked = false;
 		m_running = false;
 
 		MessagerStop();
@@ -269,6 +307,8 @@ namespace sim
 
 	void SimulationMessager::OnRequestStop(const SimulationRequestStopMessage& event)
 	{
+		DEBUG_ASSERT(ThreadOwnsObject() && GetOwnerID() == m_internal_thread.get_id(), "This simulation should be owned by the internal thread when handling a stop request");
+
 		if (IsStopping()) // If we are already stopping then ignore this event
 		{
 			return;
@@ -283,13 +323,21 @@ namespace sim
 		MessagerRequestStop(); // Send a unlink message too all that are linked. Once they all reply m_running is set to false.
 	}
 
+	void SimulationMessager::OnThreadAcquire(const SimulationThreadAcquireMessage& event)
+	{
+		DEBUG_ASSERT(ThreadOwnsObject() && GetOwnerID() == m_internal_thread.get_id(), "This simulation should be owned by the internal thread when trying to acquire");
+
+		if (IsStopping()) // If we are stopping then don't acquire
+		{
+			ThreadRelease();
+			return;
+		}
+
+		m_thread_paused = true; // We pause ourself to allow the external thread to start ticking
+	}
+
 	void SimulationMessager::OnMessagerStop(const MessagerStopEvent& event)
 	{
 		m_keep_looping = false; // Set this to false so we exit the thread loop
-
-		if (m_manually_ticked) // If we are manually ticked we can stop here as we won't tick again
-		{
-			InternalStop();
-		}
 	}
 }

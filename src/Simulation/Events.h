@@ -47,6 +47,12 @@ namespace sim
 		explicit SimulationRequestStopMessage() : Message(Unattested{}) {}
 	};
 
+	struct SimulationThreadAcquireMessage : Message
+	{
+		explicit SimulationThreadAcquireMessage(const MessageSender& sender) : Message(sender) {}
+		explicit SimulationThreadAcquireMessage() : Message(Unattested{}) {}
+	};
+
 	// Called when a simulation has stopped execution. Should be sent internally
 	struct SimulationStopEvent : Event
 	{

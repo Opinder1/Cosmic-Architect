@@ -12,6 +12,7 @@ namespace sim
 	class SimulationServer;
 
 	struct SimulationRequestStopMessage;
+	struct SimulationThreadAcquireMessage;
 	struct MessagerStopEvent;
 
 	// Simulates an environment by ticking every set timestep.
@@ -28,8 +29,8 @@ namespace sim
 		// Is this simulation currently running (not including short time when stopping)
 		bool IsRunning() const;
 
-		// This this simulation being ticked manually by a thread
-		bool IsManuallyTicked() const;
+		// This this simulation being ticked manually by an external thread that succesfully acquired this simulation
+		bool IsExternallyTicked() const;
 
 		// Get the amount of ticks this simulation aims to complete per second (only relevant in threaded mode)
 		double GetTicksPerSecond() const;
@@ -49,7 +50,7 @@ namespace sim
 		// Get the time we have been running since Start() was called
 		Clock::duration GetCurrentRunTime();
 
-		// Manually tick from the current thread
+		// Manually tick from the thread that acquired this simulation
 		bool ManualTick();
 
 		// Link to another simulation using its uuid
@@ -60,10 +61,14 @@ namespace sim
 
 	private:
 		// Start this simulation
-		bool Start(bool manually_tick);
+		bool Start();
 
 		// Stop this simulation (call from SimulationServer)
-		bool Stop();
+		void Stop();
+
+		bool ThreadAcquire();
+
+		bool ThreadRelease();
 
 		// Main thread loop of this simulation that manages ticks and timings for the owner thread
 		void ThreadLoop();
@@ -80,18 +85,21 @@ namespace sim
 	private:
 		void OnRequestStop(const SimulationRequestStopMessage& event);
 
+		void OnThreadAcquire(const SimulationThreadAcquireMessage& event);
+
 		void OnMessagerStop(const MessagerStopEvent& event);
 
 	private:
 		SimulationServer&		m_server; // The server that created this simulation
 
 		// Threading
-		std::thread				m_thread;
+		std::thread				m_internal_thread;
+		std::atomic_bool		m_thread_paused; // Is our internal thread paused
+		bool					m_keep_looping; // Should we continue to loop our internal thread
 
 		std::atomic_bool		m_running; // Is this simulation running
-		bool					m_keep_looping; // Should we continue to loop
 
-		std::atomic_bool		m_manually_ticked; // Is this simulation ticked manually by a thread
+		std::thread::id			m_external_thread; // The external thread that will be ticking this simulation if the internal thread is paused
 
 		// Options
 		const double			m_ticks_per_second; // Ticks this simulation aims to execute per second

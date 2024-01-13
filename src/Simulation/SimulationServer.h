@@ -63,11 +63,18 @@ namespace sim
 		// Start this simulation
 		bool StartSimulation(UUID id);
 
-		// Start a simulation that is owned and managed by this thread. Don't give the pointer to other threads
-		SimulationMessager* StartManualSimulation(UUID id);
-
 		// Stop this simulation. Manually managed simulations are immediately in the stopping state
 		void StopSimulation(UUID id);
+
+		// Acquire a simulation that is owned and managed by this thread
+		bool ThreadAcquireSimulation(UUID id);
+
+		// Try and get a simulation we acquired if the simulation has paused its internal thread
+		// Keep calling after ThreadAcquireSimulation() until we get a non null return
+		SimulationMessager* TryGetAcquiredSimulation(UUID id);
+
+		// Release a simulation that was acquired by this thread. The pointer should be released at this point
+		bool ThreadReleaseSimulation(UUID id);
 
 		// Send a direct message to this simulation. Ideally messages should be sent between linked simulations
 		void SendMessage(UUID id, const MessagePtr& message);
@@ -81,8 +88,8 @@ namespace sim
 		// Is this simulation currently running. It can be stopping and still running
 		Result IsSimulationRunning(UUID id);
 
-		// Is this simulation manually being ticked by a thread.
-		Result IsSimulationManuallyTicked(UUID id);
+		// Is this simulation externally being ticked by a thread.
+		Result IsSimulationExternallyTicked(UUID id);
 
 		// Is this simulation currently unlinking with all its peers
 		Result IsSimulationStopping(UUID id);

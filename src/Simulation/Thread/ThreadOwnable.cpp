@@ -28,7 +28,7 @@ namespace sim
 
     void ThreadOwnable::ThreadTransferObject(std::thread::id thread)
     {
-        DEBUG_ASSERT(ObjectOwned(), "This object should be owned when releasing it");
+        DEBUG_ASSERT(ThreadOwnsObject(), "This object should be owned when releasing it");
 
         m_owner_id = thread;
     }

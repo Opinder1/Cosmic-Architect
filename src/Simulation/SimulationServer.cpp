@@ -58,14 +58,6 @@ namespace sim
 			if (simulation->messager.IsRunning()) // If we are running and haven't already started to stop
 			{
 				simulation->messager.Stop();
-
-				// If we are manually ticked then give ownership to the deleter so it can keep ticking
-				// This is because that thread will no longer be able to tick it
-				if (simulation->messager.IsManuallyTicked())
-				{
-					DEBUG_PRINT_ERROR("Manually ticked simulations should be fully stopped before they are deleted");
-					simulation->messager.ThreadTransferObject(m_deleter_thread.get_id());
-				}
 			}
 
 			// Move the simulation into the delete queue
@@ -151,19 +143,6 @@ namespace sim
 		{
 			// Call stop first in case we transfer thread ownership
 			simulation.messager.Stop();
-
-			// If we are manually ticked then give ownership to the deleter so it can keep ticking
-			// This is because that thread will no longer be able to tick it
-			if (simulation.messager.IsManuallyTicked())
-			{
-				if (!simulation.messager.ThreadOwnsObject())
-				{
-					DEBUG_PRINT_ERROR("Manually ticked simulations should be stopped and deleted by the managing thread");
-					return;
-				}
-
-				simulation.messager.ThreadTransferObject(m_deleter_thread.get_id());
-			}
 		}
 
 		// Move the simulation into the delete queue
@@ -205,25 +184,10 @@ namespace sim
 
 		ApplyToSimulation(id, [&success](SimulationMessager& messager)
 		{
-			success = messager.Start(false);
+			success = messager.Start();
 		});
 
 		return success;
-	}
-
-	SimulationMessager* SimulationServer::StartManualSimulation(UUID id)
-	{
-		SimulationMessager* simulation_ptr = nullptr;
-
-		ApplyToSimulation(id, [&simulation_ptr](SimulationMessager& messager)
-		{
-			if (messager.Start(true))
-			{
-				simulation_ptr = &messager;
-			}
-		});
-
-		return simulation_ptr;
 	}
 
 	void SimulationServer::StopSimulation(UUID id)
@@ -232,6 +196,45 @@ namespace sim
 		{
 			messager.Stop();
 		});
+	}
+
+	bool SimulationServer::ThreadAcquireSimulation(UUID id)
+	{
+		bool success = false;
+
+		ApplyToSimulation(id, [&success](SimulationMessager& messager)
+		{
+			success = messager.ThreadAcquire();
+		});
+
+		return success;
+	}
+
+	SimulationMessager* SimulationServer::TryGetAcquiredSimulation(UUID id)
+	{
+		SimulationMessager* simulation_ptr = nullptr;
+
+		ApplyToSimulation(id, [&simulation_ptr](SimulationMessager& messager)
+		{
+			if (messager.IsExternallyTicked())
+			{
+				simulation_ptr = &messager;
+			}
+		});
+
+		return simulation_ptr;
+	}
+
+	bool SimulationServer::ThreadReleaseSimulation(UUID id)
+	{
+		bool success = false;
+
+		ApplyToSimulation(id, [&success](SimulationMessager& messager)
+		{
+			success = messager.ThreadRelease();
+		});
+
+		return success;
 	}
 
 	void SimulationServer::SendMessage(UUID id, const MessagePtr& message)
@@ -283,13 +286,13 @@ namespace sim
 		return result;
 	}
 
-	SimulationServer::Result SimulationServer::IsSimulationManuallyTicked(UUID id)
+	SimulationServer::Result SimulationServer::IsSimulationExternallyTicked(UUID id)
 	{
 		Result result = Result::Invalid;
 
 		ApplyToSimulation(id, [&result](SimulationMessager& messager)
 		{
-			result = messager.IsManuallyTicked() ? Result::True : Result::False;
+			result = messager.IsExternallyTicked() ? Result::True : Result::False;
 		});
 
 		return result;
@@ -360,19 +363,11 @@ namespace sim
 				{
 					// If its not running then we can erase the simulation safely
 					it = m_delete_queue.erase(it);
-					continue;
 				}
-
-				// If we are manually ticked then make sure to keep ticking so that we handle unlinks
-				if (simulation.messager.IsManuallyTicked())
+				else
 				{
-					lock.unlock();
-					simulation.messager.ManualTick();
-					lock.lock();
-					break; // Do one manual tick as in the time it took the delete queue could have reallocated
+					it++;
 				}
-
-				it++;
 			}
 		}
 
