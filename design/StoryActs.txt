@@ -1,0 +1,13 @@
+Game is split into 5 acts
+
+The acts level boundaries are as follows:
+Act 1: level 1-100 (100 levels) (Student or mercenary in high civilization)
+Act 2: level 101-250 (150 levels) (Soldier or top mercenary in high level civilization)
+Act 3: level 251-450 (200 levels) (Top power in high level civilization)
+Act 4: level 451-700 (250 levels) (Demigod)
+Act 5: level 701-1000 (300 levels) (Divine level)
+
+Act 1
+Act 1 takes you through 50 years of education taking you to level 100
+
+Act 2
