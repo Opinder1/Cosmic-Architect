@@ -70,6 +70,7 @@ namespace sim
 		// If we are being externally ticked then release the thread so that the internal thread handles the stop message
 		if (IsExternallyTicked())
 		{
+			DEBUG_PRINT_WARN("This simulation should have stopped being externally ticked when we stopped. If not then make sure we don't call Stop() inside ManualTick()");
 			ThreadRelease();
 		}
 

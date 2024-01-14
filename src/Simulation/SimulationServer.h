@@ -95,7 +95,7 @@ namespace sim
 		Result IsSimulationStopping(UUID id);
 
 		// Run some code on a simulation. (Only use this if you know what you are doing)
-		bool ApplyToSimulation(UUID id, const MessagerApplicator& callback);
+		void ApplyToSimulation(UUID id, const MessagerApplicator& callback);
 
 		// Attempt to free memory
 		void AttemptFreeMemory();

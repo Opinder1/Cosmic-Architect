@@ -21,6 +21,6 @@ namespace sim
 		// Process new entities then remove the new entity component flag
 		simulation.messager.PostEvent(ProcessNewEntitiesEvent());
 
-		simulation.registry.clear<NewEntityComponent>();
+		simulation.registry.clear<NewComponent>();
 	}
 }

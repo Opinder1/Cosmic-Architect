@@ -22,7 +22,8 @@
 #include <godot_cpp/variant/utility_functions.hpp>
 
 SimulationNode::SimulationNode() :
-	m_simulation_ptr(nullptr)
+	m_simulation_ptr(nullptr),
+    m_is_acquiring(false)
 {
 	set_notify_transform(true);
 	set_notify_local_transform(true);
@@ -45,26 +46,33 @@ void SimulationNode::Start()
     sim::SimulationServer::GetSingleton()->StartSimulation(m_simulation_id);
 }
 
-void SimulationNode::StartManual()
-{
-    m_simulation_ptr = sim::SimulationServer::GetSingleton()->StartManualSimulation(m_simulation_id);
-
-    DEBUG_ASSERT(m_simulation_ptr != nullptr, "The simulation should be valid since we just created it");
-}
-
 void SimulationNode::Stop()
 {
     sim::SimulationServer::GetSingleton()->StopSimulation(m_simulation_id);
 }
 
+void SimulationNode::ThreadAcquire()
+{
+    if (sim::SimulationServer::GetSingleton()->ThreadAcquireSimulation(m_simulation_id))
+    {
+        m_is_acquiring = true;
+    }
+}
+
+void SimulationNode::ThreadRelease()
+{
+    if (IsAcquiring() || IsThreadAcquired())
+    {
+        sim::SimulationServer::GetSingleton()->ThreadReleaseSimulation(m_simulation_id);
+
+        m_is_acquiring = false;
+        m_simulation_ptr = nullptr;
+    }
+}
+
 bool SimulationNode::IsValid()
 {
     return sim::SimulationServer::GetSingleton()->IsSimulation(m_simulation_id);
-}
-
-bool SimulationNode::IsManual()
-{
-    return m_simulation_ptr != nullptr;
 }
 
 bool SimulationNode::IsRunning()
@@ -77,7 +85,17 @@ bool SimulationNode::IsStopping()
     return sim::SimulationServer::GetSingleton()->IsSimulationStopping(m_simulation_id) == sim::SimulationServer::Result::True;
 }
 
-sim::SimulationMessager* SimulationNode::GetManualSimulation()
+bool SimulationNode::IsAcquiring()
+{
+    return m_is_acquiring;
+}
+
+bool SimulationNode::IsThreadAcquired()
+{
+    return m_simulation_ptr != nullptr && m_simulation_ptr->IsExternallyTicked();
+}
+
+sim::SimulationMessager* SimulationNode::GetAcquiredSimulation()
 {
     return m_simulation_ptr;
 }
@@ -87,9 +105,27 @@ void SimulationNode::AttemptFreeMemory()
     sim::SimulationServer::GetSingleton()->AttemptFreeMemory();
 }
 
+bool SimulationNode::UpdateManuallyTicked()
+{
+    if (IsThreadAcquired())
+    {
+        return true;
+    }
+    
+    if (m_is_acquiring) // If we are acquired then try and get the simulation pointer
+    {
+        m_simulation_ptr = sim::SimulationServer::GetSingleton()->TryGetAcquiredSimulation(m_simulation_id);
+        m_is_acquiring = false;
+
+        return IsThreadAcquired();
+    }
+    
+    return false;
+}
+
 void SimulationNode::_input(const godot::Ref<godot::InputEvent>& event)
 {
-    if (!m_simulation_ptr)
+    if (!UpdateManuallyTicked())
     {
         return;
     }
@@ -158,7 +194,7 @@ void SimulationNode::_input(const godot::Ref<godot::InputEvent>& event)
 
 void SimulationNode::_notification(int notification)
 {
-    if (!m_simulation_ptr)
+    if (!UpdateManuallyTicked())
     {
         return;
     }
@@ -198,6 +234,7 @@ void SimulationNode::_notification(int notification)
         break;
 
     case NOTIFICATION_PHYSICS_PROCESS:
+        m_simulation_ptr->ManualTick();
         m_simulation_ptr->PostEvent(NodePhysicsProcessEvent());
         break;
 
@@ -367,16 +404,19 @@ void SimulationNode::_notification(int notification)
 
 	default:
 		godot::UtilityFunctions::print("Unknown notification %d", notification);
+        break;
 	}
 }
 
 void SimulationNode::_bind_methods()
 {
     godot::ClassDB::bind_method(godot::D_METHOD("start"), &SimulationNode::Start);
-    godot::ClassDB::bind_method(godot::D_METHOD("start_manual"), &SimulationNode::StartManual);
     godot::ClassDB::bind_method(godot::D_METHOD("stop"), &SimulationNode::Stop);
+    godot::ClassDB::bind_method(godot::D_METHOD("threadacquire"), &SimulationNode::ThreadAcquire);
+    godot::ClassDB::bind_method(godot::D_METHOD("threadrelease"), &SimulationNode::ThreadRelease);
     godot::ClassDB::bind_method(godot::D_METHOD("is_valid"), &SimulationNode::IsValid);
-    godot::ClassDB::bind_method(godot::D_METHOD("is_manual"), &SimulationNode::IsManual);
+    godot::ClassDB::bind_method(godot::D_METHOD("is_acquiring"), &SimulationNode::IsAcquiring);
+    godot::ClassDB::bind_method(godot::D_METHOD("is_thread_acquired"), &SimulationNode::IsThreadAcquired);
     godot::ClassDB::bind_method(godot::D_METHOD("is_running"), &SimulationNode::IsRunning);
     godot::ClassDB::bind_method(godot::D_METHOD("is_stopping"), &SimulationNode::IsStopping);
 

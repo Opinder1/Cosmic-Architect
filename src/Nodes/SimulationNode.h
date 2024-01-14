@@ -23,22 +23,29 @@ public:
 
 	void Start();
 
-	void StartManual();
-
 	void Stop();
 
-	bool IsValid();
+	void ThreadAcquire();
 
-	bool IsManual();
+	void ThreadRelease();
+
+	bool IsValid();
 
 	bool IsRunning();
 
 	bool IsStopping();
 
+	bool IsAcquiring();
+
+	bool IsThreadAcquired();
+
 	static void AttemptFreeMemory();
 
 protected:
-	sim::SimulationMessager* GetManualSimulation();
+	sim::SimulationMessager* GetAcquiredSimulation();
+
+private:
+	bool UpdateManuallyTicked();
 
 public:
 	void _process(double delta) override {}
@@ -47,7 +54,6 @@ public:
 
 	void _input(const godot::Ref<godot::InputEvent>& event) override;
 
-private:
 	void _notification(int notification);
 
 	static void _bind_methods();
@@ -55,5 +61,6 @@ private:
 private:
 	sim::UUID m_simulation_id;
 
+	bool m_is_acquiring;
 	sim::SimulationMessager* m_simulation_ptr;
 };

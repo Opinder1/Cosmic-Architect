@@ -33,7 +33,6 @@
 
 # Scons
 .sconsign.dblite
-build.bat
 
 # Visual studio
 .vs

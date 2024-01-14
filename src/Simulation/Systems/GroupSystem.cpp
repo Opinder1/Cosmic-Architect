@@ -97,15 +97,22 @@ namespace sim
 
 	void GroupSystem::OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event)
 	{
-		simulation.messager.PostEvent(ProcessDeletedEntitiesEvent());
-
-		simulation.registry.clear<DeletedComponent>();
-
-		if (simulation.registry.storage<ParentDeletedComponent>().size() > 0)
+		while (true)
 		{
-			simulation.messager.PostEvent(ProcessDeletedParentsEvent());
+			simulation.messager.PostEvent(ProcessDeletedEntitiesEvent());
 
-			simulation.registry.clear<ParentDeletedComponent>();
+			simulation.registry.clear<DeletedComponent>();
+
+			if (simulation.registry.storage<ParentDeletedComponent>().size() > 0)
+			{
+				simulation.messager.PostEvent(ProcessDeletedParentsEvent());
+
+				simulation.registry.clear<ParentDeletedComponent>();
+			}
+			else
+			{
+				break;
+			}
 		}
 	}
 }

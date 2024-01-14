@@ -34,7 +34,7 @@ void DrawSystem::OnProcessNewEntities(sim::Simulation& simulation, const sim::Pr
 {
 	auto& rendering = simulation.globals.get<RenderingGlobal>();
 
-	for (auto&& [entity, rendering_instance] : simulation.registry.view<sim::NewEntityComponent, RenderingInstanceComponent>().each())
+	for (auto&& [entity, rendering_instance] : simulation.registry.view<sim::NewComponent, RenderingInstanceComponent>().each())
 	{
 		rendering_instance.instance_id = rendering.server->instance_create();
 
@@ -46,7 +46,7 @@ void DrawSystem::OnProcessDeletedEntities(sim::Simulation& simulation, const sim
 {
 	auto& rendering = simulation.globals.get<RenderingGlobal>();
 
-	for (auto&& [entity, rendering_instance] : simulation.registry.view<sim::DeletedEntityComponent, RenderingInstanceComponent>().each())
+	for (auto&& [entity, rendering_instance] : simulation.registry.view<sim::DeletedComponent, RenderingInstanceComponent>().each())
 	{
 		rendering.server->free_rid(rendering_instance.instance_id);
 	}
@@ -81,7 +81,7 @@ sim::UUID DrawSystem::CreateMeshInstance(sim::Simulation& simulation, godot::RID
 	sim::UUID id = simulation.uuid_gen.Generate();
 
 	simulation.registry.emplace<sim::IDComponent>(entity, id);
-	simulation.registry.emplace<sim::NewEntityComponent>(entity);
+	simulation.registry.emplace<sim::NewComponent>(entity);
 	simulation.registry.emplace<RenderingInstanceComponent>(entity);
 	simulation.registry.emplace<Transform3DComponent>(entity);
 	simulation.registry.emplace<MeshComponent>(entity);

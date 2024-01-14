@@ -65,7 +65,7 @@ namespace sim
 
 					entt::entity peer_entity = simulation.registry.create();
 
-					simulation.registry.emplace<NewEntityComponent>(peer_entity);
+					simulation.registry.emplace<NewComponent>(peer_entity);
 					simulation.registry.emplace<PeerComponent>(peer_entity, udp_peer, dtls_peer);
 					simulation.registry.emplace<ChildPeerComponent>(peer_entity, server_entity);
 				}
@@ -77,7 +77,7 @@ namespace sim
 	{
 		for (auto [server_entity, server] : simulation.registry.view<ServerComponent>().each())
 		{
-			simulation.registry.emplace<DeletedEntityComponent>(server_entity);
+			simulation.registry.emplace<DeletedComponent>(server_entity);
 		}
 	}
 
@@ -123,7 +123,7 @@ namespace sim
 
 		entt::entity server_entity = simulation.registry.create();
 
-		simulation.registry.emplace<NewEntityComponent>(server_entity);
+		simulation.registry.emplace<NewComponent>(server_entity);
 		simulation.registry.emplace<ServerComponent>(server_entity, event.port, udp_server, dtls_server);
 
 		server_entities.emplace(event.port, server_entity);
@@ -147,10 +147,10 @@ namespace sim
 		{
 			if (child_peer.server_entity == server_entity)
 			{
-				simulation.registry.emplace<DeletedEntityComponent>(peer_entity);
+				simulation.registry.emplace<DeletedComponent>(peer_entity);
 			}
 		}
 
-		simulation.registry.emplace<DeletedEntityComponent>(server_entity);
+		simulation.registry.emplace<DeletedComponent>(server_entity);
 	}
 }

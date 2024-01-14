@@ -44,27 +44,20 @@ namespace sim
 	template<class Tag>
 	struct GroupComponent
 	{
-		size_t num_members
+		size_t num_members;
 	};
 
 	template<class Tag>
-	struct GroupMemberComponent : Tag::GroupMember
+	struct GroupMemberComponent
 	{
 		UUID group_id;
 		entt::entity group;
-		Tag::Data data;
 	};
 
 	template<class Tag>
-	struct MultiGroupMemberComponent : Tag::MultiGroupMember
+	struct MultiGroupMemberComponent
 	{
-		struct Data
-		{
-			entt::entity entity;
-			Tag::Data data;
-		};
-
-		robin_hood::unordered_flat_map<UUID, Data> groups;
+		robin_hood::unordered_flat_map<UUID, entt::entity> groups;
 	};
 
 	template<class Tag>

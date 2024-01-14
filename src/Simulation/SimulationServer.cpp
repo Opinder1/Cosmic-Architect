@@ -310,7 +310,7 @@ namespace sim
 		return result;
 	}
 
-	bool SimulationServer::ApplyToSimulation(UUID id, const MessagerApplicator& callback)
+	void SimulationServer::ApplyToSimulation(UUID id, const MessagerApplicator& callback)
 	{
 		std::shared_lock lock(m_mutex);
 
@@ -319,12 +319,9 @@ namespace sim
 		if (it == m_simulations.end())
 		{
 			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
-			return false;
 		}
 
 		callback(it->second->messager);
-
-		return true;
 	}
 
 	void SimulationServer::AttemptFreeMemory()

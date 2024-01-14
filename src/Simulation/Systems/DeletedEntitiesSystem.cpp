@@ -21,12 +21,12 @@ namespace sim
 		// Process new entities then remove the new entity component flag
 		simulation.messager.PostEvent(ProcessNewEntitiesEvent());
 
-		simulation.registry.clear<NewEntityComponent>();
+		simulation.registry.clear<NewComponent>();
 
 		// Process deleted entities then remove them and their components from the registry
 		simulation.messager.PostEvent(ProcessDeletedEntitiesEvent());
 
-		for (auto [entity] : simulation.registry.view<DeletedEntityComponent>().each())
+		for (auto [entity] : simulation.registry.view<DeletedComponent>().each())
 		{
 			simulation.registry.destroy(entity);
 		}
