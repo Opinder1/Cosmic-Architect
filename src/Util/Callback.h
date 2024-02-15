@@ -127,15 +127,15 @@ namespace cb
 	}
 
 	template<auto Func, class Param, class Ret, class... Args>
-	auto BindHelperParam(Ret(*)(Param*, Args...), Param* param)
-	{
-		return Callback<Ret(Args...)>(FuncPtrParamCallback<Func, Param, Ret, Args...>, reinterpret_cast<void*>(param));
-	}
-
-	template<auto Func, class Param, class Ret, class... Args>
 	auto BindHelperParam(Ret(*)(Param&, Args...), Param& param)
 	{
 		return Callback<Ret(Args...)>(FuncRefParamCallback<Func, Param, Ret, Args...>, reinterpret_cast<void*>(&param));
+	}
+
+	template<auto Func, class Param, class Ret, class... Args>
+	auto BindHelperParam(Ret(*)(Param*, Args...), Param* param)
+	{
+		return Callback<Ret(Args...)>(FuncPtrParamCallback<Func, Param, Ret, Args...>, reinterpret_cast<void*>(param));
 	}
 
 	template<auto Method, class Class, class Ret, class... Args>

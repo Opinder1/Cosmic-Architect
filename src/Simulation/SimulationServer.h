@@ -6,6 +6,8 @@
 
 #include "Util/Callback.h"
 
+#include <godot_cpp/classes/config_file.hpp>
+
 #include <TKRZW/tkrzw_thread_util.h>
 
 #include <robin_hood/robin_hood.h>
@@ -44,6 +46,8 @@ namespace sim
 		// Enable the ability to use networking features
 		void StartNetworking();
 
+		std::vector<UUID> GetAllSimulations();
+
 		// Create a new simulation and receive a handle to it
 		UUID CreateSimulation(double ticks_per_second, bool add_standard_systems);
 
@@ -56,6 +60,8 @@ namespace sim
 		{
 			AddSystem(id, SystemT::OnInitialize, SystemT::OnShutdown);
 		}
+
+		void LoadConfig(UUID id, const godot::Ref<godot::ConfigFile>& config);
 
 		// Add a system using an emmiter callback
 		void AddSystem(UUID id, const SimulationApplicator& initialize, const SimulationApplicator& shutdown);
@@ -93,6 +99,9 @@ namespace sim
 
 		// Is this simulation currently unlinking with all its peers
 		Result IsSimulationStopping(UUID id);
+
+		// Is this simulation owned by the calling thread
+		Result ThreadOwnsSimulation(UUID id);
 
 		// Run some code on a simulation. (Only use this if you know what you are doing)
 		void ApplyToSimulation(UUID id, const MessagerApplicator& callback);

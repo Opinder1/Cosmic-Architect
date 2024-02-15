@@ -79,7 +79,8 @@ namespace sim
 
 	bool SimulationMessager::ThreadAcquire()
 	{
-		DEBUG_ASSERT(ObjectOwned() && GetOwnerID() == m_internal_thread.get_id(), "This simulation should be owned by the internal thread when trying to acquire");
+		DEBUG_ASSERT(ObjectOwned(), "This simulation should be owned when trying to acquire");
+		DEBUG_ASSERT(GetOwnerID() == m_internal_thread.get_id(), "This simulations owner should be the internal thread when trying to acquire");
 
 		if (m_external_thread != std::thread::id{})
 		{
@@ -108,7 +109,8 @@ namespace sim
 
 	bool SimulationMessager::ThreadRelease()
 	{
-		DEBUG_ASSERT(ThreadOwnsObject() && GetOwnerID() == m_external_thread, "The simulation should be released by the external thread that owns it");
+		DEBUG_ASSERT(ThreadOwnsObject(), "The simulation should be released by the owner thread");
+		DEBUG_ASSERT(GetOwnerID() == m_external_thread, "The releaser should released by an external thread");
 
 		if (!IsExternallyTicked())
 		{
@@ -126,7 +128,8 @@ namespace sim
 
 	bool SimulationMessager::ManualTick()
 	{
-		DEBUG_ASSERT(ThreadOwnsObject() && GetOwnerID() == m_external_thread, "The simulation should be manually ticked by the external thread that owns it");
+		DEBUG_ASSERT(ThreadOwnsObject(), "The simulation should be manually ticked by the owner thread");
+		DEBUG_ASSERT(GetOwnerID() == m_external_thread, "The simulation should be manually ticked an external thread");
 
 		if (!IsExternallyTicked())
 		{
@@ -147,6 +150,11 @@ namespace sim
 	bool SimulationMessager::IsExternallyTicked() const
 	{
 		return m_thread_paused;
+	}
+
+	bool SimulationMessager::ThreadOwnsSimulation() const
+	{
+		return ThreadOwnsObject();
 	}
 
 	double SimulationMessager::GetTicksPerSecond() const

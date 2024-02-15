@@ -29,8 +29,11 @@ namespace sim
 		// Is this simulation currently running (not including short time when stopping)
 		bool IsRunning() const;
 
-		// This this simulation being ticked manually by an external thread that succesfully acquired this simulation
+		// Is this simulation being ticked manually by an external thread that succesfully acquired this simulation
 		bool IsExternallyTicked() const;
+
+		// Is this simulation being ticked by the calling thread
+		bool ThreadOwnsSimulation() const;
 
 		// Get the amount of ticks this simulation aims to complete per second (only relevant in threaded mode)
 		double GetTicksPerSecond() const;
@@ -66,8 +69,10 @@ namespace sim
 		// Stop this simulation (call from SimulationServer)
 		void Stop();
 
+		// Acquire the simulation for the current thread
 		bool ThreadAcquire();
 
+		// Release the simulation from the current thread
 		bool ThreadRelease();
 
 		// Main thread loop of this simulation that manages ticks and timings for the owner thread

@@ -6,6 +6,8 @@
 
 #include "Util/Time.h"
 
+#include <godot_cpp/classes/config_file.hpp>
+
 namespace sim
 {
 	// Called when a thread messager has stopped execution. Should be sent internally
@@ -69,6 +71,24 @@ namespace sim
 
 		Clock::time_point tick_start;
 		Clock::duration timestep;
+	};
+
+	struct SimulationLoadConfigEvent : Event
+	{
+		explicit SimulationLoadConfigEvent(const godot::Ref<godot::ConfigFile>& config) :
+			config(config)
+		{}
+
+		const godot::Ref<godot::ConfigFile>& config;
+	};
+
+	struct SimulationSaveConfigEvent : Event
+	{
+		explicit SimulationSaveConfigEvent(const godot::Ref<godot::ConfigFile>& config) :
+			config(config)
+		{}
+
+		const godot::Ref<godot::ConfigFile>& config;
 	};
 
 	struct ProcessNewEntitiesEvent : Event

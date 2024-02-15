@@ -2,6 +2,7 @@
 
 #include "Simulation/Event/Event.h"
 
+#include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/string_name.hpp>
 
 #include <godot_cpp/classes/input_event_action.hpp>
@@ -29,7 +30,11 @@ struct NodePredeleteEvent : sim::Event
 
 struct NodeEnterTreeEvent : sim::Event
 {
-    explicit NodeEnterTreeEvent() {}
+    explicit NodeEnterTreeEvent(godot::SceneTree& tree) :
+        tree(tree)
+    {}
+
+    godot::SceneTree& tree;
 };
 
 struct NodeExitTreeEvent : sim::Event
@@ -69,7 +74,11 @@ struct NodeProcessEvent : sim::Event
 
 struct NodeParentedEvent : sim::Event
 {
-    explicit NodeParentedEvent() {}
+    explicit NodeParentedEvent(godot::Node& parent) :
+        parent(parent)
+    {}
+
+    godot::Node& parent;
 };
 
 struct NodeUnparentedEvent : sim::Event
@@ -79,7 +88,11 @@ struct NodeUnparentedEvent : sim::Event
 
 struct NodeSceneInstantiatedEvent : sim::Event
 {
-    explicit NodeSceneInstantiatedEvent() {}
+    explicit NodeSceneInstantiatedEvent(const godot::String& path) :
+        path(path)
+    {}
+
+    godot::String path;
 };
 
 struct NodeDragBeginEvent : sim::Event
@@ -94,7 +107,11 @@ struct NodeDragEndEvent : sim::Event
 
 struct NodePathRenamedEvent : sim::Event
 {
-    explicit NodePathRenamedEvent() {}
+    explicit NodePathRenamedEvent(const godot::String& path) :
+        path(path)
+    {}
+
+    godot::String path;
 };
 
 struct NodeChildOrderChangedEvent : sim::Event
@@ -356,12 +373,20 @@ struct GodotShortcutEvent : sim::Event
 
 struct NodeTransformChangedEvent : sim::Event
 {
-    explicit NodeTransformChangedEvent() {}
+    explicit NodeTransformChangedEvent(const godot::Transform3D& transform) :
+        transform(transform)
+    {}
+
+    godot::Transform3D transform;
 };
 
 struct NodeEnterWorldEvent : sim::Event
 {
-    explicit NodeEnterWorldEvent() {}
+    explicit NodeEnterWorldEvent(const godot::Ref<godot::World3D>& world) :
+        world(world)
+    {}
+
+    godot::Ref<godot::World3D> world;
 };
 
 struct NodeExitWorldEvent : sim::Event
@@ -371,10 +396,18 @@ struct NodeExitWorldEvent : sim::Event
 
 struct NodeVisibilityChangedEvent : sim::Event
 {
-    explicit NodeVisibilityChangedEvent() {}
+    explicit NodeVisibilityChangedEvent(bool visible) :
+        visible(visible)
+    {}
+
+    bool visible;
 };
 
 struct NodeLocalTransformChangedEvent : sim::Event
 {
-    explicit NodeLocalTransformChangedEvent() {}
+    explicit NodeLocalTransformChangedEvent(const godot::Transform3D& transform) :
+        transform(transform)
+    {}
+
+    godot::Transform3D transform;
 };

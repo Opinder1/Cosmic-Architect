@@ -18,86 +18,70 @@
 #include <godot_cpp/classes/input_event_pan_gesture.hpp>
 #include <godot_cpp/classes/input_event_mouse_button.hpp>
 #include <godot_cpp/classes/input_event_mouse_motion.hpp>
+#include <godot_cpp/classes/world3d.hpp>
 
 #include <godot_cpp/variant/utility_functions.hpp>
 
-SimulationNode::SimulationNode() :
-	m_simulation_ptr(nullptr),
-    m_is_acquiring(false)
+SimulationNode::SimulationNode()
 {
-	set_notify_transform(true);
-	set_notify_local_transform(true);
-
-	m_simulation_id = sim::SimulationServer::GetSingleton()->CreateSimulation(60, true);
+    set_notify_transform(true);
+    set_notify_local_transform(true);
 }
 
 SimulationNode::~SimulationNode()
 {
-	sim::SimulationServer::GetSingleton()->DeleteSimulation(m_simulation_id);
+
 }
 
-sim::UUID SimulationNode::GetID()
+godot::PackedStringArray SimulationNode::GetAllSimulations()
 {
-    return m_simulation_id;
-}
+    std::vector<sim::UUID> ids = sim::SimulationServer::GetSingleton()->GetAllSimulations();
 
-void SimulationNode::Start()
-{
-    sim::SimulationServer::GetSingleton()->StartSimulation(m_simulation_id);
-}
+    godot::PackedStringArray out;
 
-void SimulationNode::Stop()
-{
-    sim::SimulationServer::GetSingleton()->StopSimulation(m_simulation_id);
-}
-
-void SimulationNode::ThreadAcquire()
-{
-    if (sim::SimulationServer::GetSingleton()->ThreadAcquireSimulation(m_simulation_id))
+    for (const sim::UUID& id : ids)
     {
-        m_is_acquiring = true;
+        out.push_back(id.ToGodotString());
     }
+
+    return out;
 }
 
-void SimulationNode::ThreadRelease()
+godot::StringName SimulationNode::Create(const godot::String& config_path)
 {
-    if (IsAcquiring() || IsThreadAcquired())
-    {
-        sim::SimulationServer::GetSingleton()->ThreadReleaseSimulation(m_simulation_id);
+    sim::UUID uuid = sim::SimulationServer::GetSingleton()->CreateSimulation(60, true);
 
-        m_is_acquiring = false;
-        m_simulation_ptr = nullptr;
-    }
+    return uuid.ToGodotString();
 }
 
-bool SimulationNode::IsValid()
+void SimulationNode::Delete(const godot::StringName& id)
 {
-    return sim::SimulationServer::GetSingleton()->IsSimulation(m_simulation_id);
+    sim::SimulationServer::GetSingleton()->DeleteSimulation(sim::UUID(id));
 }
 
-bool SimulationNode::IsRunning()
+bool SimulationNode::Start(const godot::StringName& id)
 {
-    return sim::SimulationServer::GetSingleton()->IsSimulationRunning(m_simulation_id) == sim::SimulationServer::Result::True;
+    return sim::SimulationServer::GetSingleton()->StartSimulation(sim::UUID(id));
 }
 
-bool SimulationNode::IsStopping()
+void SimulationNode::Stop(const godot::StringName& id)
 {
-    return sim::SimulationServer::GetSingleton()->IsSimulationStopping(m_simulation_id) == sim::SimulationServer::Result::True;
+    sim::SimulationServer::GetSingleton()->StopSimulation(sim::UUID(id));
 }
 
-bool SimulationNode::IsAcquiring()
+bool SimulationNode::IsValid(const godot::StringName& id)
 {
-    return m_is_acquiring;
+    return sim::SimulationServer::GetSingleton()->IsSimulation(sim::UUID(id));
 }
 
-bool SimulationNode::IsThreadAcquired()
+bool SimulationNode::IsRunning(const godot::StringName& id)
 {
-    return m_simulation_ptr != nullptr && m_simulation_ptr->IsExternallyTicked();
+    return sim::SimulationServer::GetSingleton()->IsSimulationRunning(sim::UUID(id)) == sim::SimulationServer::Result::True;
 }
 
-sim::SimulationMessager* SimulationNode::GetAcquiredSimulation()
+bool SimulationNode::IsStopping(const godot::StringName& id)
 {
-    return m_simulation_ptr;
+    return sim::SimulationServer::GetSingleton()->IsSimulationStopping(sim::UUID(id)) == sim::SimulationServer::Result::True;
 }
 
 void SimulationNode::AttemptFreeMemory()
@@ -105,44 +89,216 @@ void SimulationNode::AttemptFreeMemory()
     sim::SimulationServer::GetSingleton()->AttemptFreeMemory();
 }
 
-bool SimulationNode::UpdateManuallyTicked()
+godot::PackedStringArray SimulationNode::GetSimulations()
 {
-    if (IsThreadAcquired())
-    {
-        return true;
-    }
-    
-    if (m_is_acquiring) // If we are acquired then try and get the simulation pointer
-    {
-        m_simulation_ptr = sim::SimulationServer::GetSingleton()->TryGetAcquiredSimulation(m_simulation_id);
-        m_is_acquiring = false;
+    godot::PackedStringArray out;
 
-        return IsThreadAcquired();
+    for (auto&& [id, ref] : m_simulations)
+    {
+        out.push_back(id.ToGodotString());
     }
-    
-    return false;
+
+    return out;
 }
 
-void SimulationNode::_input(const godot::Ref<godot::InputEvent>& event)
+bool SimulationNode::Add(const godot::StringName& id)
 {
-    if (!UpdateManuallyTicked())
+    sim::UUID uuid(id);
+
+    if (m_simulations.find(uuid) != m_simulations.end())
+    {
+        DEBUG_PRINT_INFO("The simulation has already be added");
+        return false;
+    }
+
+    // Check that the simulation is running before we try and acquire it with this thread
+    switch(sim::SimulationServer::GetSingleton()->IsSimulationRunning(uuid))
+    {
+    case sim::SimulationServer::Result::True:
+        break;
+
+    case sim::SimulationServer::Result::False:
+        DEBUG_PRINT_INFO("The requested simulation is not running so can't be added");
+        return false;
+
+    case sim::SimulationServer::Result::Invalid:
+        DEBUG_PRINT_INFO("The requested simulation doesn't exist so couldn't be added");
+        return false;
+    }
+
+    SimulationReference ref;
+
+    ref.simulation_id = uuid;
+
+    // Start trying to acquire
+    if (!sim::SimulationServer::GetSingleton()->ThreadAcquireSimulation(uuid))
+    {
+        DEBUG_PRINT_INFO("Failed to acquire simulation");
+        return false;
+    }
+
+    ref.is_acquiring = true;
+
+    m_simulations.emplace(uuid, std::move(ref));
+
+    return true;
+}
+
+bool SimulationNode::Remove(const godot::StringName& id)
+{
+    sim::UUID uuid(id);
+
+    auto it = m_simulations.find(uuid);
+
+    if (it == m_simulations.end())
+    {
+        DEBUG_PRINT_INFO("Simulation was never added to this node");
+        return false;
+    }
+
+    SimulationReference& ref = it->second;
+
+    // Make sure to have the simulation deinitialize its world and tree data
+    if (ref.simulation_ptr != nullptr)
+    {
+        godot::Ref<godot::World3D> world = get_world_3d();
+
+        if (world.is_valid())
+        {
+            ref.simulation_ptr->PostEvent(NodeExitWorldEvent());
+        }
+
+        if (is_inside_tree())
+        {
+            ref.simulation_ptr->PostEvent(NodeExitTreeEvent());
+        }
+    }
+
+    // Stop acquiring if we are either in the acquiring process or acquired
+    if (ref.is_acquiring || ref.simulation_ptr != nullptr)
+    {
+        sim::SimulationServer::GetSingleton()->ThreadReleaseSimulation(ref.simulation_id);
+
+        ref.is_acquiring = false;
+        ref.simulation_ptr = nullptr;
+    }
+
+    m_simulations.erase(it);
+
+    return true;
+}
+
+bool SimulationNode::IsAcquiring(const godot::StringName& id)
+{
+    sim::UUID uuid(id);
+
+    auto it = m_simulations.find(uuid);
+
+    if (it == m_simulations.end())
+    {
+        return false;
+    }
+
+    return it->second.is_acquiring;
+}
+
+bool SimulationNode::IsThreadAcquired(const godot::StringName& id)
+{
+    return GetAcquiredSimulation(id) != nullptr;
+}
+
+sim::SimulationMessager* SimulationNode::GetAcquiredSimulation(const godot::StringName& id)
+{
+    sim::UUID uuid(id);
+
+    auto it = m_simulations.find(uuid);
+
+    if (it == m_simulations.end())
+    {
+        return nullptr;
+    }
+
+    return it->second.simulation_ptr;
+}
+
+void SimulationNode::TryGetAcquired(SimulationReference& ref)
+{
+    DEBUG_ASSERT(ref.is_acquiring, "We should be acquiring");
+
+    ref.simulation_ptr = sim::SimulationServer::GetSingleton()->TryGetAcquiredSimulation(ref.simulation_id);
+
+    if (ref.simulation_ptr == nullptr) // We haven't acquired yet
     {
         return;
     }
 
+    ref.is_acquiring = false;
+
+    // Make sure to tell the simulation if we are already in the tree and world
+    if (is_inside_tree())
+    {
+        ref.simulation_ptr->PostEvent(NodeEnterTreeEvent(*get_tree()));
+    }
+
+    godot::Ref<godot::World3D> world = get_world_3d();
+
+    if (world.is_valid())
+    {
+        ref.simulation_ptr->PostEvent(NodeEnterWorldEvent(*world));
+
+        ref.simulation_ptr->PostEvent(NodeTransformChangedEvent(get_global_transform()));
+
+        ref.simulation_ptr->PostEvent(NodeLocalTransformChangedEvent(get_transform()));
+    }
+}
+
+template<class EventT>
+void SimulationNode::SendEventToAll(const EventT& event)
+{
+    for (auto&& [id, ref] : m_simulations)
+    {
+        if (ref.simulation_ptr != nullptr)
+        {
+            ref.simulation_ptr->PostEvent(event);
+        }
+    }
+}
+
+void SimulationNode::ManualTickAll()
+{
+    for (auto&& [id, ref] : m_simulations)
+    {
+        if (ref.is_acquiring)
+        {
+            TryGetAcquired(ref);
+        }
+    }
+
+    for (auto&& [id, ref] : m_simulations)
+    {
+        if (ref.simulation_ptr != nullptr)
+        {
+            ref.simulation_ptr->ManualTick();
+            ref.simulation_ptr->PostEvent(NodePhysicsProcessEvent());
+        }
+    }
+}
+
+void SimulationNode::_input(const godot::Ref<godot::InputEvent>& event)
+{
     if (godot::InputEventAction* action = godot::Object::cast_to<godot::InputEventAction>(event.ptr()))
     {
-        m_simulation_ptr->PostEvent(GodotActionEvent(*action));
+        SendEventToAll(GodotActionEvent(*action));
     }
     else if (godot::Object::cast_to<godot::InputEventFromWindow>(event.ptr()))
     {
         if (godot::InputEventScreenDrag* screen_drag = godot::Object::cast_to<godot::InputEventScreenDrag>(event.ptr()))
         {
-            m_simulation_ptr->PostEvent(GodotScreenDragEvent(*screen_drag));
+            SendEventToAll(GodotScreenDragEvent(*screen_drag));
         }
         else if (godot::InputEventScreenTouch* screen_touch = godot::Object::cast_to<godot::InputEventScreenTouch>(event.ptr()))
         {
-            m_simulation_ptr->PostEvent(GodotScreenTouchEvent(*screen_touch));
+            SendEventToAll(GodotScreenTouchEvent(*screen_touch));
         }
         else if (godot::Object::cast_to<godot::InputEventWithModifiers>(event.ptr()))
         {
@@ -150,256 +306,250 @@ void SimulationNode::_input(const godot::Ref<godot::InputEvent>& event)
             {
                 if (godot::InputEventMagnifyGesture* magnify_gesture = godot::Object::cast_to<godot::InputEventMagnifyGesture>(event.ptr()))
                 {
-                    m_simulation_ptr->PostEvent(GodotMagnifyGestureEvent(*magnify_gesture));
+                    SendEventToAll(GodotMagnifyGestureEvent(*magnify_gesture));
                 }
                 else if (godot::InputEventPanGesture* pan_gesture = godot::Object::cast_to<godot::InputEventPanGesture>(event.ptr()))
                 {
-                    m_simulation_ptr->PostEvent(GodotPanGestureEvent(*pan_gesture));
+                    SendEventToAll(GodotPanGestureEvent(*pan_gesture));
                 }
             }
             else if (godot::InputEventKey* key = godot::Object::cast_to<godot::InputEventKey>(event.ptr()))
             {
-                m_simulation_ptr->PostEvent(GodotKeyEvent(*key));
+                SendEventToAll(GodotKeyEvent(*key));
             }
             else if (godot::Object::cast_to<godot::InputEventMouse>(event.ptr()))
             {
                 if (godot::InputEventMouseButton* mouse_button = godot::Object::cast_to<godot::InputEventMouseButton>(event.ptr()))
                 {
-                    m_simulation_ptr->PostEvent(GodotMouseButtonEvent(*mouse_button));
+                    SendEventToAll(GodotMouseButtonEvent(*mouse_button));
                 }
                 else  if (godot::InputEventMouseMotion* mouse_motion = godot::Object::cast_to<godot::InputEventMouseMotion>(event.ptr()))
                 {
-                    m_simulation_ptr->PostEvent(GodotMouseMotionEvent(*mouse_motion));
+                    SendEventToAll(GodotMouseMotionEvent(*mouse_motion));
                 }
             }
         }
     }
     else if (godot::InputEventJoypadButton* joypad_button = godot::Object::cast_to<godot::InputEventJoypadButton>(event.ptr()))
     {
-        m_simulation_ptr->PostEvent(GodotJoypadButtonEvent(*joypad_button));
+        SendEventToAll(GodotJoypadButtonEvent(*joypad_button));
     }
     else if (godot::InputEventJoypadMotion* joypad_motion = godot::Object::cast_to<godot::InputEventJoypadMotion>(event.ptr()))
     {
-        m_simulation_ptr->PostEvent(GodotJoypadMotionEvent(*joypad_motion));
+        SendEventToAll(GodotJoypadMotionEvent(*joypad_motion));
     }
     else if (godot::InputEventMIDI* midi = godot::Object::cast_to<godot::InputEventMIDI>(event.ptr()))
     {
-        m_simulation_ptr->PostEvent(GodotMIDIEvent(*midi));
+        SendEventToAll(GodotMIDIEvent(*midi));
     }
     else if (godot::InputEventShortcut* shortcut = godot::Object::cast_to<godot::InputEventShortcut>(event.ptr()))
     {
-        m_simulation_ptr->PostEvent(GodotShortcutEvent(*shortcut));
+        SendEventToAll(GodotShortcutEvent(*shortcut));
     }
 }
 
 void SimulationNode::_notification(int notification)
 {
-    if (!UpdateManuallyTicked())
-    {
-        return;
-    }
-
 	switch (notification)
 	{
     case NOTIFICATION_POSTINITIALIZE:
-        m_simulation_ptr->PostEvent(NodePostinitializeEvent());
+        SendEventToAll(NodePostinitializeEvent());
         break;
 
     case NOTIFICATION_PREDELETE:
-        m_simulation_ptr->PostEvent(NodePredeleteEvent());
+        SendEventToAll(NodePredeleteEvent());
         break;
 
     case NOTIFICATION_ENTER_TREE:
-        m_simulation_ptr->PostEvent(NodeEnterTreeEvent());
+        SendEventToAll(NodeEnterTreeEvent(*get_tree()));
         break;
 
     case NOTIFICATION_EXIT_TREE:
-        m_simulation_ptr->PostEvent(NodeExitTreeEvent());
+        SendEventToAll(NodeExitTreeEvent());
         break;
 
     case NOTIFICATION_MOVED_IN_PARENT:
-        m_simulation_ptr->PostEvent(NodeMovedInParentEvent());
+        SendEventToAll(NodeMovedInParentEvent());
         break;
 
     case NOTIFICATION_READY:
-        m_simulation_ptr->PostEvent(NodeReadyEvent());
+        SendEventToAll(NodeReadyEvent());
         break;
 
     case NOTIFICATION_PAUSED:
-        m_simulation_ptr->PostEvent(NodePausedEvent());
+        SendEventToAll(NodePausedEvent());
         break;
 
     case NOTIFICATION_UNPAUSED:
-        m_simulation_ptr->PostEvent(NodeUnpausedEvent());
+        SendEventToAll(NodeUnpausedEvent());
         break;
 
     case NOTIFICATION_PHYSICS_PROCESS:
-        m_simulation_ptr->ManualTick();
-        m_simulation_ptr->PostEvent(NodePhysicsProcessEvent());
+        ManualTickAll();
         break;
 
     case NOTIFICATION_PROCESS:
-        m_simulation_ptr->PostEvent(NodeProcessEvent());
+        SendEventToAll(NodeProcessEvent());
         break;
 
     case NOTIFICATION_PARENTED:
-        m_simulation_ptr->PostEvent(NodeParentedEvent());
+        SendEventToAll(NodeParentedEvent(*get_parent()));
         break;
 
     case NOTIFICATION_UNPARENTED:
-        m_simulation_ptr->PostEvent(NodeUnparentedEvent());
+        SendEventToAll(NodeUnparentedEvent());
         break;
 
     case NOTIFICATION_SCENE_INSTANTIATED:
-        m_simulation_ptr->PostEvent(NodeSceneInstantiatedEvent());
+        SendEventToAll(NodeSceneInstantiatedEvent(get_scene_file_path()));
         break;
 
     case NOTIFICATION_DRAG_BEGIN:
-        m_simulation_ptr->PostEvent(NodeDragBeginEvent());
+        SendEventToAll(NodeDragBeginEvent());
         break;
 
     case NOTIFICATION_DRAG_END:
-        m_simulation_ptr->PostEvent(NodeDragEndEvent());
+        SendEventToAll(NodeDragEndEvent());
         break;
 
     case NOTIFICATION_PATH_RENAMED:
-        m_simulation_ptr->PostEvent(NodePathRenamedEvent());
+        SendEventToAll(NodePathRenamedEvent(get_path()));
         break;
 
     case NOTIFICATION_CHILD_ORDER_CHANGED:
-        m_simulation_ptr->PostEvent(NodeChildOrderChangedEvent());
+        SendEventToAll(NodeChildOrderChangedEvent());
         break;
 
     case NOTIFICATION_INTERNAL_PROCESS:
-        m_simulation_ptr->PostEvent(NodeInternalProcessEvent());
+        SendEventToAll(NodeInternalProcessEvent());
         break;
 
     case NOTIFICATION_INTERNAL_PHYSICS_PROCESS:
-        m_simulation_ptr->PostEvent(NodeInternalPhysicsProcessEvent());
+        SendEventToAll(NodeInternalPhysicsProcessEvent());
         break;
 
     case NOTIFICATION_POST_ENTER_TREE:
-        m_simulation_ptr->PostEvent(NodePostEnterTreeEvent());
+        SendEventToAll(NodePostEnterTreeEvent());
         break;
 
     case NOTIFICATION_DISABLED:
-        m_simulation_ptr->PostEvent(NodeDisabledEvent());
+        SendEventToAll(NodeDisabledEvent());
         break;
 
     case NOTIFICATION_ENABLED:
-        m_simulation_ptr->PostEvent(NodeEnabledEvent());
+        SendEventToAll(NodeEnabledEvent());
         break;
 
     case NOTIFICATION_NODE_RECACHE_REQUESTED:
-        m_simulation_ptr->PostEvent(NodeRecacheRequestedEvent());
+        SendEventToAll(NodeRecacheRequestedEvent());
         break;
 
     case NOTIFICATION_EDITOR_PRE_SAVE:
-        m_simulation_ptr->PostEvent(NodeEditorPreSaveEvent());
+        SendEventToAll(NodeEditorPreSaveEvent());
         break;
 
     case NOTIFICATION_EDITOR_POST_SAVE:
-        m_simulation_ptr->PostEvent(NodeEditorPostSaveEvent());
+        SendEventToAll(NodeEditorPostSaveEvent());
         break;
 
     case NOTIFICATION_WM_MOUSE_ENTER:
-        m_simulation_ptr->PostEvent(NodeWindowMouseEnterEvent());
+        SendEventToAll(NodeWindowMouseEnterEvent());
         break;
 
     case NOTIFICATION_WM_MOUSE_EXIT:
-        m_simulation_ptr->PostEvent(NodeWindowMouseExitEvent());
+        SendEventToAll(NodeWindowMouseExitEvent());
         break;
 
     case NOTIFICATION_WM_WINDOW_FOCUS_IN:
-        m_simulation_ptr->PostEvent(NodeWindowFocusInEvent());
+        SendEventToAll(NodeWindowFocusInEvent());
         break;
 
     case NOTIFICATION_WM_WINDOW_FOCUS_OUT:
-        m_simulation_ptr->PostEvent(NodeWindowFocusOutEvent());
+        SendEventToAll(NodeWindowFocusOutEvent());
         break;
 
     case NOTIFICATION_WM_CLOSE_REQUEST:
-        m_simulation_ptr->PostEvent(NodeWindowCloseRequestEvent());
+        SendEventToAll(NodeWindowCloseRequestEvent());
         break;
 
     case NOTIFICATION_WM_GO_BACK_REQUEST:
-        m_simulation_ptr->PostEvent(NodeWindowGoBackRequestEvent());
+        SendEventToAll(NodeWindowGoBackRequestEvent());
         break;
 
     case NOTIFICATION_WM_SIZE_CHANGED:
-        m_simulation_ptr->PostEvent(NodeWindowSizeChangedEvent());
+        SendEventToAll(NodeWindowSizeChangedEvent());
         break;
 
     case NOTIFICATION_WM_DPI_CHANGE:
-        m_simulation_ptr->PostEvent(OSDpiChangeEvent());
+        SendEventToAll(OSDpiChangeEvent());
         break;
 
     case NOTIFICATION_VP_MOUSE_ENTER:
-        m_simulation_ptr->PostEvent(NodeViewportMouseEnterEvent());
+        SendEventToAll(NodeViewportMouseEnterEvent());
         break;
 
     case NOTIFICATION_VP_MOUSE_EXIT:
-        m_simulation_ptr->PostEvent(NodeViewportMouseExitEvent());
+        SendEventToAll(NodeViewportMouseExitEvent());
         break;
 
     case NOTIFICATION_OS_MEMORY_WARNING:
-        m_simulation_ptr->PostEvent(OSMemoryWarningEvent());
+        SendEventToAll(OSMemoryWarningEvent());
         break;
 
     case NOTIFICATION_TRANSLATION_CHANGED:
-        m_simulation_ptr->PostEvent(GodotTranslationChangedEvent());
+        SendEventToAll(GodotTranslationChangedEvent());
         break;
 
     case NOTIFICATION_WM_ABOUT:
-        m_simulation_ptr->PostEvent(OSAboutEvent());
+        SendEventToAll(OSAboutEvent());
         break;
 
     case NOTIFICATION_CRASH:
-        m_simulation_ptr->PostEvent(OSCrashEvent());
+        SendEventToAll(OSCrashEvent());
         break;
 
     case NOTIFICATION_OS_IME_UPDATE:
-        m_simulation_ptr->PostEvent(OSIMEUpdateEvent());
+        SendEventToAll(OSIMEUpdateEvent());
         break;
 
     case NOTIFICATION_APPLICATION_RESUMED:
-        m_simulation_ptr->PostEvent(OSApplicationResumedEvent());
+        SendEventToAll(OSApplicationResumedEvent());
         break;
 
     case NOTIFICATION_APPLICATION_PAUSED:
-        m_simulation_ptr->PostEvent(OSApplicationPausedEvent());
+        SendEventToAll(OSApplicationPausedEvent());
         break;
 
     case NOTIFICATION_APPLICATION_FOCUS_IN:
-        m_simulation_ptr->PostEvent(OSApplicationFocusInEvent());
+        SendEventToAll(OSApplicationFocusInEvent());
         break;
 
     case NOTIFICATION_APPLICATION_FOCUS_OUT:
-        m_simulation_ptr->PostEvent(OSApplicationFocusOutEvent());
+        SendEventToAll(OSApplicationFocusOutEvent());
         break;
 
     case NOTIFICATION_TEXT_SERVER_CHANGED:
-        m_simulation_ptr->PostEvent(GodotTextServerChangedEvent());
+        SendEventToAll(GodotTextServerChangedEvent());
         break;
 
     case NOTIFICATION_TRANSFORM_CHANGED:
-        m_simulation_ptr->PostEvent(NodeTransformChangedEvent());
+        SendEventToAll(NodeTransformChangedEvent(get_global_transform()));
         break;
 
     case NOTIFICATION_ENTER_WORLD:
-        m_simulation_ptr->PostEvent(NodeEnterWorldEvent());
+        SendEventToAll(NodeEnterWorldEvent(get_world_3d()));
         break;
 
     case NOTIFICATION_EXIT_WORLD:
-        m_simulation_ptr->PostEvent(NodeExitWorldEvent());
+        SendEventToAll(NodeExitWorldEvent());
         break;
 
     case NOTIFICATION_VISIBILITY_CHANGED:
-        m_simulation_ptr->PostEvent(NodeVisibilityChangedEvent());
+        SendEventToAll(NodeVisibilityChangedEvent(is_visible_in_tree()));
         break;
 
     case NOTIFICATION_LOCAL_TRANSFORM_CHANGED:
-        m_simulation_ptr->PostEvent(NodeLocalTransformChangedEvent());
+        SendEventToAll(NodeLocalTransformChangedEvent(get_transform()));
         break;
 
 	default:
@@ -410,15 +560,19 @@ void SimulationNode::_notification(int notification)
 
 void SimulationNode::_bind_methods()
 {
-    godot::ClassDB::bind_method(godot::D_METHOD("start"), &SimulationNode::Start);
-    godot::ClassDB::bind_method(godot::D_METHOD("stop"), &SimulationNode::Stop);
-    godot::ClassDB::bind_method(godot::D_METHOD("threadacquire"), &SimulationNode::ThreadAcquire);
-    godot::ClassDB::bind_method(godot::D_METHOD("threadrelease"), &SimulationNode::ThreadRelease);
-    godot::ClassDB::bind_method(godot::D_METHOD("is_valid"), &SimulationNode::IsValid);
-    godot::ClassDB::bind_method(godot::D_METHOD("is_acquiring"), &SimulationNode::IsAcquiring);
-    godot::ClassDB::bind_method(godot::D_METHOD("is_thread_acquired"), &SimulationNode::IsThreadAcquired);
-    godot::ClassDB::bind_method(godot::D_METHOD("is_running"), &SimulationNode::IsRunning);
-    godot::ClassDB::bind_method(godot::D_METHOD("is_stopping"), &SimulationNode::IsStopping);
+    godot::ClassDB::bind_method(godot::D_METHOD("get_simulations"), &SimulationNode::GetSimulations);
+    godot::ClassDB::bind_method(godot::D_METHOD("add", "id"), &SimulationNode::Add);
+    godot::ClassDB::bind_method(godot::D_METHOD("remove", "id"), &SimulationNode::Remove);
+    godot::ClassDB::bind_method(godot::D_METHOD("is_acquiring", "id"), &SimulationNode::IsAcquiring);
+    godot::ClassDB::bind_method(godot::D_METHOD("is_thread_acquired", "id"), &SimulationNode::IsThreadAcquired);
 
+    godot::ClassDB::bind_static_method("SimulationNode", godot::D_METHOD("get_all_simulations"), &SimulationNode::AttemptFreeMemory);
+    godot::ClassDB::bind_static_method("SimulationNode", godot::D_METHOD("create", "id"), &SimulationNode::Create);
+    godot::ClassDB::bind_static_method("SimulationNode", godot::D_METHOD("delete", "id"), &SimulationNode::Delete);
+    godot::ClassDB::bind_static_method("SimulationNode", godot::D_METHOD("start", "id"), &SimulationNode::Start);
+    godot::ClassDB::bind_static_method("SimulationNode", godot::D_METHOD("stop", "id"), &SimulationNode::Stop);
+    godot::ClassDB::bind_static_method("SimulationNode", godot::D_METHOD("is_valid", "id"), &SimulationNode::IsValid);
+    godot::ClassDB::bind_static_method("SimulationNode", godot::D_METHOD("is_running", "id"), &SimulationNode::IsRunning);
+    godot::ClassDB::bind_static_method("SimulationNode", godot::D_METHOD("is_stopping", "id"), &SimulationNode::IsStopping);
     godot::ClassDB::bind_static_method("SimulationNode", godot::D_METHOD("attempt_free_memory"), &SimulationNode::AttemptFreeMemory);
 }

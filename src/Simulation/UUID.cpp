@@ -256,7 +256,5 @@ namespace sim
 
 size_t robin_hood::hash<sim::UUID>::operator()(const sim::UUID& uuid) const noexcept
 {
-	//return robin_hood::hash<uint64_t>()(uuid.GetFirst()) ^ (robin_hood::hash<uint64_t>()(uuid.GetSecond()) << 1);
-
 	return uuid.GetFirst() ^ uuid.GetSecond();
 }

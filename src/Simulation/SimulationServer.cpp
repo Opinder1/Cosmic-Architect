@@ -84,6 +84,22 @@ namespace sim
 		SimulationServer::GetSingleton()->StartSimulation(m_network_simulation);
 	}
 
+	std::vector<UUID> SimulationServer::GetAllSimulations()
+	{
+		std::shared_lock lock(m_mutex);
+
+		std::vector<UUID> out;
+
+		out.reserve(m_simulations.size());
+
+		for (auto&& [id, simulation] : m_simulations)
+		{
+			out.push_back(id);
+		}
+
+		return out;
+	}
+
 	UUID SimulationServer::CreateSimulation(double ticks_per_second, bool add_standard_systems)
 	{
 		UUID id = UUID::GenerateRandom();
@@ -305,6 +321,18 @@ namespace sim
 		ApplyToSimulation(id, [&result](SimulationMessager& messager)
 		{
 			result = messager.IsStopping() ? Result::True : Result::False;
+		});
+
+		return result;
+	}
+
+	SimulationServer::Result SimulationServer::ThreadOwnsSimulation(UUID id)
+	{
+		Result result = Result::Invalid;
+
+		ApplyToSimulation(id, [&result](SimulationMessager& messager)
+		{
+			result = messager.ThreadOwnsSimulation() ? Result::True : Result::False;
 		});
 
 		return result;
