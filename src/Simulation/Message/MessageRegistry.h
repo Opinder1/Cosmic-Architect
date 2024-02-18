@@ -18,6 +18,8 @@ namespace sim
 	// A producer of events of which their ids are incremental. Should be inherited by a class that will create message senders
 	class MessageRegistry
 	{
+		friend MessageSender;
+
 	public:
 		static MessageRegistry* GetSingleton();
 
@@ -36,12 +38,6 @@ namespace sim
 			RegisterGenericType(GetEventType<MessageT>(), std::make_unique<MessageFactory<MessageT>>(index));
 		}
 
-		// Called by a message sender when it initializes itself
-		void RegisterMessageSender(const MessageSender& sender);
-
-		// Called by a message sender when it deinitializes itself
-		void UnregisterMessageSender(const MessageSender& sender);
-
 		// Serialize a message to a stream
 		bool PackMessage(const Message& message, ByteStream& stream, const MessageSender& target) const;
 
@@ -49,6 +45,13 @@ namespace sim
 		MessagePtr UnpackMessage(ByteStream& stream, UUID& target) const;
 
 	private:
+		// Called by a message sender when it initializes itself
+		void RegisterMessageSender(const MessageSender& sender);
+
+		// Called by a message sender when it deinitializes itself
+		void UnregisterMessageSender(const MessageSender& sender);
+
+		// Internal message register callback
 		void RegisterGenericMessageType(Message::Type type, std::unique_ptr<MessageFactoryBase>&& factory);
 
 	private:

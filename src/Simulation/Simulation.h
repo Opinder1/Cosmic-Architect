@@ -22,8 +22,10 @@ namespace sim
 		using UUIDToEntityStorage = robin_hood::unordered_map<UUID, entt::entity>;
 		using EntityToUUIDStorage = robin_hood::unordered_map<entt::entity, UUID>;
 
-		Simulation(SimulationServer& server, UUID id, double ticks_per_second);
+		Simulation(SimulationServer& server, UUID id);
 		~Simulation();
+
+		SimulationServer&		server;
 
 		SimulationMessager		messager;
 

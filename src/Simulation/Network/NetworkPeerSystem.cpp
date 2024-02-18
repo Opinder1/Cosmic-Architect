@@ -82,7 +82,7 @@ namespace sim
 	{
 		// Get the message and the target to send to
 		UUID target;
-		MessagePtr message = MessageRegistry::GetSingleton()->UnpackMessage(stream, target);
+		MessagePtr message = simulation.server.UnpackMessage(stream, target);
 
 		if (message == nullptr)
 		{

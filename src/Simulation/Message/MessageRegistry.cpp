@@ -14,6 +14,7 @@ namespace sim
 
 	MessageRegistry* MessageRegistry::GetSingleton()
 	{
+		DEBUG_ASSERT(s_singleton != nullptr, "THe singleton should be valid");
 		return s_singleton;
 	}
 

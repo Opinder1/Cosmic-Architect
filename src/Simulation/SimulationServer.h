@@ -6,14 +6,13 @@
 
 #include "Util/Callback.h"
 
-#include <godot_cpp/classes/config_file.hpp>
-
 #include <TKRZW/tkrzw_thread_util.h>
 
 #include <robin_hood/robin_hood.h>
 
 namespace sim
 {
+	class SimulationBuilder;
 	class SimulationMessager;
 	struct Simulation;
 
@@ -28,7 +27,6 @@ namespace sim
 		};
 
 		using MessagerApplicator = cb::Callback<void(SimulationMessager&)>;
-		using SimulationApplicator = cb::Callback<void(Simulation&)>;
 
 		using SimulationPtr = std::unique_ptr<Simulation>;
 		using SimulationStorage = robin_hood::unordered_flat_map<UUID, SimulationPtr>;
@@ -49,22 +47,10 @@ namespace sim
 		std::vector<UUID> GetAllSimulations();
 
 		// Create a new simulation and receive a handle to it
-		UUID CreateSimulation(double ticks_per_second, bool add_standard_systems);
+		UUID CreateSimulation(const SimulationBuilder& builder);
 
 		// Delete this simulation. If the simulation is running it will be stopped and then deleted. The id handle is imediately invalid
 		void DeleteSimulation(UUID id);
-
-		// Add a system to a simulation
-		template<class SystemT>
-		void AddSystem(UUID id)
-		{
-			AddSystem(id, SystemT::OnInitialize, SystemT::OnShutdown);
-		}
-
-		void LoadConfig(UUID id, const godot::Ref<godot::ConfigFile>& config);
-
-		// Add a system using an emmiter callback
-		void AddSystem(UUID id, const SimulationApplicator& initialize, const SimulationApplicator& shutdown);
 
 		// Start this simulation
 		bool StartSimulation(UUID id);

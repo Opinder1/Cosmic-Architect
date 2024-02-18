@@ -3,6 +3,7 @@
 #include "Simulation/UUID.h"
 
 #include <godot_cpp/classes/input_event.hpp>
+#include <godot_cpp/classes/viewport.hpp>
 #include <godot_cpp/classes/node3d.hpp>
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/string_name.hpp>
@@ -25,8 +26,8 @@ class SimulationNode : public godot::Node3D
 
 public:
 	SimulationNode();
-
 	~SimulationNode();
+
 	godot::PackedStringArray GetSimulations();
 	
 	// Add a simulation to this node to be acquired

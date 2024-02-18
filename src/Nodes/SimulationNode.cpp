@@ -49,7 +49,12 @@ godot::PackedStringArray SimulationNode::GetAllSimulations()
 
 godot::StringName SimulationNode::Create(const godot::String& config_path)
 {
-    sim::UUID uuid = sim::SimulationServer::GetSingleton()->CreateSimulation(60, true);
+    godot::Ref<godot::ConfigFile> config;
+    config.instantiate();
+
+    config->load(config_path);
+
+    sim::UUID uuid = sim::SimulationServer::GetSingleton()->CreateSimulation(config);
 
     return uuid.ToGodotString();
 }
@@ -553,7 +558,7 @@ void SimulationNode::_notification(int notification)
         break;
 
 	default:
-		godot::UtilityFunctions::print("Unknown notification %d", notification);
+		godot::UtilityFunctions::print("Unknown notification: ", notification);
         break;
 	}
 }

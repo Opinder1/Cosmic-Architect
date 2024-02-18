@@ -8,25 +8,19 @@
 
 namespace sim
 {
-	SimulationMessager::SimulationMessager(SimulationServer& server, UUID id, double ticks_per_second) :
+	SimulationMessager::SimulationMessager(SimulationServer& server, UUID id) :
 		ThreadMessager(id),
 		m_server(server),
 		m_running(false),
 		m_keep_looping(false),
 		m_thread_paused(false),
-		m_ticks_per_second(ticks_per_second),
-		m_time_per_tick(std::chrono::duration_cast<Clock::duration>(1s / m_ticks_per_second)),
+		m_ticks_per_second(0),
+		m_time_per_tick(0),
 		m_current_ticks(0),
 		m_total_ticks(0),
 		m_total_run_time(0),
 		m_current_run_time(0)
 	{
-		if (m_ticks_per_second < 0.0)
-		{
-			DEBUG_PRINT_ERROR("The ticks per second should be positive or 0");
-			return;
-		}
-
 		Subscribe(cb::Bind<&SimulationMessager::OnRequestStop>(this));
 		Subscribe(cb::Bind<&SimulationMessager::OnMessagerStop>(this));
 	}
@@ -45,6 +39,28 @@ namespace sim
 
 		Unsubscribe(cb::Bind<&SimulationMessager::OnMessagerStop>(this));
 		Unsubscribe(cb::Bind<&SimulationMessager::OnRequestStop>(this));
+	}
+
+	void SimulationMessager::SetTargetTicksPerSecond(double ticks_per_second)
+	{
+		DEBUG_ASSERT(ObjectOwned(), "This simulation should be owned by a thread when stop is called on it");
+
+		if (m_ticks_per_second < 0.0)
+		{
+			DEBUG_PRINT_ERROR("The ticks per second should be positive or 0");
+			ticks_per_second = 0.0;
+		}
+
+		m_ticks_per_second = ticks_per_second;
+
+		if (ticks_per_second == 0.0)
+		{
+			m_time_per_tick = 0s;
+		}
+		else
+		{
+			m_time_per_tick = std::chrono::duration_cast<Clock::duration>(1s / ticks_per_second);
+		}
 	}
 
 	bool SimulationMessager::Start()
@@ -229,7 +245,7 @@ namespace sim
 			Clock::time_point tick_start = Clock::now();
 
 			// If the ticks per second is 0 then don't do any time processing
-			if (m_ticks_per_second > 0.0f)
+			if (m_ticks_per_second != 0.0)
 			{
 				// Get the ideal time for the next frame
 				next_tick_start = next_tick_start + m_time_per_tick;

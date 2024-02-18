@@ -13,7 +13,10 @@ namespace voxel_world
     FractalRegion3D::FractalRegion3D(FractalWorld3D& world) :
         m_world(world)
     {
-        m_simulation = sim::SimulationServer::GetSingleton()->CreateSimulation(60, true);
+        godot::Ref<godot::ConfigFile> config;
+        config.instantiate();
+
+        m_simulation = sim::SimulationServer::GetSingleton()->CreateSimulation(config);
     }
 
     FractalRegion3D::~FractalRegion3D()

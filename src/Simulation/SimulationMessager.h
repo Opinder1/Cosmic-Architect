@@ -23,8 +23,10 @@ namespace sim
 		friend class SimulationServer;
 
 	public:
-		SimulationMessager(SimulationServer& server, UUID id, double ticks_per_second);
+		SimulationMessager(SimulationServer& server, UUID id);
 		~SimulationMessager();
+
+		void SetTargetTicksPerSecond(double ticks_per_second);
 
 		// Is this simulation currently running (not including short time when stopping)
 		bool IsRunning() const;
@@ -107,8 +109,8 @@ namespace sim
 		std::thread::id			m_external_thread; // The external thread that will be ticking this simulation if the internal thread is paused
 
 		// Options
-		const double			m_ticks_per_second; // Ticks this simulation aims to execute per second
-		const Clock::duration	m_time_per_tick; // Max time per tick this simulation aims to take
+		double					m_ticks_per_second; // Ticks this simulation aims to execute per second
+		Clock::duration			m_time_per_tick; // Max time per tick this simulation aims to take
 
 		// Timings
 		size_t					m_total_ticks; // Total number of ticks this simulation has executed

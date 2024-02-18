@@ -1,18 +1,12 @@
 #include "SimulationServer.h"
-#include "Events.h"
-
 #include "Simulation.h"
-#include "Time.h"
-
-#include "Systems/NewEntitiesSystem.h"
-#include "Systems/DeletedEntitiesSystem.h"
-#include "Systems/LinkedMessagerSystem.h"
-#include "Systems/LinkedSimulationSystem.h"
-#include "Systems/LinkedRemoteSimulationSystem.h"
+#include "SimulationBuilder.h"
+#include "Events.h"
 
 #include "Network/NetworkPeerSystem.h"
 #include "Network/NetworkServerSystem.h"
 
+#include "Util/Time.h"
 #include "Util/Debug.h"
 
 namespace sim
@@ -37,6 +31,7 @@ namespace sim
 
 	SimulationServer* SimulationServer::GetSingleton()
 	{
+		DEBUG_ASSERT(s_singleton.get() != nullptr, "THe singleton should be valid");
 		return s_singleton.get();
 	}
 
@@ -76,12 +71,14 @@ namespace sim
 
 	void SimulationServer::StartNetworking()
 	{
-		m_network_simulation = SimulationServer::GetSingleton()->CreateSimulation(60, true);
+		godot::Ref<godot::ConfigFile> config;
+		config.instantiate();
+		m_network_simulation = CreateSimulation(config);
 
-		SimulationServer::GetSingleton()->AddSystem<NetworkServerSystem>(m_network_simulation);
-		SimulationServer::GetSingleton()->AddSystem<NetworkPeerSystem>(m_network_simulation);
+		AddSystem<NetworkServerSystem>(m_network_simulation);
+		AddSystem<NetworkPeerSystem>(m_network_simulation);
 
-		SimulationServer::GetSingleton()->StartSimulation(m_network_simulation);
+		StartSimulation(m_network_simulation);
 	}
 
 	std::vector<UUID> SimulationServer::GetAllSimulations()
@@ -100,7 +97,7 @@ namespace sim
 		return out;
 	}
 
-	UUID SimulationServer::CreateSimulation(double ticks_per_second, bool add_standard_systems)
+	UUID SimulationServer::CreateSimulation(const SimulationBuilder& builder)
 	{
 		UUID id = UUID::GenerateRandom();
 
@@ -112,7 +109,7 @@ namespace sim
 			return UUID();
 		}
 
-		auto&& [it, success] = m_simulations.emplace(id, std::make_unique<Simulation>(*this, id, ticks_per_second));
+		auto&& [it, success] = m_simulations.emplace(id, std::make_unique<Simulation>(*this, id));
 
 		if (!success)
 		{
@@ -120,22 +117,11 @@ namespace sim
 			return UUID();
 		}
 
-		if (add_standard_systems)
-		{
-			Simulation& simulation = *it->second;
+		Simulation& simulation = *it->second;
 
-			auto AddSystem = [&simulation](const SimulationApplicator& initialize, const SimulationApplicator& shutdown)
-			{
-				initialize(simulation);
-				simulation.system_shutdowns.push_back(shutdown);
-			};
+		lock.release();
 
-			AddSystem(&NewEntitiesSystem::OnInitialize, &NewEntitiesSystem::OnShutdown);
-			AddSystem(&DeletedEntitiesSystem::OnInitialize, &DeletedEntitiesSystem::OnShutdown);
-			AddSystem(&LinkedMessagerSystem::OnInitialize, &LinkedMessagerSystem::OnShutdown);
-			AddSystem(&LinkedSimulationSystem::OnInitialize, &LinkedSimulationSystem::OnShutdown);
-			AddSystem(&LinkedRemoteSimulationSystem::OnInitialize, &LinkedRemoteSimulationSystem::OnShutdown);
-		};
+		builder.Build(simulation);
 
 		return id;
 	}
@@ -165,33 +151,6 @@ namespace sim
 		it->second.swap(m_delete_queue.emplace_back());
 
 		m_simulations.erase(it);
-	}
-
-	void SimulationServer::AddSystem(UUID id, const SimulationApplicator& initialize, const SimulationApplicator& shutdown)
-	{
-		std::unique_lock lock(m_mutex);
-
-		auto it = m_simulations.find(id);
-
-		if (it == m_simulations.end())
-		{
-			DEBUG_PRINT_ERROR("No simulation exists with the id " + id.ToGodotString());
-			return;
-		}
-
-		Simulation& simulation = *it->second;
-
-		DEBUG_ASSERT(!simulation.messager.ObjectOwned(), "This simulation should not be owned by a thread when adding a system");
-
-		if (simulation.messager.IsRunning())
-		{
-			DEBUG_PRINT_ERROR("This simulation should not be running when trying to add a system");
-			return;
-		}
-
-		initialize(simulation);
-
-		simulation.system_shutdowns.push_back(shutdown);
 	}
 
 	bool SimulationServer::StartSimulation(UUID id)
