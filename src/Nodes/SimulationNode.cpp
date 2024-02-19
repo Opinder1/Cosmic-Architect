@@ -3,6 +3,7 @@
 
 #include "Simulation/Simulation.h"
 #include "Simulation/SimulationServer.h"
+#include "Simulation/SimulationBuilder.h"
 
 #include "Util/Debug.h"
 
@@ -49,12 +50,7 @@ godot::PackedStringArray SimulationNode::GetAllSimulations()
 
 godot::StringName SimulationNode::Create(const godot::String& config_path)
 {
-    godot::Ref<godot::ConfigFile> config;
-    config.instantiate();
-
-    config->load(config_path);
-
-    sim::UUID uuid = sim::SimulationServer::GetSingleton()->CreateSimulation(config);
+    sim::UUID uuid = sim::SimulationServer::GetSingleton()->CreateSimulation(std::make_unique<sim::EmptySimulationBuilder>(), sim::SimulationServer::CreateMethod::Thread);
 
     return uuid.ToGodotString();
 }

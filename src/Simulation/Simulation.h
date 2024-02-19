@@ -10,8 +10,11 @@
 
 namespace sim
 {
+	// Simulation data root
 	struct Simulation
 	{
+		using BuilderPtr = std::unique_ptr<SimulationBuilder>;
+
 		using Registry = entt::registry;
 
 		using Globals = entt::registry::context;

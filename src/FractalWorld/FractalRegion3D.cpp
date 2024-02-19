@@ -5,6 +5,7 @@
 
 #include "Simulation/Simulation.h"
 #include "Simulation/SimulationServer.h"
+#include "Simulation/SimulationBuilder.h"
 
 #include "Util/Debug.h"
 
@@ -13,10 +14,7 @@ namespace voxel_world
     FractalRegion3D::FractalRegion3D(FractalWorld3D& world) :
         m_world(world)
     {
-        godot::Ref<godot::ConfigFile> config;
-        config.instantiate();
-
-        m_simulation = sim::SimulationServer::GetSingleton()->CreateSimulation(config);
+        m_simulation = sim::SimulationServer::GetSingleton()->CreateSimulation(std::make_unique<sim::EmptySimulationBuilder>(), sim::SimulationServer::CreateMethod::Thread);
     }
 
     FractalRegion3D::~FractalRegion3D()

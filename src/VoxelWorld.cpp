@@ -2,6 +2,7 @@
 
 #include "Simulation/Simulation.h"
 #include "Simulation/SimulationServer.h"
+#include "Simulation/SimulationBuilder.h"
 
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
@@ -64,9 +65,7 @@ namespace voxel_world
 
 	VoxelWorldNode::VoxelWorldNode()
 	{
-		godot::Ref<godot::ConfigFile> config;
-		config.instantiate();
-		m_root_simulation = sim::SimulationServer::GetSingleton()->CreateSimulation(config);
+		m_root_simulation = sim::SimulationServer::GetSingleton()->CreateSimulation(std::make_unique<sim::EmptySimulationBuilder>(), sim::SimulationServer::CreateMethod::Thread);
 
 		godot::UtilityFunctions::print("Created VoxelWorldNode");
 	}

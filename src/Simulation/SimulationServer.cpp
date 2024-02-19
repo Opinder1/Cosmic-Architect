@@ -71,12 +71,10 @@ namespace sim
 
 	void SimulationServer::StartNetworking()
 	{
-		godot::Ref<godot::ConfigFile> config;
-		config.instantiate();
-		m_network_simulation = CreateSimulation(config);
+		m_network_simulation = CreateSimulation(std::make_unique<EmptySimulationBuilder>(), sim::SimulationServer::CreateMethod::Thread);
 
-		AddSystem<NetworkServerSystem>(m_network_simulation);
-		AddSystem<NetworkPeerSystem>(m_network_simulation);
+		//AddSystem<NetworkServerSystem>(m_network_simulation);
+		//AddSystem<NetworkPeerSystem>(m_network_simulation);
 
 		StartSimulation(m_network_simulation);
 	}
@@ -97,9 +95,16 @@ namespace sim
 		return out;
 	}
 
-	UUID SimulationServer::CreateSimulation(const SimulationBuilder& builder)
+	UUID SimulationServer::CreateSimulation(std::unique_ptr<SimulationBuilder>&& builder, CreateMethod method)
 	{
 		UUID id = UUID::GenerateRandom();
+
+		SimulationPtr simulation = std::make_unique<Simulation>(*this, id);
+
+		if (method == CreateMethod::Local) // Build before locking if we build local so we don't keep the server waiting when building
+		{
+			builder->Build(*simulation);
+		}
 
 		std::unique_lock lock(m_mutex);
 
@@ -109,19 +114,20 @@ namespace sim
 			return UUID();
 		}
 
-		auto&& [it, success] = m_simulations.emplace(id, std::make_unique<Simulation>(*this, id));
+		auto&& [it, success] = m_simulations.emplace(id, std::move(simulation));
 
 		if (!success)
 		{
-			DEBUG_PRINT_ERROR("Failed to create a new simulation");
+			DEBUG_PRINT_ERROR("Failed to insert a new simulation");
 			return UUID();
 		}
 
-		Simulation& simulation = *it->second;
+		if (method == CreateMethod::Thread)
+		{
+			Simulation& simulation = *it->second;
 
-		lock.release();
-
-		builder.Build(simulation);
+			simulation.messager.BuildStart(std::move(builder), simulation);
+		}
 
 		return id;
 	}

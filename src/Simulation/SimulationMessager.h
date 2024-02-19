@@ -9,7 +9,9 @@
 
 namespace sim
 {
+	struct Simulation;
 	class SimulationServer;
+	class SimulationBuilder;
 
 	struct SimulationRequestStopMessage;
 	struct SimulationThreadAcquireMessage;
@@ -68,6 +70,9 @@ namespace sim
 		// Start this simulation
 		bool Start();
 
+		// Start this simulation and build
+		bool BuildStart(std::unique_ptr<SimulationBuilder>&& builder, Simulation& simulation);
+
 		// Stop this simulation (call from SimulationServer)
 		void Stop();
 
@@ -78,7 +83,7 @@ namespace sim
 		bool ThreadRelease();
 
 		// Main thread loop of this simulation that manages ticks and timings for the owner thread
-		void ThreadLoop();
+		void ThreadFunc();
 
 		// Internal start that is called by the thread loop
 		void InternalStart();

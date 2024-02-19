@@ -7,7 +7,7 @@
 
 namespace sim
 {
-	class Simulation;
+	struct Simulation;
 
 	class SimulationBuilder
 	{
@@ -26,28 +26,29 @@ namespace sim
 		template<class SystemT>
 		void AddSystem(Simulation& simulation)
 		{
-			AddSystem(Simulation& simulation, SystemT::OnInitialize, SystemT::OnShutdown);
+			AddSystem(simulation, SystemT::OnInitialize, SystemT::OnShutdown);
 		}
 
 		// Add a system using an emmiter callback
 		void AddSystem(Simulation& simulation, const SimulationApplicator& initialize, const SimulationApplicator& shutdown);
 	};
 
-	class EmptySimulationBuilder
+	class EmptySimulationBuilder : public SimulationBuilder
 	{
 	public:
-		void Build(Simulation& simulation) const {}
+		EmptySimulationBuilder() {}
+
+		void Build(Simulation& simulation) const final {}
 	};
 
-	class DirectorySimulationBuilder
+	class DirectorySimulationBuilder : protected SimulationBuilder
 	{
 	public:
 		DirectorySimulationBuilder(const godot::String& path);
 
 		virtual void Build(Simulation& simulation, const godot::DirAccess& directory) const = 0;
 
-	protected:
-		void Build(Simulation& simulation) const;
+		void Build(Simulation& simulation) const final;
 
 	private:
 		godot::String m_path;

@@ -1,5 +1,6 @@
 #include "SimulationMessager.h"
 #include "SimulationServer.h"
+#include "SimulationBuilder.h"
 #include "Events.h"
 
 #include "Message/Message.h"
@@ -22,6 +23,7 @@ namespace sim
 		m_current_run_time(0)
 	{
 		Subscribe(cb::Bind<&SimulationMessager::OnRequestStop>(this));
+		Subscribe(cb::Bind<&SimulationMessager::OnThreadAcquire>(this));
 		Subscribe(cb::Bind<&SimulationMessager::OnMessagerStop>(this));
 	}
 
@@ -38,6 +40,7 @@ namespace sim
 		}
 
 		Unsubscribe(cb::Bind<&SimulationMessager::OnMessagerStop>(this));
+		Unsubscribe(cb::Bind<&SimulationMessager::OnThreadAcquire>(this));
 		Unsubscribe(cb::Bind<&SimulationMessager::OnRequestStop>(this));
 	}
 
@@ -74,7 +77,30 @@ namespace sim
 		}
 
 		// Start our internal thread
-		m_internal_thread = std::thread(&SimulationMessager::ThreadLoop, this);
+		m_internal_thread = std::thread(&SimulationMessager::ThreadFunc, this);
+
+		return true;
+	}
+
+	bool SimulationMessager::BuildStart(std::unique_ptr<SimulationBuilder>&& builder, Simulation& simulation)
+	{
+		DEBUG_ASSERT(!ObjectOwned(), "This simulation should not be owned by a thread when start is called on it");
+
+		if (m_running)
+		{
+			DEBUG_PRINT_ERROR("This simulation should not be running when trying to start it");
+			return false;
+		}
+
+		// Start our internal thread
+		m_internal_thread = std::thread([this, &builder, &simulation]()
+		{
+			DEBUG_ASSERT(builder != nullptr, "The builder should be a valid object");
+
+			builder->Build(simulation);
+
+			ThreadFunc();
+		});
 
 		return true;
 	}
@@ -175,6 +201,8 @@ namespace sim
 
 	double SimulationMessager::GetTicksPerSecond() const
 	{
+		DEBUG_ASSERT(ThreadOwnsObject(), "Called non const getter without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
+
 		return IsExternallyTicked() ? 0.0f : m_ticks_per_second;
 	}
 
@@ -233,7 +261,7 @@ namespace sim
 		});
 	}
 
-	void SimulationMessager::ThreadLoop()
+	void SimulationMessager::ThreadFunc()
 	{
 		InternalStart();
 

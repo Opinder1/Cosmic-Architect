@@ -12,9 +12,9 @@
 
 namespace sim
 {
+	struct Simulation;
 	class SimulationBuilder;
 	class SimulationMessager;
-	struct Simulation;
 
 	class SimulationServer : public MessageRegistry
 	{
@@ -24,6 +24,12 @@ namespace sim
 			True,
 			False,
 			Invalid
+		};
+
+		enum class CreateMethod
+		{
+			Local,
+			Thread,
 		};
 
 		using MessagerApplicator = cb::Callback<void(SimulationMessager&)>;
@@ -46,8 +52,8 @@ namespace sim
 
 		std::vector<UUID> GetAllSimulations();
 
-		// Create a new simulation and receive a handle to it
-		UUID CreateSimulation(const SimulationBuilder& builder);
+		// Create a new simulation and build it in its own thread. Returns a handle to it
+		UUID CreateSimulation(std::unique_ptr<SimulationBuilder>&& builder, CreateMethod method);
 
 		// Delete this simulation. If the simulation is running it will be stopped and then deleted. The id handle is imediately invalid
 		void DeleteSimulation(UUID id);
