@@ -14,7 +14,7 @@ namespace sim
 
 	}
 
-	void SimulationBuilder::AddDefaultSystems(Simulation& simulation)
+	void SimulationBuilder::AddDefaultSystems(Simulation& simulation) const
 	{
 		simulation.messager.SetTargetTicksPerSecond(60);
 
@@ -25,11 +25,21 @@ namespace sim
 		AddSystem<LinkedRemoteSimulationSystem>(simulation);
 	}
 
-	void SimulationBuilder::AddSystem(Simulation& simulation, const SimulationApplicator& initialize, const SimulationApplicator& shutdown)
+	void SimulationBuilder::AddSystem(Simulation& simulation, const SimulationApplicator& initialize, const SimulationApplicator& shutdown) const
 	{
 		initialize(simulation);
 
 		simulation.system_shutdowns.push_back(shutdown);
+	}
+
+	EmptySimulationBuilder::EmptySimulationBuilder()
+	{
+
+	}
+
+	void EmptySimulationBuilder::Build(Simulation& simulation) const
+	{
+		// AddDefaultSystems(simulation);
 	}
 
 	DirectorySimulationBuilder::DirectorySimulationBuilder(const godot::String& path) :

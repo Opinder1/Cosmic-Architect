@@ -13,12 +13,12 @@ namespace sim
 {
 	void LinkedRemoteSimulationSystem::OnInitialize(Simulation& simulation)
 	{
-		simulation.messager.Subscribe(cb::BindParam<&LinkedRemoteSimulationSystem::OnSimulationTick>(simulation));
+		simulation.dispatcher.Subscribe(cb::BindParam<&LinkedRemoteSimulationSystem::OnSimulationTick>(simulation));
 	}
 
 	void LinkedRemoteSimulationSystem::OnShutdown(Simulation& simulation)
 	{
-		simulation.messager.Unsubscribe(cb::BindParam<&LinkedRemoteSimulationSystem::OnSimulationTick>(simulation));
+		simulation.dispatcher.Unsubscribe(cb::BindParam<&LinkedRemoteSimulationSystem::OnSimulationTick>(simulation));
 	}
 
 	void LinkedRemoteSimulationSystem::OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event)

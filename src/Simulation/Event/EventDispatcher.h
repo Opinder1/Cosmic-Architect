@@ -2,6 +2,8 @@
 
 #include "Event.h"
 
+#include "Util/Debug.h"
+
 #include <robin_hood/robin_hood.h>
 
 namespace sim
@@ -71,10 +73,14 @@ namespace sim
 			Priority priority;
 		};
 
-		// A message that will be processed at a later point
-
 		// A callback list that will be automatically sorted by priority on emplacement
-		using CallbackList = std::vector<CallbackEntry>;
+		struct CallbackList
+		{
+			std::vector<CallbackEntry> entries;
+#if DEBUG
+			const char* debug_name = "None";
+#endif
+		};
 
 		// A list of messages that will be processed at a later point
 		using EventQueue = std::vector<QueuedEvent>;
@@ -108,7 +114,11 @@ namespace sim
 		template<class EventT>
 		void Subscribe(const EventCallback<EventT>& callback, Priority priority = Priority::Normal, Ordering ordering = Ordering::First)
 		{
+#if DEBUG
+			SubscribeGeneric(GetGenericCallback(callback), GetEventType<EventT>(), priority, ordering, typeid(EventT).name());
+#else
 			SubscribeGeneric(GetGenericCallback(callback), GetEventType<EventT>(), priority, ordering);
+#endif
 		}
 
 		// Unsubscribe from an event with a callback.
@@ -119,7 +129,6 @@ namespace sim
 			UnsubscribeGeneric(GetGenericCallback(callback), GetEventType<EventT>());
 		}
 
-	protected:
 		// Process the messages in the queue
 		void ProcessEventQueue();
 
@@ -129,6 +138,10 @@ namespace sim
 		void PostQueuedEventGeneric(QueuedEvent&& event);
 
 		void SubscribeGeneric(const EventCallback<Event>& callback, Event::Type event_type, Priority priority, Ordering ordering);
+
+#if DEBUG
+		void SubscribeGeneric(const EventCallback<Event>& callback, Event::Type event_type, Priority priority, Ordering ordering, const char* debug_name);
+#endif
 
 		void UnsubscribeGeneric(const EventCallback<Event>& callback, Event::Type event_type);
 

@@ -25,6 +25,12 @@
 
 SimulationNode::SimulationNode()
 {
+    set_process(true);
+    set_physics_process(true);
+
+    set_process_internal(true);
+    set_physics_process_internal(true);
+
     set_notify_transform(true);
     set_notify_local_transform(true);
 }
@@ -108,7 +114,7 @@ bool SimulationNode::Add(const godot::StringName& id)
 
     if (m_simulations.find(uuid) != m_simulations.end())
     {
-        DEBUG_PRINT_INFO("The simulation has already be added");
+        DEBUG_PRINT_WARN("The simulation has already be added");
         return false;
     }
 
@@ -119,11 +125,11 @@ bool SimulationNode::Add(const godot::StringName& id)
         break;
 
     case sim::SimulationServer::Result::False:
-        DEBUG_PRINT_INFO("The requested simulation is not running so can't be added");
+        DEBUG_PRINT_WARN("The requested simulation is not running so can't be added");
         return false;
 
     case sim::SimulationServer::Result::Invalid:
-        DEBUG_PRINT_INFO("The requested simulation doesn't exist so couldn't be added");
+        DEBUG_PRINT_WARN("The requested simulation doesn't exist so couldn't be added");
         return false;
     }
 
@@ -134,7 +140,7 @@ bool SimulationNode::Add(const godot::StringName& id)
     // Start trying to acquire
     if (!sim::SimulationServer::GetSingleton()->ThreadAcquireSimulation(uuid))
     {
-        DEBUG_PRINT_INFO("Failed to acquire simulation");
+        DEBUG_PRINT_WARN("Failed to acquire simulation");
         return false;
     }
 
@@ -153,7 +159,7 @@ bool SimulationNode::Remove(const godot::StringName& id)
 
     if (it == m_simulations.end())
     {
-        DEBUG_PRINT_INFO("Simulation was never added to this node");
+        DEBUG_PRINT_WARN("Simulation was never added to this node");
         return false;
     }
 
@@ -166,12 +172,12 @@ bool SimulationNode::Remove(const godot::StringName& id)
 
         if (world.is_valid())
         {
-            ref.simulation_ptr->PostEvent(NodeExitWorldEvent());
+            ref.simulation_ptr->PostEventFromUnattested(NodeExitWorldEvent());
         }
 
         if (is_inside_tree())
         {
-            ref.simulation_ptr->PostEvent(NodeExitTreeEvent());
+            ref.simulation_ptr->PostEventFromUnattested(NodeExitTreeEvent());
         }
     }
 
@@ -238,18 +244,18 @@ void SimulationNode::TryGetAcquired(SimulationReference& ref)
     // Make sure to tell the simulation if we are already in the tree and world
     if (is_inside_tree())
     {
-        ref.simulation_ptr->PostEvent(NodeEnterTreeEvent(*get_tree()));
+        ref.simulation_ptr->PostEventFromUnattested(NodeEnterTreeEvent(*get_tree()));
     }
 
     godot::Ref<godot::World3D> world = get_world_3d();
 
     if (world.is_valid())
     {
-        ref.simulation_ptr->PostEvent(NodeEnterWorldEvent(*world));
+        ref.simulation_ptr->PostEventFromUnattested(NodeEnterWorldEvent(*world));
 
-        ref.simulation_ptr->PostEvent(NodeTransformChangedEvent(get_global_transform()));
+        ref.simulation_ptr->PostEventFromUnattested(NodeTransformChangedEvent(get_global_transform()));
 
-        ref.simulation_ptr->PostEvent(NodeLocalTransformChangedEvent(get_transform()));
+        ref.simulation_ptr->PostEventFromUnattested(NodeLocalTransformChangedEvent(get_transform()));
     }
 }
 
@@ -260,7 +266,7 @@ void SimulationNode::SendEventToAll(const EventT& event)
     {
         if (ref.simulation_ptr != nullptr)
         {
-            ref.simulation_ptr->PostEvent(event);
+            ref.simulation_ptr->PostEventFromUnattested(event);
         }
     }
 }
@@ -280,7 +286,7 @@ void SimulationNode::ManualTickAll()
         if (ref.simulation_ptr != nullptr)
         {
             ref.simulation_ptr->ManualTick();
-            ref.simulation_ptr->PostEvent(NodePhysicsProcessEvent());
+            ref.simulation_ptr->PostEventFromUnattested(NodePhysicsProcessEvent());
         }
     }
 }

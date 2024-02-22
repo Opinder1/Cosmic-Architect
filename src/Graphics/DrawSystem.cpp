@@ -16,18 +16,18 @@ void DrawSystem::OnInitialize(sim::Simulation& simulation)
 {
 	simulation.globals.emplace<RenderingGlobal>().server = godot::RenderingServer::get_singleton();
 
-	simulation.messager.Subscribe(cb::BindParam<&DrawSystem::OnProcessNewEntities>(simulation));
-	simulation.messager.Subscribe(cb::BindParam<&DrawSystem::OnProcessDeletedEntities>(simulation));
-	simulation.messager.Subscribe(cb::BindParam<&DrawSystem::OnSimulationTick>(simulation));
-	simulation.messager.Subscribe(cb::BindParam<&DrawSystem::OnRender>(simulation));
+	simulation.dispatcher.Subscribe(cb::BindParam<&DrawSystem::OnProcessNewEntities>(simulation));
+	simulation.dispatcher.Subscribe(cb::BindParam<&DrawSystem::OnProcessDeletedEntities>(simulation));
+	simulation.dispatcher.Subscribe(cb::BindParam<&DrawSystem::OnSimulationTick>(simulation));
+	simulation.dispatcher.Subscribe(cb::BindParam<&DrawSystem::OnRender>(simulation));
 }
 
 void DrawSystem::OnShutdown(sim::Simulation& simulation)
 {
-	simulation.messager.Unsubscribe(cb::BindParam<&DrawSystem::OnRender>(simulation));
-	simulation.messager.Unsubscribe(cb::BindParam<&DrawSystem::OnSimulationTick>(simulation));
-	simulation.messager.Unsubscribe(cb::BindParam<&DrawSystem::OnProcessDeletedEntities>(simulation));
-	simulation.messager.Unsubscribe(cb::BindParam<&DrawSystem::OnProcessNewEntities>(simulation));
+	simulation.dispatcher.Unsubscribe(cb::BindParam<&DrawSystem::OnRender>(simulation));
+	simulation.dispatcher.Unsubscribe(cb::BindParam<&DrawSystem::OnSimulationTick>(simulation));
+	simulation.dispatcher.Unsubscribe(cb::BindParam<&DrawSystem::OnProcessDeletedEntities>(simulation));
+	simulation.dispatcher.Unsubscribe(cb::BindParam<&DrawSystem::OnProcessNewEntities>(simulation));
 }
 
 void DrawSystem::OnProcessNewEntities(sim::Simulation& simulation, const sim::ProcessNewEntitiesEvent& event)

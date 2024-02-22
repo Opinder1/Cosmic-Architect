@@ -21,7 +21,7 @@ namespace sim
 		friend MessageSender;
 
 	public:
-		static MessageRegistry* GetSingleton();
+		//static MessageRegistry* GetSingleton();
 
 		explicit MessageRegistry();
 		~MessageRegistry();

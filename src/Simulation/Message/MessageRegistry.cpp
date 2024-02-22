@@ -12,11 +12,11 @@ namespace sim
 {
 	MessageRegistry* MessageRegistry::s_singleton;
 
-	MessageRegistry* MessageRegistry::GetSingleton()
-	{
-		DEBUG_ASSERT(s_singleton != nullptr, "THe singleton should be valid");
-		return s_singleton;
-	}
+	//MessageRegistry* MessageRegistry::GetSingleton()
+	//{
+	//	DEBUG_ASSERT(s_singleton != nullptr, "THe singleton should be valid");
+	//	return s_singleton;
+	//}
 
 	MessageRegistry::MessageRegistry()
 	{

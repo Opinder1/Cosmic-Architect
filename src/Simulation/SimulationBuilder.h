@@ -20,25 +20,25 @@ namespace sim
 		virtual void Build(Simulation& simulation) const = 0;
 
 	protected:
-		void AddDefaultSystems(Simulation& simulation);
+		void AddDefaultSystems(Simulation& simulation) const;
 
 		// Add a system to a simulation
 		template<class SystemT>
-		void AddSystem(Simulation& simulation)
+		void AddSystem(Simulation& simulation) const
 		{
 			AddSystem(simulation, SystemT::OnInitialize, SystemT::OnShutdown);
 		}
 
 		// Add a system using an emmiter callback
-		void AddSystem(Simulation& simulation, const SimulationApplicator& initialize, const SimulationApplicator& shutdown);
+		void AddSystem(Simulation& simulation, const SimulationApplicator& initialize, const SimulationApplicator& shutdown) const;
 	};
 
 	class EmptySimulationBuilder : public SimulationBuilder
 	{
 	public:
-		EmptySimulationBuilder() {}
+		EmptySimulationBuilder();
 
-		void Build(Simulation& simulation) const final {}
+		void Build(Simulation& simulation) const final;
 	};
 
 	class DirectorySimulationBuilder : protected SimulationBuilder

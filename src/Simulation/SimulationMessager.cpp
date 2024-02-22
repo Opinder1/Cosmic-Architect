@@ -3,15 +3,16 @@
 #include "SimulationBuilder.h"
 #include "Events.h"
 
+#include "Event/EventDispatcher.h"
+
 #include "Message/Message.h"
 
 #include "Util/Debug.h"
 
 namespace sim
 {
-	SimulationMessager::SimulationMessager(SimulationServer& server, UUID id) :
-		ThreadMessager(id),
-		m_server(server),
+	SimulationMessager::SimulationMessager(SimulationServer& server, UUID id, EventDispatcher& dispatcher) :
+		ThreadMessager(server, id, dispatcher),
 		m_running(false),
 		m_keep_looping(false),
 		m_thread_paused(false),
@@ -22,14 +23,14 @@ namespace sim
 		m_total_run_time(0),
 		m_current_run_time(0)
 	{
-		Subscribe(cb::Bind<&SimulationMessager::OnRequestStop>(this));
-		Subscribe(cb::Bind<&SimulationMessager::OnThreadAcquire>(this));
-		Subscribe(cb::Bind<&SimulationMessager::OnMessagerStop>(this));
+		GetDispatcher().Subscribe(cb::Bind<&SimulationMessager::OnRequestStop>(this));
+		GetDispatcher().Subscribe(cb::Bind<&SimulationMessager::OnThreadAcquire>(this));
+		GetDispatcher().Subscribe(cb::Bind<&SimulationMessager::OnMessagerStop>(this));
 	}
 
 	SimulationMessager::~SimulationMessager()
 	{
-		if (m_running)
+		if (m_starting || m_running)
 		{
 			DEBUG_PRINT_ERROR("This simulation should have been stopped before destroying it");
 		}
@@ -39,9 +40,9 @@ namespace sim
 			m_internal_thread.join();
 		}
 
-		Unsubscribe(cb::Bind<&SimulationMessager::OnMessagerStop>(this));
-		Unsubscribe(cb::Bind<&SimulationMessager::OnThreadAcquire>(this));
-		Unsubscribe(cb::Bind<&SimulationMessager::OnRequestStop>(this));
+		GetDispatcher().Unsubscribe(cb::Bind<&SimulationMessager::OnMessagerStop>(this));
+		GetDispatcher().Unsubscribe(cb::Bind<&SimulationMessager::OnThreadAcquire>(this));
+		GetDispatcher().Unsubscribe(cb::Bind<&SimulationMessager::OnRequestStop>(this));
 	}
 
 	void SimulationMessager::SetTargetTicksPerSecond(double ticks_per_second)
@@ -66,9 +67,20 @@ namespace sim
 		}
 	}
 
+	SimulationServer& SimulationMessager::GetSimulationServer()
+	{
+		return static_cast<SimulationServer&>(GetMessageRegistry());
+	}
+
 	bool SimulationMessager::Start()
 	{
 		DEBUG_ASSERT(!ObjectOwned(), "This simulation should not be owned by a thread when start is called on it");
+
+		if (m_starting) // We are already starting
+		{
+			DEBUG_PRINT_INFO("We are already starting");
+			return false;
+		}
 
 		if (m_running)
 		{
@@ -76,30 +88,42 @@ namespace sim
 			return false;
 		}
 
+		m_starting = true;
+
 		// Start our internal thread
-		m_internal_thread = std::thread(&SimulationMessager::ThreadFunc, this);
+		m_internal_thread = std::thread([this]()
+		{
+			DEBUG_ASSERT(m_starting, "We should be starting");
+
+			InternalStart();
+
+			ThreadLoop();
+
+			InternalStop();
+		});
 
 		return true;
 	}
 
 	bool SimulationMessager::BuildStart(std::unique_ptr<SimulationBuilder>&& builder, Simulation& simulation)
 	{
-		DEBUG_ASSERT(!ObjectOwned(), "This simulation should not be owned by a thread when start is called on it");
+		DEBUG_ASSERT(!m_starting && !m_running && m_total_run_time == 0s && m_total_ticks == 0, "This simulation should not have been started before");
 
-		if (m_running)
-		{
-			DEBUG_PRINT_ERROR("This simulation should not be running when trying to start it");
-			return false;
-		}
+		m_starting = true;
 
 		// Start our internal thread
-		m_internal_thread = std::thread([this, &builder, &simulation]()
+		m_internal_thread = std::thread([this, builder = std::move(builder), &simulation]()
 		{
+			DEBUG_ASSERT(m_starting, "We should be starting");
 			DEBUG_ASSERT(builder != nullptr, "The builder should be a valid object");
+
+			InternalStart();
 
 			builder->Build(simulation);
 
-			ThreadFunc();
+			ThreadLoop();
+
+			InternalStop();
 		});
 
 		return true;
@@ -107,6 +131,13 @@ namespace sim
 
 	void SimulationMessager::Stop()
 	{
+		if (m_starting)
+		{
+			DEBUG_PRINT_ERROR("We are currently starting this simulation. Don't stop it too quickly");
+			return;
+		}
+
+		DEBUG_ASSERT(m_running, "This simulation should be owned by a thread when stop is called on it");
 		DEBUG_ASSERT(ObjectOwned(), "This simulation should be owned by a thread when stop is called on it");
 
 		// If we are being externally ticked then release the thread so that the internal thread handles the stop message
@@ -121,6 +152,7 @@ namespace sim
 
 	bool SimulationMessager::ThreadAcquire()
 	{
+		DEBUG_ASSERT(m_running, "Simulation should be running when trying to acquire");
 		DEBUG_ASSERT(ObjectOwned(), "This simulation should be owned when trying to acquire");
 		DEBUG_ASSERT(GetOwnerID() == m_internal_thread.get_id(), "This simulations owner should be the internal thread when trying to acquire");
 
@@ -151,6 +183,7 @@ namespace sim
 
 	bool SimulationMessager::ThreadRelease()
 	{
+		DEBUG_ASSERT(m_running, "Simulation should be running when trying to release");
 		DEBUG_ASSERT(ThreadOwnsObject(), "The simulation should be released by the owner thread");
 		DEBUG_ASSERT(GetOwnerID() == m_external_thread, "The releaser should released by an external thread");
 
@@ -161,17 +194,18 @@ namespace sim
 		}
 
 		// Unpause the internal thread and give ownership back to it
+		ThreadTransferObject(m_internal_thread.get_id());
 		m_external_thread = std::thread::id{};
 		m_thread_paused = false;
-		ThreadTransferObject(m_internal_thread.get_id());
 
 		return true;
 	}
 
 	bool SimulationMessager::ManualTick()
 	{
+		DEBUG_ASSERT(m_running, "Simulation should be running when trying to manually tick");
 		DEBUG_ASSERT(ThreadOwnsObject(), "The simulation should be manually ticked by the owner thread");
-		DEBUG_ASSERT(GetOwnerID() == m_external_thread, "The simulation should be manually ticked an external thread");
+		DEBUG_ASSERT(GetOwnerID() == m_external_thread, "The simulation should be manually ticked by an external thread");
 
 		if (!IsExternallyTicked())
 		{
@@ -184,9 +218,14 @@ namespace sim
 		return true;
 	}
 
+	bool SimulationMessager::IsStarting() const
+	{
+		return m_starting;
+	}
+
 	bool SimulationMessager::IsRunning() const
 	{
-		return m_running;
+		return IsStarting() || m_running;
 	}
 
 	bool SimulationMessager::IsExternallyTicked() const
@@ -245,7 +284,7 @@ namespace sim
 	{
 		DEBUG_ASSERT(ThreadOwnsObject(), "Called link without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
 
-		m_server.ApplyToSimulation(simulation_id, [this](SimulationMessager& simulation)
+		GetSimulationServer().ApplyToSimulation(simulation_id, [this](SimulationMessager& simulation)
 		{
 			LinkMessager(simulation);
 		});
@@ -255,15 +294,26 @@ namespace sim
 	{
 		DEBUG_ASSERT(ThreadOwnsObject(), "Called unlink without owning simulation"); // If we are the owner thread then this can't be changed while we are accessing it
 
-		m_server.ApplyToSimulation(simulation_id, [this](SimulationMessager& simulation)
+		GetSimulationServer().ApplyToSimulation(simulation_id, [this](SimulationMessager& simulation)
 		{
 			UnlinkMessager(simulation);
 		});
 	}
 
-	void SimulationMessager::ThreadFunc()
+	void SimulationMessager::PostEventFromUnattestedGeneric(const Event& event, Event::Type event_type)
 	{
-		InternalStart();
+		DEBUG_ASSERT(m_running, "Immediate events should only be sent to a simulation that is running");
+		DEBUG_ASSERT(ThreadOwnsObject(), "The owning thread should be posting immediate events for this messager");
+
+		if (ThreadOwnsObject()) // If we own this then don't bother queuing as we won't be reading the queue right now
+		{
+			GetDispatcher().PostEventGeneric(event, event_type);
+		}
+	}
+
+	void SimulationMessager::ThreadLoop()
+	{
+		DEBUG_ASSERT(ThreadOwnsObject() && GetOwnerID() == m_internal_thread.get_id(), "The internal thread should be calling internal loop");
 
 		// The ideal time for the next tick to begin
 		Clock::time_point next_tick_start = Clock::now();
@@ -292,40 +342,42 @@ namespace sim
 				}
 			}
 
-			if (m_thread_paused)
+			if (!m_thread_paused)
 			{
-				if (ThreadOwnsObject()) // If we were just paused but still own this thread
+				InternalTick(tick_start);
+
+				if (m_thread_paused) // If the thread was paused during this tick
 				{
 					ThreadTransferObject(m_external_thread);
 				}
 			}
-			else
-			{
-				InternalTick(tick_start);
-			}
 		}
-
-		InternalStop();
 	}
 
 	void SimulationMessager::InternalStart()
 	{
+		DEBUG_ASSERT(m_starting, "We should be starting");
+
 		MessagerStart();
+
+		DEBUG_ASSERT(ThreadOwnsObject() && GetOwnerID() == m_internal_thread.get_id(), "The internal thread should be calling internal start");
 
 		// Set running to true before the start callback so that IsRunning() works
 		m_running = true;
+		m_starting = false;
 		m_keep_looping = true;
 
 		m_current_start_time = Clock::now();
 		m_current_ticks = 0;
 		m_last_tick_time = Clock::now();
 
-		PostEvent(SimulationStartEvent());
+		GetDispatcher().PostEvent(SimulationStartEvent());
 	}
 
 	void SimulationMessager::InternalTick(Clock::time_point tick_start)
 	{
 		DEBUG_ASSERT(ThreadOwnsObject(), "This simulation should be owned by the object that is calling internal tick");
+		DEBUG_ASSERT(m_running, "We should be running");
 
 		Clock::duration timestep = tick_start - m_last_tick_time;
 		m_total_run_time += timestep;
@@ -339,7 +391,7 @@ namespace sim
 		// there to remove the queue. We don't want to send to a messager that no longer exists
 		ProcessIncommingMessages();
 
-		PostEvent(SimulationTickEvent(tick_start, timestep));
+		GetDispatcher().PostEvent(SimulationTickEvent(tick_start, timestep));
 
 		// Send all outgoing messages that may have been queued during the tick event.
 		ProcessOutgoingMessages();
@@ -347,15 +399,19 @@ namespace sim
 
 	void SimulationMessager::InternalStop()
 	{
-		PostEvent(SimulationStopEvent());
+		DEBUG_ASSERT(ThreadOwnsObject() && GetOwnerID() == m_internal_thread.get_id(), "This internal thread should be calling internal stop");
+		DEBUG_ASSERT(IsStopping(), "We should be stopping");
+		DEBUG_ASSERT(m_running, "We should be running");
+
+		GetDispatcher().PostEvent(SimulationStopEvent());
 
 		m_current_start_time = Clock::time_point{};
 		m_current_ticks = 0;
 		m_current_run_time = Clock::duration{};
 
-		m_running = false;
-
 		MessagerStop();
+
+		m_running = false;
 	}
 
 	void SimulationMessager::OnRequestStop(const SimulationRequestStopMessage& event)
@@ -391,6 +447,9 @@ namespace sim
 
 	void SimulationMessager::OnMessagerStop(const MessagerStopEvent& event)
 	{
+		DEBUG_ASSERT(ThreadOwnsObject(), "This message should be sent by the owning thread");
+		DEBUG_ASSERT(IsStopping(), "We should be stopping");
+
 		m_keep_looping = false; // Set this to false so we exit the thread loop
 	}
 }

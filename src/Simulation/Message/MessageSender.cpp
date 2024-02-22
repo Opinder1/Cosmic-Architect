@@ -3,15 +3,21 @@
 
 namespace sim
 {
-	MessageSender::MessageSender(UUID id) :
+	MessageSender::MessageSender(MessageRegistry& registry, UUID id) :
+		m_registry(registry),
 		m_id(id)
 	{
-		MessageRegistry::GetSingleton()->RegisterMessageSender(*this);
+		m_registry.RegisterMessageSender(*this);
 	}
 
 	MessageSender::~MessageSender()
 	{
-		MessageRegistry::GetSingleton()->UnregisterMessageSender(*this);
+		m_registry.UnregisterMessageSender(*this);
+	}
+
+	MessageRegistry& MessageSender::GetMessageRegistry() const
+	{
+		return m_registry;
 	}
 
 	UUID MessageSender::GetUUID() const

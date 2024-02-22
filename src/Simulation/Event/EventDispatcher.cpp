@@ -16,9 +16,9 @@ namespace sim
 #if DEBUG
 		for (auto&& [type, callback_list] : m_callback_lists)
 		{
-			if (!callback_list.empty())
+			if (!callback_list.entries.empty())
 			{
-				DEBUG_PRINT_ERROR("The callback list for the type '" + godot::String::num_uint64(type) + "' was not empty on destruction");
+				DEBUG_PRINT_ERROR(godot::vformat("The callback list for the type %s was not empty on destruction", callback_list.debug_name));
 			}
 		}
 #endif
@@ -54,6 +54,15 @@ namespace sim
 		SubscribeInternal(m_callback_lists[event_type], callback, priority, ordering);
 	}
 
+#if DEBUG
+	void EventDispatcher::SubscribeGeneric(const EventCallback<Event>& callback, Event::Type event_type, Priority priority, Ordering ordering, const char* debug_name)
+	{
+		SubscribeInternal(m_callback_lists[event_type], callback, priority, ordering);
+
+		m_callback_lists[event_type].debug_name = debug_name;
+	}
+#endif
+
 	void EventDispatcher::UnsubscribeGeneric(const EventCallback<Event>& callback, Event::Type event_type)
 	{
 		auto it = m_callback_lists.find(event_type);
@@ -67,7 +76,7 @@ namespace sim
 		UnsubscribeInternal(it->second, callback);
 
 		// Erase the callback list if it is empty
-		if (it->second.size() == 0)
+		if (it->second.entries.size() == 0)
 		{
 			m_callback_lists.erase(it);
 		}
@@ -75,7 +84,7 @@ namespace sim
 
 	void EventDispatcher::PostEventInternal(CallbackList& list, const Event& event)
 	{
-		for (CallbackEntry& callback : list) // The list should be sorted by priority
+		for (CallbackEntry& callback : list.entries) // The list should be sorted by priority
 		{
 			callback.callback(event);
 		}
@@ -83,33 +92,33 @@ namespace sim
 
 	void EventDispatcher::SubscribeInternal(CallbackList& list, const EventCallback<Event>& callback, Priority priority, Ordering ordering)
 	{
-		CallbackList::iterator it;
+		std::vector<CallbackEntry>::iterator it;
 
 		if (ordering == Ordering::Last)
 		{
 			// Here we emplace before the first item we find that is lower priority than this callback
-			it = std::find_if(list.begin(), list.end(), [priority](CallbackEntry& other) { return other.priority < priority; });
+			it = std::find_if(list.entries.begin(), list.entries.end(), [priority](CallbackEntry& other) { return other.priority < priority; });
 		}
 		else
 		{
 			// Here we emplace after the first item we find that is higher priority than this callback
-			it = std::find_if(list.rbegin(), list.rend(), [priority](CallbackEntry& other) { return other.priority > priority; }).base();
+			it = std::find_if(list.entries.rbegin(), list.entries.rend(), [priority](CallbackEntry& other) { return other.priority > priority; }).base();
 		}
 
 		// We emplace before the iterator which works even if the iterator is at the end
-		list.emplace(it, CallbackEntry{ callback, priority });
+		list.entries.emplace(it, CallbackEntry{ callback, priority });
 	}
 
 	void EventDispatcher::UnsubscribeInternal(CallbackList& list, const EventCallback<Event>& callback)
 	{
-		auto find_it = std::find_if(list.begin(), list.end(), [&](CallbackEntry& other) { return other.callback == callback; });
+		auto find_it = std::find_if(list.entries.begin(), list.entries.end(), [&](CallbackEntry& other) { return other.callback == callback; });
 
-		if (find_it == list.end())
+		if (find_it == list.entries.end())
 		{
 			DEBUG_PRINT_ERROR("Event type does not have the observer");
 			return;
 		}
 
-		list.erase(find_it);
+		list.entries.erase(find_it);
 	}
 }

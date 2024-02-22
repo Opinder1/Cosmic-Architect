@@ -8,12 +8,12 @@ namespace sim
 {
 	void LinkedMessagerSystem::OnInitialize(Simulation& simulation)
 	{
-		simulation.messager.Subscribe(cb::BindParam<&LinkedMessagerSystem::OnSimulationTick>(simulation));
+		simulation.dispatcher.Subscribe(cb::BindParam<&LinkedMessagerSystem::OnSimulationTick>(simulation));
 	}
 
 	void LinkedMessagerSystem::OnShutdown(Simulation& simulation)
 	{
-		simulation.messager.Unsubscribe(cb::BindParam<&LinkedMessagerSystem::OnSimulationTick>(simulation));
+		simulation.dispatcher.Unsubscribe(cb::BindParam<&LinkedMessagerSystem::OnSimulationTick>(simulation));
 	}
 
 	void LinkedMessagerSystem::OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event)

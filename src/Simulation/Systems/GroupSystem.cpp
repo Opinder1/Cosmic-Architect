@@ -99,13 +99,13 @@ namespace sim
 	{
 		while (true)
 		{
-			simulation.messager.PostEvent(ProcessDeletedEntitiesEvent());
+			simulation.dispatcher.PostEvent(ProcessDeletedEntitiesEvent());
 
 			simulation.registry.clear<DeletedComponent>();
 
 			if (simulation.registry.storage<ParentDeletedComponent>().size() > 0)
 			{
-				simulation.messager.PostEvent(ProcessDeletedParentsEvent());
+				simulation.dispatcher.PostEvent(ProcessDeletedParentsEvent());
 
 				simulation.registry.clear<ParentDeletedComponent>();
 			}

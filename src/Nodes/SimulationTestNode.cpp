@@ -10,18 +10,6 @@
 #include <godot_cpp/classes/input_event_key.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
-namespace
-{
-	void SimulationTickCallback(sim::SimulationMessager* simulation, const sim::SimulationTickEvent& event)
-	{
-		if (simulation->GetTotalTicks() % 1000 == 0)
-		{
-			auto id = std::this_thread::get_id();
-			godot::UtilityFunctions::print(godot::vformat("Thread %d on tick %d", *(unsigned int*)&id, simulation->GetTotalTicks()));
-		}
-	}
-}
-
 SimulationTestNode::SimulationTestNode() :
 	m_try_and_add(false),
 	m_added(false)
@@ -39,32 +27,20 @@ void SimulationTestNode::_notification(int notification)
 	case NOTIFICATION_ENTER_TREE:
 		m_id = Create("");
 
-		if (!Start(m_id))
-		{
-			DEBUG_PRINT_ERROR("We failed to start the simulation we just created");
-		}
-
 		m_try_and_add = true;
 		break;
 
 	case NOTIFICATION_EXIT_TREE:
-		if (sim::SimulationMessager* messager = GetAcquiredSimulation(m_id))
-		{
-			messager->Unsubscribe(cb::BindParam<&SimulationTickCallback>(messager));
-
-		}
-
-		m_try_and_add = false;
-
-		if (m_added)
+		if (m_try_and_add)
 		{
 			if (!Remove(m_id))
 			{
 				DEBUG_PRINT_ERROR("We failed to remove the simulation that we created and should have added to ourselves");
 			}
-			m_added = false;
 		}
-		
+
+		m_try_and_add = false;
+
 		if (!m_id.is_empty())
 		{
 			Delete(m_id);
@@ -77,16 +53,22 @@ void SimulationTestNode::_notification(int notification)
 			if (Add(m_id))
 			{
 				m_try_and_add = false;
-				m_added = true;
 			}
 		}
 
-		if (sim::SimulationMessager* messager = GetAcquiredSimulation(m_id))
+		if (sim::SimulationMessager* simulation = GetAcquiredSimulation(m_id))
 		{
-			messager->Subscribe(cb::BindParam<&SimulationTickCallback>(messager));
+			if (simulation->GetTotalTicks() % 1000 == 0)
+			{
+				auto id = std::this_thread::get_id();
+				godot::UtilityFunctions::print(godot::vformat("Thread %d on tick %d", *(unsigned int*)&id, simulation->GetTotalTicks()));
+			}
 		}
+
 		break;
 	}
+
+	SimulationNode::_notification(notification);
 }
 
 void SimulationTestNode::_bind_methods()

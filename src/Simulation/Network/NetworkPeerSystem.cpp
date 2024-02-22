@@ -28,12 +28,12 @@ namespace sim
 
 	void NetworkPeerSystem::OnInitialize(Simulation& simulation)
 	{
-		simulation.messager.Subscribe(cb::BindParam<&NetworkPeerSystem::OnSimulationTick>(simulation));
+		simulation.dispatcher.Subscribe(cb::BindParam<&NetworkPeerSystem::OnSimulationTick>(simulation));
 	}
 
 	void NetworkPeerSystem::OnShutdown(Simulation& simulation)
 	{
-		simulation.messager.Unsubscribe(cb::BindParam<&NetworkPeerSystem::OnSimulationTick>(simulation));
+		simulation.dispatcher.Unsubscribe(cb::BindParam<&NetworkPeerSystem::OnSimulationTick>(simulation));
 	}
 
 	void NetworkPeerSystem::OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event)

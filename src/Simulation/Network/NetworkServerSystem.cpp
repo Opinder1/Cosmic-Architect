@@ -26,20 +26,20 @@ namespace sim
 {
 	void NetworkServerSystem::OnInitialize(Simulation& simulation)
 	{
-		simulation.messager.Subscribe(cb::BindParam<&NetworkServerSystem::OnSimulationTick>(simulation));
-		simulation.messager.Subscribe(cb::BindParam<&NetworkServerSystem::OnSimulationRequestStop>(simulation));
-		simulation.messager.Subscribe(cb::BindParam<&NetworkServerSystem::OnSimulationStop>(simulation));
-		simulation.messager.Subscribe(cb::BindParam<&NetworkServerSystem::OnStartNetworkServer>(simulation));
-		simulation.messager.Subscribe(cb::BindParam<&NetworkServerSystem::OnStopNetworkServer>(simulation));
+		simulation.dispatcher.Subscribe(cb::BindParam<&NetworkServerSystem::OnSimulationTick>(simulation));
+		simulation.dispatcher.Subscribe(cb::BindParam<&NetworkServerSystem::OnSimulationRequestStop>(simulation));
+		simulation.dispatcher.Subscribe(cb::BindParam<&NetworkServerSystem::OnSimulationStop>(simulation));
+		simulation.dispatcher.Subscribe(cb::BindParam<&NetworkServerSystem::OnStartNetworkServer>(simulation));
+		simulation.dispatcher.Subscribe(cb::BindParam<&NetworkServerSystem::OnStopNetworkServer>(simulation));
 	}
 
 	void NetworkServerSystem::OnShutdown(Simulation& simulation)
 	{
-		simulation.messager.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnStopNetworkServer>(simulation));
-		simulation.messager.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnStartNetworkServer>(simulation));
-		simulation.messager.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnSimulationStop>(simulation));
-		simulation.messager.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnSimulationRequestStop>(simulation));
-		simulation.messager.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnSimulationTick>(simulation));
+		simulation.dispatcher.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnStopNetworkServer>(simulation));
+		simulation.dispatcher.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnStartNetworkServer>(simulation));
+		simulation.dispatcher.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnSimulationStop>(simulation));
+		simulation.dispatcher.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnSimulationRequestStop>(simulation));
+		simulation.dispatcher.Unsubscribe(cb::BindParam<&NetworkServerSystem::OnSimulationTick>(simulation));
 	}
 
 	void NetworkServerSystem::OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event)

@@ -2,6 +2,8 @@
 
 #include "SimulationMessager.h"
 
+#include "Event/EventDispatcher.h"
+
 #include "Util/Callback.h"
 
 #include <entt/entity/registry.hpp>
@@ -30,17 +32,19 @@ namespace sim
 
 		SimulationServer&		server;
 
+		SystemDeleteStorage		system_shutdowns;
+
+		// Messaging
 		SimulationMessager		messager;
+		EventDispatcher			dispatcher;
 
+		// UIDs
 		UUIDGenerator			uuid_gen;
-
 		UUIDToEntityStorage     uuid_to_entity;
 		EntityToUUIDStorage     entity_to_uuid;
 
-		SystemDeleteStorage		system_shutdowns;
-
+		// Data
 		Registry				registry;
-
 		Globals					globals;
 	};
 }

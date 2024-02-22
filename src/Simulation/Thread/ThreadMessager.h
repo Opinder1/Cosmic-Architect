@@ -5,8 +5,6 @@
 
 #include "Simulation/Message/MessageSender.h"
 
-#include "Simulation/Event/EventDispatcher.h"
-
 #include <robin_hood/robin_hood.h>
 
 #include <mutex>
@@ -22,7 +20,7 @@ namespace sim
 	struct MessagerException {};
 
 	// A messager that sends events to other messagers in this process. They could be in other threads
-	class ThreadMessager : protected ThreadOwnable, public MessageSender, public EventDispatcher
+	class ThreadMessager : protected ThreadOwnable, public MessageSender
 	{
 	private:
 		struct LinkedMessager
@@ -34,7 +32,7 @@ namespace sim
 		using LinkedMessagerStorage = robin_hood::unordered_node_map<UUID, LinkedMessager>;
 
 	public:
-		explicit ThreadMessager(UUID id);
+		explicit ThreadMessager(MessageRegistry& registry, UUID id, EventDispatcher& dispatcher);
 		~ThreadMessager();
 
 		// Is this messager stopping
@@ -53,6 +51,8 @@ namespace sim
 		void PostMessagesFromUnattested(const MessageQueue& messages);
 
 	protected:
+		EventDispatcher& GetDispatcher();
+
 		// Link to another messager. Run by user of this messager
 		void LinkMessager(ThreadMessager& target);
 
@@ -90,6 +90,9 @@ namespace sim
 	private:
 		// Mutex to protect m_in_queue
 		mutable std::mutex m_mutex;
+
+		// The dispatcher we will output events to
+		EventDispatcher& m_dispatcher;
 
 		// Used by all other messagers and should not interfere with this messagers message reading
 		// Can be fought over by other messagers

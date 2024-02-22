@@ -2,25 +2,33 @@
 
 #include "Simulation/Events.h"
 
+#include "Simulation/Event/EventDispatcher.h"
+
 #include "Util/Debug.h"
 
 namespace sim
 {
-	ThreadMessager::ThreadMessager(UUID id) :
-		MessageSender(id),
-		m_stopping(false)
+	ThreadMessager::ThreadMessager(MessageRegistry& registry, UUID id, EventDispatcher& dispatcher) :
+		MessageSender(registry, id),
+		m_stopping(false),
+		m_dispatcher(dispatcher)
 	{
-		Subscribe(cb::Bind<&ThreadMessager::OnAttemptFreeMemory>(this));
+		m_dispatcher.Subscribe(cb::Bind<&ThreadMessager::OnAttemptFreeMemory>(this));
 	}
 
 	ThreadMessager::~ThreadMessager()
 	{
-		Unsubscribe(cb::Bind<&ThreadMessager::OnAttemptFreeMemory>(this));
+		m_dispatcher.Unsubscribe(cb::Bind<&ThreadMessager::OnAttemptFreeMemory>(this));
 	}
 
 	bool ThreadMessager::IsStopping() const
 	{
 		return m_stopping;
+	}
+
+	EventDispatcher& ThreadMessager::GetDispatcher()
+	{
+		return m_dispatcher;
 	}
 
 	void ThreadMessager::LinkMessager(ThreadMessager& target)
@@ -116,7 +124,7 @@ namespace sim
 
 		if (ThreadOwnsObject()) // If we own this then don't bother queuing as we won't be reading the queue right now
 		{
-			PostEventGeneric(*message, GetMessageType(*message));
+			m_dispatcher.PostEventGeneric(*message, GetMessageType(*message));
 		}
 		else
 		{
@@ -137,7 +145,7 @@ namespace sim
 		{
 			for (const MessagePtr& message : messages)
 			{
-				PostEventGeneric(*message, GetMessageType(*message));
+				m_dispatcher.PostEventGeneric(*message, GetMessageType(*message));
 			}
 		}
 		else
@@ -194,7 +202,7 @@ namespace sim
 		DEBUG_ASSERT(ThreadOwnsObject(), "The owning thread should be processing messages for this messager");
 
 		// Process the events sent to ourself first before messages sent from other messagers
-		ProcessEventQueue();
+		m_dispatcher.ProcessEventQueue();
 
 		// Used exclusively by this messager and wont be blocked by other messagers sending to this
 		ThreadMessageQueue process_queue;
@@ -237,7 +245,7 @@ namespace sim
 		if (m_stopping && m_linked_messagers.size() == 0)
 		{
 			// Tell the superclass we have stopped
-			PostEvent(MessagerStopEvent());
+			m_dispatcher.PostEvent(MessagerStopEvent());
 		}
 	}
 
@@ -257,6 +265,8 @@ namespace sim
 
 	void ThreadMessager::MessagerStop()
 	{
+		DEBUG_ASSERT(m_stopping, "We should be in the stopping state");
+
 		m_stopping = false;
 
 		ThreadReleaseObject(); // Unclaim this object
@@ -312,7 +322,7 @@ namespace sim
 			// which should be processed after the queue is created in that messager.
 			thread_message.sender->PostMessageFromOther(ThreadMessage(ThreadMessage::Type::ConfirmLink, this, nullptr));
 			
-			PostEvent(MessagerLinkEvent(thread_message.sender->GetUUID()));
+			m_dispatcher.PostEvent(MessagerLinkEvent(thread_message.sender->GetUUID()));
 			break;
 
 		case ThreadMessage::Type::ConfirmLink:
@@ -324,7 +334,7 @@ namespace sim
 
 			m_linked_messagers.emplace(thread_message.sender->GetUUID(), LinkedMessager{ thread_message.sender });
 
-			PostEvent(MessagerLinkEvent(thread_message.sender->GetUUID()));
+			m_dispatcher.PostEvent(MessagerLinkEvent(thread_message.sender->GetUUID()));
 			break;
 
 		case ThreadMessage::Type::RequestUnlink:
@@ -334,7 +344,7 @@ namespace sim
 				break;
 			}
 
-			PostEvent(MessagerUnlinkEvent(thread_message.sender->GetUUID()));
+			m_dispatcher.PostEvent(MessagerUnlinkEvent(thread_message.sender->GetUUID()));
 
 			// Send the confirmation of the unlink after the OnUnlink() callback as
 			// in that callback, some messages could be sent to that messager.
@@ -348,11 +358,11 @@ namespace sim
 				break;
 			}
 
-			PostEvent(MessagerUnlinkEvent(thread_message.sender->GetUUID()));
+			m_dispatcher.PostEvent(MessagerUnlinkEvent(thread_message.sender->GetUUID()));
 			break;
 
 		case ThreadMessage::Type::Message:
-			PostEventGeneric(*thread_message.message, GetMessageType(*thread_message.message));
+			m_dispatcher.PostEventGeneric(*thread_message.message, GetMessageType(*thread_message.message));
 			break;
 
 		default:

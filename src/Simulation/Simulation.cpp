@@ -6,7 +6,7 @@ namespace sim
 {
 	Simulation::Simulation(SimulationServer& server, UUID id) :
 		server(server),
-		messager(server, id),
+		messager(server, id, dispatcher),
 		globals(registry.get_allocator())
 	{}
 

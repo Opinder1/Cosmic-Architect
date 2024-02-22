@@ -8,23 +8,23 @@ namespace sim
 {
 	void DeletedEntitiesSystem::OnInitialize(Simulation& simulation)
 	{
-		simulation.messager.Subscribe(cb::BindParam<&DeletedEntitiesSystem::OnSimulationTick>(simulation));
+		simulation.dispatcher.Subscribe(cb::BindParam<&DeletedEntitiesSystem::OnSimulationTick>(simulation));
 	}
 
 	void DeletedEntitiesSystem::OnShutdown(Simulation& simulation)
 	{
-		simulation.messager.Unsubscribe(cb::BindParam<&DeletedEntitiesSystem::OnSimulationTick>(simulation));
+		simulation.dispatcher.Unsubscribe(cb::BindParam<&DeletedEntitiesSystem::OnSimulationTick>(simulation));
 	}
 
 	void DeletedEntitiesSystem::OnSimulationTick(Simulation& simulation, const SimulationTickEvent& event)
 	{
 		// Process new entities then remove the new entity component flag
-		simulation.messager.PostEvent(ProcessNewEntitiesEvent());
+		simulation.dispatcher.PostEvent(ProcessNewEntitiesEvent());
 
 		simulation.registry.clear<NewComponent>();
 
 		// Process deleted entities then remove them and their components from the registry
-		simulation.messager.PostEvent(ProcessDeletedEntitiesEvent());
+		simulation.dispatcher.PostEvent(ProcessDeletedEntitiesEvent());
 
 		for (auto [entity] : simulation.registry.view<DeletedComponent>().each())
 		{
