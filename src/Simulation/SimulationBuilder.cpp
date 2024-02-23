@@ -39,7 +39,7 @@ namespace sim
 
 	void EmptySimulationBuilder::Build(Simulation& simulation) const
 	{
-		// AddDefaultSystems(simulation);
+		AddDefaultSystems(simulation);
 	}
 
 	DirectorySimulationBuilder::DirectorySimulationBuilder(const godot::String& path) :

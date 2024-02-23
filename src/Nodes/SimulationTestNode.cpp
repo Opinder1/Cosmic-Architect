@@ -28,28 +28,37 @@ void SimulationTestNode::_notification(int notification)
 		m_id = Create("");
 
 		m_try_and_add = true;
+
+		DEBUG_PRINT_INFO("Created simulation with id: " + m_id);
 		break;
 
 	case NOTIFICATION_EXIT_TREE:
-		m_try_and_add = false;
-
-		if (!m_id.is_empty())
+		if (!m_id.is_empty()) // Only delete if we have an id
 		{
-			if (!Remove(m_id))
+			if (!m_try_and_add) // If we succesfully added then this will be false
 			{
-				DEBUG_PRINT_ERROR("We failed to remove the simulation that we created and should have added to ourselves");
+				if (!Remove(m_id))
+				{
+					DEBUG_PRINT_ERROR("We failed to remove the simulation that we created and should have added to ourselves");
+				}
 			}
 
+			DEBUG_PRINT_INFO("Deleted simulation with id: " + m_id);
+
+			// Delete the simulation and forget the id since we can just create a new id if needed
 			Delete(m_id);
+			m_id = godot::StringName();
 		}
+
+		m_try_and_add = false;
 		break;
 
 	case NOTIFICATION_PROCESS:
-		if (m_try_and_add)
+		if (m_try_and_add) // Keep trying to add until we succeed
 		{
 			if (Add(m_id))
 			{
-				m_try_and_add = false;
+				m_try_and_add = false; // Stop trying to add once we succeed in adding
 			}
 		}
 
@@ -64,8 +73,6 @@ void SimulationTestNode::_notification(int notification)
 
 		break;
 	}
-
-	SimulationNode::_notification(notification);
 }
 
 void SimulationTestNode::_bind_methods()
