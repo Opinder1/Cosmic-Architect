@@ -168,12 +168,7 @@ bool SimulationNode::Remove(const godot::StringName& id)
     // Make sure to have the simulation deinitialize its world and tree data
     if (ref.simulation_ptr != nullptr)
     {
-        godot::Ref<godot::World3D> world = get_world_3d();
-
-        if (world.is_valid())
-        {
-            ref.simulation_ptr->PostEventFromUnattested(NodeExitWorldEvent());
-        }
+        ref.simulation_ptr->PostEventFromUnattested(NodeExitWorldEvent());
 
         if (is_inside_tree())
         {
