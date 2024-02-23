@@ -6,8 +6,6 @@
 
 #include "Util/Time.h"
 
-#include <godot_cpp/classes/config_file.hpp>
-
 namespace sim
 {
 	// Called when a thread messager has stopped execution. Should be sent internally
@@ -49,10 +47,18 @@ namespace sim
 		explicit SimulationRequestStopMessage() : Message(Unattested{}) {}
 	};
 
+	// Called when a thread has acquired the simulation and it will start to be manually ticked. Should be sent internally
 	struct SimulationThreadAcquireMessage : Message
 	{
 		explicit SimulationThreadAcquireMessage(const MessageSender& sender) : Message(sender) {}
 		explicit SimulationThreadAcquireMessage() : Message(Unattested{}) {}
+	};
+
+	// Called when a thread has released the simulation and it will no longer be manually ticked. Should be sent internally
+	struct SimulationThreadReleaseMessage : Message
+	{
+		explicit SimulationThreadReleaseMessage(const MessageSender& sender) : Message(sender) {}
+		explicit SimulationThreadReleaseMessage() : Message(Unattested{}) {}
 	};
 
 	// Called when a simulation has stopped execution. Should be sent internally
@@ -73,34 +79,19 @@ namespace sim
 		Clock::duration timestep;
 	};
 
-	struct SimulationLoadConfigEvent : Event
-	{
-		explicit SimulationLoadConfigEvent(const godot::Ref<godot::ConfigFile>& config) :
-			config(config)
-		{}
-
-		const godot::Ref<godot::ConfigFile>& config;
-	};
-
-	struct SimulationSaveConfigEvent : Event
-	{
-		explicit SimulationSaveConfigEvent(const godot::Ref<godot::ConfigFile>& config) :
-			config(config)
-		{}
-
-		const godot::Ref<godot::ConfigFile>& config;
-	};
-
+	// When we recieve this event we should process all entities with the new component
 	struct ProcessNewEntitiesEvent : Event
 	{
 		explicit ProcessNewEntitiesEvent() {}
 	};
-	
+
+	// When we recieve this event we should process all entities with the deleted component
 	struct ProcessDeletedEntitiesEvent : Event
 	{
 		explicit ProcessDeletedEntitiesEvent() {}
 	};
 
+	// When we recieve this event we should process all entities with the parent deleted component
 	struct ProcessDeletedParentsEvent : Event
 	{
 		explicit ProcessDeletedParentsEvent() {}

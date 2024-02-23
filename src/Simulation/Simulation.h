@@ -35,8 +35,8 @@ namespace sim
 		SystemDeleteStorage		system_shutdowns;
 
 		// Messaging
-		SimulationMessager		messager;
 		EventDispatcher			dispatcher;
+		SimulationMessager		messager;
 
 		// UIDs
 		UUIDGenerator			uuid_gen;

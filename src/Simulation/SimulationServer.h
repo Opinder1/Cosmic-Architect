@@ -16,6 +16,8 @@ namespace sim
 	class SimulationBuilder;
 	class SimulationMessager;
 
+	// The simulation server helps with creating and deleting simulations since they can be processed in different threads
+	// The server will handle the creation, updating and deletion of the simulations making sure everything is thread safe
 	class SimulationServer : public MessageRegistry
 	{
 	public:
@@ -50,6 +52,7 @@ namespace sim
 		// Enable the ability to use networking features
 		void StartNetworking();
 
+		// Get all the simulations that currently exist in this server
 		std::vector<UUID> GetAllSimulations();
 
 		// Create a new simulation and build it in its own thread. Returns a handle to it

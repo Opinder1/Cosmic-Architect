@@ -9,6 +9,7 @@ namespace sim
 {
 	struct Simulation;
 
+	// An interface for defining a method for constructing a simulation and adding systems and globals to it
 	class SimulationBuilder
 	{
 	public:
@@ -17,20 +18,21 @@ namespace sim
 	public:
 		SimulationBuilder();
 
+		// Our build function that will be called once
 		virtual void Build(Simulation& simulation) const = 0;
 
 	protected:
-		void AddDefaultSystems(Simulation& simulation) const;
+		static void AddDefaultSystems(Simulation& simulation);
 
-		// Add a system to a simulation
+		// Add a system to the simulation
 		template<class SystemT>
-		void AddSystem(Simulation& simulation) const
+		static void AddSystem(Simulation& simulation)
 		{
 			AddSystem(simulation, SystemT::OnInitialize, SystemT::OnShutdown);
 		}
 
 		// Add a system using an emmiter callback
-		void AddSystem(Simulation& simulation, const SimulationApplicator& initialize, const SimulationApplicator& shutdown) const;
+		static void AddSystem(Simulation& simulation, const SimulationApplicator& initialize, const SimulationApplicator& shutdown);
 	};
 
 	class EmptySimulationBuilder : public SimulationBuilder
@@ -46,6 +48,7 @@ namespace sim
 	public:
 		DirectorySimulationBuilder(const godot::String& path);
 
+		// Build with a given directory
 		virtual void Build(Simulation& simulation, const godot::DirAccess& directory) const = 0;
 
 		void Build(Simulation& simulation) const final;

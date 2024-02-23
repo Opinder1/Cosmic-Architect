@@ -14,7 +14,7 @@ namespace sim
 
 	}
 
-	void SimulationBuilder::AddDefaultSystems(Simulation& simulation) const
+	void SimulationBuilder::AddDefaultSystems(Simulation& simulation)
 	{
 		simulation.messager.SetTargetTicksPerSecond(60);
 
@@ -25,7 +25,7 @@ namespace sim
 		AddSystem<LinkedRemoteSimulationSystem>(simulation);
 	}
 
-	void SimulationBuilder::AddSystem(Simulation& simulation, const SimulationApplicator& initialize, const SimulationApplicator& shutdown) const
+	void SimulationBuilder::AddSystem(Simulation& simulation, const SimulationApplicator& initialize, const SimulationApplicator& shutdown)
 	{
 		initialize(simulation);
 

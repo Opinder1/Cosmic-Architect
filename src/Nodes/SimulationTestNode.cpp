@@ -31,18 +31,15 @@ void SimulationTestNode::_notification(int notification)
 		break;
 
 	case NOTIFICATION_EXIT_TREE:
-		if (m_try_and_add)
+		m_try_and_add = false;
+
+		if (!m_id.is_empty())
 		{
 			if (!Remove(m_id))
 			{
 				DEBUG_PRINT_ERROR("We failed to remove the simulation that we created and should have added to ourselves");
 			}
-		}
 
-		m_try_and_add = false;
-
-		if (!m_id.is_empty())
-		{
 			Delete(m_id);
 		}
 		break;

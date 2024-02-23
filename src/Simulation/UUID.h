@@ -11,14 +11,14 @@
 
 namespace sim
 {
-	// An id that should be unique regardless of how it was created or what system created it
+	// An id that should be unique regardless of the circumstances in which it was generated
 	class UUID
 	{
 	public:
 		static const UUID k_empty_uuid;
 
 	public:
-		// Generate a random uuid using thread safe global random. (Avoid using this often and prefer using stored random)
+		// Generate a random uuid using thread safe global random. (Avoid using this often and prefer using local random)
 		static UUID GenerateRandom();
 
 		// Create empty uuid (value of 0)

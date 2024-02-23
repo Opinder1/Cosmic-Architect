@@ -198,6 +198,8 @@ namespace sim
 		m_external_thread = std::thread::id{};
 		m_thread_paused = false;
 
+		PostMessageFromUnattested(std::make_shared<SimulationThreadReleaseMessage>());
+
 		return true;
 	}
 
@@ -394,6 +396,7 @@ namespace sim
 		GetDispatcher().PostEvent(SimulationTickEvent(tick_start, timestep));
 
 		// Send all outgoing messages that may have been queued during the tick event.
+		// Do this after as they will have been queued during the tick
 		ProcessOutgoingMessages();
 	}
 
@@ -418,7 +421,7 @@ namespace sim
 	{
 		DEBUG_ASSERT(ThreadOwnsObject() && GetOwnerID() == m_internal_thread.get_id(), "This simulation should be owned by the internal thread when handling a stop request");
 
-		if (IsStopping()) // If we are already stopping then ignore this event
+		if (IsStopping()) // We may recieve this message more than once but that is fine since all senders will get what they requested
 		{
 			return;
 		}
@@ -450,6 +453,6 @@ namespace sim
 		DEBUG_ASSERT(ThreadOwnsObject(), "This message should be sent by the owning thread");
 		DEBUG_ASSERT(IsStopping(), "We should be stopping");
 
-		m_keep_looping = false; // Set this to false so we exit the thread loop
+		m_keep_looping = false; // Set this to false so we exit the thread loop. This should be executed within a tick
 	}
 }
