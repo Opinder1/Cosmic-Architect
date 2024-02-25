@@ -30,8 +30,8 @@ namespace sim
 
 		enum class CreateMethod
 		{
-			Local,
-			Thread,
+			Default,
+			ThreadAutoStart,
 		};
 
 		using MessagerApplicator = cb::Callback<void(SimulationMessager&)>;
@@ -48,9 +48,6 @@ namespace sim
 	public:
 		explicit SimulationServer();
 		~SimulationServer();
-
-		// Enable the ability to use networking features
-		void StartNetworking();
 
 		// Get all the simulations that currently exist in this server
 		std::vector<UUID> GetAllSimulations();

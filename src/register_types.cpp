@@ -18,8 +18,6 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 
 		sim::SimulationServer::Initialize();
 
-		sim::SimulationServer::GetSingleton()->StartNetworking();
-
 		godot::ClassDB::register_class<SimulationNode>();
 		godot::ClassDB::register_class<SimulationTestNode>();
 

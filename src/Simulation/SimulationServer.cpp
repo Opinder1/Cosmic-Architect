@@ -69,16 +69,6 @@ namespace sim
 		m_deleter_thread.join();
 	}
 
-	void SimulationServer::StartNetworking()
-	{
-		m_network_simulation = CreateSimulation(std::make_unique<EmptySimulationBuilder>(), sim::SimulationServer::CreateMethod::Thread);
-
-		//AddSystem<NetworkServerSystem>(m_network_simulation);
-		//AddSystem<NetworkPeerSystem>(m_network_simulation);
-
-		StartSimulation(m_network_simulation);
-	}
-
 	std::vector<UUID> SimulationServer::GetAllSimulations()
 	{
 		std::shared_lock lock(m_mutex);
@@ -101,7 +91,7 @@ namespace sim
 
 		SimulationPtr simulation = std::make_unique<Simulation>(*this, id);
 
-		if (method == CreateMethod::Local) // Build before locking if we build local so we don't keep the server waiting when building
+		if (method == CreateMethod::Default) // Build before locking if we build local so we don't keep the server waiting when building
 		{
 			builder->Build(*simulation);
 		}
@@ -122,7 +112,7 @@ namespace sim
 			return UUID();
 		}
 
-		if (method == CreateMethod::Thread)
+		if (method == CreateMethod::ThreadAutoStart)
 		{
 			Simulation& simulation = *it->second;
 

@@ -65,7 +65,7 @@ namespace voxel_world
 
 	VoxelWorldNode::VoxelWorldNode()
 	{
-		m_root_simulation = sim::SimulationServer::GetSingleton()->CreateSimulation(std::make_unique<sim::EmptySimulationBuilder>(), sim::SimulationServer::CreateMethod::Thread);
+		m_root_simulation = sim::SimulationServer::GetSingleton()->CreateSimulation(std::make_unique<sim::EmptySimulationBuilder>(), sim::SimulationServer::CreateMethod::ThreadAutoStart);
 
 		godot::UtilityFunctions::print("Created VoxelWorldNode");
 	}

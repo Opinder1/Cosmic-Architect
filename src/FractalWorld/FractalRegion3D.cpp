@@ -14,7 +14,7 @@ namespace voxel_world
     FractalRegion3D::FractalRegion3D(FractalWorld3D& world) :
         m_world(world)
     {
-        m_simulation = sim::SimulationServer::GetSingleton()->CreateSimulation(std::make_unique<sim::EmptySimulationBuilder>(), sim::SimulationServer::CreateMethod::Thread);
+        m_simulation = sim::SimulationServer::GetSingleton()->CreateSimulation(std::make_unique<sim::EmptySimulationBuilder>(), sim::SimulationServer::CreateMethod::ThreadAutoStart);
     }
 
     FractalRegion3D::~FractalRegion3D()

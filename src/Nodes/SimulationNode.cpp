@@ -56,7 +56,7 @@ godot::PackedStringArray SimulationNode::GetAllSimulations()
 
 godot::StringName SimulationNode::Create(const godot::String& config_path)
 {
-    sim::UUID uuid = sim::SimulationServer::GetSingleton()->CreateSimulation(std::make_unique<sim::EmptySimulationBuilder>(), sim::SimulationServer::CreateMethod::Thread);
+    sim::UUID uuid = sim::SimulationServer::GetSingleton()->CreateSimulation(std::make_unique<sim::EmptySimulationBuilder>(), sim::SimulationServer::CreateMethod::ThreadAutoStart);
 
     return uuid.ToGodotString();
 }
