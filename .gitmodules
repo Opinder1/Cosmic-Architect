@@ -2,3 +2,6 @@
 	path = godot-cpp
 	url = https://github.com/godotengine/godot-cpp
 	branch = 4.1
+[submodule "VoxelGameDemo"]
+	path = VoxelGameDemo
+	url = https://github.com/Opinder1/VoxelGameDemo.git
