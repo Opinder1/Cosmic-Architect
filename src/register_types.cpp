@@ -1,9 +1,4 @@
-#include "Simulation/SimulationServer.h"
-
-#include "VoxelWorld.h"
-
-#include "Nodes/SimulationNode.h"
-#include "Nodes/SimulationTestNode.h"
+#include "World.h"
 
 #include <godot_cpp/variant/utility_functions.hpp>
 
@@ -16,10 +11,8 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 	{
 		godot::UtilityFunctions::print("Loading voxel world extension");
 
-		sim::SimulationServer::Initialize();
-
-		godot::ClassDB::register_class<SimulationNode>();
-		godot::ClassDB::register_class<SimulationTestNode>();
+		godot::ClassDB::register_class<voxel_world::World>();
+		godot::ClassDB::register_class<voxel_world::WorldNode>();
 
 		godot::UtilityFunctions::print("Loaded voxel world extension");
 	}
@@ -30,8 +23,6 @@ void uninitialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 	if (p_level == godot::MODULE_INITIALIZATION_LEVEL_SCENE)
 	{
 		godot::UtilityFunctions::print("Unloading voxel world extension");
-
-		sim::SimulationServer::Uninitialize();
 
 		godot::UtilityFunctions::print("Unloaded voxel world extension");
 	}
