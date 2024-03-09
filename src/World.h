@@ -2,21 +2,26 @@
 
 #include <flecs/flecs.h>
 
-#include <godot_cpp/classes/ref_counted.hpp>
-#include <godot_cpp/classes/node3d.hpp>
 #include <godot_cpp/classes/resource.hpp>
+#include <godot_cpp/classes/node3d.hpp>
 
 namespace voxel_world
 {
-	class World : public godot::RefCounted
+	class World : public godot::Resource
 	{
-		GDCLASS(World, godot::RefCounted);
+		GDCLASS(World, godot::Resource);
 
 	public:
 		World();
 		~World();
 
-		bool progress(double delta);
+		void Reset();
+
+		void StartRest(uint16_t port, bool monitor);
+
+		void SetThreads(int64_t threads);
+
+		bool Progress(double delta);
 
 	protected:
 		static void _bind_methods();
@@ -36,6 +41,9 @@ namespace voxel_world
 		void SetWorld(const godot::Ref<World>& world);
 		godot::Ref<World> GetWorld();
 
+		// Load a new world and make this node the owner
+		void LoadWorld(const godot::String& path);
+
 		void _process(double delta) override;
 
 	protected:
@@ -43,5 +51,7 @@ namespace voxel_world
 
 	private:
 		godot::Ref<World> m_world;
+
+		bool m_owner;
 	};
 }

@@ -5,24 +5,46 @@
 namespace voxel_world
 {
 	World::World()
-	{
-		m_world.set_threads(12);
-	}
+	{}
 
 	World::~World()
 	{}
 
-	bool World::progress(double delta)
+	void World::Reset()
+	{
+		m_world.reset();
+	}
+
+	void World::StartRest(uint16_t port, bool monitor)
+	{
+		m_world.set(flecs::Rest{ port, nullptr, nullptr });
+
+		if (monitor)
+		{
+			m_world.import<flecs::monitor>();
+		}
+	}
+
+	void World::SetThreads(int64_t threads)
+	{
+		m_world.set_threads(threads);
+	}
+
+	bool World::Progress(double delta)
 	{
 		return m_world.progress(delta);
 	}
 
 	void World::_bind_methods()
 	{
-		godot::ClassDB::bind_method(godot::D_METHOD("progress", "delta"), &World::progress);
+		godot::ClassDB::bind_method(godot::D_METHOD("reset"), &World::Reset);
+		godot::ClassDB::bind_method(godot::D_METHOD("start_rest", "port", "monitor"), &World::StartRest, 27750, true);
+		godot::ClassDB::bind_method(godot::D_METHOD("set_threads", "thread_count"), &World::SetThreads);
+		godot::ClassDB::bind_method(godot::D_METHOD("progress", "delta"), &World::Progress, 0.0);
 	}
 
-	WorldNode::WorldNode()
+	WorldNode::WorldNode() :
+		m_owner(false)
 	{}
 
 	WorldNode::~WorldNode()
@@ -42,7 +64,7 @@ namespace voxel_world
 	{
 		if (m_world.is_valid())
 		{
-			m_world->progress(delta);
+			m_world->Progress(delta);
 		}
 	}
 

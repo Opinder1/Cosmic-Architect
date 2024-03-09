@@ -43,14 +43,14 @@ env.Append(CPPDEFINES=["ENTT_ID_TYPE=std::uint64_t"])
 
 if env["platform"] == "macos":
     library = env.SharedLibrary(
-        "demo/bin/voxelgame.{}.{}.framework/voxelgame.{}.{}".format(
+        "VoxelGameDemo/bin/voxelgame.{}.{}.framework/voxelgame.{}.{}".format(
             env["platform"], env["target"], env["platform"], env["target"]
         ),
         source=sources,
     )
 else:
     library = env.SharedLibrary(
-        "demo/bin/voxelgame{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
+        "VoxelGameDemo/bin/voxelgame{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
         source=sources,
     )
     
@@ -73,7 +73,7 @@ if ARGUMENTS.get("vs_proj"): # Generate VS project for intellisense and nice bui
     
     debug_settings = {
         'LocalDebuggerCommand': "C:/Godot/godotengine/bin/godot.windows.template_debug.dev.double.x86_64.exe",
-        'LocalDebuggerCommandArguments': "--path C:/Godot/Projects/VoxelGame/demo --debug",
+        'LocalDebuggerCommandArguments': "--path C:/Godot/Projects/VoxelGame/VoxelGameDemo --debug",
     }
 
     proj = env2.MSVSProject(
