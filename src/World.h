@@ -15,13 +15,23 @@ namespace voxel_world
 		World();
 		~World();
 
+		void StartRest(uint64_t port, bool monitor);
+
+		void SetThreads(uint64_t threads);
+
 		void Reset();
 
-		void StartRest(uint16_t port, bool monitor);
-
-		void SetThreads(int64_t threads);
+		void ResetTime();
 
 		bool Progress(double delta);
+
+		float GetDeltaTime();
+
+		void PreallocateForEntities(uint64_t entity_count);
+
+		void SetEntityRange(uint64_t min, uint64_t max);
+
+		void SetEntityRangeCheck(bool enabled);
 
 	protected:
 		static void _bind_methods();

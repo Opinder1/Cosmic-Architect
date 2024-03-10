@@ -10,14 +10,14 @@ namespace voxel_world
 	World::~World()
 	{}
 
-	void World::Reset()
+	void World::StartRest(uint64_t port, bool monitor)
 	{
-		m_world.reset();
-	}
+		if (port > UINT16_MAX)
+		{
+			// Error
+		}
 
-	void World::StartRest(uint16_t port, bool monitor)
-	{
-		m_world.set(flecs::Rest{ port, nullptr, nullptr });
+		m_world.set(flecs::Rest{ static_cast<uint16_t>(port), nullptr, nullptr });
 
 		if (monitor)
 		{
@@ -25,14 +25,54 @@ namespace voxel_world
 		}
 	}
 
-	void World::SetThreads(int64_t threads)
+	void World::SetThreads(uint64_t threads)
 	{
-		m_world.set_threads(threads);
+		if (threads > INT32_MAX)
+		{
+			// Error
+		}
+
+		m_world.set_threads(static_cast<int32_t>(threads));
+	}
+
+	void World::Reset()
+	{
+		m_world.reset();
+	}
+
+	void World::ResetTime()
+	{
+		m_world.reset_clock();
 	}
 
 	bool World::Progress(double delta)
 	{
 		return m_world.progress(delta);
+	}
+
+	float World::GetDeltaTime()
+	{
+		return m_world.delta_time();
+	}
+
+	void World::PreallocateForEntities(uint64_t entity_count)
+	{
+		if (entity_count > INT32_MAX)
+		{
+			// Error
+		}
+
+		m_world.dim(static_cast<int32_t>(entity_count));
+	}
+
+	void World::SetEntityRange(uint64_t min, uint64_t max)
+	{
+		m_world.set_entity_range(min, max);
+	}
+
+	void World::SetEntityRangeCheck(bool enabled)
+	{
+		m_world.enable_range_check(enabled);
 	}
 
 	void World::_bind_methods()
