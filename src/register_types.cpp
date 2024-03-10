@@ -1,4 +1,5 @@
 #include "World.h"
+#include "WorldNode.h"
 
 #include <godot_cpp/variant/utility_functions.hpp>
 
