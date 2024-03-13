@@ -6,38 +6,30 @@
 
 namespace voxel_world
 {
-	class World : public godot::Resource
+	class FlecsWorld : public godot::RefCounted
 	{
-		GDCLASS(World, godot::Resource);
+		GDCLASS(FlecsWorld, godot::RefCounted);
 
 	public:
-		World();
-		~World();
+		FlecsWorld();
+		~FlecsWorld();
 
 		void StartRestServer(uint64_t port, bool monitor);
-
 		void StopRestServer();
-
-		bool HasRestServer();
+		bool RunningRestServer();
 
 		void SetThreads(uint64_t threads);
 
-		void PreallocateForEntities(uint64_t entity_count);
-
 		void SetEntityRange(uint64_t min_id, uint64_t max_id);
 
-		void SetEntityRangeCheck(bool enabled);
-
-		void Reset();
-
 		void ResetTime();
-
+		void SetTimeMulti(double multi);
 		bool Progress(double delta);
 
 	protected:
 		static void _bind_methods();
 
-	private:
+	protected:
 		flecs::world m_world;
 		const flecs::world_info_t* m_info;
 	};

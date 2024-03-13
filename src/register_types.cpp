@@ -1,10 +1,54 @@
-#include "World.h"
-#include "WorldNode.h"
+#include "FlecsWorld.h"
+#include "FlecsWorldNode.h"
+#include "UniverseSimulation.h"
+
+#include "Util/Debug.h"
+
+#include <flecs/flecs.h>
 
 #include <godot_cpp/variant/utility_functions.hpp>
 
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/core/class_db.hpp>
+
+void godot_log_flecs(
+	int32_t level,     /* Logging level */
+	const char* file,  /* File where message was logged */
+	int32_t line,      /* Line it was logged */
+	const char* msg)
+{
+	/* >0: Debug tracing. Only enabled in debug builds. */
+	/*  0: Tracing. Enabled in debug/release builds. */
+	/* -2: Warning. An issue occurred, but operation was successful. */
+	/* -3: Error. An issue occurred, and operation was unsuccessful. */
+	/* -4: Fatal. An issue occurred, and application must quit. */
+
+	godot::String log_msg = godot::vformat("%s:%d: %s", file, line, msg);
+
+	switch (level)
+	{
+	case 0:
+		godot::UtilityFunctions::print(log_msg);
+		break;
+
+	case 1:
+		DEBUG_PRINT_INFO(log_msg);
+		break;
+
+	case 2:
+		DEBUG_PRINT_WARN(log_msg);
+		break;
+
+	case 3:
+		DEBUG_PRINT_ERROR(log_msg);
+		break;
+
+	case 4:
+		DEBUG_PRINT_ERROR(log_msg);
+		DEBUG_CRASH();
+		break;
+	}
+}
 
 void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 {
@@ -12,8 +56,11 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 	{
 		godot::UtilityFunctions::print("Loading voxel world extension");
 
-		godot::ClassDB::register_class<voxel_world::World>();
-		godot::ClassDB::register_class<voxel_world::WorldNode>();
+		ecs_os_api.log_ = godot_log_flecs;
+
+		godot::ClassDB::register_class<voxel_world::FlecsWorld>();
+		godot::ClassDB::register_class<voxel_world::FlecsWorldNode>();
+		godot::ClassDB::register_class<voxel_world::UniverseSimulation>();
 
 		godot::UtilityFunctions::print("Loaded voxel world extension");
 	}
