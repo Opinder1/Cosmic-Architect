@@ -10,13 +10,6 @@ namespace voxel_world
 	{
 		GDCLASS(UniverseSimulation, FlecsWorld);
 
-	private:
-		struct DeferredCommand
-		{
-			size_t id;
-			godot::Array args;
-		};
-
 	public:
 		UniverseSimulation();
 		~UniverseSimulation();
@@ -25,7 +18,7 @@ namespace voxel_world
 		void StartLocalGalaxy(const godot::String& galaxy_path);
 
 		// Start a fragment of a galaxy network locally
-		void StartLocalFragment(const godot::String& fragment_path);
+		void StartLocalFragment(const godot::String& fragment_path, const godot::String& fragment_type);
 
 		// Attempt to connect to a galaxy network hosted remotely
 		void StartRemoteGalaxy(const godot::String& galaxy_path);
@@ -34,24 +27,20 @@ namespace voxel_world
 		void StopGalaxy();
 
 		// When connected to a remote galaxy we may need to login
-		void CreateAccount();
-		void LoginAccount();
+		void CreateAccount(const godot::String& username, const godot::String& password_hash);
+		void LoginAccount(const godot::String& username, const godot::String& password_hash);
 		void LogoutAccount();
 
-		// Send a galaxy command to the server
-		bool SendGalaxyCommand(const godot::String& command, const godot::Array& args);
-		bool SendGalaxyCommandInternal(size_t command_id, const godot::Array& args);
+		uint64_t CreateInstance(godot::RID mesh);
 
 	protected:
 		static void _bind_methods();
 
 	private:
 		godot::String m_path;
+		godot::String m_fragment_type;
 
-		robin_hood::unordered_map<godot::String, size_t> m_command_names;
-
-		bool m_deferred;
-		std::vector<DeferredCommand> m_command_queue;
-		flecs::entity_t m_command_event;
+		godot::Signal m_remote_on_connect;
+		godot::Signal m_remote_on_disconnect;
 	};
 }

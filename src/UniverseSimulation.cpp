@@ -1,4 +1,5 @@
 #include "UniverseSimulation.h"
+#include "Components.h"
 
 #include "Util/Debug.h"
 
@@ -18,14 +19,17 @@ namespace voxel_world
 		m_path = galaxy_path;
 	}
 
-	void UniverseSimulation::StartLocalFragment(const godot::String& fragment_path)
+	void UniverseSimulation::StartLocalFragment(const godot::String& fragment_path, const godot::String& fragment_type)
 	{
-
+		m_world.reset();
+		m_path = fragment_path;
+		m_fragment_type = fragment_type;
 	}
 
 	void UniverseSimulation::StartRemoteGalaxy(const godot::String& galaxy_path)
 	{
-
+		m_world.reset();
+		m_path = galaxy_path;
 	}
 
 	void UniverseSimulation::StopGalaxy()
@@ -34,12 +38,12 @@ namespace voxel_world
 		m_path = godot::String();
 	}
 
-	void UniverseSimulation::CreateAccount()
+	void UniverseSimulation::CreateAccount(const godot::String& username, const godot::String& password_hash)
 	{
 
 	}
 
-	void UniverseSimulation::LoginAccount()
+	void UniverseSimulation::LoginAccount(const godot::String& username, const godot::String& password_hash)
 	{
 
 	}
@@ -49,43 +53,27 @@ namespace voxel_world
 
 	}
 
-	bool UniverseSimulation::SendGalaxyCommand(const godot::String& command, const godot::Array& args)
+	uint64_t UniverseSimulation::CreateInstance(godot::RID mesh)
 	{
-		auto it = m_command_names.find(command);
+		auto entity = m_world.entity();
 
-		if (it == m_command_names.end())
-		{
-			return;
-		}
+		entity.emplace<Instance>(mesh);
+		entity.add<Position>();
 
-		return SendGalaxyCommandInternal(it->second, args);
-	}
-
-	bool UniverseSimulation::SendGalaxyCommandInternal(size_t command_id, const godot::Array& args)
-	{
-		auto command = m_world.event(m_command_event);
-
-		command.ctx(&args);
-
-		if (m_world.is_deferred())
-		{
-			command.enqueue();
-		}
-		else
-		{
-			command.emit();
-		}
+		return entity.id();
 	}
 
 	void UniverseSimulation::_bind_methods()
 	{
 		godot::ClassDB::bind_method(godot::D_METHOD("start_local_galaxy", "galaxy_path"), &UniverseSimulation::StartLocalGalaxy);
-		godot::ClassDB::bind_method(godot::D_METHOD("start_local_fragment", "fragment_path"), &UniverseSimulation::StartLocalFragment);
+		godot::ClassDB::bind_method(godot::D_METHOD("start_local_fragment", "fragment_path", "fragment_type"), &UniverseSimulation::StartLocalFragment);
 		godot::ClassDB::bind_method(godot::D_METHOD("start_remote_galaxy", "galaxy_path"), &UniverseSimulation::StartRemoteGalaxy);
 		godot::ClassDB::bind_method(godot::D_METHOD("stop_galaxy"), &UniverseSimulation::StopGalaxy);
+
 		godot::ClassDB::bind_method(godot::D_METHOD("create_account"), &UniverseSimulation::CreateAccount);
 		godot::ClassDB::bind_method(godot::D_METHOD("login_account"), &UniverseSimulation::LoginAccount);
 		godot::ClassDB::bind_method(godot::D_METHOD("logout_account"), &UniverseSimulation::LogoutAccount);
-		godot::ClassDB::bind_method(godot::D_METHOD("send_galaxy_command", "command", "args"), &UniverseSimulation::SendGalaxyCommand);
+
+		godot::ClassDB::bind_method(godot::D_METHOD("create_instance", "mesh"), &UniverseSimulation::CreateInstance);
 	}
 }
