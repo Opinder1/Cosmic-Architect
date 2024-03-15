@@ -6,6 +6,11 @@
 
 namespace voxel_world
 {
+	struct Scenario
+	{
+		godot::RID scenario_id;
+	};
+
 	struct Instance
 	{
 		godot::RID instance_id;

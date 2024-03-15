@@ -7,6 +7,13 @@
 
 namespace voxel_world
 {
+	size_t UniverseSimulation::UUIDHash::operator()(const UUID& uuid) const
+	{
+		const uint64_t(&arr)[2] = reinterpret_cast<const uint64_t(&)[2]>(uuid);
+
+		return arr[0] ^ arr[1];
+	}
+
 	UniverseSimulation::UniverseSimulation()
 	{}
 
@@ -38,29 +45,33 @@ namespace voxel_world
 		m_path = godot::String();
 	}
 
-	void UniverseSimulation::CreateAccount(const godot::String& username, const godot::String& password_hash)
-	{
-
-	}
-
-	void UniverseSimulation::LoginAccount(const godot::String& username, const godot::String& password_hash)
-	{
-
-	}
-
-	void UniverseSimulation::LogoutAccount()
-	{
-
-	}
-
-	uint64_t UniverseSimulation::CreateInstance(godot::RID mesh)
+	uint64_t UniverseSimulation::CreateInstance(godot::RID mesh, godot::RID scenario)
 	{
 		auto entity = m_world.entity();
 
-		entity.emplace<Instance>(mesh);
+		entity.emplace<Scenario>(scenario);
+		entity.emplace<Mesh>(mesh);
+		entity.add<Instance>();
 		entity.add<Position>();
 
 		return entity.id();
+	}
+
+	void UniverseSimulation::SetInstancePos(uint64_t instance_id, const godot::Vector3& pos)
+	{
+		auto entity = m_world.entity(instance_id);
+		
+		entity.get_mut<Position>()->position = pos;
+		entity.modified<Position>();
+	}
+
+	bool UniverseSimulation::DeleteInstance(uint64_t instance_id)
+	{
+		auto entity = m_world.entity(instance_id);
+
+		entity.destruct();
+
+		return entity.is_alive();
 	}
 
 	void UniverseSimulation::_bind_methods()
@@ -70,10 +81,8 @@ namespace voxel_world
 		godot::ClassDB::bind_method(godot::D_METHOD("start_remote_galaxy", "galaxy_path"), &UniverseSimulation::StartRemoteGalaxy);
 		godot::ClassDB::bind_method(godot::D_METHOD("stop_galaxy"), &UniverseSimulation::StopGalaxy);
 
-		godot::ClassDB::bind_method(godot::D_METHOD("create_account"), &UniverseSimulation::CreateAccount);
-		godot::ClassDB::bind_method(godot::D_METHOD("login_account"), &UniverseSimulation::LoginAccount);
-		godot::ClassDB::bind_method(godot::D_METHOD("logout_account"), &UniverseSimulation::LogoutAccount);
-
-		godot::ClassDB::bind_method(godot::D_METHOD("create_instance", "mesh"), &UniverseSimulation::CreateInstance);
+		godot::ClassDB::bind_method(godot::D_METHOD("create_instance", "mesh", "scenario"), &UniverseSimulation::CreateInstance);
+		godot::ClassDB::bind_method(godot::D_METHOD("set_instance_pos", "instance_id", "pos"), &UniverseSimulation::SetInstancePos);
+		godot::ClassDB::bind_method(godot::D_METHOD("delete_instance", "instance_id"), &UniverseSimulation::DeleteInstance);
 	}
 }
