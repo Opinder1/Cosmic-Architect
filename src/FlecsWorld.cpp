@@ -4,7 +4,7 @@
 
 #include <godot_cpp/core/class_db.hpp>
 
-namespace voxel_world
+namespace voxel_game
 {
 	FlecsWorld::FlecsWorld() :
 		m_info(m_world.get_info())

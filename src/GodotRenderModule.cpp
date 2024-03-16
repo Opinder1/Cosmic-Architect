@@ -5,7 +5,7 @@
 
 #include <flecs/flecs.h>
 
-namespace voxel_world
+namespace voxel_game
 {
 	void GodotRender(flecs::world& world)
 	{

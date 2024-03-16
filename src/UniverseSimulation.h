@@ -4,13 +4,14 @@
 
 #include <robin_hood/robin_hood.h>
 
-namespace voxel_world
+namespace voxel_game
 {
 	class UniverseSimulation : public FlecsWorld
 	{
 		GDCLASS(UniverseSimulation, FlecsWorld);
 
 		struct Callbacks;
+		struct Signals;
 
 	public:
 		using UUID = godot::Color;
@@ -40,7 +41,7 @@ namespace voxel_world
 		void ConnectToGalaxyList(const godot::String& ip);
 		void DisconnectFromGalaxyList();
 
-		void QueryGalaxyList(const godot::Dictionary& query, const godot::Callable& callback);
+		void QueryGalaxyList(const godot::Dictionary& query);
 
 		void PingGalaxy(const godot::String& ip);
 
@@ -272,7 +273,6 @@ namespace voxel_world
 		static void _bind_methods();
 
 	private:
-		std::unique_ptr<Callbacks> m_callbacks;
 
 		LoadState m_load_state = LoadState::Unloaded;
 
@@ -283,5 +283,8 @@ namespace voxel_world
 		godot::Signal m_remote_on_disconnect;
 
 		robin_hood::unordered_flat_map<UUID, godot::Dictionary, UUIDHash> m_info_cache;
+
+		std::unique_ptr<Callbacks> m_callbacks;
+		std::unique_ptr<Signals> m_signals;
 	};
 }

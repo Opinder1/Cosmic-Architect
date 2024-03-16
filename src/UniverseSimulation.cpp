@@ -1,20 +1,18 @@
 #include "UniverseSimulation.h"
-#include "Components.h"
+#include "Callbacks.h"
+#include "Signals.h"
 
 #include "Util/Debug.h"
 
 #include <godot_cpp/core/class_db.hpp>
 
-namespace voxel_world
+namespace voxel_game
 {
-	struct UniverseSimulation::Callbacks
-	{
-		std::vector<godot::Callable> start_local_galaxy;
-	};
-
 	size_t UniverseSimulation::UUIDHash::operator()(const UUID& uuid) const
 	{
-		const uint64_t(&arr)[2] = reinterpret_cast<const uint64_t(&)[2]>(uuid);
+		static_assert(sizeof(size_t[2]) == sizeof(UUID));
+
+		size_t* arr = (size_t*)&uuid;
 
 		return arr[0] ^ arr[1];
 	}
@@ -22,67 +20,11 @@ namespace voxel_world
 	UniverseSimulation::UniverseSimulation()
 	{
 		m_callbacks = std::make_unique<Callbacks>();
+		m_signals = std::make_unique<Signals>();
 	}
 
 	UniverseSimulation::~UniverseSimulation()
 	{}
-
-	void UniverseSimulation::StartLocalGalaxy(const godot::String& galaxy_path, const godot::Callable& loaded_callback)
-	{
-		m_world.reset();
-		m_path = galaxy_path;
-		m_callbacks->start_local_galaxy.push_back(loaded_callback);
-
-		emit_signal("galaxy_started");
-	}
-
-	void UniverseSimulation::StartLocalFragment(const godot::String& fragment_path, const godot::String& fragment_type)
-	{
-		m_world.reset();
-		m_path = fragment_path;
-		m_fragment_type = fragment_type;
-	}
-
-	void UniverseSimulation::StartRemoteGalaxy(const godot::String& galaxy_path)
-	{
-		m_world.reset();
-		m_path = galaxy_path;
-	}
-
-	void UniverseSimulation::StopGalaxy()
-	{
-		m_world.reset();
-		m_path = godot::String();
-	}
-
-	uint64_t UniverseSimulation::CreateInstance(godot::RID mesh, godot::RID scenario)
-	{
-		auto entity = m_world.entity();
-
-		entity.emplace<Scenario>(scenario);
-		entity.emplace<Mesh>(mesh);
-		entity.add<Instance>();
-		entity.add<Position>();
-
-		return entity.id();
-	}
-
-	void UniverseSimulation::SetInstancePos(uint64_t instance_id, const godot::Vector3& pos)
-	{
-		auto entity = m_world.entity(instance_id);
-		
-		entity.get_mut<Position>()->position = pos;
-		entity.modified<Position>();
-	}
-
-	bool UniverseSimulation::DeleteInstance(uint64_t instance_id)
-	{
-		auto entity = m_world.entity(instance_id);
-
-		entity.destruct();
-
-		return entity.is_alive();
-	}
 
 	void UniverseSimulation::_bind_methods()
 	{

@@ -4,7 +4,7 @@
 
 #include <godot_cpp/variant/transform3d.hpp>
 
-namespace voxel_world
+namespace voxel_game
 {
 	struct Scenario
 	{

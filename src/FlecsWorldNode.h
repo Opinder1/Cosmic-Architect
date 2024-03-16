@@ -4,7 +4,7 @@
 
 #include <godot_cpp/classes/node3d.hpp>
 
-namespace voxel_world
+namespace voxel_game
 {
 	class FlecsWorldNode : public godot::Node3D
 	{

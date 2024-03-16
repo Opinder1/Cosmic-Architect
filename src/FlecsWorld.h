@@ -4,7 +4,7 @@
 
 #include <godot_cpp/classes/resource.hpp>
 
-namespace voxel_world
+namespace voxel_game
 {
 	class FlecsWorld : public godot::RefCounted
 	{

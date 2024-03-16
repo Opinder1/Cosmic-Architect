@@ -58,9 +58,9 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 
 		ecs_os_api.log_ = godot_log_flecs;
 
-		godot::ClassDB::register_class<voxel_world::FlecsWorld>();
-		godot::ClassDB::register_class<voxel_world::FlecsWorldNode>();
-		godot::ClassDB::register_class<voxel_world::UniverseSimulation>();
+		godot::ClassDB::register_class<voxel_game::FlecsWorld>();
+		godot::ClassDB::register_class<voxel_game::FlecsWorldNode>();
+		godot::ClassDB::register_class<voxel_game::UniverseSimulation>();
 
 		godot::UtilityFunctions::print("Loaded voxel world extension");
 	}

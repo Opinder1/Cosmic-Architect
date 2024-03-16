@@ -1,6 +1,6 @@
 #pragma once
 
-namespace voxel_world
+namespace voxel_game
 {
 
 }

@@ -2,7 +2,7 @@
 
 #include <godot_cpp/core/class_db.hpp>
 
-namespace voxel_world
+namespace voxel_game
 {
 	FlecsWorldNode::FlecsWorldNode()
 	{}
