@@ -10,6 +10,8 @@ namespace voxel_world
 	{
 		GDCLASS(UniverseSimulation, FlecsWorld);
 
+		struct Callbacks;
+
 	public:
 		using UUID = godot::Color;
 		using UUIDVector = godot::PackedColorArray;
@@ -31,10 +33,23 @@ namespace voxel_world
 		UniverseSimulation();
 		~UniverseSimulation();
 
+		// ####### Universe #######
+
+		godot::Dictionary GetUniverseInfo();
+
+		void ConnectToGalaxyList(const godot::String& ip);
+		void DisconnectFromGalaxyList();
+
+		void QueryGalaxyList(const godot::Dictionary& query, const godot::Callable& callback);
+
+		void PingGalaxy(const godot::String& ip);
+
 		// ####### Galaxy #######
 
+		godot::Dictionary GetGalaxyInfo();
+
 		// Start a galaxy locally
-		void StartLocalGalaxy(const godot::String& galaxy_path);
+		void StartLocalGalaxy(const godot::String& galaxy_path, const godot::Callable& loaded_callback);
 
 		// Start a fragment of a galaxy network locally
 		void StartLocalFragment(const godot::String& fragment_path, const godot::String& fragment_type);
@@ -45,8 +60,6 @@ namespace voxel_world
 
 		// Stop the galaxy running
 		void StopGalaxy();
-
-		LoadState GetGalaxyLoadState();
 
 		// ####### Account #######
 
@@ -73,19 +86,15 @@ namespace voxel_world
 		godot::Array GetChatChannelHistory(UUID channel_id);
 		godot::Array GetPrivateChatHistory(UUID account_id);
 
+		// ####### Galaxy Region #######
+
+		godot::Dictionary GetGalaxyRegionInfo(UUID galaxy_region_id);
+
 		// ####### Fragments #######
 
 		godot::Dictionary GetFragmentInfo(UUID fragment_id);
 		UUID GetCurrentFragment();
 		void EnterFragment(UUID fragment_id, const godot::Dictionary& method); // We will have checked we can do so before hand
-
-		// ###### Galaxy #######
-
-		godot::Dictionary GetGalaxyInfo(UUID galaxy_id);
-
-		// ####### Galaxy Region #######
-
-		godot::Dictionary GetGalaxyRegionInfo(UUID galaxy_region_id);
 
 		// ####### Players #######
 
@@ -263,6 +272,10 @@ namespace voxel_world
 		static void _bind_methods();
 
 	private:
+		std::unique_ptr<Callbacks> m_callbacks;
+
+		LoadState m_load_state = LoadState::Unloaded;
+
 		godot::String m_path;
 		godot::String m_fragment_type;
 

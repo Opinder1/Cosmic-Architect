@@ -7,6 +7,11 @@
 
 namespace voxel_world
 {
+	struct UniverseSimulation::Callbacks
+	{
+		std::vector<godot::Callable> start_local_galaxy;
+	};
+
 	size_t UniverseSimulation::UUIDHash::operator()(const UUID& uuid) const
 	{
 		const uint64_t(&arr)[2] = reinterpret_cast<const uint64_t(&)[2]>(uuid);
@@ -15,15 +20,20 @@ namespace voxel_world
 	}
 
 	UniverseSimulation::UniverseSimulation()
-	{}
+	{
+		m_callbacks = std::make_unique<Callbacks>();
+	}
 
 	UniverseSimulation::~UniverseSimulation()
 	{}
 
-	void UniverseSimulation::StartLocalGalaxy(const godot::String& galaxy_path)
+	void UniverseSimulation::StartLocalGalaxy(const godot::String& galaxy_path, const godot::Callable& loaded_callback)
 	{
 		m_world.reset();
 		m_path = galaxy_path;
+		m_callbacks->start_local_galaxy.push_back(loaded_callback);
+
+		emit_signal("galaxy_started");
 	}
 
 	void UniverseSimulation::StartLocalFragment(const godot::String& fragment_path, const godot::String& fragment_type)
@@ -84,5 +94,8 @@ namespace voxel_world
 		godot::ClassDB::bind_method(godot::D_METHOD("create_instance", "mesh", "scenario"), &UniverseSimulation::CreateInstance);
 		godot::ClassDB::bind_method(godot::D_METHOD("set_instance_pos", "instance_id", "pos"), &UniverseSimulation::SetInstancePos);
 		godot::ClassDB::bind_method(godot::D_METHOD("delete_instance", "instance_id"), &UniverseSimulation::DeleteInstance);
+
+		ADD_SIGNAL(godot::MethodInfo("galaxy_started"));
+		ADD_SIGNAL(godot::MethodInfo("fragment_started", godot::PropertyInfo(godot::Variant::COLOR, "fragment_id")));
 	}
 }
