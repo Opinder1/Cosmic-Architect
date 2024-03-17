@@ -2,29 +2,105 @@
 
 namespace voxel_game
 {
+	godot::PropertyInfo MakeEnumProperty(const godot::StringName& name, const godot::String& enum_string)
+	{
+		godot::PropertyInfo info;
+
+		info.type = godot::Variant::INT;
+		info.name = name;
+		info.class_name = godot::String();
+		info.hint = godot::PROPERTY_HINT_NONE;
+		info.hint_string = godot::enum_qualified_name_to_class_info_name(enum_string);
+		info.usage = godot::PROPERTY_USAGE_DEFAULT | godot::PROPERTY_USAGE_CLASS_IS_ENUM;
+
+		return info;
+	}
+	
 	std::unique_ptr<const UniverseSimulation::Signals> UniverseSimulation::k_signals;
 
 	UniverseSimulation::Signals::Signals()
 	{
+#define INITIALIZE_SIGNAL(name) name = godot::StringName{ #name, true }
+
 		// ####### Universe #######
 
-		connected_to_galaxy_list = godot::StringName{ "connected_to_galaxy_list", true };
-		disconnected_from_galaxy_list = godot::StringName{ "disconnected_from_galaxy_list", true };
-		galaxy_list_query_response = godot::StringName{ "galaxy_list_query_response", true };
-		galaxy_ping_response = godot::StringName{ "galaxy_ping_response", true };
+		INITIALIZE_SIGNAL(connected_to_galaxy_list);
+		INITIALIZE_SIGNAL(disconnected_from_galaxy_list);
+		INITIALIZE_SIGNAL(galaxy_list_query_response);
+		INITIALIZE_SIGNAL(galaxy_ping_response);
 
 		// ####### Galaxy #######
 
-		local_galaxy_started = godot::StringName{ "local_galaxy_started", true };
-		local_fragment_started = godot::StringName{ "local_fragment_started", true };
-		local_galaxy_stopped = godot::StringName{ "local_galaxy_stopped", true };
-		connected_to_remote_galaxy = godot::StringName{ "connected_to_remote_galaxy", true };
-		disonnected_from_remote_galaxy = godot::StringName{ "disonnected_from_remote_galaxy", true };
-		galaxy_load_state_changed = godot::StringName{ "galaxy_load_state_changed", true };
+		INITIALIZE_SIGNAL(local_galaxy_started);
+		INITIALIZE_SIGNAL(local_fragment_started);
+		INITIALIZE_SIGNAL(local_galaxy_stopped);
+		INITIALIZE_SIGNAL(connected_to_remote_galaxy);
+		INITIALIZE_SIGNAL(disonnected_from_remote_galaxy);
+		INITIALIZE_SIGNAL(galaxy_load_state_changed);
+
+		// ####### Fragments (admin only) #######
+
+		// ####### Account #######
+
+		// ####### Friends #######
+
+		// ####### Chat #######
+
+		// ####### Players #######
+
+		// ####### Party #######
+
+		// ####### Entity #######
+
+		// ####### Volume (is entity) #######
+
+		// ####### Galaxy Region #######
+
+		// ####### Galaxy Object (is volume) #######
+
+		// ####### Currency #######
+
+		// ####### Internet #######
+
+		// ####### Faction Roles #######
+
+		// ####### Faction (is entity) #######
+
+		// ####### Player Faction (is faction) #######
+
+		// ####### Language #######
+
+		// ####### Culture #######
+
+		// ####### Religion (is culture) #######
+
+		// ####### Civilization (is faction) #######
+
+		// ####### Level #######
+
+		// ####### Player Control #######
+
+		// ####### Looking at #######
+
+		// ####### Inventory #######
+
+		// ####### Interact with entity #######
+
+		// ####### Vehicle Control #######
+
+		// ####### Abilities #######
+
+		// ####### Magic #######
+
+		// ####### Testing #######
+
+#undef INITIALIZE_SIGNAL
 	}
 
 	void UniverseSimulation::BindSignals()
 	{
+#define ENUM_PROPERTY(name, enum_) MakeEnumProperty(name, #enum_)
+
 		k_signals = std::make_unique<const Signals>();
 
 		// ####### Universe #######
@@ -41,6 +117,64 @@ namespace voxel_game
 		ADD_SIGNAL(godot::MethodInfo(k_signals->local_galaxy_stopped));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_remote_galaxy));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->disonnected_from_remote_galaxy));
-		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_load_state_changed, godot::PropertyInfo{ godot::Variant::INT, "state", godot::PROPERTY_HINT_NONE, godot::String(), godot::PROPERTY_USAGE_DEFAULT | godot::PROPERTY_USAGE_CLASS_IS_ENUM, "UniverseSimulation.LoadState" }));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_load_state_changed, ENUM_PROPERTY("state", UniverseSimulation::LoadState)));
+		
+		// ####### Fragments (admin only) #######
+
+		// ####### Account #######
+
+		// ####### Friends #######
+
+		// ####### Chat #######
+
+		// ####### Players #######
+
+		// ####### Party #######
+
+		// ####### Entity #######
+
+		// ####### Volume (is entity) #######
+
+		// ####### Galaxy Region #######
+
+		// ####### Galaxy Object (is volume) #######
+
+		// ####### Currency #######
+
+		// ####### Internet #######
+
+		// ####### Faction Roles #######
+
+		// ####### Faction (is entity) #######
+
+		// ####### Player Faction (is faction) #######
+
+		// ####### Language #######
+
+		// ####### Culture #######
+
+		// ####### Religion (is culture) #######
+
+		// ####### Civilization (is faction) #######
+
+		// ####### Level #######
+
+		// ####### Player Control #######
+
+		// ####### Looking at #######
+
+		// ####### Inventory #######
+
+		// ####### Interact with entity #######
+
+		// ####### Vehicle Control #######
+
+		// ####### Abilities #######
+
+		// ####### Magic #######
+
+		// ####### Testing #######
+
+#undef ENUM_PROPERTY
 	}
 }

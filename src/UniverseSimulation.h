@@ -59,6 +59,12 @@ namespace voxel_game
 		void StopGalaxy();
 		LoadState GetGalaxyLoadState();
 
+		// ####### Fragments (admin only) #######
+
+		godot::Dictionary GetFragmentInfo(UUID fragment_id);
+		UUID GetCurrentFragment();
+		void EnterFragment(UUID fragment_id, const godot::Dictionary& method); // We will have checked we can do so before hand
+
 		// ####### Account #######
 
 		godot::Dictionary GetAccountInfo();
@@ -81,19 +87,8 @@ namespace voxel_game
 		godot::Dictionary GetChannelInfo(UUID channel_id);
 		void SendMessageToChannel(const godot::String& message, UUID channel_id);
 		void SendMessageToPlayer(const godot::String& message, UUID account_id);
-		godot::PackedInt64Array GetChatChannels();
 		godot::Array GetChatChannelHistory(UUID channel_id);
 		godot::Array GetPrivateChatHistory(UUID account_id);
-
-		// ####### Galaxy Region #######
-
-		godot::Dictionary GetGalaxyRegionInfo(UUID galaxy_region_id);
-
-		// ####### Fragments #######
-
-		godot::Dictionary GetFragmentInfo(UUID fragment_id);
-		UUID GetCurrentFragment();
-		void EnterFragment(UUID fragment_id, const godot::Dictionary& method); // We will have checked we can do so before hand
 
 		// ####### Players #######
 
@@ -113,16 +108,7 @@ namespace voxel_game
 		// ####### Entity #######
 
 		godot::Dictionary GetEntityInfo(UUID entity_id);
-
-		// ####### Inventory #######
-
-		godot::Dictionary GetInventoryInfo(UUID inventory_id);
-		UUID GetInventory();
-		UUID GetInventoryItemEntity(UUID inventory_id, uint64_t item_index);
-		void TrashInventoryItem(UUID inventory_id, uint64_t item_index);
-		void MoveInventoryItem(UUID inventory_id, uint64_t from_item_index, uint64_t to_item_index);
-		void TransferInventoryItem(UUID from_inventory_id, uint64_t from_item_index, UUID to_inventory_id, uint64_t to_item_index);
-		void InteractWithInventoryItem(UUID inventory_id, uint64_t item_index, const godot::Dictionary& interaction_info);
+		void RequestEntityInfo(UUID entity_id);
 
 		// ####### Volume (is entity) #######
 
@@ -131,13 +117,21 @@ namespace voxel_game
 		void PlaceBlock(UUID volume_id, const godot::Vector4i& position, UUID block_id, const godot::Dictionary& block_data);
 		void FillBlocks(UUID volume_id, const godot::Vector4i& position_first, const godot::Vector4i& position_second, UUID block_id, uint32_t block_data);
 		void PlaceBlockInNewVolume(const godot::Vector4& fragment_position, UUID block_id, const godot::Dictionary& block_data);
+		void InteractBlock(UUID volume_id, const godot::Vector4i& position, const godot::Dictionary& interaction);
 		godot::Vector4i GetEntityPositionInVolume(UUID volume_id, UUID entity_id);
 		godot::Vector4i FragmentPositionToVolumePosition(UUID volume_id, const godot::Vector4& fragment_position);
 		godot::Vector4 VolumePositionToFragmentPosition(UUID volume_id, const godot::Vector4i& volume_position);
 
+		// ####### Galaxy Region #######
+
+		godot::Dictionary GetGalaxyRegionInfo(UUID galaxy_region_id);
+		UUIDVector GetCurrentGalaxyRegions();
+		void RequestGalaxyRegionInfo(UUID entity_id);
+
 		// ####### Galaxy Object (is volume) #######
 
 		godot::Dictionary GetGalaxyObjectInfo(UUID galaxy_object_id);
+		void RequestGalaxyObjectInfo(UUID entity_id);
 
 		// ####### Currency #######
 
@@ -173,28 +167,45 @@ namespace voxel_game
 		godot::Dictionary GetRoleInfo(UUID role_id);
 		godot::Dictionary GetPermissionInfo(UUID permission_id);
 		UUID GetEntityRole(UUID faction_id, UUID entity_id);
-		bool EntityHasPermission(UUID faction_id, UUID entity_id, UUID permission_id);
-		void SetEntityRole(UUID faction_id, UUID entity_id, UUID role_id); // Only can do this if we have permissions
+		void AddFactionRole(UUID faction_id, UUID role_id, const godot::Dictionary& role_info);
+		void RemoveFactionRole(UUID faction_id, UUID role_id);
+		void ModifyFactionRole(UUID faction_id, UUID role_id, const godot::Dictionary& role_info);
 		void AddPermissionToRole(UUID faction_id, UUID role_id, UUID permission_id); // Only can do this if we have permissions
 		void RemovePermissionFromRole(UUID faction_id, UUID role_id, UUID permission_id); // Only can do this if we have permissions
-
+		void SetEntityRole(UUID faction_id, UUID entity_id, UUID role_id); // Only can do this if we have permissions
+		bool EntityHasPermission(UUID faction_id, UUID entity_id, UUID permission_id);
+		
 		// ####### Faction (is entity) #######
 
-		UUID GetPlayerFaction(); // Is a faction which only players are part of. Player factions are children of this
 		godot::Dictionary GetFactionInfo(UUID faction_id);
-		uint64_t GetNumberOfChildFactions(UUID faction_id);
-		uint64_t GetNumberOfFactionMembers(UUID faction_id);
-		double GetFactionBalance(UUID faction_id, UUID currency_id); // Only if we have access to view the bank account
-		UUID GetFactionInternet(UUID faction_id); // Faction may not have an internet
-		UUID GetFactionChatChannel(UUID faction_id);
+		UUIDVector GetJoinedFactions();
+		void JoinFaction(UUID faction_id, const godot::Dictionary& request_info);
+		void LeaveFaction(UUID faction_id);
+		void InviteEntityToFaction(UUID faction_id, UUID entity_id);
+		void KickEntityFromFaction(UUID faction_id, UUID entity_id);
+		void AddChildFactionFaction(UUID parent_faction_id, UUID child_faction_id);
+		void RemoveChildFaction(UUID faction_id);
+		void InviteChildFaction(UUID parent_faction_id, UUID child_faction_id);
+		void KickChildFaction(UUID faction_id);
+		// uint64_t GetNumberOfChildFactions(UUID faction_id);
+		// uint64_t GetNumberOfFactionMembers(UUID faction_id);
+		// double GetFactionBalance(UUID faction_id, UUID currency_id); // Only if we have access to view the bank account
+		// UUID GetFactionInternet(UUID faction_id); // Faction may not have an internet
+		// UUID GetFactionChatChannel(UUID faction_id);
+
+		// ####### Player Faction (is faction) #######
+
+		UUID GetGlobalPlayerFaction(); // Is a faction which only players are part of. Player factions are children of this
+		UUID GetPlayerFaction();
+		void RequestJoinPlayerFaction(UUID faction_id, const godot::String& message);
+
+		// ####### Language #######
+
+		// ####### Culture #######
+
+		// ####### Religion (is culture) #######
 
 		// ####### Civilization (is faction) #######
-
-		uint64_t GetNumberOfChildCivilizations(UUID civilization_id);
-		bool CivilizationOwnsPlanet(UUID planet_id);
-		bool CivilizationOwnsGalaxyRegion(UUID galaxy_region_id);
-		UUID GetPlanetOwner(UUID planet_id);
-		UUID GetGalaxyRegionOwner(UUID galaxy_region_id);
 
 		// ####### Level #######
 
@@ -224,6 +235,16 @@ namespace voxel_game
 		UUID GetLookingAtVolume();
 		godot::Vector4i GetLookingAtBlock();
 
+		// ####### Inventory #######
+
+		godot::Dictionary GetInventoryInfo(UUID inventory_id);
+		UUID GetInventory();
+		UUID GetInventoryItemEntity(UUID inventory_id, uint64_t item_index);
+		void TrashInventoryItem(UUID inventory_id, uint64_t item_index);
+		void MoveInventoryItem(UUID inventory_id, uint64_t from_item_index, uint64_t to_item_index);
+		void TransferInventoryItem(UUID from_inventory_id, uint64_t from_item_index, UUID to_inventory_id, uint64_t to_item_index);
+		void InteractWithInventoryItem(UUID inventory_id, uint64_t item_index, const godot::Dictionary& interaction_info);
+
 		// ####### Interact with entity #######
 
 		void StoreEntity(UUID entity_id, UUID inventory_id);
@@ -237,7 +258,7 @@ namespace voxel_game
 		void UnequipItemToInventory(UUID entity_id, UUID inventory_id, uint64_t item_index);
 		void SetLeftHandEquip(UUID entity_id);
 		void SetRightHandEquip(UUID entity_id);
-		void UseEquip(UUID entity_id);
+		void UseEquip(UUID entity_id, bool hand);
 		void ToggleEquip(UUID entity_id, bool toggled);
 
 		void RideEntity(UUID entity_id, uint64_t attachment_point);
@@ -265,6 +286,10 @@ namespace voxel_game
 
 		godot::Dictionary GetSpellInfo(UUID spell_id);
 		void UseSpell(uint64_t spell_index, const godot::Dictionary& params);
+
+		// ####### Godhood #######
+
+		// ####### Chaos #######
 
 		// ####### Testing #######
 
