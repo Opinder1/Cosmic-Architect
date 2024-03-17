@@ -12,7 +12,7 @@ namespace voxel_game
 		return {};
 	}
 
-	void UniverseSimulation::EnterFragment(UniverseSimulation::UUID fragment_id, const godot::Dictionary& method)
+	void UniverseSimulation::EnterFragment(UUID fragment_id, const godot::Dictionary& method)
 	{
 
 	}

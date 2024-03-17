@@ -4,7 +4,7 @@ namespace voxel_game
 {
 	godot::Dictionary UniverseSimulation::GetAccountInfo()
 	{
-
+		return {};
 	}
 
 	void UniverseSimulation::CreateAccount(const godot::String& username, const godot::String& password_hash)
@@ -36,5 +36,4 @@ namespace voxel_game
 	{
 
 	}
-
 }

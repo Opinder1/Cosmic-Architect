@@ -73,6 +73,12 @@ namespace voxel_game
 		// ####### Culture #######
 
 		// ####### Religion (is culture) #######
+		
+		// ####### Buisiness (is culture) #######
+		
+		// ####### Politics (is culture) #######
+		
+		// ####### Economics (is culture) #######
 
 		// ####### Civilization (is faction) #######
 
@@ -154,6 +160,12 @@ namespace voxel_game
 		// ####### Culture #######
 
 		// ####### Religion (is culture) #######
+		
+		// ####### Buisiness (is culture) #######
+		
+		// ####### Politics (is culture) #######
+		
+		// ####### Economics (is culture) #######
 
 		// ####### Civilization (is faction) #######
 

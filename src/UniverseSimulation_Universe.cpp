@@ -1,5 +1,4 @@
 #include "UniverseSimulation.h"
-#include "Signals.h"
 
 namespace voxel_game
 {

@@ -139,6 +139,7 @@ namespace voxel_game
 		godot::Dictionary GetCurrencyInfo(UUID currency_id);
 		godot::Dictionary GetBankInfo(UUID bank_id);
 		godot::Dictionary GetBankInterfaceInfo(UUID bank_interface_id);
+		godot::Dictionary GetGoodInfo(UUID good_id); 
 		UUID GetBankOfInterface(UUID bank_interface_id);
 		UUIDVector GetOwnedCurrencies();
 		double GetBalance(UUID currency_id);
@@ -146,7 +147,6 @@ namespace voxel_game
 		void Deposit(UUID currency_id, double amount, UUID bank_interface_id);
 		void Convert(UUID from_currency_id, UUID to_currency_id, double amount, UUID bank_interface_id);
 		void PayEntity(UUID currency_id, UUID entity_id, double amount, UUID bank_interface_id);
-		godot::Dictionary GetGoodInfo(UUID good_id); 
 		void BuyGoodWithCurrency(UUID good_id, UUID currency_id); // The currency may not be accepted
 
 		// ####### Internet #######
@@ -205,6 +205,12 @@ namespace voxel_game
 		// ####### Culture #######
 
 		// ####### Religion (is culture) #######
+		
+		// ####### Buisiness (is culture) #######
+		
+		// ####### Politics (is culture) #######
+		
+		// ####### Economics (is culture) #######
 
 		// ####### Civilization (is faction) #######
 
@@ -421,12 +427,12 @@ namespace voxel_game
 
 		godot::StringName faction_join_response;
 		godot::StringName faction_leave_response;
-		godot::StringName faction_invite_response;
+		godot::StringName faction_entity_invite_response;
 		godot::StringName faction_invite_received;
 		godot::StringName faction_entity_kick_response;
 		godot::StringName faction_child_add_response;
 		godot::StringName faction_child_remove_response;
-		godot::StringName faction_invite_response;
+		godot::StringName faction_child_invite_response;
 		godot::StringName faction_kick_response;
 
 		// ####### Player Faction (is faction) #######
@@ -438,6 +444,12 @@ namespace voxel_game
 		// ####### Culture #######
 
 		// ####### Religion (is culture) #######
+		
+		// ####### Buisiness (is culture) #######
+		
+		// ####### Politics (is culture) #######
+		
+		// ####### Economics (is culture) #######
 
 		// ####### Civilization (is faction) #######
 

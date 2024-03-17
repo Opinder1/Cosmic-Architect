@@ -1,5 +1,4 @@
 #include "UniverseSimulation.h"
-#include "Signals.h"
 
 #include "Util/Debug.h"
 
