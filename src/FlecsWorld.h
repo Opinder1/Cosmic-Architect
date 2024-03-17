@@ -2,7 +2,7 @@
 
 #include <flecs/flecs.h>
 
-#include <godot_cpp/classes/resource.hpp>
+#include <godot_cpp/classes/ref_counted.hpp>
 
 namespace voxel_game
 {

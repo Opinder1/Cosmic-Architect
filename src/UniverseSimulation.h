@@ -2,6 +2,13 @@
 
 #include "FlecsWorld.h"
 
+#include <godot_cpp/classes/dir_access.hpp>
+#include <godot_cpp/classes/ref.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
+#include <godot_cpp/variant/color.hpp>
+#include <godot_cpp/variant/packed_color_array.hpp>
+#include <godot_cpp/variant/string.hpp>
+
 #include <robin_hood/robin_hood.h>
 
 namespace voxel_game
@@ -10,7 +17,6 @@ namespace voxel_game
 	{
 		GDCLASS(UniverseSimulation, FlecsWorld);
 
-		struct Callbacks;
 		struct Signals;
 
 	public:
@@ -22,7 +28,7 @@ namespace voxel_game
 			size_t operator()(const UUID&) const;
 		};
 
-		enum class LoadState
+		enum LoadState
 		{
 			Unloaded,
 			Loading,
@@ -31,39 +37,31 @@ namespace voxel_game
 		};
 
 	public:
+		static void BindSignals();
+
 		UniverseSimulation();
 		~UniverseSimulation();
 
 		// ####### Universe #######
 
 		godot::Dictionary GetUniverseInfo();
-
 		void ConnectToGalaxyList(const godot::String& ip);
 		void DisconnectFromGalaxyList();
-
 		void QueryGalaxyList(const godot::Dictionary& query);
-
 		void PingGalaxy(const godot::String& ip);
 
 		// ####### Galaxy #######
 
 		godot::Dictionary GetGalaxyInfo();
-
-		// Start a galaxy locally
-		void StartLocalGalaxy(const godot::String& galaxy_path, const godot::Callable& loaded_callback);
-
-		// Start a fragment of a galaxy network locally
+		void StartLocalGalaxy(const godot::String& galaxy_path);
 		void StartLocalFragment(const godot::String& fragment_path, const godot::String& fragment_type);
-
-		// Attempt to connect to a galaxy network hosted remotely
-		// When connected to a remote galaxy we may need to login
 		void StartRemoteGalaxy(const godot::String& galaxy_path);
-
-		// Stop the galaxy running
 		void StopGalaxy();
+		LoadState GetGalaxyLoadState();
 
 		// ####### Account #######
 
+		godot::Dictionary GetAccountInfo();
 		void CreateAccount(const godot::String& username, const godot::String& password_hash);
 		void AccountLogin(const godot::String& username, const godot::String& password_hash);
 		void SavedSessionLogin();
@@ -103,10 +101,12 @@ namespace voxel_game
 
 		// ####### Party #######
 
+		godot::Dictionary GetPartyInfo(UUID party_host_id);
 		void CreateParty();
 		void InviteToParty(UUID player_id);
 		void AcceptInvite(UUID player_id);
 		void KickFromParty();
+		void LeaveParty();
 		UUIDVector GetPlayersInParty();
 		UUID GetPartyChatChannel();
 
@@ -136,6 +136,8 @@ namespace voxel_game
 		godot::Vector4 VolumePositionToFragmentPosition(UUID volume_id, const godot::Vector4i& volume_position);
 
 		// ####### Galaxy Object (is volume) #######
+
+		godot::Dictionary GetGalaxyObjectInfo(UUID galaxy_object_id);
 
 		// ####### Currency #######
 
@@ -254,6 +256,7 @@ namespace voxel_game
 
 		// ####### Abilities #######
 
+		godot::Dictionary GetAbilityInfo(UUID ability_id);
 		void ActivateAbility(UUID ability_id);
 		void ToggleAbility(UUID ability_id, bool toggled);
 		void SetPlayerSetting(UUID setting_id, const godot::Variant& value);
@@ -273,18 +276,16 @@ namespace voxel_game
 		static void _bind_methods();
 
 	private:
+		static std::unique_ptr<const Signals> k_signals;
 
-		LoadState m_load_state = LoadState::Unloaded;
+		LoadState m_galaxy_load_state = LoadState::Unloaded;
 
 		godot::String m_path;
+		godot::Ref<godot::DirAccess> m_directory;
 		godot::String m_fragment_type;
 
-		godot::Signal m_remote_on_connect;
-		godot::Signal m_remote_on_disconnect;
-
 		robin_hood::unordered_flat_map<UUID, godot::Dictionary, UUIDHash> m_info_cache;
-
-		std::unique_ptr<Callbacks> m_callbacks;
-		std::unique_ptr<Signals> m_signals;
 	};
 }
+
+VARIANT_ENUM_CAST(voxel_game::UniverseSimulation::LoadState);

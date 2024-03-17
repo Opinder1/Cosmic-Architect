@@ -1,8 +1,9 @@
 #include "UniverseSimulation.h"
-#include "Callbacks.h"
 #include "Signals.h"
 
 #include "Components.h"
+
+#include <godot_cpp/classes/dir_access.hpp>
 
 namespace voxel_game
 {
@@ -11,13 +12,14 @@ namespace voxel_game
 		return {};
 	}
 
-	void UniverseSimulation::StartLocalGalaxy(const godot::String& galaxy_path, const godot::Callable& loaded_callback)
+	void UniverseSimulation::StartLocalGalaxy(const godot::String& galaxy_path)
 	{
 		m_world.reset();
 		m_path = galaxy_path;
-		m_callbacks->start_local_galaxy.push_back(loaded_callback);
+		m_directory = godot::DirAccess::open(m_path);
+		m_galaxy_load_state = LoadState::Loading;
+		emit_signal(k_signals->galaxy_load_state_changed, m_galaxy_load_state);
 
-		emit_signal("galaxy_started");
 	}
 
 	void UniverseSimulation::StartLocalFragment(const godot::String& fragment_path, const godot::String& fragment_type)
@@ -39,32 +41,8 @@ namespace voxel_game
 		m_path = godot::String();
 	}
 
-	uint64_t UniverseSimulation::CreateInstance(godot::RID mesh, godot::RID scenario)
+	UniverseSimulation::LoadState UniverseSimulation::GetGalaxyLoadState()
 	{
-		auto entity = m_world.entity();
-
-		entity.emplace<Scenario>(scenario);
-		entity.emplace<Mesh>(mesh);
-		entity.add<Instance>();
-		entity.add<Position>();
-
-		return entity.id();
-	}
-
-	void UniverseSimulation::SetInstancePos(uint64_t instance_id, const godot::Vector3& pos)
-	{
-		auto entity = m_world.entity(instance_id);
-
-		entity.get_mut<Position>()->position = pos;
-		entity.modified<Position>();
-	}
-
-	bool UniverseSimulation::DeleteInstance(uint64_t instance_id)
-	{
-		auto entity = m_world.entity(instance_id);
-
-		entity.destruct();
-
-		return entity.is_alive();
+		return m_galaxy_load_state;
 	}
 }
