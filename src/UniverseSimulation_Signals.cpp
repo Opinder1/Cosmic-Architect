@@ -1,4 +1,4 @@
-#include "Signals.h"
+#include "UniverseSimulation.h"
 
 namespace voxel_game
 {
@@ -84,7 +84,7 @@ namespace voxel_game
 
 		// ####### Inventory #######
 
-		// ####### Interact with entity #######
+		// ####### Interact #######
 
 		// ####### Vehicle Control #######
 
@@ -165,7 +165,7 @@ namespace voxel_game
 
 		// ####### Inventory #######
 
-		// ####### Interact with entity #######
+		// ####### Interact #######
 
 		// ####### Vehicle Control #######
 
