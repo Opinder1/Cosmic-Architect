@@ -38,8 +38,6 @@ namespace voxel_game
 		};
 
 	public:
-		static void BindSignals();
-
 		UniverseSimulation();
 		~UniverseSimulation();
 
@@ -126,8 +124,8 @@ namespace voxel_game
 		// ####### Galaxy Region #######
 
 		godot::Dictionary GetGalaxyRegionInfo(UUID galaxy_region_id);
-		UUIDVector GetCurrentGalaxyRegions();
 		void RequestGalaxyRegionInfo(UUID entity_id);
+		UUIDVector GetCurrentGalaxyRegions();
 
 		// ####### Galaxy Object (is volume) #######
 
@@ -139,7 +137,8 @@ namespace voxel_game
 		godot::Dictionary GetCurrencyInfo(UUID currency_id);
 		godot::Dictionary GetBankInfo(UUID bank_id);
 		godot::Dictionary GetBankInterfaceInfo(UUID bank_interface_id);
-		godot::Dictionary GetGoodInfo(UUID good_id); 
+		godot::Dictionary GetGoodInfo(UUID good_id);
+		UUID GetUniversalCurrency();
 		UUID GetBankOfInterface(UUID bank_interface_id);
 		UUIDVector GetOwnedCurrencies();
 		double GetBalance(UUID currency_id);
@@ -184,7 +183,7 @@ namespace voxel_game
 		void LeaveFaction(UUID faction_id);
 		void InviteEntityToFaction(UUID faction_id, UUID entity_id);
 		void KickEntityFromFaction(UUID faction_id, UUID entity_id);
-		void AddChildFactionFaction(UUID parent_faction_id, UUID child_faction_id);
+		void AddChildFaction(UUID parent_faction_id, UUID child_faction_id);
 		void RemoveChildFaction(UUID faction_id);
 		void InviteChildFaction(UUID parent_faction_id, UUID child_faction_id);
 		void KickChildFaction(UUID faction_id);
@@ -202,7 +201,13 @@ namespace voxel_game
 
 		// ####### Language #######
 
+		godot::Dictionary GetLanguageInfo(UUID language_id);
+		void GetLanguageTranslation(UUID language_id, const godot::StringName& string);
+		void GetLanguageString(UUID language_id, uint64_t string_id);
+
 		// ####### Culture #######
+
+		godot::Dictionary GetCultureInfo(UUID culture_id);
 
 		// ####### Religion (is culture) #######
 		
@@ -265,7 +270,7 @@ namespace voxel_game
 		void UnequipItemToInventory(UUID entity_id, UUID inventory_id, uint64_t item_index);
 		void SetLeftHandEquip(UUID entity_id);
 		void SetRightHandEquip(UUID entity_id);
-		void UseEquip(UUID entity_id, bool hand);
+		void UseEquip(UUID entity_id, uint64_t hand);
 		void ToggleEquip(UUID entity_id, bool toggled);
 
 		void RideEntity(UUID entity_id, uint64_t attachment_point);
@@ -306,6 +311,11 @@ namespace voxel_game
 
 	protected:
 		static void _bind_methods();
+
+	private:
+		static void BindEnums();
+		static void BindMethods();
+		static void BindSignals();
 
 	private:
 		static std::unique_ptr<const Signals> k_signals;
@@ -439,26 +449,10 @@ namespace voxel_game
 
 		godot::StringName faction_request_join_response;
 
-		// ####### Language #######
-
-		// ####### Culture #######
-
-		// ####### Religion (is culture) #######
-		
-		// ####### Buisiness (is culture) #######
-		
-		// ####### Politics (is culture) #######
-		
-		// ####### Economics (is culture) #######
-
-		// ####### Civilization (is faction) #######
-
 		// ####### Level #######
 
 		godot::StringName levelup_available;
 		godot::StringName complete_levelup_response;
-
-		// ####### Player Control #######
 
 		// ####### Looking at #######
 

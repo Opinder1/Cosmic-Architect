@@ -52,7 +52,7 @@ namespace voxel_game
 
 	}
 
-	void UniverseSimulation::UseEquip(UUID entity_id, bool hand)
+	void UniverseSimulation::UseEquip(UUID entity_id, uint64_t hand)
 	{
 
 	}

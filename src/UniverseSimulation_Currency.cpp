@@ -22,6 +22,11 @@ namespace voxel_game
 		return {};
 	}
 
+	UniverseSimulation::UUID UniverseSimulation::GetUniversalCurrency()
+	{
+		return {};
+	}
+
 	UniverseSimulation::UUID UniverseSimulation::GetBankOfInterface(UUID bank_interface_id)
 	{
 		return {};

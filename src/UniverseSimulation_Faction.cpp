@@ -32,7 +32,7 @@ namespace voxel_game
 
 	}
 
-	void UniverseSimulation::AddChildFactionFaction(UUID parent_faction_id, UUID child_faction_id)
+	void UniverseSimulation::AddChildFaction(UUID parent_faction_id, UUID child_faction_id)
 	{
 
 	}
