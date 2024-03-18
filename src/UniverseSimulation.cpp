@@ -116,7 +116,7 @@ namespace voxel_game
 		// ####### Galaxy Region #######
 
 		godot::ClassDB::bind_method(godot::D_METHOD("get_galaxy_region_info", "galaxy_region_id"), &UniverseSimulation::GetGalaxyRegionInfo);
-		godot::ClassDB::bind_method(godot::D_METHOD("request_galaxy_region_info", "entity_id"), &UniverseSimulation::GetCurrentGalaxyRegions);
+		godot::ClassDB::bind_method(godot::D_METHOD("request_galaxy_region_info", "galaxy_region_id"), &UniverseSimulation::RequestGalaxyRegionInfo);
 		godot::ClassDB::bind_method(godot::D_METHOD("get_current_galaxy_regions"), &UniverseSimulation::GetCurrentGalaxyRegions);
 
 		// ####### Galaxy Object (is volume) #######
@@ -221,7 +221,7 @@ namespace voxel_game
 		// ####### Looking at #######
 
 		godot::ClassDB::bind_method(godot::D_METHOD("get_looking_at_entity"), &UniverseSimulation::GetLookingAtEntity);
-		godot::ClassDB::bind_method(godot::D_METHOD("get_looking_at_entity"), &UniverseSimulation::GetLookingAtVolume);
+		godot::ClassDB::bind_method(godot::D_METHOD("get_looking_at_volume"), &UniverseSimulation::GetLookingAtVolume);
 		godot::ClassDB::bind_method(godot::D_METHOD("get_looking_at_block"), &UniverseSimulation::GetLookingAtBlock);
 
 		// ####### Inventory #######
@@ -235,10 +235,9 @@ namespace voxel_game
 		godot::ClassDB::bind_method(godot::D_METHOD("interact_with_inventory_item", "inventory_id", "item_index", "interaction_info"), &UniverseSimulation::InteractWithInventoryItem);
 
 		// ####### Interact #######
-
 		godot::ClassDB::bind_method(godot::D_METHOD("store_entity", "entity_id", "inventory_id"), &UniverseSimulation::StoreEntity);
 		godot::ClassDB::bind_method(godot::D_METHOD("hold_block", "volume_id", "position"), &UniverseSimulation::HoldBlock);
-		godot::ClassDB::bind_method(godot::D_METHOD("hold_block", "entity_id"), &UniverseSimulation::HoldEntity);
+		godot::ClassDB::bind_method(godot::D_METHOD("hold_entity", "entity_id"), &UniverseSimulation::HoldEntity);
 		godot::ClassDB::bind_method(godot::D_METHOD("drop_held_entity"), &UniverseSimulation::DropHeldEntity);
 
 		godot::ClassDB::bind_method(godot::D_METHOD("equip_item_from_world", "entity_id"), &UniverseSimulation::EquipItemFromWorld);

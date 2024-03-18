@@ -124,7 +124,7 @@ namespace voxel_game
 		// ####### Galaxy Region #######
 
 		godot::Dictionary GetGalaxyRegionInfo(UUID galaxy_region_id);
-		void RequestGalaxyRegionInfo(UUID entity_id);
+		void RequestGalaxyRegionInfo(UUID galaxy_region_id);
 		UUIDVector GetCurrentGalaxyRegions();
 
 		// ####### Galaxy Object (is volume) #######
@@ -509,6 +509,8 @@ namespace voxel_game
 		godot::StringName use_spell_response_response;
 
 		// ####### Testing #######
+
+		godot::StringName test_signal;
 	};
 }
 
