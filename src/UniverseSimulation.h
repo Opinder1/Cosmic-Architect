@@ -9,6 +9,8 @@
 #include <godot_cpp/variant/packed_color_array.hpp>
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/string_name.hpp>
+#include <godot_cpp/variant/vector4.hpp>
+#include <godot_cpp/variant/vector4i.hpp>
 
 #include <robin_hood/robin_hood.h>
 
@@ -320,12 +322,16 @@ namespace voxel_game
 	private:
 		static std::unique_ptr<const Signals> k_signals;
 
-		LoadState m_galaxy_load_state = LoadState::Unloaded;
-
 		godot::String m_path;
 		godot::Ref<godot::DirAccess> m_directory;
+		LoadState m_galaxy_load_state = LoadState::Unloaded;
+
 		godot::String m_fragment_type;
 
+		godot::Dictionary m_universe_info_cache;
+		godot::Dictionary m_galaxy_info_cache;
+		godot::Dictionary m_account_info_cache;
+		godot::Dictionary m_player_info_cache;
 		robin_hood::unordered_flat_map<UUID, godot::Dictionary, UUIDHash> m_info_cache;
 	};
 

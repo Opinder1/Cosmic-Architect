@@ -1,5 +1,7 @@
 #include "UniverseSimulation.h"
 
+#include "Modules/GodotRenderModule.h"
+
 #include "Util/Debug.h"
 
 #include <godot_cpp/core/class_db.hpp>
@@ -18,6 +20,7 @@ namespace voxel_game
 
 	UniverseSimulation::UniverseSimulation()
 	{
+		GodotRenderModule(m_world);
 	}
 
 	UniverseSimulation::~UniverseSimulation()
