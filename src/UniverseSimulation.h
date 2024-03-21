@@ -311,13 +311,16 @@ namespace voxel_game
 		void SetInstancePos(uint64_t instance_id, const godot::Vector3& pos);
 		bool DeleteInstance(uint64_t instance_id);
 
-	protected:
+	public:
 		static void _bind_methods();
+		static void _cleanup_methods();
 
 	private:
 		static void BindEnums();
 		static void BindMethods();
 		static void BindSignals();
+
+		static void CleanupSignals();
 
 	private:
 		static std::unique_ptr<const Signals> k_signals;

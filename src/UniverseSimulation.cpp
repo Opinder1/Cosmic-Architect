@@ -291,4 +291,9 @@ namespace voxel_game
 		BindMethods();
 		BindSignals();
 	}
+
+	void UniverseSimulation::_cleanup_methods()
+	{
+		CleanupSignals();
+	}
 }

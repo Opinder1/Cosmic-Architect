@@ -1,3 +1,4 @@
+#include "CommandQueue.h"
 #include "FlecsWorld.h"
 #include "FlecsWorldNode.h"
 #include "UniverseSimulation.h"
@@ -58,6 +59,7 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 
 		ecs_os_api.log_ = godot_log_flecs;
 
+		godot::ClassDB::register_class<voxel_game::CommandQueue>();
 		godot::ClassDB::register_class<voxel_game::FlecsWorld>();
 		godot::ClassDB::register_class<voxel_game::FlecsWorldNode>();
 		godot::ClassDB::register_class<voxel_game::UniverseSimulation>();
@@ -71,6 +73,9 @@ void uninitialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 	if (p_level == godot::MODULE_INITIALIZATION_LEVEL_SCENE)
 	{
 		godot::UtilityFunctions::print("Unloading voxel world extension");
+
+		voxel_game::UniverseSimulation::_cleanup_methods();
+		voxel_game::CommandQueue::_cleanup_methods();
 
 		godot::UtilityFunctions::print("Unloaded voxel world extension");
 	}

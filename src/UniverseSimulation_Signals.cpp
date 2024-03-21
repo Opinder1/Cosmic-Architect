@@ -20,7 +20,7 @@ namespace voxel_game
 
 	UniverseSimulation::Signals::Signals()
 	{
-#define INITIALIZE_SIGNAL(name) name = godot::StringName{ #name, true }
+#define INITIALIZE_SIGNAL(name) name = godot::StringName{ #name }
 
 		// ####### Universe #######
 
@@ -390,5 +390,10 @@ namespace voxel_game
 		ADD_SIGNAL(godot::MethodInfo(k_signals->test_signal));
 
 #undef ENUM_PROPERTY
+	}
+
+	void UniverseSimulation::CleanupSignals()
+	{
+		k_signals.reset();
 	}
 }

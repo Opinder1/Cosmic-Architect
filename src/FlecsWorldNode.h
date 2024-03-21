@@ -17,7 +17,7 @@ namespace voxel_game
 		void SetWorld(const godot::Ref<FlecsWorld>& world);
 		godot::Ref<FlecsWorld> GetWorld();
 
-	protected:
+	public:
 		static void _bind_methods();
 
 	private:

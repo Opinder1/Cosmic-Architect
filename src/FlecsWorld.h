@@ -26,7 +26,7 @@ namespace voxel_game
 		void SetTimeMulti(double multi);
 		bool Progress(double delta);
 
-	protected:
+	public:
 		static void _bind_methods();
 
 	protected:
