@@ -62,12 +62,12 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 		ecs_os_api.log_ = godot_log_flecs;
 
 		godot::ClassDB::register_class<voxel_game::CommandQueue>();
-		godot::ClassDB::register_class<voxel_game::CommandQueueProcessor>();
+		godot::ClassDB::register_class<voxel_game::CommandQueueServer>();
 		godot::ClassDB::register_class<voxel_game::FlecsWorld>();
 		godot::ClassDB::register_class<voxel_game::FlecsWorldNode>();
 		godot::ClassDB::register_class<voxel_game::UniverseSimulation>();
 
-		godot::Engine::get_singleton()->register_singleton("CommandQueueProcessor", voxel_game::CommandQueueProcessor::get_singleton());
+		godot::Engine::get_singleton()->register_singleton("CommandQueueServer", voxel_game::CommandQueueServer::get_singleton());
 
 		godot::UtilityFunctions::print("Loaded voxel world extension");
 	}
@@ -80,7 +80,7 @@ void uninitialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 		godot::UtilityFunctions::print("Unloading voxel world extension");
 
 		voxel_game::UniverseSimulation::_cleanup_methods();
-		voxel_game::CommandQueueProcessor::_cleanup_methods();
+		voxel_game::CommandQueueServer::_cleanup_methods();
 
 		godot::UtilityFunctions::print("Unloaded voxel world extension");
 	}

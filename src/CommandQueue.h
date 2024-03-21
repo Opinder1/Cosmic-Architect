@@ -9,9 +9,7 @@
 #include <godot_cpp/templates/local_vector.hpp>
 
 #include <memory>
-#include <deque>
-#include <thread>
-#include <mutex>
+#include <shared_mutex>
 
 namespace voxel_game
 {
@@ -20,6 +18,7 @@ namespace voxel_game
 		constexpr static size_t k_max_args = 16;
 
 		godot::StringName command;
+		godot::Callable callback;
 		size_t argcount;
 	};
 
@@ -27,13 +26,17 @@ namespace voxel_game
 	{
 		GDCLASS(CommandQueue, godot::RefCounted);
 
-		friend class CommandQueueProcessor;
-
 	public:
+		static godot::Ref<CommandQueue> MakeQueue(const godot::Variant& object);
+
 		CommandQueue();
 		~CommandQueue();
 
-		static godot::Ref<CommandQueue> MakeQueue(const godot::Variant& object);
+		uint64_t GetObject();
+
+		uint64_t GetOwningThread();
+
+		bool IsRenderingQueue();
 
 		template<class... Args>
 		void RegisterCommand(const godot::StringName& command, Args... args)
@@ -56,35 +59,32 @@ namespace voxel_game
 		void _register_command(const godot::StringName& command, const godot::Variant** args, size_t argcount);
 
 	private:
-		std::thread::id m_thread_id;
-
-		godot::ObjectID m_object_id;
-
+		uint64_t m_thread_id;
+		uint64_t m_object_id;
+		bool m_rendering_queue;
 		std::vector<uint8_t> m_command_buffer;
-		std::vector<uint32_t> m_command_offsets;
 	};
 
-	class CommandQueueProcessor : public godot::Object
+	class CommandQueueServer : public godot::Object
 	{
-		GDCLASS(CommandQueueProcessor, godot::Object);
+		GDCLASS(CommandQueueServer, godot::Object);
 
 		struct Commands
 		{
-			godot::ObjectID object_id;
-
+			uint64_t object_id;
 			std::vector<uint8_t> command_buffer;
-			std::vector<uint32_t> command_offsets;
 		};
 
 	public:
-		static CommandQueueProcessor* get_singleton();
+		static CommandQueueServer* get_singleton();
 
-		CommandQueueProcessor();
-		~CommandQueueProcessor();
+		CommandQueueServer();
+		~CommandQueueServer();
 
-		void AddCommands(CommandQueue& command_queue);
+		void AddCommands(uint64_t object_id, std::vector<uint8_t>& command_buffer);
+		void AddRenderingCommands(uint64_t object_id, std::vector<uint8_t>& command_buffer);
 
-		void ProcessCommands(const Commands& commands);
+		void ProcessCommands(uint64_t object_id, const std::vector<uint8_t>& command_buffer);
 
 		void Flush();
 
@@ -93,9 +93,19 @@ namespace voxel_game
 		static void _cleanup_methods();
 
 	private:
-		static std::unique_ptr<CommandQueueProcessor> k_singleton;
+		bool HasCommands();
+		bool HasRenderingCommands();
 
-		std::mutex m_mutex;
+		void FlushCommands();
+		void FlushRenderingCommands();
+
+	private:
+		static std::unique_ptr<CommandQueueServer> k_singleton;
+
+		std::shared_mutex m_mutex;
 		std::vector<Commands> m_command_buffers;
+
+		std::shared_mutex m_rendering_mutex;
+		std::vector<Commands> m_rendering_command_buffers;
 	};
 }
