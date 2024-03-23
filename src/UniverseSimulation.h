@@ -1,9 +1,8 @@
 #pragma once
 
-#include "FlecsWorld.h"
-
-#include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/ref.hpp>
+#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/color.hpp>
 #include <godot_cpp/variant/packed_color_array.hpp>
@@ -14,15 +13,19 @@
 
 #include <robin_hood/robin_hood.h>
 
+#include <flecs/flecs.h>
+
 namespace voxel_game
 {
-	class UniverseSimulation : public FlecsWorld
-	{
-		GDCLASS(UniverseSimulation, FlecsWorld);
+	class Universe;
 
-		struct Signals;
+	class UniverseSimulation : public godot::RefCounted
+	{
+		GDCLASS(UniverseSimulation, godot::RefCounted);
 
 	public:
+		struct Signals;
+
 		using UUID = godot::Color;
 		using UUIDVector = godot::PackedColorArray;
 
@@ -31,33 +34,29 @@ namespace voxel_game
 			size_t operator()(const UUID&) const;
 		};
 
+		using InfoMap = robin_hood::unordered_flat_map<UUID, godot::Dictionary, UUIDHash>;
+
 		enum LoadState
 		{
-			Unloaded,
 			Loading,
 			Loaded,
-			Unloading
+			Unloading,
+			Unloaded
 		};
+
+		static std::unique_ptr<const Signals> k_signals;
 
 	public:
 		UniverseSimulation();
 		~UniverseSimulation();
 
-		// ####### Universe #######
+		void Initialize(Universe& universe, const godot::String& path, const godot::String& fragment_type, bool remote);
 
 		godot::Dictionary GetUniverseInfo();
-		void ConnectToGalaxyList(const godot::String& ip);
-		void DisconnectFromGalaxyList();
-		void QueryGalaxyList(const godot::Dictionary& query);
-		void PingGalaxy(const godot::String& ip);
-
-		// ####### Galaxy #######
-
 		godot::Dictionary GetGalaxyInfo();
-		void StartLocalGalaxy(const godot::String& galaxy_path);
-		void StartLocalFragment(const godot::String& fragment_path, const godot::String& fragment_type);
-		void StartRemoteGalaxy(const godot::String& galaxy_path);
-		void StopGalaxy();
+		void StartSimulation();
+		void StopSimulation();
+		bool Progress(double delta);
 		LoadState GetGalaxyLoadState();
 
 		// ####### Fragments (admin only) #######
@@ -323,40 +322,30 @@ namespace voxel_game
 		static void CleanupSignals();
 
 	private:
-		static std::unique_ptr<const Signals> k_signals;
+		Universe* m_universe;
+		flecs::world m_world;
 
 		godot::String m_path;
+		godot::String m_fragment_type;
+		bool m_remote;
 		godot::Ref<godot::DirAccess> m_directory;
 		LoadState m_galaxy_load_state = LoadState::Unloaded;
 
-		godot::String m_fragment_type;
-
-		godot::Dictionary m_universe_info_cache;
 		godot::Dictionary m_galaxy_info_cache;
 		godot::Dictionary m_account_info_cache;
 		godot::Dictionary m_player_info_cache;
-		robin_hood::unordered_flat_map<UUID, godot::Dictionary, UUIDHash> m_info_cache;
+		InfoMap m_info_cache;
 	};
 
 	struct UniverseSimulation::Signals
 	{
 		Signals();
 
-		// ####### Universe #######
-
-		godot::StringName connected_to_galaxy_list;
-		godot::StringName disconnected_from_galaxy_list;
-		godot::StringName galaxy_list_query_response;
-		godot::StringName galaxy_ping_response;
-
-		// ####### Galaxy #######
-
-		godot::StringName local_galaxy_started;
-		godot::StringName local_fragment_started;
-		godot::StringName local_galaxy_stopped;
-		godot::StringName connected_to_remote_galaxy;
-		godot::StringName disonnected_from_remote_galaxy;
-		godot::StringName galaxy_load_state_changed;
+		godot::StringName simulation_started;
+		godot::StringName simulation_stopped;
+		godot::StringName connected_to_remote;
+		godot::StringName disonnected_from_remote;
+		godot::StringName load_state_changed;
 
 		// ####### Fragments (admin only) #######
 

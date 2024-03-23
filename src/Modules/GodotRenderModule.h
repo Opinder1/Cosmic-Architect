@@ -7,5 +7,8 @@ namespace flecs
 
 namespace voxel_game
 {
-	void GodotRenderModule(flecs::world& world);
+	struct GodotRenderModule
+	{
+		GodotRenderModule(flecs::world& world);
+	};
 }

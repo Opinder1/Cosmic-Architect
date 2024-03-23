@@ -1,14 +1,35 @@
 #include "UniverseSimulation.h"
+#include "Universe.h"
 
 #include "Modules/GodotRenderModule.h"
 
 #include "Util/Debug.h"
+
+#include <godot_cpp/classes/os.hpp>
 
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/type_info.hpp>
 
 namespace voxel_game
 {
+	void StartRestServer(flecs::world& world, uint64_t port, bool monitor)
+	{
+		if (port >= UINT16_MAX)
+		{
+			DEBUG_PRINT_ERROR("Port should be 65535 or less");
+			return;
+		}
+
+		world.set<flecs::Rest>({ static_cast<uint16_t>(port), nullptr, nullptr });
+
+		if (monitor)
+		{
+			world.import<flecs::monitor>();
+		}
+
+		DEBUG_PRINT_INFO("Started rest server on port " + godot::UtilityFunctions::str(port) + " with monitoring " + (monitor ? "enabled" : "disabled"));
+	}
+
 	size_t UniverseSimulation::UUIDHash::operator()(const UUID& uuid) const
 	{
 		static_assert(sizeof(size_t[2]) == sizeof(UUID));
@@ -19,12 +40,63 @@ namespace voxel_game
 	}
 
 	UniverseSimulation::UniverseSimulation()
-	{
-		GodotRenderModule(m_world);
-	}
+	{}
 
 	UniverseSimulation::~UniverseSimulation()
 	{}
+
+	void UniverseSimulation::Initialize(Universe& universe, const godot::String& path, const godot::String& fragment_type, bool remote)
+	{
+		m_path = path;
+		m_fragment_type = fragment_type;
+		m_remote = remote;
+		m_directory = godot::DirAccess::open(m_path);
+	}
+
+	godot::Dictionary UniverseSimulation::GetUniverseInfo()
+	{
+		DEBUG_ASSERT(m_universe != nullptr, "This universe simulations should have been instantiated by a universe");
+		return m_universe->GetUniverseInfo();
+	}
+
+	godot::Dictionary UniverseSimulation::GetGalaxyInfo()
+	{
+		return m_galaxy_info_cache;
+	}
+
+	void UniverseSimulation::StartSimulation()
+	{
+		DEBUG_ASSERT(m_universe != nullptr, "This universe simulations should have been instantiated by a universe");
+
+		m_world.reset();
+
+#if DEBUG
+		StartRestServer(m_world, 27750, true);
+#endif
+
+		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
+
+		m_world.import<GodotRenderModule>();
+
+		m_galaxy_load_state = LoadState::Loading;
+		emit_signal(k_signals->load_state_changed, m_galaxy_load_state);
+	}
+
+	void UniverseSimulation::StopSimulation()
+	{
+		m_galaxy_load_state = LoadState::Unloading;
+		emit_signal(k_signals->load_state_changed, m_galaxy_load_state);
+	}
+
+	bool UniverseSimulation::Progress(double delta)
+	{
+		return m_world.progress(delta);
+	}
+
+	UniverseSimulation::LoadState UniverseSimulation::GetGalaxyLoadState()
+	{
+		return m_galaxy_load_state;
+	}
 
 	void UniverseSimulation::BindEnums()
 	{
@@ -36,21 +108,10 @@ namespace voxel_game
 
 	void UniverseSimulation::BindMethods()
 	{
-		// ####### Universe #######
-
 		godot::ClassDB::bind_method(godot::D_METHOD("get_universe_info"), &UniverseSimulation::GetUniverseInfo);
-		godot::ClassDB::bind_method(godot::D_METHOD("connect_to_galaxy_list", "ip"), &UniverseSimulation::ConnectToGalaxyList);
-		godot::ClassDB::bind_method(godot::D_METHOD("disconnect_from_galaxy_list"), &UniverseSimulation::DisconnectFromGalaxyList);
-		godot::ClassDB::bind_method(godot::D_METHOD("query_galaxy_list"), &UniverseSimulation::QueryGalaxyList);
-		godot::ClassDB::bind_method(godot::D_METHOD("ping_galaxy"), &UniverseSimulation::PingGalaxy);
-
-		// ####### Galaxy #######
-
 		godot::ClassDB::bind_method(godot::D_METHOD("get_galaxy_info"), &UniverseSimulation::GetGalaxyInfo);
-		godot::ClassDB::bind_method(godot::D_METHOD("start_local_galaxy", "galaxy_path"), &UniverseSimulation::StartLocalGalaxy);
-		godot::ClassDB::bind_method(godot::D_METHOD("start_local_fragment", "fragment_path", "fragment_type"), &UniverseSimulation::StartLocalFragment);
-		godot::ClassDB::bind_method(godot::D_METHOD("start_remote_galaxy", "galaxy_path"), &UniverseSimulation::StartRemoteGalaxy);
-		godot::ClassDB::bind_method(godot::D_METHOD("stop_galaxy"), &UniverseSimulation::StopGalaxy);
+		godot::ClassDB::bind_method(godot::D_METHOD("start_simulation", "path", "fragment_type"), &UniverseSimulation::StartSimulation);
+		godot::ClassDB::bind_method(godot::D_METHOD("stop_simulation"), &UniverseSimulation::StopSimulation);
 		godot::ClassDB::bind_method(godot::D_METHOD("get_galaxy_load_state"), &UniverseSimulation::GetGalaxyLoadState);
 
 		// ####### Fragments (admin only) #######
