@@ -322,12 +322,12 @@ namespace voxel_game
 		static void CleanupSignals();
 
 	private:
-		Universe* m_universe;
+		Universe* m_universe = nullptr;
 		flecs::world m_world;
 
 		godot::String m_path;
 		godot::String m_fragment_type;
-		bool m_remote;
+		bool m_remote = false;
 		godot::Ref<godot::DirAccess> m_directory;
 		LoadState m_galaxy_load_state = LoadState::Unloaded;
 

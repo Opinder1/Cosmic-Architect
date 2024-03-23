@@ -30,10 +30,7 @@ namespace voxel_game
 		return command_queue;
 	}
 
-	CommandQueue::CommandQueue() :
-		m_thread_id(0),
-		m_object_id(0),
-		m_rendering_queue(false)
+	CommandQueue::CommandQueue()
 	{}
 
 	CommandQueue::~CommandQueue()

@@ -59,9 +59,9 @@ namespace voxel_game
 		void _register_command(const godot::StringName& command, const godot::Variant** args, size_t argcount);
 
 	private:
-		uint64_t m_thread_id;
-		uint64_t m_object_id;
-		bool m_rendering_queue;
+		uint64_t m_thread_id = 0;
+		uint64_t m_object_id = 0;
+		bool m_rendering_queue = false;
 		std::vector<uint8_t> m_command_buffer;
 	};
 

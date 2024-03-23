@@ -39,12 +39,6 @@ namespace voxel_game
 		static void _cleanup_methods();
 
 	private:
-		static void BindEnums();
-		static void BindMethods();
-		static void BindSignals();
-
-		static void CleanupSignals();
-
 		void SimulationStateChanged(const godot::Ref<UniverseSimulation>& simulation, uint64_t load_state);
 
 	private:
