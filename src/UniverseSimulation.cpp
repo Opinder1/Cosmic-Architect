@@ -12,15 +12,9 @@
 
 namespace voxel_game
 {
-	void StartRestServer(flecs::world& world, uint64_t port, bool monitor)
+	void StartRestServer(flecs::world& world, uint16_t port, bool monitor)
 	{
-		if (port >= UINT16_MAX)
-		{
-			DEBUG_PRINT_ERROR("Port should be 65535 or less");
-			return;
-		}
-
-		world.set<flecs::Rest>({ static_cast<uint16_t>(port), nullptr, nullptr });
+		world.set<flecs::Rest>({ port, nullptr, nullptr });
 
 		if (monitor)
 		{
@@ -47,6 +41,7 @@ namespace voxel_game
 
 	void UniverseSimulation::Initialize(Universe& universe, const godot::String& path, const godot::String& fragment_type, bool remote)
 	{
+		m_universe = &universe;
 		m_path = path;
 		m_fragment_type = fragment_type;
 		m_remote = remote;
@@ -110,8 +105,9 @@ namespace voxel_game
 	{
 		godot::ClassDB::bind_method(godot::D_METHOD("get_universe_info"), &UniverseSimulation::GetUniverseInfo);
 		godot::ClassDB::bind_method(godot::D_METHOD("get_galaxy_info"), &UniverseSimulation::GetGalaxyInfo);
-		godot::ClassDB::bind_method(godot::D_METHOD("start_simulation", "path", "fragment_type"), &UniverseSimulation::StartSimulation);
+		godot::ClassDB::bind_method(godot::D_METHOD("start_simulation"), &UniverseSimulation::StartSimulation);
 		godot::ClassDB::bind_method(godot::D_METHOD("stop_simulation"), &UniverseSimulation::StopSimulation);
+		godot::ClassDB::bind_method(godot::D_METHOD("progress", "delta"), &UniverseSimulation::Progress);
 		godot::ClassDB::bind_method(godot::D_METHOD("get_galaxy_load_state"), &UniverseSimulation::GetGalaxyLoadState);
 
 		// ####### Fragments (admin only) #######

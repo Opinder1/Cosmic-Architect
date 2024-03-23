@@ -20,15 +20,11 @@ namespace voxel_game
 		Universe();
 		~Universe();
 
-		// ####### Universe #######
-
 		godot::Dictionary GetUniverseInfo();
 		void ConnectToGalaxyList(const godot::String& ip);
 		void DisconnectFromGalaxyList();
 		void QueryGalaxyList(const godot::Dictionary& query);
 		void PingGalaxy(const godot::String& ip);
-
-		// ####### Galaxy #######
 
 		godot::Ref<UniverseSimulation> StartLocalGalaxy(const godot::String& galaxy_path);
 		godot::Ref<UniverseSimulation> StartLocalFragment(const godot::String& fragment_path, const godot::String& fragment_type);
@@ -39,7 +35,7 @@ namespace voxel_game
 		static void _cleanup_methods();
 
 	private:
-		void SimulationStateChanged(const godot::Ref<UniverseSimulation>& simulation, uint64_t load_state);
+		void SimulationStateChanged(uint64_t load_state, const godot::Ref<UniverseSimulation>& simulation);
 
 	private:
 		godot::Dictionary m_universe_info_cache;

@@ -143,7 +143,7 @@ namespace voxel_game
 		return simulation;
 	}
 
-	void Universe::SimulationStateChanged(const godot::Ref<UniverseSimulation>& simulation, uint64_t load_state)
+	void Universe::SimulationStateChanged(uint64_t load_state, const godot::Ref<UniverseSimulation>& simulation)
 	{
 		emit_signal(k_signals->simulation_load_state_changed, simulation, load_state);
 	}
@@ -152,13 +152,23 @@ namespace voxel_game
 	{
 		InitializeFlecsLogToGodot();
 
+		godot::ClassDB::bind_method(godot::D_METHOD("get_universe_info"), &Universe::GetUniverseInfo);
+		godot::ClassDB::bind_method(godot::D_METHOD("connect_to_galaxy_list", "ip"), &Universe::ConnectToGalaxyList);
+		godot::ClassDB::bind_method(godot::D_METHOD("disconnect_from_galaxy_list"), &Universe::DisconnectFromGalaxyList);
+		godot::ClassDB::bind_method(godot::D_METHOD("query_galaxy_list", "query"), &Universe::QueryGalaxyList);
+		godot::ClassDB::bind_method(godot::D_METHOD("ping_galaxy", "ip"), &Universe::PingGalaxy);
+
+		godot::ClassDB::bind_method(godot::D_METHOD("start_local_galaxy", "galaxy_path"), &Universe::StartLocalGalaxy);
+		godot::ClassDB::bind_method(godot::D_METHOD("start_local_fragment", "fragment_path", "fragment_type"), &Universe::StartLocalFragment);
+		godot::ClassDB::bind_method(godot::D_METHOD("start_remote_galaxy", "galaxy_path"), &Universe::StartRemoteGalaxy);
+
 		k_signals = std::make_unique<const Signals>();
 
 		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_galaxy_list));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->disconnected_from_galaxy_list));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_list_query_response));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_ping_response));
-		ADD_SIGNAL(godot::MethodInfo(k_signals->simulation_load_state_changed, OBJECT_PROPERTY("simulation", UniverseSimulation), ENUM_PROPERTY("state", UniverseSimulation::LoadState)));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->simulation_load_state_changed, ENUM_PROPERTY("state", UniverseSimulation::LoadState), OBJECT_PROPERTY("simulation", UniverseSimulation)));
 	}
 
 	void Universe::_cleanup_methods()
