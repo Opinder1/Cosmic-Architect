@@ -1,7 +1,10 @@
 #include "GodotRenderModule.h"
 #include "Components.h"
 
+#include "Util/Debug.h"
+
 #include <godot_cpp/classes/rendering_server.hpp>
+
 #include <godot_cpp/variant/utility_functions.hpp>
 
 #include <flecs/flecs.h>
@@ -27,13 +30,12 @@ namespace voxel_game
             for (auto i : it)
             {
                 instances[i].instance_id = rendering_server->instance_create();
-                godot::UtilityFunctions::print(godot::vformat("created instance %d", instances[i].instance_id.get_id()));
             }
         });
 
-        world.observer<Instance>()
+        world.observer<const Instance>()
             .event(flecs::OnRemove)
-            .iter([rendering_server](flecs::iter& it, Instance* instances)
+            .iter([rendering_server](flecs::iter& it, const Instance* instances)
         {
             for (auto i : it)
             {
@@ -41,10 +43,8 @@ namespace voxel_game
             }
         });
 
-        /*
-        world.system<Position, Velocity>()
-            .multi_threaded()
-            .iter([](flecs::iter& it, Position* positions, Velocity* velocities)
+        world.system<Position, const Velocity>()
+            .iter([](flecs::iter& it, Position* positions, const Velocity* velocities)
         {
             for (auto i : it)
             {
@@ -52,40 +52,30 @@ namespace voxel_game
                 positions[i].position.y += velocities[i].velocity.y * it.delta_time();
             }
         });
-        */
 
-        world.observer<Scenario, Instance>()
+        world.observer<const Scenario, const Instance>()
             .event(flecs::OnSet)
-            .iter([rendering_server](flecs::iter& it, Scenario* scenarios, Instance* instances)
+            .iter([rendering_server](flecs::iter& it, const Scenario* scenarios, const Instance* instances)
         {
             for (auto i : it)
             {
                 rendering_server->instance_set_scenario(instances[i].instance_id, scenarios[i].scenario_id);
-                godot::UtilityFunctions::print(godot::vformat("set instance %d's scenario to %d", instances[i].instance_id.get_id(), scenarios[i].scenario_id.get_id()));
             }
         });
 
-        /*
-        world.system()
-            .read<Mesh>(flecs::OnSet)
-            .read<Instance>()
-            .iter([rendering_server](flecs::iter& it)
+        world.observer<const Mesh, const Instance>()
+            .event(flecs::OnSet)
+            .iter([rendering_server](flecs::iter& it, const Mesh* meshes, const Instance* instances)
         {
-            auto meshes = it.field<const Mesh>(1);
-            auto instances = it.field<const Instance>(2);
             for (auto i : it)
             {
                 rendering_server->instance_set_base(instances[i].instance_id, meshes[i].mesh_id);
             }
         });
 
-        world.system()
-            .read<Position>(flecs::OnSet)
-            .read<Instance>()
-            .iter([rendering_server](flecs::iter& it)
+        world.system<const Position, const Instance>()
+            .iter([rendering_server](flecs::iter& it, const Position* positions, const Instance* instances)
         {
-            auto positions = it.field<const Position>(1);
-            auto instances = it.field<const Instance>(2);
             for (auto i : it)
             {
                 godot::Transform3D transform;
@@ -93,7 +83,6 @@ namespace voxel_game
                 rendering_server->instance_set_transform(instances[i].instance_id, transform);
             }
         });
-        */
 
         godot::UtilityFunctions::print("Added render module");
 	}

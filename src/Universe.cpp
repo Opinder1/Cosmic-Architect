@@ -57,7 +57,7 @@ namespace voxel_game
 		ecs_os_init();
 
 		ecs_os_api.log_ = FlecsLogToGodot;
-		ecs_os_api.log_level_ = 0;
+		ecs_os_api.log_level_ = -1;
 
 		ecs_os_set_api(&ecs_os_api); // Set the initialized flag so we don't override the log_ again
 	}
