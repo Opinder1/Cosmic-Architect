@@ -38,10 +38,10 @@ namespace voxel_game
 
 		enum LoadState
 		{
-			Loading,
-			Loaded,
-			Unloading,
-			Unloaded
+			LOAD_STATE_LOADING,
+			LOAD_STATE_LOADED,
+			LOAD_STATE_UNLOADING,
+			LOAD_STATE_UNLOADED
 		};
 
 		static std::unique_ptr<const Signals> k_signals;
@@ -50,7 +50,7 @@ namespace voxel_game
 		UniverseSimulation();
 		~UniverseSimulation();
 
-		void Initialize(Universe& universe, const godot::String& path, const godot::String& fragment_type, bool remote);
+		void Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, bool remote);
 
 		godot::Dictionary GetUniverseInfo();
 		godot::Dictionary GetGalaxyInfo();
@@ -322,14 +322,14 @@ namespace voxel_game
 		static void CleanupSignals();
 
 	private:
-		Universe* m_universe = nullptr;
+		godot::Ref<Universe> m_universe;
 		flecs::world m_world;
 
 		godot::String m_path;
 		godot::String m_fragment_type;
 		bool m_remote = false;
 		godot::Ref<godot::DirAccess> m_directory;
-		LoadState m_galaxy_load_state = LoadState::Unloaded;
+		LoadState m_galaxy_load_state = LOAD_STATE_UNLOADED;
 
 		godot::Dictionary m_galaxy_info_cache;
 		godot::Dictionary m_account_info_cache;

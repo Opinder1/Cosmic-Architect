@@ -1,6 +1,6 @@
 #include "UniverseSimulation.h"
 
-#include "Components.h"
+#include "Simulation/Components.h"
 
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/rd_texture_format.hpp>
@@ -10,6 +10,100 @@
 
 namespace voxel_game
 {
+    struct Instance
+    {
+        godot::RID instance;
+    };
+
+    struct Mesh
+    {
+        godot::RID mesh;
+    };
+
+    struct Scenario
+    {
+        godot::RID scenario;
+    };
+
+    struct GodotRenderTestModule
+    {
+        GodotRenderTestModule(flecs::world& world)
+        {
+            auto* rendering_server = godot::RenderingServer::get_singleton();
+
+            world.module<GodotRenderTestModule>();
+
+            world.component<Position>();
+            world.component<Velocity>();
+            world.component<Instance>();
+            world.component<Scenario>();
+            world.component<Mesh>();
+
+            world.observer<Instance>()
+                .event(flecs::OnAdd)
+                .iter([rendering_server](flecs::iter& it, Instance* instances)
+            {
+                for (auto i : it)
+                {
+                    instances[i].instance = rendering_server->instance_create();
+                }
+            });
+
+            world.observer<const Instance>()
+                .event(flecs::OnRemove)
+                .iter([rendering_server](flecs::iter& it, const Instance* instances)
+            {
+                for (auto i : it)
+                {
+                    rendering_server->free_rid(instances[i].instance);
+                }
+            });
+
+            world.system<Position, const Velocity>()
+                .iter([](flecs::iter& it, Position* positions, const Velocity* velocities)
+            {
+                for (auto i : it)
+                {
+                    positions[i].position.x += velocities[i].velocity.x * it.delta_time();
+                    positions[i].position.y += velocities[i].velocity.y * it.delta_time();
+                }
+            });
+
+            world.observer<const Scenario, const Instance>()
+                .event(flecs::OnSet)
+                .iter([rendering_server](flecs::iter& it, const Scenario* scenarios, const Instance* instances)
+            {
+                for (auto i : it)
+                {
+                    rendering_server->instance_set_scenario(instances[i].instance, scenarios[i].scenario);
+                }
+            });
+
+            world.observer<const Mesh, const Instance>()
+                .event(flecs::OnSet)
+                .iter([rendering_server](flecs::iter& it, const Mesh* meshes, const Instance* instances)
+            {
+                for (auto i : it)
+                {
+                    rendering_server->instance_set_base(instances[i].instance, meshes[i].mesh);
+                }
+            });
+
+            world.system<const Position, const Instance>()
+                .iter([rendering_server](flecs::iter& it, const Position* positions, const Instance* instances)
+            {
+                for (auto i : it)
+                {
+                    godot::Transform3D transform;
+                    transform.origin = positions[i].position;
+                    rendering_server->instance_set_transform(instances[i].instance, transform);
+                }
+            });
+
+            godot::UtilityFunctions::print("Added render module");
+        }
+    };
+
     void print_limits()
     {
         auto* rendering_server = godot::RenderingServer::get_singleton();
@@ -147,6 +241,8 @@ namespace voxel_game
             print_limits();
 
             test_material_uniforms();
+
+            m_world.import<GodotRenderTestModule>();
 
             once = false;
         }

@@ -1,7 +1,7 @@
 #include "UniverseSimulation.h"
 #include "Universe.h"
 
-#include "Modules/GodotRenderModule.h"
+#include "Simulation/UniverseModule.h"
 
 #include "Util/Debug.h"
 
@@ -39,9 +39,11 @@ namespace voxel_game
 	UniverseSimulation::~UniverseSimulation()
 	{}
 
-	void UniverseSimulation::Initialize(Universe& universe, const godot::String& path, const godot::String& fragment_type, bool remote)
+	void UniverseSimulation::Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, bool remote)
 	{
-		m_universe = &universe;
+		DEBUG_ASSERT(!m_universe.is_valid(), "We can't initialize a simulation twice");
+
+		m_universe = universe;
 		m_path = path;
 		m_fragment_type = fragment_type;
 		m_remote = remote;
@@ -50,7 +52,7 @@ namespace voxel_game
 
 	godot::Dictionary UniverseSimulation::GetUniverseInfo()
 	{
-		DEBUG_ASSERT(m_universe != nullptr, "This universe simulations should have been instantiated by a universe");
+		DEBUG_ASSERT(m_universe.is_valid(), "This universe simulations should have been instantiated by a universe");
 		return m_universe->GetUniverseInfo();
 	}
 
@@ -61,7 +63,8 @@ namespace voxel_game
 
 	void UniverseSimulation::StartSimulation()
 	{
-		DEBUG_ASSERT(m_universe != nullptr, "This universe simulations should have been instantiated by a universe");
+		DEBUG_ASSERT(m_galaxy_load_state == LoadState::LOAD_STATE_LOADED, "This galaxy should not be loaded when we start");
+		DEBUG_ASSERT(m_universe.is_valid(), "This universe simulation should have been instantiated by a universe");
 
 		m_world.reset();
 
@@ -71,15 +74,17 @@ namespace voxel_game
 
 		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
 
-		m_world.import<GodotRenderModule>();
+		m_world.import<UniverseModule>();
 
-		m_galaxy_load_state = LoadState::Loading;
+		m_galaxy_load_state = LOAD_STATE_LOADING;
 		emit_signal(k_signals->load_state_changed, m_galaxy_load_state);
 	}
 
 	void UniverseSimulation::StopSimulation()
 	{
-		m_galaxy_load_state = LoadState::Unloading;
+		DEBUG_ASSERT(m_galaxy_load_state == LoadState::LOAD_STATE_LOADED, "This galaxy should have loaded if we want to start unloading");
+
+		m_galaxy_load_state = LOAD_STATE_UNLOADING;
 		emit_signal(k_signals->load_state_changed, m_galaxy_load_state);
 	}
 
@@ -95,10 +100,10 @@ namespace voxel_game
 
 	void UniverseSimulation::BindEnums()
 	{
-		BIND_ENUM_CONSTANT(LoadState::Unloaded);
-		BIND_ENUM_CONSTANT(LoadState::Loading);
-		BIND_ENUM_CONSTANT(LoadState::Loaded);
-		BIND_ENUM_CONSTANT(LoadState::Unloading);
+		BIND_ENUM_CONSTANT(LOAD_STATE_LOADING);
+		BIND_ENUM_CONSTANT(LOAD_STATE_LOADED);
+		BIND_ENUM_CONSTANT(LOAD_STATE_UNLOADING);
+		BIND_ENUM_CONSTANT(LOAD_STATE_UNLOADED);
 	}
 
 	void UniverseSimulation::BindMethods()
