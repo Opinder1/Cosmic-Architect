@@ -1,5 +1,6 @@
 #include "UniverseModule.h"
 #include "Components.h"
+#include "Voxel.h"
 
 #include <flecs/flecs.h>
 
@@ -12,5 +13,7 @@ namespace voxel_game
 		world.component<UniverseScene>();
 		world.component<UniverseCamera>();
 		world.component<UniverseObject>();
+
+		VoxelNode node;
 	}
 }
