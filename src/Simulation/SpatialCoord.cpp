@@ -1,4 +1,4 @@
-#include "FractalCoord.h"
+#include "SpatialCoord.h"
 namespace
 {
     godot::Vector3i VecEql(godot::Vector3i l, godot::Vector3i r)
@@ -29,64 +29,64 @@ namespace
 
 namespace voxel_game
 {
-    FractalCoord3D::FractalCoord3D()
+    SpatialCoord3D::SpatialCoord3D()
     {}
 
-    FractalCoord3D::FractalCoord3D(int32_t x, int32_t y, int32_t z, uint8_t s) :
+    SpatialCoord3D::SpatialCoord3D(int32_t x, int32_t y, int32_t z, uint8_t s) :
         m_pos(x, y, z),
         m_scale(s)
     {}
 
-    FractalCoord3D::FractalCoord3D(godot::Vector3i pos, uint8_t scale) :
+    SpatialCoord3D::SpatialCoord3D(godot::Vector3i pos, uint8_t scale) :
         m_pos(pos),
         m_scale(scale)
     {}
 
-    FractalCoord3D FractalCoord3D::GetParent() const
+    SpatialCoord3D SpatialCoord3D::GetParent() const
     {
         if (m_scale % 2 == 0)
         {
-            return FractalCoord3D((m_pos + 1) / 2, m_scale + 1);
+            return SpatialCoord3D((m_pos + 1) / 2, m_scale + 1);
         }
         else
         {
-            return FractalCoord3D(m_pos / 2, m_scale + 1);
+            return SpatialCoord3D(m_pos / 2, m_scale + 1);
         }
     }
 
-    godot::Vector3i FractalCoord3D::GetPos() const
+    godot::Vector3i SpatialCoord3D::GetPos() const
     {
         return m_pos;
     }
 
-    uint8_t FractalCoord3D::GetScale() const
+    uint8_t SpatialCoord3D::GetScale() const
     {
         return m_scale;
     }
 
-    godot::Vector3i FractalCoord3D::GetParentRelPos() const
+    godot::Vector3i SpatialCoord3D::GetParentRelPos() const
     {
         return VecEql(GetParent().GetBottomLeftChild().m_pos, m_pos);
     }
 
-    FractalCoord3D FractalCoord3D::GetBottomLeftChild() const
+    SpatialCoord3D SpatialCoord3D::GetBottomLeftChild() const
     {
         if (m_scale % 2 == 0)
         {
-            return FractalCoord3D((m_pos * 2) + godot::Vector3i(0, 0, 0), m_scale - 1);
+            return SpatialCoord3D((m_pos * 2) + godot::Vector3i(0, 0, 0), m_scale - 1);
         }
         else
         {
-            return FractalCoord3D((m_pos * 2) + godot::Vector3i(-1, -1, -1), m_scale - 1);
+            return SpatialCoord3D((m_pos * 2) + godot::Vector3i(-1, -1, -1), m_scale - 1);
         }
     }
 
-    godot::Vector3i FractalCoord3D::GetTileSize() const
+    godot::Vector3i SpatialCoord3D::GetTileSize() const
     {
         return godot::Vector3i(1 << m_scale, 1 << m_scale, 1 << m_scale);
     }
 
-    godot::Vector3i FractalCoord3D::GetRelPos() const
+    godot::Vector3i SpatialCoord3D::GetRelPos() const
     {
         int32_t offset = four_pow(ceil_div2(m_scale)) / 3;
         int32_t size = 1 << m_scale;

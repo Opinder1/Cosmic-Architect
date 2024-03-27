@@ -4,17 +4,15 @@
 
 namespace voxel_game
 {
-    // A coordinate in a fractal world that has a position and a level of detail
-    class FractalCoord3D
+    // A coordinate in a Spatial world that has a position and a level of detail
+    class SpatialCoord3D
     {
     public:
-        FractalCoord3D();
+        SpatialCoord3D();
+        SpatialCoord3D(int32_t x, int32_t y, int32_t z, uint8_t scale);
+        SpatialCoord3D(godot::Vector3i pos, uint8_t scale);
 
-        FractalCoord3D(int32_t x, int32_t y, int32_t z, uint8_t scale);
-
-        FractalCoord3D(godot::Vector3i pos, uint8_t scale);
-
-        FractalCoord3D GetParent() const;
+        SpatialCoord3D GetParent() const;
 
         godot::Vector3i GetPos() const;
 
@@ -22,7 +20,7 @@ namespace voxel_game
 
         godot::Vector3i GetParentRelPos() const;
 
-        FractalCoord3D GetBottomLeftChild() const;
+        SpatialCoord3D GetBottomLeftChild() const;
 
         godot::Vector3i GetTileSize() const;
 
@@ -34,7 +32,7 @@ namespace voxel_game
     };
 
     template<class Callable>
-    void ForEachChild(const FractalCoord3D& coord, Callable&& callable)
+    void ForEachChild(const SpatialCoord3D& coord, Callable&& callable)
     {
         if (m_s % 2 == 0)
         {
@@ -42,7 +40,7 @@ namespace voxel_game
             for (int32_t y = 0; y < 2; y++)
             for (int32_t z = 0; z < 2; z++)
             {
-                callable(FractalCoord3D((2 * coord.GetPos()) + godot::Vector3i(x, y, z), coord.GetScale() - 1));
+                callable(SpatialCoord3D((2 * coord.GetPos()) + godot::Vector3i(x, y, z), coord.GetScale() - 1));
             }
         }
         else
@@ -51,7 +49,7 @@ namespace voxel_game
             for (int32_t y = -1; y < 1; y++)
             for (int32_t z = -1; z < 1; z++)
             {
-                callable(FractalCoord3D((2 * coord.GetPos()) + godot::Vector3i(x, y, z), coord.GetScale() - 1));
+                callable(SpatialCoord3D((2 * coord.GetPos()) + godot::Vector3i(x, y, z), coord.GetScale() - 1));
             }
         }
     }
