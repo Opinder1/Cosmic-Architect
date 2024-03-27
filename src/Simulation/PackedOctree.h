@@ -68,7 +68,7 @@ namespace voxel_game
 
 			Offset offset = 0;
 
-			for (size_t depth = 0; depth < k_depth - 2; depth++)
+			for (size_t depth = 0; depth < k_depth - 1; depth++)
 			{
 				Offset child_offset = GetOffsetNode(offset).offsets[pos.x & 0x1][pos.y & 0x1][pos.z & 0x1];
 
@@ -79,7 +79,14 @@ namespace voxel_game
 						return;
 					}
 
-					child_offset = EmplaceNode<OffsetNode>() - offset;
+					if (depth == k_depth - 2)
+					{
+						child_offset = EmplaceNode<ItemNode>() - offset;
+					}
+					else
+					{
+						child_offset = EmplaceNode<OffsetNode>() - offset;
+					}
 
 					GetOffsetNode(offset).offsets[pos.x & 0x1][pos.y & 0x1][pos.z & 0x1] = child_offset;
 				}
@@ -87,23 +94,6 @@ namespace voxel_game
 
 				pos.x >>= 1; pos.y >>= 1; pos.z >>= 1;
 			}
-
-			Offset child_offset = GetOffsetNode(offset).offsets[pos.x & 0x1][pos.y & 0x1][pos.z & 0x1];
-
-			if (child_offset == k_invalid_offset)
-			{
-				if (value == k_invalid_item) // Don't bother emplacing and continuing if the item is invalid anyway
-				{
-					return;
-				}
-
-				child_offset = EmplaceNode<ItemNode>() - offset;
-
-				GetOffsetNode(offset).offsets[pos.x & 0x1][pos.y & 0x1][pos.z & 0x1] = child_offset;
-			}
-			offset += child_offset;
-
-			pos.x >>= 1; pos.y >>= 1; pos.z >>= 1;
 
 			GetItemNode(offset).items[pos.x & 0x1][pos.y & 0x1][pos.z & 0x1] = value;
 		}
