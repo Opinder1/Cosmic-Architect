@@ -82,11 +82,4 @@ namespace voxel_game
 		robin_hood::unordered_flat_set<SpatialNode3D*> nodes_changed; // List of nodes marked as updated. Useful for knowing which nodes to update for renderer
 		robin_hood::unordered_flat_set<SpatialNode3D*> nodes_no_observers; // List of nodes that have no observers observing them
 	};
-
-	constexpr const size_t coord_size = sizeof(SpatialCoord3D);
-	constexpr const size_t loader_size = sizeof(SpatialLoader3D);
-	constexpr const size_t node_size = sizeof(SpatialNode3D);
-	constexpr const size_t scale_size = sizeof(SpatialScale3D);
-	constexpr const size_t region_size = sizeof(SpatialRegion3D);
-	constexpr const size_t world_size = sizeof(SpatialWorld3D);
 }
