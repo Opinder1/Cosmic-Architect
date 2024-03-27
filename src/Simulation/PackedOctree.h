@@ -58,6 +58,11 @@ namespace voxel_game
 		{
 			if (m_data.size() == 0)
 			{
+				if (value == k_invalid_item) // Don't bother emplacing and continuing if the item is invalid anyway
+				{
+					return;
+				}
+
 				EmplaceNode<OffsetNode>();
 			}
 
@@ -69,6 +74,11 @@ namespace voxel_game
 
 				if (child_offset == k_invalid_offset)
 				{
+					if (value == k_invalid_item) // Don't bother emplacing and continuing if the item is invalid anyway
+					{
+						return;
+					}
+
 					child_offset = EmplaceNode<OffsetNode>() - offset;
 
 					GetOffsetNode(offset).offsets[pos.x & 0x1][pos.y & 0x1][pos.z & 0x1] = child_offset;
@@ -82,6 +92,11 @@ namespace voxel_game
 
 			if (child_offset == k_invalid_offset)
 			{
+				if (value == k_invalid_item) // Don't bother emplacing and continuing if the item is invalid anyway
+				{
+					return;
+				}
+
 				child_offset = EmplaceNode<ItemNode>() - offset;
 
 				GetOffsetNode(offset).offsets[pos.x & 0x1][pos.y & 0x1][pos.z & 0x1] = child_offset;
@@ -125,6 +140,11 @@ namespace voxel_game
 		template<class Callable>
 		void Iterate(Callable callable) const
 		{
+			if (m_data.size() == 0)
+			{
+				return;
+			}
+
 			IterateBranch<Callable, 0>(m_data.data(), godot::Vector3i(0, 0, 0), callable);
 		}
 
@@ -134,9 +154,9 @@ namespace voxel_game
 			PackedOctree<Item, k_depth, k_invalid_item> new_octree;
 
 			Iterate([&new_octree](godot::Vector3i pos, Item item)
-				{
-					new_octree.Set(pos, item);
-				});
+			{
+				new_octree.Set(pos, item);
+			});
 
 			m_data.swap(new_octree.m_data);
 		}
