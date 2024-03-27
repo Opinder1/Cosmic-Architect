@@ -24,6 +24,7 @@ namespace voxel_game
 	struct SpatialScale3D;
     struct SpatialWorld3D;
 
+	// An object that tells a spatial world where to load nodes and at what lods
 	struct SpatialLoader3D
 	{
         SpatialWorld3D* world; // World that this camera is loading chunks in
@@ -38,6 +39,7 @@ namespace voxel_game
         std::vector<SpatialNode3D*> observed; // Nodes that are being observed by this camera
 	};
 
+	// A single node in a spatial world. This is meant to be inherited from for custom data
 	struct SpatialNode3D
 	{
 		SpatialWorld3D* world;
@@ -55,26 +57,34 @@ namespace voxel_game
 		uint32_t version;
 	};
 
+	// A level of detail map for a world. The world will have multiple of these
 	struct SpatialScale3D
 	{
 		robin_hood::unordered_flat_map<godot::Vector3i, SpatialNode3D*, ByteHash<godot::Vector3i>> nodes;
 
-		std::vector<SpatialLoader3D*> cameras;
+		std::vector<SpatialLoader3D*> loaders; // List of loaders that can see this scale
 		
+		// Each scale has a mutex which protects adding and removing nodes from the tree and hash map
+		// When adding and removing from multiple scales at once the world mutex should be locked
 		tkrzw::SpinSharedMutex mutex;
 	};
 
+	// A region in a world. Can also be a region within a region. Is used so that threads can modify different bits of the world in parallel
 	struct SpatialRegion3D
 	{
 		godot::AABB region;
 
+		// If this region has any child regions then they must be locked as well or add a new one to access nodes in this region
 		robin_hood::unordered_flat_map<godot::AABB, SpatialRegion3D*> regions;
 
-		std::vector<SpatialLoader3D*> cameras; // List of chunk cameras this region is focused around
+		std::vector<SpatialLoader3D*> loaders; // List of chunk cameras this region is focused around
 		
+		// Each region has a mutex so different threads can read and write to nodes from different regions simultaneously
+		// The world also uses this mutex to protect its members as well
 		tkrzw::SpinSharedMutex mutex;
 	};
 
+	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct SpatialWorld3D : SpatialRegion3D
 	{
 		std::array<SpatialScale3D, 16> scales; // Random access map for each scale

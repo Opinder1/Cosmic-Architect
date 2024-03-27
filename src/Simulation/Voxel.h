@@ -9,12 +9,14 @@
 
 namespace voxel_game
 {
+	// A single voxel that is stored in a voxel world
 	struct Block
 	{
-		uint16_t id = 0;
-		uint16_t data = 0;
+		uint16_t id = 0; // The block type which decides its behaviour
+		uint16_t data = 0; // Some data that can optionally be used by the type
 	};
 
+	// A spatial node for voxels which can also be entities. This node also keeps track of the entities and factions within it.
 	struct VoxelNode : public SpatialNode3D
 	{
 		std::vector<flecs::entity_t> entities;
