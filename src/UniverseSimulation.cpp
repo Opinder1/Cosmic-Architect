@@ -63,16 +63,16 @@ namespace voxel_game
 
 	void UniverseSimulation::StartSimulation()
 	{
-		DEBUG_ASSERT(m_galaxy_load_state == LoadState::LOAD_STATE_LOADED, "This galaxy should not be loaded when we start");
+		DEBUG_ASSERT(m_galaxy_load_state == LoadState::LOAD_STATE_UNLOADED, "This galaxy should not be loaded when we start");
 		DEBUG_ASSERT(m_universe.is_valid(), "This universe simulation should have been instantiated by a universe");
 
 		m_world.reset();
 
+		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
+
 #if DEBUG
 		StartRestServer(m_world, 27750, true);
 #endif
-
-		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
 
 		m_world.import<UniverseModule>();
 
