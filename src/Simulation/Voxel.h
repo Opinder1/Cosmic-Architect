@@ -1,7 +1,9 @@
 #pragma once
 
-#include "Spatial.h"
+#include "Spatial/Spatial.h"
 #include "PackedOctree.h"
+
+#include <robin_hood/robin_hood.h>
 
 #include <flecs/flecs.h>
 
@@ -17,7 +19,7 @@ namespace voxel_game
 	};
 
 	// A spatial node for voxels which can also be entities. This node also keeps track of the entities and factions within it.
-	struct VoxelNode : public SpatialNode3D
+	struct VoxelNode : SpatialNode3D
 	{
 		std::vector<flecs::entity_t> entities;
 
@@ -26,36 +28,23 @@ namespace voxel_game
 		std::vector<flecs::entity_t> factions;
 
 		bool update_children : 1;
-		bool modified : 1;
-		bool edited : 1;
+		bool modified : 1; // This node has been modified so should be saved and loaded instead of regenerated
+		bool edited : 1; // A change has been made to this node and loaders should be notified
 
-		Block blocks[16][16][16] = {};
+		Block blocks[16][16][16] = {}; // This member is last since its large
 	};
 
-	// Entities that are children of a region entity or world entity should have this component
-	// so that the system knows how to place them in the spatial world
-	struct VoxelEntityComponent
+	struct VoxelWorld : SpatialWorld3D
 	{
-		SpatialCoord3D coord;
+		robin_hood::detail::BulkPoolAllocator<VoxelNode> node_allocator;
 	};
 
-	// Voxel entities can have this component which makes them load components around them
-	struct VoxelCameraComponent
-	{
-		SpatialLoader3D* loader;
-	};
+	Block GetBlockAtScale(VoxelWorld* world, godot::Vector3i pos, uint32_t scale);
 
-	// Entities with this component are region entities and should be a child of a world
-	// entity. This entity should have region entities and voxel entities as children.
-	struct VoxelRegionComponent
-	{
-		SpatialRegion3D* region;
-	};
+	Block GetBlockDepthFirst(VoxelWorld* world, godot::Vector3i pos, uint32_t start_scale);
 
-	// This component should be added to the world entity. This entity should have region entities
-	// as children. The owning entity should also have a region component as a world is a region.
-	struct VoxelWorldComponent
-	{
-		SpatialWorld3D* world;
-	};
+	Block GetBlockBreadthFirst(VoxelWorld* world, godot::Vector3i pos, uint32_t start_scale);
+
+	Block GetBlockOctreeSearch(VoxelWorld* world, godot::Vector3i pos, uint32_t start_scale);
+
 }

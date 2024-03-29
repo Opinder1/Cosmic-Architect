@@ -5,18 +5,13 @@
 namespace voxel_game
 {
     // A coordinate in a Spatial world that has a position and a level of detail
-    class SpatialCoord3D
+    struct SpatialCoord3D
     {
-    public:
         SpatialCoord3D();
-        SpatialCoord3D(int32_t x, int32_t y, int32_t z, uint8_t scale);
-        SpatialCoord3D(godot::Vector3i pos, uint8_t scale);
+        SpatialCoord3D(int32_t x, int32_t y, int32_t z, uint32_t scale);
+        SpatialCoord3D(godot::Vector3i pos, uint32_t scale);
 
         SpatialCoord3D GetParent() const;
-
-        godot::Vector3i GetPos() const;
-
-        uint8_t GetScale() const;
 
         godot::Vector3i GetParentRelPos() const;
 
@@ -26,9 +21,23 @@ namespace voxel_game
 
         godot::Vector3i GetRelPos() const;
 
-    private:
-        godot::Vector3i m_pos; // Position relative to scale
-        uint8_t m_scale = 0;
+        SpatialCoord3D operator*(uint64_t val);
+        SpatialCoord3D operator/(uint64_t val);
+        SpatialCoord3D operator+(uint64_t val);
+        SpatialCoord3D operator-(uint64_t val);
+        SpatialCoord3D operator%(uint64_t val);
+
+        union
+        {
+            godot::Vector3i pos{};
+            struct
+            {
+                int32_t x; // Position relative to scale
+                int32_t y;
+                int32_t z;
+            };
+        };
+        uint32_t scale = 0;
     };
 
     template<class Callable>
@@ -40,7 +49,7 @@ namespace voxel_game
             for (int32_t y = 0; y < 2; y++)
             for (int32_t z = 0; z < 2; z++)
             {
-                callable(SpatialCoord3D((2 * coord.GetPos()) + godot::Vector3i(x, y, z), coord.GetScale() - 1));
+                callable(SpatialCoord3D((2 * coord.pos) + godot::Vector3i(x, y, z), coord.scale - 1));
             }
         }
         else
@@ -49,7 +58,7 @@ namespace voxel_game
             for (int32_t y = -1; y < 1; y++)
             for (int32_t z = -1; z < 1; z++)
             {
-                callable(SpatialCoord3D((2 * coord.GetPos()) + godot::Vector3i(x, y, z), coord.GetScale() - 1));
+                callable(SpatialCoord3D((2 * coord.pos) + godot::Vector3i(x, y, z), coord.scale - 1));
             }
         }
     }

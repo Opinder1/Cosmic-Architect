@@ -7,10 +7,11 @@
 namespace voxel_game
 {
 	// This is an octree implementation which has the goal of storing all the items in one
-	// contigous block of memory that grows as more items are added. Removing items and
-	// rebuilding the tree are not added as they are not nececary for the use case. The main
-	// use case of this octree is storing block entities for chunks where we may have a
-	// variable amount of them.
+	// contigous block of memory that grows as more items are added. The tree will not reduce in
+	// size automatically when removing elements so ShrinkToFit should be called occasionally.
+	// The main use case of this octree is storing block entities for chunks where we may have a
+	// variable amount of them but we want to use as little memory as possible when we have a
+	// Small amount of elements in the tree.
 	template<class Item, size_t k_depth, Item k_invalid_item>
 	class PackedOctree
 	{
