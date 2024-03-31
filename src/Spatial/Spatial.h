@@ -32,17 +32,15 @@ namespace voxel_game
 		uint32_t min_lod; // The minimum lod this camera can see
 		uint32_t max_lod; // The maximum lod this camera can see
 		uint32_t update_frequency; // The frequency
-
-        std::vector<SpatialNode3D*> observed; // Nodes that are being observed by this camera
 	};
 
 	// A single node in a spatial world. This is meant to be inherited from for custom data
 	struct SpatialNode3D
 	{
 		SpatialNode3D* parent = nullptr; // Octree parent
-		uint8_t pos_in_parent;
+		uint8_t pos_in_parent = 0;
 
-		SpatialNode3D* children[8] = {nullptr}; // Octree children
+		SpatialNode3D* children[2][2][2] = { nullptr }; // Octree children
 		SpatialNode3D* neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
 
 		Clock::time_point unload_time; // Time when number of observers hit 0. Can be used to unload chunk after an amount of time

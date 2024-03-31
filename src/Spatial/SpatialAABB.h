@@ -4,13 +4,14 @@
 
 namespace voxel_game
 {
-	class SpatialAABB
+	struct SpatialAABB
 	{
-	public:
 		SpatialAABB();
+		SpatialAABB(godot::Vector3i pos, godot::Vector3i size, uint32_t scale);
+		SpatialAABB(SpatialCoord3D coord, godot::Vector3i size);
 
-	private:
-		SpatialCoord3D position;
+		godot::Vector3i pos;
 		godot::Vector3i size;
+		uint32_t scale = 0;
 	};
 }

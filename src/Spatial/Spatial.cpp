@@ -20,7 +20,7 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(coord.scale < k_max_world_scale, "The coordinates scale is out of range");
 
-		auto& nodes = world->scales[coord.scale].nodes;
+		auto& nodes = world->scales[coord.scale];
 
 		auto it = nodes.find(coord.pos);
 
