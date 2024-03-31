@@ -71,7 +71,10 @@ namespace voxel_game
 	};
 
 	// A level of detail map for a world. The world will have multiple of these
-	using SpatialScale3D = robin_hood::unordered_flat_map<godot::Vector3i, SpatialNode3D*, ByteHash<godot::Vector3i>>;
+	struct SpatialScale3D
+	{
+		robin_hood::unordered_flat_map<godot::Vector3i, SpatialNode3D*, ByteHash<godot::Vector3i>> nodes;
+	};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct SpatialWorld3D

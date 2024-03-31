@@ -3,6 +3,8 @@
 #include "SpatialCoord.h"
 #include "SpatialAABB.h"
 
+#include <godot_cpp/variant/vector3.hpp>
+
 namespace flecs
 {
 	struct world;
@@ -12,8 +14,9 @@ namespace flecs
 namespace voxel_game
 {
 	struct SpatialLoader3D;
-	struct SpatialRegion3D;
+	struct SpatialScale3D;
 	struct SpatialWorld3D;
+	struct SpatialWorld3DThread;
 
 	struct SpatialEntityTag {};
 
@@ -21,44 +24,50 @@ namespace voxel_game
 	// so that the system knows how to place them in the spatial world
 	struct SpatialPositionComponent
 	{
-		SpatialCoord3D coord;
+		godot::Vector3 position;
+		uint32_t scale;
 	};
 
 	struct SpatialBoxComponent
 	{
-		SpatialAABB aabb;
+		godot::Vector3 size;
 	};
 
 	struct SpatialSphereComponent
 	{
-		double radius;
+		double radius = 0.0;
 	};
 
 	// Spatial world entities can have this component which makes them load nodes around them
 	struct SpatialCameraComponent
 	{
-		SpatialLoader3D* loader;
+		SpatialLoader3D* loader = nullptr;
 	};
 
 	// This component should be added to the world entity. This entity should have region entities
 	// as children. The owning entity should also have a region component as a world is a region.
 	struct SpatialWorldComponent
 	{
-		SpatialWorld3D* world;
+		SpatialWorld3D* world = nullptr;
+	};
+
+	struct SpatialWorldRefComponent
+	{
+		SpatialWorld3D* world = nullptr;
 	};
 
 	struct SpatialWorldThreadComponent
 	{
-		SpatialWorld3D* world;
-		uint32_t id;
+		SpatialWorld3D* world = nullptr;
+		uint32_t id = UINT32_MAX;
 	};
 
 	struct SpatialModule
 	{
 		SpatialModule(flecs::world& world);
 
-		static void ProcessThread(flecs::entity entity, SpatialWorldThreadComponent& world_thread);
+		static void ProgressWorldThread(flecs::entity entity, SpatialWorldThreadComponent& world_thread);
 
-		static void ProcessWorld(flecs::entity entity, SpatialWorldComponent& spatial_world);
+		static void ProgressWorld(flecs::entity entity, SpatialWorldComponent& spatial_world);
 	};
 }
