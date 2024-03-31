@@ -17,9 +17,9 @@ namespace voxel_game
 			{
 				for (double z = start.x; z < end.x; z++)
 				{
-					godot::Vector3 voxel_pos = godot::Vector3i(x, y, z);
+					godot::Vector3i voxel_pos{ x, y, z };
 
-					if (voxel_pos.distance_squared_to(pos) < radius)
+					if (pos.distance_squared_to(voxel_pos) < radius)
 					{
 						callable(voxel_pos);
 					}
