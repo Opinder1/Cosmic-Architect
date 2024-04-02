@@ -30,4 +30,8 @@ namespace voxel_game
 		Block blocks[16][16][16] = {}; // This member is last since its large
 	};
 
+	struct VoxelWorld : SpatialWorld3D
+	{
+
+	};
 }
