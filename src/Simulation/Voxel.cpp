@@ -2,11 +2,17 @@
 
 #include "Spatial/Spatial.h"
 
+#include "Util/Debug.h"
+
 namespace voxel_game
 {
-	Block GetBlockAtScale(VoxelWorld* world, godot::Vector3i pos, uint32_t scale)
+	Block GetBlockAtScale(flecs::entity world, godot::Vector3i pos, uint32_t scale)
 	{
-		SpatialNode3D* node = GetNode(world, SpatialCoord3D(pos / 16, scale));
+		const SpatialWorld3DComponent* spatial_world = world.get<SpatialWorld3DComponent>();
+
+		DEBUG_ASSERT(spatial_world != nullptr, "World entity should have a world");
+
+		SpatialNode3D* node = GetNode(*spatial_world, SpatialCoord3D(pos / 16, scale));
 
 		if (node == nullptr)
 		{
@@ -16,14 +22,18 @@ namespace voxel_game
 		return static_cast<VoxelNode*>(node)->blocks[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Block GetBlockDepthFirst(VoxelWorld* world, godot::Vector3i pos, uint32_t start_scale)
+	Block GetBlockDepthFirst(flecs::entity world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		if (start_scale == k_max_world_scale)
 		{
 			return Block{};
 		}
 
-		SpatialNode3D* node = GetNode(world, SpatialCoord3D(pos / 16, start_scale));
+		const SpatialWorld3DComponent* spatial_world = world.get<SpatialWorld3DComponent>();
+
+		DEBUG_ASSERT(spatial_world != nullptr, "World entity should have a world");
+
+		SpatialNode3D* node = GetNode(*spatial_world, SpatialCoord3D(pos / 16, start_scale));
 
 		if (node == nullptr)
 		{
@@ -33,14 +43,18 @@ namespace voxel_game
 		return static_cast<VoxelNode*>(node)->blocks[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Block GetBlockBreadthFirst(VoxelWorld* world, godot::Vector3i pos, uint32_t start_scale)
+	Block GetBlockBreadthFirst(flecs::entity world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		if (start_scale == 0)
 		{
 			return Block{};
 		}
 
-		SpatialNode3D* node = GetNode(world, SpatialCoord3D(pos / 16, start_scale));
+		const SpatialWorld3DComponent* spatial_world = world.get<SpatialWorld3DComponent>();
+
+		DEBUG_ASSERT(spatial_world != nullptr, "World entity should have a world");
+
+		SpatialNode3D* node = GetNode(*spatial_world, SpatialCoord3D(pos / 16, start_scale));
 
 		if (node == nullptr)
 		{
@@ -50,11 +64,15 @@ namespace voxel_game
 		return static_cast<VoxelNode*>(node)->blocks[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Block GetBlockOctreeSearch(VoxelWorld* world, godot::Vector3i pos, uint32_t start_scale)
+	Block GetBlockOctreeSearch(flecs::entity world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		godot::Vector3i node_pos = pos / 16;
 
-		SpatialNode3D* node = GetNode(world, SpatialCoord3D(node_pos, start_scale));
+		const SpatialWorld3DComponent* spatial_world = world.get<SpatialWorld3DComponent>();
+
+		DEBUG_ASSERT(spatial_world != nullptr, "World entity should have a world");
+
+		SpatialNode3D* node = GetNode(*spatial_world, SpatialCoord3D(node_pos, start_scale));
 
 		if (node == nullptr)
 		{

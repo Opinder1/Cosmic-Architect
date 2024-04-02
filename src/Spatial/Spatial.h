@@ -5,8 +5,10 @@
 
 #include "Util/Time.h"
 #include "Util/ByteHash.h"
+#include "Util/Nocopy.h"
 
 #include <godot_cpp/variant/vector3i.hpp>
+#include <godot_cpp/variant/vector3.hpp>
 
 #include <robin_hood/robin_hood.h>
 
@@ -15,16 +17,34 @@
 #include <vector>
 #include <array>
 #include <bitset>
+#include <memory>
 
 namespace voxel_game
 {
     constexpr const uint8_t k_max_world_scale = 16;
 
-    struct SpatialNode3D;
-    struct SpatialWorld3D;
+	struct SpatialEntity3DTag {};
+
+	// Entities that are children of a world entity should have this component
+	// so that the system knows how to place them in the spatial world
+	struct SpatialPosition3DComponent
+	{
+		godot::Vector3 position;
+		uint32_t scale;
+	};
+
+	struct SpatialBox3DComponent
+	{
+		godot::Vector3 size;
+	};
+
+	struct SpatialSphere3DComponent
+	{
+		double radius = 0.0;
+	};
 
 	// An object that tells a spatial world where to load nodes and at what lods
-	struct SpatialLoader3D
+	struct SpatialLoader3DComponent
 	{
         SpatialCoord3D coord;
 
@@ -50,14 +70,29 @@ namespace voxel_game
 
 	};
 
-	struct SpatialWorld3DThread
+	// A level of detail map for a world. The world will have multiple of these
+	struct SpatialScale3D
+	{
+		robin_hood::unordered_flat_map<godot::Vector3i, SpatialNode3D*, ByteHash<godot::Vector3i>> nodes;
+	};
+
+	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
+	struct SpatialWorld3DComponent : Nocopy
+	{
+		SpatialAABB aabb;
+
+		// Random access map for each scale
+		std::array<SpatialScale3D, k_max_world_scale> scales;
+	};
+
+	struct SpatialWorld3DThread : Nocopy
 	{
 		// The AABB that the thread will be accessing
 		SpatialAABB aabb;
+	};
 
-		// Loaders that this thread should update
-		std::vector<SpatialLoader3D*> loaders_to_update;
-
+	struct SpatialWorld3DCommands : Nocopy
+	{
 		struct Lists
 		{
 			// Per thread lists for which the thread adds commands to be resolved later.
@@ -70,30 +105,5 @@ namespace voxel_game
 		std::array<Lists, k_max_world_scale> scale_lists;
 	};
 
-	// A level of detail map for a world. The world will have multiple of these
-	struct SpatialScale3D
-	{
-		robin_hood::unordered_flat_map<godot::Vector3i, SpatialNode3D*, ByteHash<godot::Vector3i>> nodes;
-	};
-
-	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
-	struct SpatialWorld3D
-	{
-		SpatialAABB aabb;
-
-		// Random access map for each scale
-		std::array<SpatialScale3D, k_max_world_scale> scales;
-
-		// List of loaders that can see this world
-		std::vector<SpatialLoader3D*> loaders;
-
-		// Per thread data for updating the world in parallel
-		robin_hood::unordered_node_map<uint64_t, SpatialWorld3DThread> threads;
-	};
-
-	SpatialWorld3D* CreateNewWorld();
-
-	void DestroyWorld(SpatialWorld3D* world);
-
-	SpatialNode3D* GetNode(SpatialWorld3D* world, SpatialCoord3D coord);
+	SpatialNode3D* GetNode(const SpatialWorld3DComponent& world, SpatialCoord3D coord);
 }

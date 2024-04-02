@@ -240,7 +240,7 @@ namespace voxel_game
         {
             print_limits();
 
-            test_material_uniforms();
+            //test_material_uniforms();
 
             m_world.import<GodotRenderTestModule>();
 

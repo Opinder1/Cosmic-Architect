@@ -11,11 +11,70 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
+void flecs_log_to_godot(int32_t level, const char* file, int32_t line, const char* msg)
+{
+	/* >0: Debug tracing. Only enabled in debug builds. */
+	/*  0: Tracing. Enabled in debug/release builds. */
+	/* -2: Warning. An issue occurred, but operation was successful. */
+	/* -3: Error. An issue occurred, and operation was unsuccessful. */
+	/* -4: Fatal. An issue occurred, and application must quit. */
+
+	godot::String log_msg = godot::vformat("%s:%d: %s", file, line, msg);
+
+	switch (level)
+	{
+	case -4:
+		DEBUG_PRINT_ERROR(log_msg);
+		DEBUG_CRASH();
+		break;
+
+	case -3:
+		DEBUG_PRINT_ERROR(log_msg);
+		break;
+
+	case -2:
+		DEBUG_PRINT_WARN(log_msg);
+		break;
+
+	case -1:
+		DEBUG_PRINT_INFO(log_msg);
+		break;
+
+	case 0:
+		godot::UtilityFunctions::print(log_msg);
+		break;
+
+	case 1:
+	case 2:
+	case 3:
+	case 4:
+		godot::UtilityFunctions::print(godot::vformat("[Trace %d]", level), log_msg);
+		break;
+	}
+}
+
+void initialize_flecs()
+{
+	ecs_os_init();
+
+	ecs_os_api.log_ = flecs_log_to_godot;
+	ecs_os_api.log_level_ = 0;
+
+	ecs_os_set_api(&ecs_os_api); // Set the initialized flag so we don't override the log_ again
+}
+
+void uninitialize_flecs()
+{
+	ecs_os_fini();
+}
+
 void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 {
 	if (p_level == godot::MODULE_INITIALIZATION_LEVEL_SCENE)
 	{
 		godot::UtilityFunctions::print("Loading voxel world extension");
+
+		initialize_flecs();
 
 		godot::ClassDB::register_class<voxel_game::CommandQueue>();
 		godot::ClassDB::register_class<voxel_game::CommandQueueServer>();
@@ -37,6 +96,8 @@ void uninitialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 		voxel_game::UniverseSimulation::_cleanup_methods();
 		voxel_game::Universe::_cleanup_methods();
 		voxel_game::CommandQueueServer::_cleanup_methods();
+
+		uninitialize_flecs();
 
 		godot::UtilityFunctions::print("Unloaded voxel world extension");
 	}

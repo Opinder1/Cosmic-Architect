@@ -34,17 +34,12 @@ namespace voxel_game
 		Block blocks[16][16][16] = {}; // This member is last since its large
 	};
 
-	struct VoxelWorld : SpatialWorld3D
-	{
-		robin_hood::detail::BulkPoolAllocator<VoxelNode> node_allocator;
-	};
+	Block GetBlockAtScale(flecs::entity world, godot::Vector3i pos, uint32_t scale);
 
-	Block GetBlockAtScale(VoxelWorld* world, godot::Vector3i pos, uint32_t scale);
+	Block GetBlockDepthFirst(flecs::entity world, godot::Vector3i pos, uint32_t start_scale);
 
-	Block GetBlockDepthFirst(VoxelWorld* world, godot::Vector3i pos, uint32_t start_scale);
+	Block GetBlockBreadthFirst(flecs::entity world, godot::Vector3i pos, uint32_t start_scale);
 
-	Block GetBlockBreadthFirst(VoxelWorld* world, godot::Vector3i pos, uint32_t start_scale);
-
-	Block GetBlockOctreeSearch(VoxelWorld* world, godot::Vector3i pos, uint32_t start_scale);
+	Block GetBlockOctreeSearch(flecs::entity world, godot::Vector3i pos, uint32_t start_scale);
 
 }

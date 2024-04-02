@@ -6,62 +6,8 @@
 
 #include <godot_cpp/variant/utility_functions.hpp>
 
-#include <flecs/flecs.h>
-
 namespace voxel_game
 {
-	void FlecsLogToGodot(int32_t level, const char* file, int32_t line, const char* msg)
-	{
-		/* >0: Debug tracing. Only enabled in debug builds. */
-		/*  0: Tracing. Enabled in debug/release builds. */
-		/* -2: Warning. An issue occurred, but operation was successful. */
-		/* -3: Error. An issue occurred, and operation was unsuccessful. */
-		/* -4: Fatal. An issue occurred, and application must quit. */
-
-		godot::String log_msg = godot::vformat("%s:%d: %s", file, line, msg);
-
-		switch (level)
-		{
-		case -4:
-			DEBUG_PRINT_ERROR(log_msg);
-			DEBUG_CRASH();
-			break;
-
-		case -3:
-			DEBUG_PRINT_ERROR(log_msg);
-			break;
-
-		case -2:
-			DEBUG_PRINT_WARN(log_msg);
-			break;
-
-		case -1:
-			DEBUG_PRINT_INFO(log_msg);
-			break;
-
-		case 0:
-			godot::UtilityFunctions::print(log_msg);
-			break;
-
-		case 1:
-		case 2:
-		case 3:
-		case 4:
-			godot::UtilityFunctions::print(godot::vformat("[Trace %d]", level), log_msg);
-			break;
-		}
-	}
-
-	void InitializeFlecsLogToGodot()
-	{
-		ecs_os_init();
-
-		ecs_os_api.log_ = FlecsLogToGodot;
-		ecs_os_api.log_level_ = -1;
-
-		ecs_os_set_api(&ecs_os_api); // Set the initialized flag so we don't override the log_ again
-	}
-
 	std::unique_ptr<const Universe::Signals> Universe::k_signals;
 
 	Universe::Signals::Signals()
@@ -150,8 +96,6 @@ namespace voxel_game
 
 	void Universe::_bind_methods()
 	{
-		InitializeFlecsLogToGodot();
-
 		godot::ClassDB::bind_method(godot::D_METHOD("get_universe_info"), &Universe::GetUniverseInfo);
 		godot::ClassDB::bind_method(godot::D_METHOD("connect_to_galaxy_list", "ip"), &Universe::ConnectToGalaxyList);
 		godot::ClassDB::bind_method(godot::D_METHOD("disconnect_from_galaxy_list"), &Universe::DisconnectFromGalaxyList);

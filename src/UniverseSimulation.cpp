@@ -2,6 +2,7 @@
 #include "Universe.h"
 
 #include "Simulation/UniverseModule.h"
+#include "Spatial/SpatialModule.h"
 
 #include "Util/Debug.h"
 
@@ -75,8 +76,24 @@ namespace voxel_game
 #endif
 
 		m_world.import<UniverseModule>();
+		m_world.import<SpatialModule>();
+
+		for (size_t i = 0; i < 20; i++)
+		{
+			auto entity = m_world.entity().emplace<SpatialWorld3DComponent>();
+
+			for (size_t i = 0; i < 20; i++)
+			{
+				m_world.entity().emplace<SpatialWorld3DThread>().child_of(entity);
+			}
+		}
 
 		m_galaxy_load_state = LOAD_STATE_LOADING;
+		emit_signal(k_signals->load_state_changed, m_galaxy_load_state);
+
+		// Defer loading
+
+		m_galaxy_load_state = LOAD_STATE_LOADED;
 		emit_signal(k_signals->load_state_changed, m_galaxy_load_state);
 	}
 
