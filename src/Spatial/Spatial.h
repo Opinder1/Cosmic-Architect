@@ -12,12 +12,10 @@
 
 #include <robin_hood/robin_hood.h>
 
-#include <TKRZW/tkrzw_thread_util.h>
+#include <flecs/flecs.h>
 
 #include <vector>
 #include <array>
-#include <bitset>
-#include <memory>
 
 namespace voxel_game
 {
@@ -79,16 +77,22 @@ namespace voxel_game
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct SpatialWorld3DComponent : Nocopy
 	{
-		SpatialAABB aabb;
+		SpatialAABB region;
+
+		robin_hood::unordered_flat_map<flecs::entity_t, godot::Vector3> loaders;
+
+		robin_hood::unordered_flat_map<size_t, flecs::entity_t> command_lists;
 
 		// Random access map for each scale
 		std::array<SpatialScale3D, k_max_world_scale> scales;
 	};
 
-	struct SpatialWorld3DThread : Nocopy
+	struct SpatialWorld3DThreadComponent : Nocopy
 	{
-		// The AABB that the thread will be accessing
-		SpatialAABB aabb;
+		uint32_t min_scale;
+		uint32_t max_scale;
+
+		SpatialAABB region;
 	};
 
 	struct SpatialWorld3DCommands : Nocopy
@@ -104,6 +108,4 @@ namespace voxel_game
 
 		std::array<Lists, k_max_world_scale> scale_lists;
 	};
-
-	SpatialNode3D* GetNode(const SpatialWorld3DComponent& world, SpatialCoord3D coord);
 }

@@ -3,11 +3,7 @@
 #include "Spatial/Spatial.h"
 #include "PackedOctree.h"
 
-#include <robin_hood/robin_hood.h>
-
 #include <flecs/flecs.h>
-
-#include <bitset>
 
 namespace voxel_game
 {
@@ -33,13 +29,5 @@ namespace voxel_game
 
 		Block blocks[16][16][16] = {}; // This member is last since its large
 	};
-
-	Block GetBlockAtScale(flecs::entity world, godot::Vector3i pos, uint32_t scale);
-
-	Block GetBlockDepthFirst(flecs::entity world, godot::Vector3i pos, uint32_t start_scale);
-
-	Block GetBlockBreadthFirst(flecs::entity world, godot::Vector3i pos, uint32_t start_scale);
-
-	Block GetBlockOctreeSearch(flecs::entity world, godot::Vector3i pos, uint32_t start_scale);
 
 }

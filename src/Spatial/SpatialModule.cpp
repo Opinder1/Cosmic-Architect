@@ -1,6 +1,7 @@
 #include "SpatialModule.h"
-
 #include "Spatial.h"
+
+#include "Util/Debug.h"
 
 #include <flecs/flecs.h>
 
@@ -30,32 +31,66 @@ namespace voxel_game
 
 	SpatialModule::SpatialModule(flecs::world& world)
 	{
-		world.module<SpatialModule>();
+		world.module<SpatialModule>("SpatialModule");
 
 		world.component<SpatialEntity3DTag>().add_second<SpatialWorld3DComponent>(flecs::OneOf);
 
 		world.component<SpatialWorld3DComponent>();
 		world.component<SpatialPosition3DComponent>().add_second<SpatialWorld3DComponent>(flecs::OneOf);
-		world.component<SpatialWorld3DThread>().add_second<SpatialWorld3DComponent>(flecs::OneOf);
+		world.component<SpatialWorld3DThreadComponent>().add_second<SpatialWorld3DComponent>(flecs::OneOf);
 		world.component<SpatialBox3DComponent>().add_second<SpatialPosition3DComponent>(flecs::With);
 		world.component<SpatialSphere3DComponent>().add_second<SpatialPosition3DComponent>(flecs::With);
 		world.component<SpatialLoader3DComponent>().add_second<SpatialPosition3DComponent>(flecs::With);
 
 		world.system<SpatialWorld3DComponent>("SpatialWorldProgressSystem")
 			.multi_threaded()
-			.each([](flecs::iter& iter, size_t index, SpatialWorld3DComponent& spatial_world)
+			.iter([](flecs::iter& it, SpatialWorld3DComponent* spatial_worlds)
 		{
 
 		});
 
-		world.system<SpatialWorld3DThread>("SpatialWorldThreadProgressSystem")
+		world.system<SpatialWorld3DComponent>("SpatialWorldDelegateToThreadsSystem")
 			.multi_threaded()
-			.term<const SpatialWorld3DComponent>().parent()
-			.each([](flecs::iter& it, size_t index, SpatialWorld3DThread& spatial_world_thread)
+			.iter([](flecs::iter& it, SpatialWorld3DComponent* spatial_worlds)
 		{
-			const SpatialWorld3DComponent& spatial_world = *it.field<const SpatialWorld3DComponent>(2);
-
-			spatial_world_thread.aabb = spatial_world.aabb;
+			for (size_t i : it)
+			{
+				it.world().filter_builder<SpatialWorld3DThreadComponent>()
+					.term(flecs::ChildOf, it.entity(i))
+					.each([&spatial_world = spatial_worlds[i]](flecs::entity entity, SpatialWorld3DThreadComponent& spatial_world_thread)
+				{
+					spatial_world.region = spatial_world_thread.region;
+				});
+			}
 		});
+
+		world.system<SpatialWorld3DThreadComponent>("SpatialWorldThreadProgressSystem")
+			.term<const SpatialWorld3DComponent>().parent()
+			.multi_threaded()
+			.iter([](flecs::iter& it, SpatialWorld3DThreadComponent* spatial_world_threads)
+		{
+			auto spatial_worlds = it.field<const SpatialWorld3DComponent>(2);
+
+			for (size_t i : it)
+			{
+				spatial_world_threads[i].region = spatial_worlds[i].region;
+			}
+		});
+	}
+
+	SpatialNode3D* SpatialModule::GetNode(const SpatialWorld3DComponent& world, SpatialCoord3D coord)
+	{
+		DEBUG_ASSERT(coord.scale < k_max_world_scale, "The coordinates scale is out of range");
+
+		auto& nodes = world.scales[coord.scale].nodes;
+
+		auto it = nodes.find(coord.pos);
+
+		if (it == nodes.end())
+		{
+			return nullptr;
+		}
+
+		return it->second;
 	}
 }
