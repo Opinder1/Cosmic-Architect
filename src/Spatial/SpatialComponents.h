@@ -62,7 +62,6 @@ namespace voxel_game
 
 	struct SpatialScaleThread3DComponent
 	{
-		SpatialWorld3D* world = nullptr;
 		uint32_t scale = 0;
 
 		SpatialWorld3DCommands commands;
@@ -70,7 +69,6 @@ namespace voxel_game
 
 	struct SpatialRegionThread3DComponent : SpatialWorld3DCommands
 	{
-		SpatialWorld3D* world = nullptr;
 		SpatialAABB region;
 
 		std::array<SpatialWorld3DCommands, k_max_world_scale> scale_lists;
@@ -78,7 +76,6 @@ namespace voxel_game
 
 	struct SpatialNodeThread3DComponent : SpatialWorld3DCommands
 	{
-		SpatialWorld3D* world = nullptr;
 		SpatialCoord3D node;
 
 		std::array<SpatialWorld3DCommands, k_max_world_scale> scale_lists;

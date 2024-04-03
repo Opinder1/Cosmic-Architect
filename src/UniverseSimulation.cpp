@@ -90,7 +90,7 @@ namespace voxel_game
 			for (uint32_t i = 0; i < spatial_world->max_scale; i++)
 			{
 				auto scale = m_world.entity();
-				scale.emplace<SpatialScaleThread3DComponent>(SpatialScaleThread3DComponent{ spatial_world, i });
+				scale.set<SpatialScaleThread3DComponent>({ i });
 				scale.child_of(world);
 			}
 

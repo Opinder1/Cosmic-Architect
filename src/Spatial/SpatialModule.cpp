@@ -100,14 +100,38 @@ namespace voxel_game
 			}
 		});
 
-		world.system<SpatialScaleThread3DComponent>("SpatialWorldScaleProgress")
+		world.system<SpatialScaleThread3DComponent, SpatialWorld3DComponent>("SpatialWorldScaleProgress")
 			.multi_threaded()
 			.kind<WorldScaleProgressPhase>()
-			.each([](SpatialScaleThread3DComponent& spatial_world_scale)
+			.term_at(2).parent()
+			.each([](SpatialScaleThread3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world)
 		{
-			SpatialWorld3D* spatial_world = spatial_world_scale.world;
+			SpatialScale3D& scale = spatial_world.world->scales[spatial_world_scale.scale];
+		});
 
-			SpatialScale3D& scale = spatial_world->scales[spatial_world_scale.scale];
+		world.system<SpatialRegionThread3DComponent, SpatialWorld3DComponent>("SpatialWorldScaleProgress")
+			.multi_threaded()
+			.kind<WorldScaleProgressPhase>()
+			.term_at(2).parent()
+			.each([](SpatialRegionThread3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world)
+		{
+			
+		});
+
+		world.system<SpatialNodeThread3DComponent, SpatialWorld3DComponent>("SpatialWorldScaleProgress")
+			.multi_threaded()
+			.kind<WorldScaleProgressPhase>()
+			.term_at(2).parent()
+			.each([](SpatialNodeThread3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world)
+		{
+			SpatialScale3D& scale = spatial_world.world->scales[spatial_world_scale.node.scale];
+
+			auto it = scale.nodes.find(spatial_world_scale.node.pos);
+
+			if (it != scale.nodes.end())
+			{
+				SpatialNode3D* node = it->second;
+			}
 		});
 	}
 
