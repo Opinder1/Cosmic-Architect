@@ -93,6 +93,13 @@ namespace voxel_game
 				scale.emplace<SpatialScaleThread3DComponent>(SpatialScaleThread3DComponent{ spatial_world, i });
 				scale.child_of(world);
 			}
+
+			for (uint32_t i = 0; i < 3; i++)
+			{
+				auto loader = m_world.entity();
+				loader.add<SpatialLoader3DComponent>();
+				loader.child_of(world);
+			}
 		}
 
 		m_galaxy_load_state = LOAD_STATE_LOADING;

@@ -35,7 +35,7 @@ namespace voxel_game
 	{
 		world.module<SpatialModule>("SpatialModule");
 
-		world.singleton<WorldTime>();
+		world.add<WorldTime>();
 
 		world.component<SpatialEntity3DTag>().add_second<SpatialWorld3DComponent>(flecs::OneOf);
 
@@ -58,25 +58,21 @@ namespace voxel_game
 		world.system("WorldScaleProgressSync").kind<WorldScaleProgressPhase>().iter([](flecs::iter& it) {});
 		world.system("WorldProgressSync").kind<WorldProgressPhase>().iter([](flecs::iter& it) {});
 
-		world.system("WorldUpdateTime")
+		world.system<WorldTime>("WorldUpdateTime")
 			.kind(flecs::OnUpdate)
-			.term<WorldTime>().singleton()
-			.iter([](flecs::iter& it)
+			.term_at(1).src<WorldTime>()
+			.iter([](flecs::iter& it, WorldTime* world_time)
 		{
-			auto world_time = it.field<WorldTime>(0);
-
 			world_time->frame_start = Clock::now();
 		});
 
-		world.system<SpatialLoader3DComponent, const WorldTime>("SpatialWorldLoaderUpdateNodes")
+		world.system<SpatialLoader3DComponent, const SpatialWorld3DComponent, const WorldTime>("SpatialWorldLoaderUpdateNodes")
 			.multi_threaded()
 			.kind<WorldProgressPhase>()
-			.term_at(2).singleton()
-			.term<const SpatialWorld3DComponent>().parent()
-			.each([](flecs::iter& iter, size_t, SpatialLoader3DComponent& spatial_loader, const WorldTime& world_time)
+			.term_at(2).parent()
+			.term_at(3).src<WorldTime>()
+			.each([](flecs::iter& iter, size_t, SpatialLoader3DComponent& spatial_loader, const SpatialWorld3DComponent& world, const WorldTime& world_time)
 		{
-			const SpatialWorld3DComponent& world = *iter.field<const SpatialWorld3DComponent>(3);
-
 			for (size_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
 			{
 				const SpatialScale3D& spatial_scale = world.world->scales[scale_index];
