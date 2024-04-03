@@ -43,7 +43,6 @@ namespace voxel_game
 	struct SpatialScale3D : Nocopy
 	{
 		robin_hood::unordered_flat_map<godot::Vector3i, SpatialNode3D*, ByteHash<godot::Vector3i>> nodes;
-		std::mutex m;
 	};
 
 	struct SpatialWorld3D : Nocopy

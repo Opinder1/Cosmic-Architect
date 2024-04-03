@@ -12,13 +12,13 @@ namespace voxel_game
 	template<class Callable>
 	void ForEachCoordInSphere(godot::Vector3 pos, double radius, Callable callable)
 	{
-		godot::Vector3 start = pos - godot::Vector3(radius, radius, radius);
-		godot::Vector3 end = pos + godot::Vector3(radius, radius, radius);
-		for (double x = start.x; x < end.x; x++)
+		godot::Vector3i start = pos - godot::Vector3i(radius, radius, radius);
+		godot::Vector3i end = pos + godot::Vector3i(radius, radius, radius);
+		for (int32_t x = start.x; x < end.x; x++)
 		{
-			for (double y = start.x; y < end.x; y++)
+			for (int32_t y = start.x; y < end.x; y++)
 			{
-				for (double z = start.x; z < end.x; z++)
+				for (int32_t z = start.x; z < end.x; z++)
 				{
 					godot::Vector3i voxel_pos{ x, y, z };
 
@@ -35,6 +35,8 @@ namespace voxel_game
 	{
 		world.module<SpatialModule>("SpatialModule");
 
+		world.singleton<WorldTime>();
+
 		world.component<SpatialEntity3DTag>().add_second<SpatialWorld3DComponent>(flecs::OneOf);
 
 		world.component<SpatialWorld3DComponent>();
@@ -46,52 +48,70 @@ namespace voxel_game
 		world.component<SpatialSphere3DComponent>().add_second<SpatialPosition3DComponent>(flecs::With);
 		world.component<SpatialLoader3DComponent>().add_second<SpatialPosition3DComponent>(flecs::With);
 
+		world.entity<WorldNodeProgressPhase>().add(flecs::Phase).depends_on(flecs::OnUpdate);
+		world.entity<WorldRegionProgressPhase>().add(flecs::Phase).depends_on<WorldNodeProgressPhase>();
+		world.entity<WorldScaleProgressPhase>().add(flecs::Phase).depends_on<WorldRegionProgressPhase>();
+		world.entity<WorldProgressPhase>().add(flecs::Phase).depends_on<WorldScaleProgressPhase>();
+
+		world.system("WorldNodeProgressSync").kind<WorldNodeProgressPhase>().iter([](flecs::iter& it) {});
+		world.system("WorldRegionProgressSync").kind<WorldRegionProgressPhase>().iter([](flecs::iter& it) {});
+		world.system("WorldScaleProgressSync").kind<WorldScaleProgressPhase>().iter([](flecs::iter& it) {});
+		world.system("WorldProgressSync").kind<WorldProgressPhase>().iter([](flecs::iter& it) {});
+
+		world.system("WorldUpdateTime")
+			.kind(flecs::OnUpdate)
+			.term<WorldTime>().singleton()
+			.iter([](flecs::iter& it)
+		{
+			auto world_time = it.field<WorldTime>(0);
+
+			world_time->frame_start = Clock::now();
+		});
+
+		world.system<SpatialLoader3DComponent, const WorldTime>("SpatialWorldLoaderUpdateNodes")
+			.multi_threaded()
+			.kind<WorldProgressPhase>()
+			.term_at(2).singleton()
+			.term<const SpatialWorld3DComponent>().parent()
+			.each([](flecs::iter& iter, size_t, SpatialLoader3DComponent& spatial_loader, const WorldTime& world_time)
+		{
+			const SpatialWorld3DComponent& world = *iter.field<const SpatialWorld3DComponent>(3);
+
+			for (size_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
+			{
+				const SpatialScale3D& spatial_scale = world.world->scales[scale_index];
+
+				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [scale_index, &spatial_scale, &world_time](godot::Vector3i pos)
+				{
+					auto it = spatial_scale.nodes.find(pos);
+
+					if (it != spatial_scale.nodes.end())
+					{
+						it->second->last_update_time = world_time.frame_start;
+					}
+				});
+			}
+		});
+
 		world.system<SpatialWorld3DComponent>("SpatialWorldProgress")
 			.multi_threaded()
-			.iter([](flecs::iter& it, SpatialWorld3DComponent* spatial_worlds)
+			.kind<WorldProgressPhase>()
+			.each([](SpatialWorld3DComponent& spatial_world)
 		{
-			for (size_t i : it)
-			{ 
-				for (auto& scale : spatial_worlds[i].world->scales)
-				{
-					if (scale.m.try_lock())
-					{
-						//std::this_thread::yield();
-						scale.m.unlock();
-					}
-					else
-					{
-						DEBUG_PRINT_ERROR("Should have locked mutex");
-					}
-				}
+			for (SpatialScale3D& scale : spatial_world.world->scales)
+			{
 
-				it.entity(i).modified<SpatialWorld3DComponent>();
 			}
 		});
 
 		world.system<SpatialScaleThread3DComponent>("SpatialWorldScaleProgress")
-			.term<SpatialWorld3DComponent>().parent().inout()
 			.multi_threaded()
-			.iter([](flecs::iter& it, SpatialScaleThread3DComponent* spatial_world_scales)
+			.kind<WorldScaleProgressPhase>()
+			.each([](SpatialScaleThread3DComponent& spatial_world_scale)
 		{
-			for (size_t i : it)
-			{ 
-				SpatialWorld3D& spatial_world = *spatial_world_scales[i].world;
+			SpatialWorld3D* spatial_world = spatial_world_scale.world;
 
-				SpatialScale3D& scale = spatial_world.scales[spatial_world_scales[i].scale];
-
-				if (scale.m.try_lock())
-				{
-					//std::this_thread::yield();
-					scale.m.unlock();
-				}
-				else
-				{
-					DEBUG_PRINT_ERROR("Should have locked mutex");
-				}
-
-				it.entity(i).parent().modified<SpatialWorld3DComponent>();
-			}
+			SpatialScale3D& scale = spatial_world->scales[spatial_world_scale.scale];
 		});
 	}
 
