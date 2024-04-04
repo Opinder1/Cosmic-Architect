@@ -109,24 +109,24 @@ namespace voxel_game
 			SpatialScale3D& scale = spatial_world.world->scales[spatial_world_scale.scale];
 		});
 
-		world.system<SpatialRegionThread3DComponent, SpatialWorld3DComponent>("SpatialWorldScaleProgress")
+		world.system<SpatialRegionThread3DComponent, SpatialWorld3DComponent>("SpatialWorldRegionProgress")
 			.multi_threaded()
 			.kind<WorldScaleProgressPhase>()
 			.term_at(2).parent()
-			.each([](SpatialRegionThread3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world)
+			.each([](SpatialRegionThread3DComponent& spatial_world_region, SpatialWorld3DComponent& spatial_world)
 		{
 			
 		});
 
-		world.system<SpatialNodeThread3DComponent, SpatialWorld3DComponent>("SpatialWorldScaleProgress")
+		world.system<SpatialNodeThread3DComponent, SpatialWorld3DComponent>("SpatialWorldNodeProgress")
 			.multi_threaded()
 			.kind<WorldScaleProgressPhase>()
 			.term_at(2).parent()
-			.each([](SpatialNodeThread3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world)
+			.each([](SpatialNodeThread3DComponent& spatial_world_node, SpatialWorld3DComponent& spatial_world)
 		{
-			SpatialScale3D& scale = spatial_world.world->scales[spatial_world_scale.node.scale];
+			SpatialScale3D& scale = spatial_world.world->scales[spatial_world_node.node.scale];
 
-			auto it = scale.nodes.find(spatial_world_scale.node.pos);
+			auto it = scale.nodes.find(spatial_world_node.node.pos);
 
 			if (it != scale.nodes.end())
 			{
