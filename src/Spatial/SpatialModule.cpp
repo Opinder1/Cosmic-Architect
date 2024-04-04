@@ -68,37 +68,36 @@ namespace voxel_game
 	{
 		world.module<SpatialModule>("SpatialModule");
 
-		AddSingletons(world);
-
-		AddTags(world);
-
 		AddComponents(world);
-
+		AddRelationships(world);
 		AddObservers(world);
-
 		AddPhases(world);
-
 		AddSystems(world);
-	}
-
-	void SpatialModule::AddSingletons(flecs::world& world)
-	{
-		world.add<WorldTime>();
-	}
-
-	void SpatialModule::AddTags(flecs::world& world)
-	{
-		world.component<SpatialEntity3DTag>().add_second<SpatialWorld3DComponent>(flecs::OneOf);
 	}
 
 	void SpatialModule::AddComponents(flecs::world& world)
 	{
+		world.component<WorldTime>();
+		world.component<SpatialEntity3DTag>();
 		world.component<SpatialWorld3DComponent>();
 		world.component<SpatialCommands3DComponent>();
+		world.component<SpatialPosition3DComponent>();
+		world.component<SpatialScaleThread3DComponent>();
+		world.component<SpatialRegionThread3DComponent>();
+		world.component<SpatialNodeThread3DComponent>();
+		world.component<SpatialBox3DComponent>();
+		world.component<SpatialSphere3DComponent>();
+		world.component<SpatialLoader3DComponent>();
+	}
+
+	void SpatialModule::AddRelationships(flecs::world& world)
+	{
+		world.component<SpatialEntity3DTag>().add_second<SpatialWorld3DComponent>(flecs::OneOf);
+
 		world.component<SpatialPosition3DComponent>().add_second<SpatialWorld3DComponent>(flecs::OneOf);
-		world.component<SpatialScaleThread3DComponent>().add_second<SpatialCommands3DComponent>(flecs::With).add_second<SpatialWorld3DComponent>(flecs::OneOf);
-		world.component<SpatialRegionThread3DComponent>().add_second<SpatialCommands3DComponent>(flecs::With).add_second<SpatialWorld3DComponent>(flecs::OneOf);
-		world.component<SpatialNodeThread3DComponent>().add_second<SpatialCommands3DComponent>(flecs::With).add_second<SpatialWorld3DComponent>(flecs::OneOf);
+		world.component<SpatialScaleThread3DComponent>().add_second<SpatialWorld3DComponent>(flecs::OneOf).add_second<SpatialCommands3DComponent>(flecs::With);
+		world.component<SpatialRegionThread3DComponent>().add_second<SpatialWorld3DComponent>(flecs::OneOf).add_second<SpatialCommands3DComponent>(flecs::With);
+		world.component<SpatialNodeThread3DComponent>().add_second<SpatialWorld3DComponent>(flecs::OneOf).add_second<SpatialCommands3DComponent>(flecs::With);
 		world.component<SpatialBox3DComponent>().add_second<SpatialPosition3DComponent>(flecs::With);
 		world.component<SpatialSphere3DComponent>().add_second<SpatialPosition3DComponent>(flecs::With);
 		world.component<SpatialLoader3DComponent>().add_second<SpatialCommands3DComponent>(flecs::With).add_second<SpatialPosition3DComponent>(flecs::With);

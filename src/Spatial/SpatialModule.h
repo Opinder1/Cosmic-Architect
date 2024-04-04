@@ -29,11 +29,9 @@ namespace voxel_game
 	{
 		SpatialModule(flecs::world& world);
 
-		static void AddSingletons(flecs::world& world);
-
-		static void AddTags(flecs::world& world);
-
 		static void AddComponents(flecs::world& world);
+
+		static void AddRelationships(flecs::world& world);
 
 		static void AddObservers(flecs::world& world);
 
