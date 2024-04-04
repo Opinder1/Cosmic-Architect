@@ -34,6 +34,11 @@ namespace voxel_game
 		double radius = 0.0;
 	};
 
+	struct SpatialCommands3DComponent : Nocopy
+	{
+		std::array<SpatialCommands3D, k_max_world_scale> scales;
+	};
+
 	// An object that tells a spatial world where to load nodes and at what lods
 	struct SpatialLoader3DComponent
 	{
@@ -45,39 +50,26 @@ namespace voxel_game
 		uint32_t update_frequency; // The frequency
 	};
 
+	struct SpatialScaleThread3DComponent
+	{
+		uint32_t scale = 0;
+	};
+
+	struct SpatialRegionThread3DComponent
+	{
+		SpatialAABB region;
+	};
+
+	struct SpatialNodeThread3DComponent
+	{
+		SpatialCoord3D node;
+	};
+
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct SpatialWorld3DComponent
 	{
 		SpatialWorld3D* world = nullptr;
-	};
 
-	struct SpatialWorld3DCommands : Nocopy
-	{
-		// Per thread lists for which the thread adds commands to be resolved later.
-		std::vector<std::pair<godot::Vector3i, SpatialNode3D*>> nodes_add;
-		std::vector<godot::Vector3i> nodes_remove;
-		std::vector<godot::Vector3i> nodes_no_loaders; // List of nodes that have no loaders observing them
-		std::vector<godot::Vector3i> nodes_changed; // List of nodes marked as updated. Useful for knowing which nodes to update for renderer
-	};
-
-	struct SpatialScaleThread3DComponent
-	{
-		uint32_t scale = 0;
-
-		SpatialWorld3DCommands commands;
-	};
-
-	struct SpatialRegionThread3DComponent : SpatialWorld3DCommands
-	{
-		SpatialAABB region;
-
-		std::array<SpatialWorld3DCommands, k_max_world_scale> scale_lists;
-	};
-
-	struct SpatialNodeThread3DComponent : SpatialWorld3DCommands
-	{
-		SpatialCoord3D node;
-
-		std::array<SpatialWorld3DCommands, k_max_world_scale> scale_lists;
+		flecs::query<SpatialCommands3DComponent> commands_query;
 	};
 }

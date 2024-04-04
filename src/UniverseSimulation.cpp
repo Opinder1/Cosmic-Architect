@@ -94,7 +94,7 @@ namespace voxel_game
 				scale.child_of(world);
 			}
 
-			for (uint32_t i = 0; i < 3; i++)
+			for (uint32_t i = 0; i < 20; i++)
 			{
 				auto loader = m_world.entity();
 				loader.add<SpatialLoader3DComponent>();
