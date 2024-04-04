@@ -39,7 +39,7 @@ sources = SourcesRecursive(["src", "lib"])
 
 #include paths
 env.Append(CPPPATH=["src", "lib"])
-env.Append(CPPDEFINES=["ecs_ftime_t=double"])
+env.Append(CPPDEFINES=["FLECS_CPP_NO_AUTO_REGISTRATION", "ecs_ftime_t=double"])
 
 if env["platform"] == "macos":
     library = env.SharedLibrary(
