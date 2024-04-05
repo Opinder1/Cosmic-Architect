@@ -8,7 +8,7 @@
 namespace voxel_game
 {
 	template<class Callable>
-	void ForEachChildNodeRecursive(SpatialNode3D* node, Callable&& callable)
+	void ForEachChildNodeRecursive(SpatialNode3D* node, Callable&& callback)
 	{
 		if (node->children_mask == 0)
 		{
@@ -19,13 +19,15 @@ namespace voxel_game
 		{
 			if (node != nullptr)
 			{
-				ForEachChildNodeRecursive(node, callable);
+				callback(node);
+
+				ForEachChildNodeRecursive(node, callback);
 			}
 		}
 	}
 
 	template<class Callable>
-	void ForEachCoordInRegion(godot::Vector3i start, godot::Vector3i end, Callable&& callable)
+	void ForEachCoordInRegion(godot::Vector3i start, godot::Vector3i end, Callable&& callback)
 	{
 		if (end.x < start.x) std::swap(start.x, end.x);
 		if (end.y < start.y) std::swap(start.y, end.y);
@@ -37,14 +39,14 @@ namespace voxel_game
 			{
 				for (; start.z < end.x; start.z++)
 				{
-					callable(start);
+					callback(start);
 				}
 			}
 		}
 	}
 
 	template<class Callable>
-	void ForEachCoordInSphere(godot::Vector3 pos, double radius, Callable&& callable)
+	void ForEachCoordInSphere(godot::Vector3 pos, double radius, Callable&& callback)
 	{
 		godot::Vector3i start = start - godot::Vector3i(radius, radius, radius);
 		godot::Vector3i end = end + godot::Vector3i(radius, radius, radius);
@@ -57,7 +59,7 @@ namespace voxel_game
 				{
 					if (pos.distance_squared_to(start) < radius)
 					{
-						callable(start);
+						callback(start);
 					}
 				}
 			}
