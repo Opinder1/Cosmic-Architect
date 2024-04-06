@@ -54,8 +54,6 @@ namespace voxel_game
 	{
 		SpatialAABB region;
 
-		robin_hood::unordered_flat_map<flecs::entity_t, godot::Vector3> loaders;
-
 		// Random access map for each scale
 		size_t max_scale = k_max_world_scale;
 		std::array<SpatialScale3D, k_max_world_scale> scales;

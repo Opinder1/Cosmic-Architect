@@ -1,6 +1,6 @@
 #include "UniverseSimulation.h"
 
-#include "Simulation/Components.h"
+#include "Universe/UniverseComponents.h"
 
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/rd_texture_format.hpp>

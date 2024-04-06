@@ -14,24 +14,11 @@ namespace voxel_game
 	struct SpatialNode3D;
 	struct SpatialWorld3D;
 
-	struct SpatialEntity3DTag {};
+	struct SpatialEntity3DComponent {};
 
-	// Entities that are children of a world entity should have this component
-	// so that the system knows how to place them in the spatial world
-	struct SpatialPosition3DComponent
+	struct SpatialScale3DComponent
 	{
-		godot::Vector3 position;
-		uint32_t scale;
-	};
-
-	struct SpatialBox3DComponent
-	{
-		godot::Vector3 size;
-	};
-
-	struct SpatialSphere3DComponent
-	{
-		double radius = 0.0;
+		uint8_t scale;
 	};
 
 	struct SpatialCommands3DComponent : Nocopy
@@ -44,15 +31,15 @@ namespace voxel_game
 	{
 		SpatialCoord3D coord;
 
-		uint32_t dist_per_lod; // The number of nodes there are until the next lod starts
-		uint32_t min_lod; // The minimum lod this camera can see
-		uint32_t max_lod; // The maximum lod this camera can see
-		uint32_t update_frequency; // The frequency
+		uint8_t dist_per_lod; // The number of nodes there are until the next lod starts
+		uint8_t min_lod; // The minimum lod this camera can see
+		uint8_t max_lod; // The maximum lod this camera can see
+		uint8_t update_frequency; // The frequency
 	};
 
 	struct SpatialScaleThread3DComponent
 	{
-		uint32_t scale = 0;
+		uint8_t scale;
 	};
 
 	struct SpatialRegionThread3DComponent

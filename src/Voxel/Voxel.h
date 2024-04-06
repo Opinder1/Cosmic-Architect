@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Spatial/Spatial.h"
-#include "PackedOctree.h"
+#include "Util/PackedOctree.h"
 
 #include <flecs/flecs.h>
 

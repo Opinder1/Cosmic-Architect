@@ -1,6 +1,5 @@
 #include "UniverseModule.h"
-#include "Components.h"
-#include "Voxel.h"
+#include "UniverseComponents.h"
 
 #include <flecs/flecs.h>
 

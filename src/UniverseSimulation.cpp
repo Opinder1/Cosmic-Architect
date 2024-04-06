@@ -1,11 +1,13 @@
 #include "UniverseSimulation.h"
 #include "Universe.h"
 
-#include "Simulation/UniverseModule.h"
+#include "Universe/UniverseModule.h"
+
 #include "Spatial/SpatialComponents.h"
 #include "Spatial/SpatialModule.h"
-#include "Simulation/Voxel.h"
-#include "Simulation/VoxelModule.h"
+
+#include "Voxel/Voxel.h"
+#include "Voxel/VoxelModule.h"
 
 #include "Util/Debug.h"
 
@@ -87,7 +89,7 @@ namespace voxel_game
 
 			auto world = m_world.entity().emplace<SpatialWorld3DComponent>(spatial_world);
 
-			for (uint32_t i = 0; i < spatial_world->max_scale; i++)
+			for (uint8_t i = 0; i < spatial_world->max_scale; i++)
 			{
 				auto scale = m_world.entity();
 				scale.set<SpatialScaleThread3DComponent>({ i });

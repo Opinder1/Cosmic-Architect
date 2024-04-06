@@ -1,6 +1,8 @@
 #include "SpatialModule.h"
 #include "SpatialComponents.h"
 
+#include "Physics/PhysicsComponents.h"
+
 #include "Util/Debug.h"
 
 #include <flecs/flecs.h>
@@ -80,29 +82,25 @@ namespace voxel_game
 	void SpatialModule::AddComponents(flecs::world& world)
 	{
 		world.component<WorldTime>();
-		world.component<SpatialEntity3DTag>();
+		world.component<SpatialEntity3DComponent>();
+		world.component<SpatialScale3DComponent>();
 		world.component<SpatialWorld3DComponent>();
 		world.component<SpatialCommands3DComponent>();
-		world.component<SpatialPosition3DComponent>();
 		world.component<SpatialScaleThread3DComponent>();
 		world.component<SpatialRegionThread3DComponent>();
 		world.component<SpatialNodeThread3DComponent>();
-		world.component<SpatialBox3DComponent>();
-		world.component<SpatialSphere3DComponent>();
 		world.component<SpatialLoader3DComponent>();
 	}
 
 	void SpatialModule::AddRelationships(flecs::world& world)
 	{
-		world.component<SpatialEntity3DTag>().add_second<SpatialWorld3DComponent>(flecs::OneOf);
+		world.component<SpatialEntity3DComponent>().add_second<SpatialWorld3DComponent>(flecs::OneOf);
 
-		world.component<SpatialPosition3DComponent>().add_second<SpatialWorld3DComponent>(flecs::OneOf);
+		world.component<SpatialScale3DComponent>().add_second<SpatialWorld3DComponent>(flecs::OneOf);
 		world.component<SpatialScaleThread3DComponent>().add_second<SpatialWorld3DComponent>(flecs::OneOf).add_second<SpatialCommands3DComponent>(flecs::With);
 		world.component<SpatialRegionThread3DComponent>().add_second<SpatialWorld3DComponent>(flecs::OneOf).add_second<SpatialCommands3DComponent>(flecs::With);
 		world.component<SpatialNodeThread3DComponent>().add_second<SpatialWorld3DComponent>(flecs::OneOf).add_second<SpatialCommands3DComponent>(flecs::With);
-		world.component<SpatialBox3DComponent>().add_second<SpatialPosition3DComponent>(flecs::With);
-		world.component<SpatialSphere3DComponent>().add_second<SpatialPosition3DComponent>(flecs::With);
-		world.component<SpatialLoader3DComponent>().add_second<SpatialCommands3DComponent>(flecs::With).add_second<SpatialPosition3DComponent>(flecs::With);
+		world.component<SpatialLoader3DComponent>().add_second<SpatialCommands3DComponent>(flecs::With).add_second<Position3DComponent>(flecs::With).add_second<SpatialScale3DComponent>(flecs::With);
 	}
 
 	void SpatialModule::AddObservers(flecs::world& world)
