@@ -144,18 +144,18 @@ namespace voxel_game
 			world_time->frame_start = Clock::now();
 		});
 
-		world.system<SpatialLoader3DComponent, SpatialCommands3DComponent, const SpatialWorld3DComponent, const WorldTime>("SpatialWorldLoaderUpdateNodes")
+		world.system<const SpatialLoader3DComponent, SpatialCommands3DComponent, SpatialWorld3DComponent, const WorldTime>("SpatialWorldLoaderUpdateNodes")
 			.multi_threaded()
 			.kind<WorldLoaderProgressPhase>()
 			.term_at(3).parent()
 			.term_at(4).src<WorldTime>()
-			.each([](SpatialLoader3DComponent& spatial_loader, SpatialCommands3DComponent& spatial_commands, const SpatialWorld3DComponent& world, const WorldTime& world_time)
+			.each([](const SpatialLoader3DComponent& spatial_loader, SpatialCommands3DComponent& spatial_commands, SpatialWorld3DComponent& world, const WorldTime& world_time)
 		{
 			for (size_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
 			{
 				const SpatialScale3D& spatial_scale = world.world->scales[scale_index];
 
-				auto node_update = [scale_index, &spatial_scale, &spatial_commands, &world_time](godot::Vector3i pos)
+				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [scale_index, &spatial_scale, &spatial_commands, &world_time](godot::Vector3i pos)
 				{
 					auto it = spatial_scale.nodes.find(pos);
 
@@ -167,18 +167,16 @@ namespace voxel_game
 					{
 						spatial_commands.scales[scale_index].nodes_load.push_back(pos);
 					}
-				};
-
-				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, node_update);
+				});
 			}
 		});
 
-		world.system<SpatialScaleThread3DComponent, SpatialWorld3DComponent, const WorldTime>("SpatialWorldUnloadUnusedNodes")
+		world.system<const SpatialScaleThread3DComponent, SpatialWorld3DComponent, const WorldTime>("SpatialWorldUnloadUnusedNodes")
 			.multi_threaded()
 			.kind<WorldScaleProgressPhase>()
 			.term_at(2).parent()
 			.term_at(3).src<WorldTime>()
-			.each([](SpatialScaleThread3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world, const WorldTime& world_time)
+			.each([](const SpatialScaleThread3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world, const WorldTime& world_time)
 		{
 			SpatialScale3D& scale = spatial_world.world->scales[spatial_world_scale.scale];
 
@@ -256,11 +254,34 @@ namespace voxel_game
 
 	void SpatialModule::AddExamples(flecs::world& world)
 	{
-		world.system<SpatialNodeThread3DComponent, SpatialWorld3DComponent>("SpatialWorldNodeProgressExample")
+		world.system<const SpatialLoader3DComponent, SpatialWorld3DComponent>("SpatialWorldLoaderExample")
+			.multi_threaded()
+			.kind<WorldLoaderProgressPhase>()
+			.term_at(3).parent()
+			.term_at(4).src<WorldTime>()
+			.each([](const SpatialLoader3DComponent& spatial_loader, SpatialWorld3DComponent& world)
+		{
+			for (size_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
+			{
+				const SpatialScale3D& spatial_scale = world.world->scales[scale_index];
+
+				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [scale_index, &spatial_scale](godot::Vector3i pos)
+				{
+					auto it = spatial_scale.nodes.find(pos);
+
+					if (it != spatial_scale.nodes.end())
+					{
+						it->second;
+					}
+				});
+			}
+		});
+
+		world.system<const SpatialNodeThread3DComponent, SpatialWorld3DComponent>("SpatialWorldNodeExample")
 			.multi_threaded()
 			.kind<WorldNodeProgressPhase>()
 			.term_at(2).parent()
-			.each([](SpatialNodeThread3DComponent& spatial_world_node, SpatialWorld3DComponent& spatial_world)
+			.each([](const SpatialNodeThread3DComponent& spatial_world_node, SpatialWorld3DComponent& spatial_world)
 		{
 			SpatialScale3D& scale = spatial_world.world->scales[spatial_world_node.node.scale];
 
@@ -277,11 +298,11 @@ namespace voxel_game
 			}
 		});
 
-		world.system<SpatialRegionThread3DComponent, SpatialWorld3DComponent>("SpatialWorldRegionProgressExample")
+		world.system<const SpatialRegionThread3DComponent, SpatialWorld3DComponent>("SpatialWorldRegionExample")
 			.multi_threaded()
 			.kind<WorldRegionProgressPhase>()
 			.term_at(2).parent()
-			.each([](SpatialRegionThread3DComponent& spatial_world_region, SpatialWorld3DComponent& spatial_world)
+			.each([](const SpatialRegionThread3DComponent& spatial_world_region, SpatialWorld3DComponent& spatial_world)
 		{
 			uint32_t scale_index = spatial_world_region.region.scale;
 			godot::Vector3i start = spatial_world_region.region.pos;
@@ -300,11 +321,11 @@ namespace voxel_game
 			});
 		});
 
-		world.system<SpatialScaleThread3DComponent, SpatialWorld3DComponent>("SpatialWorldScaleProgressExample")
+		world.system<const SpatialScaleThread3DComponent, SpatialWorld3DComponent>("SpatialWorldScaleExample")
 			.multi_threaded()
 			.kind<WorldScaleProgressPhase>()
 			.term_at(2).parent()
-			.each([](SpatialScaleThread3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world)
+			.each([](const SpatialScaleThread3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world)
 		{
 			SpatialScale3D& scale = spatial_world.world->scales[spatial_world_scale.scale];
 
@@ -314,7 +335,7 @@ namespace voxel_game
 			}
 		});
 
-		world.system<SpatialWorld3DComponent>("SpatialWorldProgressExample")
+		world.system<SpatialWorld3DComponent>("SpatialWorldExample")
 			.multi_threaded()
 			.kind<WorldProgressPhase>()
 			.each([](SpatialWorld3DComponent& spatial_world)
