@@ -257,8 +257,7 @@ namespace voxel_game
 		world.system<const SpatialLoader3DComponent, SpatialWorld3DComponent>("SpatialWorldLoaderExample")
 			.multi_threaded()
 			.kind<WorldLoaderProgressPhase>()
-			.term_at(3).parent()
-			.term_at(4).src<WorldTime>()
+			.term_at(2).parent()
 			.each([](const SpatialLoader3DComponent& spatial_loader, SpatialWorld3DComponent& world)
 		{
 			for (size_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
