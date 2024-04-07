@@ -135,21 +135,21 @@ namespace voxel_game
 	{
 		AddSyncs(world);
 
-		world.system<WorldTime>("WorldUpdateTime")
+		world.system<WorldTimeGlobal>("WorldUpdateTime")
 			.kind(flecs::OnUpdate)
-			.term_at(1).src<WorldTime>()
-			.iter([](flecs::iter& it, WorldTime* world_time)
+			.term_at(1).src<WorldTimeGlobal>()
+			.iter([](flecs::iter& it, WorldTimeGlobal* world_time)
 		{
 			world_time->frame_index++;
 			world_time->frame_start = Clock::now();
 		});
 
-		world.system<const SpatialLoader3DComponent, SpatialCommands3DComponent, SpatialWorld3DComponent, const WorldTime>("SpatialWorldLoaderUpdateNodes")
+		world.system<const SpatialLoader3DComponent, SpatialCommands3DComponent, SpatialWorld3DComponent, const WorldTimeGlobal>("SpatialWorldLoaderUpdateNodes")
 			.multi_threaded()
 			.kind<WorldLoaderProgressPhase>()
 			.term_at(3).parent()
-			.term_at(4).src<WorldTime>()
-			.each([](const SpatialLoader3DComponent& spatial_loader, SpatialCommands3DComponent& spatial_commands, SpatialWorld3DComponent& world, const WorldTime& world_time)
+			.term_at(4).src<WorldTimeGlobal>()
+			.each([](const SpatialLoader3DComponent& spatial_loader, SpatialCommands3DComponent& spatial_commands, SpatialWorld3DComponent& world, const WorldTimeGlobal& world_time)
 		{
 			for (size_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
 			{
@@ -171,12 +171,12 @@ namespace voxel_game
 			}
 		});
 
-		world.system<const SpatialScaleThread3DComponent, SpatialWorld3DComponent, const WorldTime>("SpatialWorldUnloadUnusedNodes")
+		world.system<const SpatialScaleThread3DComponent, SpatialWorld3DComponent, const WorldTimeGlobal>("SpatialWorldUnloadUnusedNodes")
 			.multi_threaded()
 			.kind<WorldScaleProgressPhase>()
 			.term_at(2).parent()
-			.term_at(3).src<WorldTime>()
-			.each([](const SpatialScaleThread3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world, const WorldTime& world_time)
+			.term_at(3).src<WorldTimeGlobal>()
+			.each([](const SpatialScaleThread3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world, const WorldTimeGlobal& world_time)
 		{
 			SpatialScale3D& scale = spatial_world.world->scales[spatial_world_scale.scale];
 

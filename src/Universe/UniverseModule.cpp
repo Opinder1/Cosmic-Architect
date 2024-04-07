@@ -9,8 +9,26 @@ namespace voxel_game
 	{
 		world.module<UniverseModule>("UniverseModule");
 
-		world.component<UniverseScene>();
-		world.component<UniverseCamera>();
-		world.component<UniverseObject>();
+		AddComponents(world);
+
+		AddRelationships(world);
+	}
+
+	void UniverseModule::AddComponents(flecs::world& world)
+	{
+		world.component<ScenarioComponent>();
+		world.component<UniverseCameraComponent>();
+		world.component<UniverseObjectComponent>();
+		world.component<StarRendererComponent>();
+		world.component<StarComponent>();
+		world.component<GalaxyRendererComponent>();
+		world.component<GalaxyComponent>();
+		world.component<SimulatedGalaxyComponent>();
+	}
+
+	void UniverseModule::AddRelationships(flecs::world& world)
+	{
+		world.component<StarRendererComponent>().add_second<ScenarioComponent>(flecs::OneOf);
+		world.component<GalaxyRendererComponent>().add_second<ScenarioComponent>(flecs::OneOf);
 	}
 }

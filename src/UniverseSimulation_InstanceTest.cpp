@@ -1,7 +1,5 @@
 #include "UniverseSimulation.h"
 
-#include "Universe/UniverseComponents.h"
-
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/rd_texture_format.hpp>
 #include <godot_cpp/classes/rd_texture_view.hpp>
@@ -10,6 +8,16 @@
 
 namespace voxel_game
 {
+    struct Position
+    {
+        godot::Vector3i position;
+    };
+
+    struct Velocity
+    {
+        godot::Vector3i velocity;
+    };
+
     struct Instance
     {
         godot::RID instance;
