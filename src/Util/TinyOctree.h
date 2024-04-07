@@ -51,22 +51,35 @@ public:
 			DEBUG_ASSERT(m_data.size() == 0);
 			m_single_item = value;
 
-			m_start_depth = k_depth;
 			m_x_mask = pos.x;
 			m_y_mask = pos.y;
 			m_z_mask = pos.z;
-
 			return;
 		}
 
-		if (m_data.size() == 0 && value == k_invalid_item) // Don't bother emplacing and continuing if the item is invalid anyway
+		if (value == k_invalid_item && m_start_depth == k_depth)
 		{
+			if (PosInBounds(pos)) // If we have one item and we set it to invalid then clear it
+			{
+				m_single_item = k_invalid_item;
+
+				m_x_mask = 0;
+				m_y_mask = 0;
+				m_z_mask = 0;
+			}
 			return;
 		}
 
 		while (!PosInBounds(pos)) // Keep adding new roots until the pos is in the tree
 		{
 			AddNewRoot();
+		}
+
+		if (m_start_depth == k_depth) // If we are in bounds and at max depth then we are changing our one value
+		{
+			DEBUG_ASSERT(m_data.size() == 0);
+			m_single_item = value;
+			return;
 		}
 
 		uint32_t bit = 0b1 << (k_depth - m_start_depth - 1);
