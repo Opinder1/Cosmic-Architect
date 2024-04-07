@@ -4,7 +4,7 @@
 #include "SpatialAABB.h"
 
 #include "Util/Time.h"
-#include "Util/ByteHash.h"
+#include "Util/Hash.h"
 #include "Util/Nocopy.h"
 
 #include <godot_cpp/variant/vector3.hpp>
@@ -47,7 +47,7 @@ namespace voxel_game
 	// A level of detail map for a world. The world will have multiple of these
 	struct SpatialScale3D : Nocopy
 	{
-		robin_hood::unordered_flat_map<godot::Vector3i, SpatialNode3D*, ByteHash<godot::Vector3i>> nodes;
+		robin_hood::unordered_flat_map<godot::Vector3i, SpatialNode3D*, VectorHash> nodes;
 	};
 
 	struct SpatialWorld3D : Nocopy

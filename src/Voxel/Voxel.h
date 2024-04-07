@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Spatial/Spatial.h"
-#include "Util/PackedOctree.h"
+#include "Util/TinyOctree.h"
 
 #include <flecs/flecs.h>
 
@@ -19,7 +19,7 @@ namespace voxel_game
 	{
 		std::vector<flecs::entity_t> entities;
 
-		PackedOctree<flecs::entity_t, 4, 0> block_entities;
+		TinyOctree<flecs::entity_t, 4, 0> block_entities;
 
 		std::vector<flecs::entity_t> factions;
 
