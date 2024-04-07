@@ -46,28 +46,29 @@ public:
 			return;
 		}
 
-		if (m_single_item == k_invalid_item) // If the single item is invalid then we have 0 items
+		if (m_start_depth == k_depth)
 		{
-			DEBUG_ASSERT(m_data.size() == 0);
-			m_single_item = value;
+			DEBUG_ASSERT(m_data.size() == 0, "We shouldn't have any data allocated if we have a single item");
 
-			m_x_mask = pos.x;
-			m_y_mask = pos.y;
-			m_z_mask = pos.z;
-			return;
-		}
+			if (m_single_item == k_invalid_item) // If the single item is invalid then we have 0 items
+			{
+				m_single_item = value;
 
-		if (value == k_invalid_item && m_start_depth == k_depth)
-		{
-			if (PosInBounds(pos)) // If we have one item and we set it to invalid then clear it
+				m_x_mask = pos.x;
+				m_y_mask = pos.y;
+				m_z_mask = pos.z;
+				return;
+			}
+
+			if (value == k_invalid_item && PosInBounds(pos)) // If we have one item and we set it to invalid then clear it
 			{
 				m_single_item = k_invalid_item;
 
 				m_x_mask = 0;
 				m_y_mask = 0;
 				m_z_mask = 0;
+				return;
 			}
-			return;
 		}
 
 		while (!PosInBounds(pos)) // Keep adding new roots until the pos is in the tree
@@ -77,7 +78,7 @@ public:
 
 		if (m_start_depth == k_depth) // If we are in bounds and at max depth then we are changing our one value
 		{
-			DEBUG_ASSERT(m_data.size() == 0);
+			DEBUG_ASSERT(m_data.size() == 0, "We shouldn't have any data allocated if we have a single item");
 			m_single_item = value;
 			return;
 		}
@@ -88,7 +89,11 @@ public:
 
 		for (size_t depth = m_start_depth; depth < k_depth - 1; depth++)
 		{
-			Offset child_offset = GetOffsetNode(offset).offsets[!!(pos.x & bit)][!!(pos.y & bit)][!!(pos.z & bit)];
+			bool x = !!(pos.x & bit);
+			bool y = !!(pos.y & bit);
+			bool z = !!(pos.z & bit);
+
+			Offset child_offset = GetOffsetNode(offset).offsets[x][y][z];
 
 			if (child_offset == k_invalid_offset)
 			{
@@ -106,14 +111,18 @@ public:
 					child_offset = EmplaceNode<OffsetNode>() - offset;
 				}
 
-				GetOffsetNode(offset).offsets[!!(pos.x & bit)][!!(pos.y & bit)][!!(pos.z & bit)] = child_offset;
+				GetOffsetNode(offset).offsets[x][y][z] = child_offset;
 			}
 			offset += child_offset;
 
 			bit >>= 1;
 		}
 
-		GetItemNode(offset).items[!!(pos.x & bit)][!!(pos.y & bit)][!!(pos.z & bit)] = value;
+		bool x = !!(pos.x & bit);
+		bool y = !!(pos.y & bit);
+		bool z = !!(pos.z & bit);
+
+		GetItemNode(offset).items[x][y][z] = value;
 	}
 
 	// Get an item in the octree and return the default value if not present
@@ -132,7 +141,7 @@ public:
 
 		if (m_start_depth == k_depth)
 		{
-			DEBUG_ASSERT(m_data.size() == 0);
+			DEBUG_ASSERT(m_data.size() == 0, "We shouldn't have any data allocated if we have a single item");
 			return m_single_item;
 		}
 
@@ -142,7 +151,11 @@ public:
 
 		for (size_t depth = m_start_depth; depth < k_depth - 1; depth++)
 		{
-			const Offset& offset = reinterpret_cast<const OffsetNode*>(data_ptr)->offsets[!!(pos.x & bit)][!!(pos.y & bit)][!!(pos.z & bit)];
+			bool x = !!(pos.x & bit);
+			bool y = !!(pos.y & bit);
+			bool z = !!(pos.z & bit);
+
+			const Offset& offset = reinterpret_cast<const OffsetNode*>(data_ptr)->offsets[x][y][z];
 
 			if (offset == k_invalid_offset)
 			{
@@ -154,7 +167,11 @@ public:
 			bit >>= 1;
 		}
 
-		return reinterpret_cast<const ItemNode*>(data_ptr)->items[!!(pos.x & bit)][!!(pos.y & bit)][!!(pos.z & bit)];
+		bool x = !!(pos.x & bit);
+		bool y = !!(pos.y & bit);
+		bool z = !!(pos.z & bit);
+
+		return reinterpret_cast<const ItemNode*>(data_ptr)->items[x][y][z];
 	}
 
 	// Clear the octree
@@ -171,7 +188,7 @@ public:
 
 		if (m_start_depth == k_depth) // No allocations so check the single item
 		{
-			DEBUG_ASSERT(m_data.size() == 0);
+			DEBUG_ASSERT(m_data.size() == 0, "We shouldn't have any data allocated if we have a single item");
 
 			if (m_single_item != k_invalid_item)
 			{
@@ -193,11 +210,11 @@ public:
 	{
 		if (m_data.size() == 0) // Nothing to swap
 		{
-			DEBUG_ASSERT(m_start_depth == k_depth);
+			DEBUG_ASSERT(m_start_depth == k_depth, "Our data should only be empty if we are starting at max depth");
 			return;
 		}
 
-		DEBUG_ASSERT(m_start_depth < k_depth);
+		DEBUG_ASSERT(m_start_depth < k_depth, "Our data should be allocated if we don't start at the max depth");
 
 		// Make new octree which we will fill in with all our values
 		TinyOctree<Item, k_depth, k_invalid_item> new_octree;
@@ -254,7 +271,7 @@ private:
 
 		if (m_start_depth == k_depth - 1)
 		{
-			DEBUG_ASSERT(m_data.size() == 0);
+			DEBUG_ASSERT(m_data.size() == 0, "We shouldn't have any data allocated if we have a single item");
 
 			EmplaceNode<ItemNode>();
 
