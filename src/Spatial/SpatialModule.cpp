@@ -81,7 +81,7 @@ namespace voxel_game
 
 	void SpatialModule::AddComponents(flecs::world& world)
 	{
-		world.component<WorldTime>();
+		world.component<WorldTimeGlobal>();
 		world.component<SpatialEntity3DComponent>();
 		world.component<SpatialScale3DComponent>();
 		world.component<SpatialWorld3DComponent>();

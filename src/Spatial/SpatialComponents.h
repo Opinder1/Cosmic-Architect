@@ -14,6 +14,18 @@ namespace voxel_game
 	struct SpatialNode3D;
 	struct SpatialWorld3D;
 
+	struct WorldLoaderProgressPhase {};
+	struct WorldRegionProgressPhase {};
+	struct WorldNodeProgressPhase {};
+	struct WorldScaleProgressPhase {};
+	struct WorldProgressPhase {};
+
+	struct WorldTimeGlobal
+	{
+		uint64_t frame_index = 0;
+		Clock::time_point frame_start;
+	};
+
 	struct SpatialEntity3DComponent {};
 
 	struct SpatialScale3DComponent
@@ -21,7 +33,7 @@ namespace voxel_game
 		uint8_t scale;
 	};
 
-	struct SpatialCommands3DComponent : Nocopy
+	struct SpatialCommands3DComponent
 	{
 		std::array<SpatialCommands3D, k_max_world_scale> scales;
 	};

@@ -13,18 +13,6 @@ namespace voxel_game
 	struct SpatialNode3D;
 	struct SpatialWorld3D;
 
-	struct WorldTime
-	{
-		uint64_t frame_index = 0;
-		Clock::time_point frame_start;
-	};
-
-	struct WorldLoaderProgressPhase {};
-	struct WorldRegionProgressPhase {};
-	struct WorldNodeProgressPhase {};
-	struct WorldScaleProgressPhase {};
-	struct WorldProgressPhase {};
-
 	struct SpatialModule
 	{
 		SpatialModule(flecs::world& world);
