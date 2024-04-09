@@ -5,11 +5,14 @@
 #include "Util/Debug.h"
 
 #include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/os.hpp>
 
 #include <godot_cpp/variant/utility_functions.hpp>
 
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/core/class_db.hpp>
+
+#include <flecs/flecs.h>
 
 void flecs_log_to_godot(int32_t level, const char* file, int32_t line, const char* msg)
 {
@@ -53,12 +56,37 @@ void flecs_log_to_godot(int32_t level, const char* file, int32_t line, const cha
 	}
 }
 
+void* flecs_malloc_godot(ecs_size_t size)
+{
+	return memalloc(size);
+}
+
+void* flecs_realloc_godot(void* ptr, ecs_size_t size)
+{
+	return memrealloc(ptr, size);
+}
+
+void* flecs_calloc_godot(ecs_size_t size)
+{
+	return memset(memalloc(size), 0, size);
+}
+
+void flecs_free_godot(void* ptr)
+{
+	memfree(ptr);
+}
+
 void initialize_flecs()
 {
 	ecs_os_init();
 
 	ecs_os_api.log_ = flecs_log_to_godot;
 	ecs_os_api.log_level_ = 0;
+
+	ecs_os_api.malloc_ = flecs_malloc_godot;
+	ecs_os_api.realloc_ = flecs_realloc_godot;
+	ecs_os_api.calloc_ = flecs_calloc_godot;
+	ecs_os_api.free_ = flecs_free_godot;
 
 	ecs_os_set_api(&ecs_os_api); // Set the initialized flag so we don't override the log_ again
 }
