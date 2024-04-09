@@ -14,5 +14,9 @@ namespace voxel_game
 		static void AddComponents(flecs::world& world);
 
 		static void AddRelationships(flecs::world& world);
+
+		static void AddObservers(flecs::world& world);
+
+		static void AddSystems(flecs::world& world);
 	};
 }

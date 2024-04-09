@@ -21,22 +21,12 @@ namespace voxel_game
 
 	struct UniverseObjectComponent
 	{
-
-	};
-
-	struct StarRendererComponent
-	{
-		godot::RID multimesh;
+		godot::Vector3i position;
 	};
 
 	struct StarComponent
 	{
-
-	};
-
-	struct GalaxyRendererComponent
-	{
-		godot::RID multimesh;
+		godot::Color color;
 	};
 
 	struct GalaxyComponent
