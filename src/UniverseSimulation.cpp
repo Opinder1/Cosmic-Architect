@@ -1,6 +1,7 @@
 #include "UniverseSimulation.h"
 #include "Universe.h"
 
+#include "Universe/UniverseComponents.h"
 #include "Universe/UniverseModule.h"
 
 #include "Spatial/SpatialComponents.h"
@@ -50,10 +51,31 @@ namespace voxel_game
 		DEBUG_ASSERT(!m_universe.is_valid(), "We can't initialize a simulation twice");
 
 		m_universe = universe;
-		m_path = path;
-		m_fragment_type = fragment_type;
-		m_remote = remote;
-		m_directory = godot::DirAccess::open(m_path);
+
+		m_world.reset();
+
+		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
+
+#if DEBUG
+		StartRestServer(m_world, 27750, true);
+#endif
+
+		m_world.import<UniverseModule>();
+		m_world.import<SpatialModule>();
+
+		m_universe_entity = m_world.entity().add<UniverseComponent>();
+
+		m_galaxy_entity = m_world.entity()
+			.add(flecs::Parent, m_universe_entity)
+			.add<GalaxyComponent>()
+			.add<UniverseObjectComponent>()
+			.set([&](SimulatedGalaxyComponent& simulated_galaxy)
+		{
+			simulated_galaxy.name = "Test";
+			simulated_galaxy.path = path;
+			simulated_galaxy.fragment_type = fragment_type;
+			simulated_galaxy.is_remote = remote;
+		});
 	}
 
 	godot::Dictionary UniverseSimulation::GetUniverseInfo()
@@ -71,38 +93,6 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(m_galaxy_load_state == LoadState::LOAD_STATE_UNLOADED, "This galaxy should not be loaded when we start");
 		DEBUG_ASSERT(m_universe.is_valid(), "This universe simulation should have been instantiated by a universe");
-
-		m_world.reset();
-
-		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
-
-#if DEBUG
-		StartRestServer(m_world, 27750, true);
-#endif
-
-		m_world.import<UniverseModule>();
-		m_world.import<SpatialModule>();
-
-		for (size_t i = 0; i < 20; i++)
-		{
-			SpatialWorld3D* spatial_world = new SpatialWorld3D();
-
-			auto world = m_world.entity().emplace<SpatialWorld3DComponent>(spatial_world);
-
-			for (uint8_t i = 0; i < spatial_world->max_scale; i++)
-			{
-				auto scale = m_world.entity();
-				scale.set<SpatialScaleThread3DComponent>({ i });
-				scale.child_of(world);
-			}
-
-			for (uint32_t i = 0; i < 20; i++)
-			{
-				auto loader = m_world.entity();
-				loader.add<SpatialLoader3DComponent>();
-				loader.child_of(world);
-			}
-		}
 
 		m_galaxy_load_state = LOAD_STATE_LOADING;
 		emit_signal(k_signals->load_state_changed, m_galaxy_load_state);

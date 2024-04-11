@@ -1,5 +1,5 @@
 #include "VoxelModule.h"
-#include "Voxel.h"
+#include "VoxelComponents.h"
 
 #include "Spatial/Spatial.h"
 #include "Spatial/SpatialModule.h"
@@ -12,6 +12,9 @@ namespace voxel_game
 {
 	VoxelModule::VoxelModule(flecs::world& world)
 	{
+		world.module<VoxelModule>();
+
+		world.import<VoxelComponents>();
 		world.import<SpatialModule>();
 	}
 

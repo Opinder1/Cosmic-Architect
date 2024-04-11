@@ -1,6 +1,8 @@
 #include "UniverseModule.h"
 #include "UniverseComponents.h"
 
+#include "Physics/PhysicsComponents.h"
+
 #include <flecs/flecs.h>
 
 namespace voxel_game
@@ -9,34 +11,8 @@ namespace voxel_game
 	{
 		world.module<UniverseModule>("UniverseModule");
 
-		AddComponents(world);
-		AddRelationships(world);
-		AddObservers(world);
-		AddSystems(world);
-	}
+		world.import<UniverseComponents>();
 
-	void UniverseModule::AddComponents(flecs::world& world)
-	{
-		world.component<ScenarioComponent>();
-		world.component<UniverseCameraComponent>();
-		world.component<UniverseObjectComponent>();
-		world.component<StarComponent>();
-		world.component<GalaxyComponent>();
-		world.component<SimulatedGalaxyComponent>();
-	}
-
-	void UniverseModule::AddRelationships(flecs::world& world)
-	{
-
-	}
-
-	void UniverseModule::AddObservers(flecs::world& world)
-	{
-
-	}
-
-	void UniverseModule::AddSystems(flecs::world& world)
-	{
-
+		world.prefab("Universe");
 	}
 }

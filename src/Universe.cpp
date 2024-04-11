@@ -60,9 +60,9 @@ namespace voxel_game
 
 		simulation.instantiate();
 
-		simulation->Initialize(this, galaxy_path, "full_galaxy", false);
-
 		simulation->connect(UniverseSimulation::k_signals->load_state_changed, godot::create_custom_callable_function_pointer(this, &Universe::SimulationStateChanged).bind(simulation));
+
+		simulation->Initialize(this, galaxy_path, "full_galaxy", false);
 		
 		return simulation;
 	}

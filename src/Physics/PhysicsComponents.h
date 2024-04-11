@@ -3,8 +3,18 @@
 #include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/variant/AABB.hpp>
 
+namespace flecs
+{
+	struct world;
+}
+
 namespace voxel_game
 {
+	struct PhysicsComponents
+	{
+		PhysicsComponents(flecs::world& world);
+	};
+
 	// Entities that are children of a world entity should have this component
 	// so that the system knows how to place them in the spatial world
 	struct Position3DComponent

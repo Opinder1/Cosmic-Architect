@@ -2,13 +2,14 @@
 
 namespace flecs
 {
+	struct iter;
 	struct world;
 }
 
 namespace voxel_game
 {
-	struct UniverseModule
+	struct SimulationModule
 	{
-		UniverseModule(flecs::world& world);
+		SimulationModule(flecs::world& world);
 	};
 }

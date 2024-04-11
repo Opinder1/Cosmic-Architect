@@ -9,6 +9,11 @@
 
 #include <vector>
 
+namespace flecs
+{
+	struct world;
+}
+
 namespace voxel_game
 {
 	struct SpatialNode3D;
@@ -19,12 +24,6 @@ namespace voxel_game
 	struct WorldNodeProgressPhase {};
 	struct WorldScaleProgressPhase {};
 	struct WorldProgressPhase {};
-
-	struct WorldTimeGlobal
-	{
-		uint64_t frame_index = 0;
-		Clock::time_point frame_start;
-	};
 
 	struct SpatialEntity3DComponent {};
 
@@ -70,5 +69,10 @@ namespace voxel_game
 		SpatialWorld3D* world = nullptr;
 
 		flecs::query<SpatialCommands3DComponent> commands_query;
+	};
+
+	struct SpatialComponents
+	{
+		SpatialComponents(flecs::world& world);
 	};
 }

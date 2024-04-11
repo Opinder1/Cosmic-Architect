@@ -323,13 +323,12 @@ namespace voxel_game
 
 	private:
 		godot::Ref<Universe> m_universe;
-		flecs::world m_world;
 
-		godot::String m_path;
-		godot::String m_fragment_type;
-		bool m_remote = false;
-		godot::Ref<godot::DirAccess> m_directory;
 		LoadState m_galaxy_load_state = LOAD_STATE_UNLOADED;
+
+		flecs::world m_world;
+		flecs::entity_t m_universe_entity = 0;
+		flecs::entity_t m_galaxy_entity = 0;
 
 		godot::Dictionary m_galaxy_info_cache;
 		godot::Dictionary m_account_info_cache;

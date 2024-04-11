@@ -7,8 +7,8 @@ namespace flecs
 
 namespace voxel_game
 {
-	struct UniverseModule
+	struct PhysicsModule
 	{
-		UniverseModule(flecs::world& world);
+		PhysicsModule(flecs::world& world);
 	};
 }
