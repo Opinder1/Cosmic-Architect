@@ -317,6 +317,14 @@ namespace voxel_game
 		static void _cleanup_methods();
 
 	private:
+		void ThreadFunc();
+
+		template<class... Args>
+		void QueueSignal(const godot::StringName& signal, Args... p_args)
+		{
+			m_emitted_signals->RegisterCommand("emit_signal", signal, p_args);
+		}
+
 		static void BindEnums();
 		static void BindMethods();
 		static void BindSignals();
@@ -326,17 +334,18 @@ namespace voxel_game
 	private:
 		godot::Ref<Universe> m_universe;
 
-		godot::Ref<CommandQueue> m_command_queue;
-
-		LoadState m_galaxy_load_state = LOAD_STATE_UNLOADED;
-
 		flecs::world m_world;
 		flecs::entity_t m_universe_entity = 0;
 		flecs::entity_t m_galaxy_entity = 0;
 
-		std::thread m_thread;
+		godot::Ref<CommandQueue> m_commands;
+		godot::Ref<CommandQueue> m_emitted_signals;
 
-		tkrzw::SpinSharedMutex m_mutex;
+		std::thread m_thread;
+		tkrzw::SpinSharedMutex m_mutex; // Protect state and info caches
+
+		LoadState m_galaxy_load_state = LOAD_STATE_UNLOADED;
+
 		godot::Dictionary m_galaxy_info_cache;
 		godot::Dictionary m_account_info_cache;
 		godot::Dictionary m_player_info_cache;

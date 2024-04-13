@@ -21,7 +21,7 @@ namespace voxel_game
 	{
 		if (m_thread.joinable() && std::this_thread::get_id() != m_thread.get_id())
 		{
-			m_command_queue->RegisterCommand("enter_fragment", fragment_id, method);
+			m_commands->RegisterCommand("enter_fragment", fragment_id, method);
 			return;
 		}
 	}

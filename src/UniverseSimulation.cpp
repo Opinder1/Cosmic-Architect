@@ -45,10 +45,19 @@ namespace voxel_game
 
 		m_universe = universe;
 
+		m_commands.instantiate();
+		m_emitted_signals.instantiate();
+
 		m_world.reset();
 
+		m_world.set_target_fps(20);
+		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
+
+		m_world.import<flecs::monitor>();
 		m_world.import<UniverseModule>();
 		m_world.import<SpatialModule>();
+
+		m_world.add<flecs::Rest>();
 
 		m_universe_entity = m_world.entity().add<UniverseComponent>();
 
@@ -97,17 +106,7 @@ namespace voxel_game
 		emit_signal(k_signals->load_state_changed, m_galaxy_load_state);
 		emit_signal(k_signals->simulation_started);
 
-		m_thread = std::thread([&world = m_world]()
-		{
-			flecs::app_builder app(world);
-
-			app.enable_monitor(true);
-			app.enable_rest(true);
-			app.threads(godot::OS::get_singleton()->get_processor_count());
-			app.target_fps(20);
-
-			app.run();
-		});
+		m_thread = std::thread(&UniverseSimulation::ThreadFunc, this);
 	}
 
 	void UniverseSimulation::StopSimulation()
@@ -128,6 +127,22 @@ namespace voxel_game
 		m_galaxy_load_state = LOAD_STATE_UNLOADING;
 		lock.unlock();
 		emit_signal(k_signals->load_state_changed, m_galaxy_load_state);
+	}
+
+	void UniverseSimulation::ThreadFunc()
+	{
+		CommandBuffer command_buffer;
+
+		while (m_galaxy_load_state != LOAD_STATE_UNLOADED)
+		{
+			m_commands->PopCommandBuffer(command_buffer);
+			
+			CommandQueue::ProcessCommands(get_instance_id(), command_buffer);
+
+			m_world.progress();
+
+			m_emitted_signals->Flush();
+		}
 	}
 
 	bool UniverseSimulation::Progress(double delta)
