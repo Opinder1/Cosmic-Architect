@@ -18,6 +18,14 @@ namespace voxel_game
 	{
 		GDCLASS(CommandQueue, godot::RefCounted);
 
+		struct Command
+		{
+			constexpr static size_t k_max_args = 16;
+
+			godot::StringName command;
+			size_t argcount;
+		};
+
 	public:
 		static godot::Ref<CommandQueue> MakeQueue(const godot::Variant& object);
 
@@ -42,6 +50,10 @@ namespace voxel_game
 		}
 
 		void Flush();
+
+		void PopCommandBuffer(std::vector<uint8_t>& command_buffer_out);
+
+		static void ProcessCommands(uint64_t object_id, const std::vector<uint8_t>& command_buffer);
 
 	public:
 		static void _bind_methods();
@@ -88,8 +100,6 @@ namespace voxel_game
 
 		void FlushCommands();
 		void FlushRenderingCommands();
-
-		void ProcessCommands(uint64_t object_id, const std::vector<uint8_t>& command_buffer);
 
 	private:
 		static std::unique_ptr<CommandQueueServer> k_singleton;
