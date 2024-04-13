@@ -8,20 +8,12 @@
 
 #include <godot_cpp/templates/local_vector.hpp>
 
+#include <TKRZW/tkrzw_thread_util.h>
+
 #include <memory>
-#include <shared_mutex>
 
 namespace voxel_game
 {
-	struct Command
-	{
-		constexpr static size_t k_max_args = 16;
-
-		godot::StringName command;
-		godot::Callable callback;
-		size_t argcount;
-	};
-
 	class CommandQueue : public godot::RefCounted
 	{
 		GDCLASS(CommandQueue, godot::RefCounted);
@@ -39,14 +31,14 @@ namespace voxel_game
 		bool IsRenderingQueue();
 
 		template<class... Args>
-		void RegisterCommand(const godot::StringName& command, Args... args)
+		void RegisterCommand(const godot::StringName& command, Args... p_args)
 		{
-			godot::Variant args[sizeof...(args) + 1] = { args..., godot::Variant() }; // +1 makes sure zero sized arrays are also supported.
-			const godot::Variant* argptrs[sizeof...(args) + 1];
-			for (uint32_t i = 0; i < sizeof...(args); i++) {
+			godot::Variant args[sizeof...(p_args) + 1] = { p_args..., godot::Variant() }; // +1 makes sure zero sized arrays are also supported.
+			const godot::Variant* argptrs[sizeof...(p_args) + 1];
+			for (uint32_t i = 0; i < sizeof...(p_args); i++) {
 				argptrs[i] = &args[i];
 			}
-			return _register_command(command, sizeof...(args) == 0 ? nullptr : (const godot::Variant**)argptrs, sizeof...(args));
+			return _register_command(command, sizeof...(p_args) == 0 ? nullptr : (const godot::Variant**)argptrs, sizeof...(p_args));
 		}
 
 		void Flush();
@@ -84,8 +76,6 @@ namespace voxel_game
 		void AddCommands(uint64_t object_id, std::vector<uint8_t>& command_buffer);
 		void AddRenderingCommands(uint64_t object_id, std::vector<uint8_t>& command_buffer);
 
-		void ProcessCommands(uint64_t object_id, const std::vector<uint8_t>& command_buffer);
-
 		void Flush();
 
 	public:
@@ -99,13 +89,15 @@ namespace voxel_game
 		void FlushCommands();
 		void FlushRenderingCommands();
 
+		void ProcessCommands(uint64_t object_id, const std::vector<uint8_t>& command_buffer);
+
 	private:
 		static std::unique_ptr<CommandQueueServer> k_singleton;
 
-		std::shared_mutex m_mutex;
+		tkrzw::SpinMutex m_mutex;
 		std::vector<Commands> m_command_buffers;
 
-		std::shared_mutex m_rendering_mutex;
+		tkrzw::SpinMutex m_rendering_mutex;
 		std::vector<Commands> m_rendering_command_buffers;
 	};
 }

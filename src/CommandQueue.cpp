@@ -9,6 +9,14 @@
 
 namespace voxel_game
 {
+	struct Command
+	{
+		constexpr static size_t k_max_args = 16;
+
+		godot::StringName command;
+		size_t argcount;
+	};
+
 	godot::Ref<CommandQueue> CommandQueue::MakeQueue(const godot::Variant& object)
 	{
 		if (object.get_type() != godot::Variant::OBJECT)
@@ -31,7 +39,9 @@ namespace voxel_game
 	}
 
 	CommandQueue::CommandQueue()
-	{}
+	{
+		m_command_buffer.reserve(64);
+	}
 
 	CommandQueue::~CommandQueue()
 	{
@@ -112,7 +122,7 @@ namespace voxel_game
 			CommandQueueServer::get_singleton()->AddCommands(m_object_id, m_command_buffer);
 		}
 
-		m_command_buffer.reserve(4096);
+		m_command_buffer.reserve(64);
 	}
 
 	void CommandQueue::_bind_methods()
@@ -165,13 +175,13 @@ namespace voxel_game
 
 	bool CommandQueueServer::HasCommands()
 	{
-		std::shared_lock lock(m_mutex);
+		std::lock_guard lock(m_mutex);
 		return m_command_buffers.size() > 0;
 	}
 
 	bool CommandQueueServer::HasRenderingCommands()
 	{
-		std::shared_lock lock(m_rendering_mutex);
+		std::lock_guard lock(m_rendering_mutex);
 		return m_rendering_command_buffers.size() > 0;
 	}
 
@@ -192,26 +202,32 @@ namespace voxel_game
 
 	void CommandQueueServer::FlushCommands()
 	{
-		std::lock_guard lock(m_mutex);
+		std::vector<Commands> command_buffers;
 
-		for (Commands& commands : m_command_buffers)
+		{
+			std::lock_guard lock(m_mutex);
+			m_command_buffers.swap(command_buffers);
+		}
+
+		for (Commands& commands : command_buffers)
 		{
 			ProcessCommands(commands.object_id, commands.command_buffer);
 		}
-
-		m_command_buffers.clear();
 	}
 
 	void CommandQueueServer::FlushRenderingCommands()
 	{
-		std::lock_guard lock(m_rendering_mutex);
+		std::vector<Commands> command_buffers;
 
-		for (Commands& commands : m_rendering_command_buffers)
+		{
+			std::lock_guard lock(m_rendering_mutex);
+			m_rendering_command_buffers.swap(command_buffers);
+		}
+
+		for (Commands& commands : command_buffers)
 		{
 			ProcessCommands(commands.object_id, commands.command_buffer);
 		}
-
-		m_rendering_command_buffers.clear();
 	}
 
 	void CommandQueueServer::ProcessCommands(uint64_t object_id, const std::vector<uint8_t>& command_buffer)
