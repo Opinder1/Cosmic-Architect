@@ -49,6 +49,7 @@ namespace voxel_game
 		godot::StringName disconnected_from_galaxy_list;
 		godot::StringName galaxy_list_query_response;
 		godot::StringName galaxy_ping_response;
-		godot::StringName simulation_load_state_changed;
+		godot::StringName galaxy_simulation_started;
+		godot::StringName galaxy_simulation_stopped;
 	};
 }

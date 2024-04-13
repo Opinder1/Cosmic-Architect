@@ -13,6 +13,11 @@ namespace flecs
 
 namespace voxel_game
 {
+	struct SignalsComponent
+	{
+		std::vector<godot::StringName> events;
+	};
+
 	struct UniverseComponent {};
 
 	struct UniverseCameraComponent {};

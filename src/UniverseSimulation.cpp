@@ -1,5 +1,6 @@
 #include "UniverseSimulation.h"
 #include "Universe.h"
+#include "CommandQueue.h"
 
 #include "Universe/UniverseComponents.h"
 #include "Universe/UniverseModule.h"
@@ -13,24 +14,13 @@
 #include "Util/Debug.h"
 
 #include <godot_cpp/classes/os.hpp>
+#include <godot_cpp/classes/thread.hpp>
 
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/type_info.hpp>
 
 namespace voxel_game
 {
-	void StartRestServer(flecs::world& world, uint16_t port, bool monitor)
-	{
-		world.set<flecs::Rest>({ port, nullptr, nullptr });
-
-		if (monitor)
-		{
-			world.import<flecs::monitor>();
-		}
-
-		DEBUG_PRINT_INFO("Started rest server on port " + godot::UtilityFunctions::str(port) + " with monitoring " + (monitor ? "enabled" : "disabled"));
-	}
-
 	size_t UniverseSimulation::UUIDHash::operator()(const UUID& uuid) const
 	{
 		static_assert(sizeof(size_t[2]) == sizeof(UUID));
@@ -44,7 +34,10 @@ namespace voxel_game
 	{}
 
 	UniverseSimulation::~UniverseSimulation()
-	{}
+	{
+		DEBUG_ASSERT(!m_thread.joinable(), "The simulation should have been stopped before destroying it");
+		m_thread.join();
+	}
 
 	void UniverseSimulation::Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, bool remote)
 	{
@@ -53,12 +46,6 @@ namespace voxel_game
 		m_universe = universe;
 
 		m_world.reset();
-
-		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
-
-#if DEBUG
-		StartRestServer(m_world, 27750, true);
-#endif
 
 		m_world.import<UniverseModule>();
 		m_world.import<SpatialModule>();
@@ -78,47 +65,80 @@ namespace voxel_game
 		});
 	}
 
-	godot::Dictionary UniverseSimulation::GetUniverseInfo()
+	godot::Ref<Universe> UniverseSimulation::GetUniverse()
 	{
-		DEBUG_ASSERT(m_universe.is_valid(), "This universe simulations should have been instantiated by a universe");
-		return m_universe->GetUniverseInfo();
+		return m_universe;
 	}
 
 	godot::Dictionary UniverseSimulation::GetGalaxyInfo()
 	{
+		std::shared_lock lock(m_mutex);
 		return m_galaxy_info_cache;
 	}
 
 	void UniverseSimulation::StartSimulation()
 	{
-		DEBUG_ASSERT(m_galaxy_load_state == LoadState::LOAD_STATE_UNLOADED, "This galaxy should not be loaded when we start");
-		DEBUG_ASSERT(m_universe.is_valid(), "This universe simulation should have been instantiated by a universe");
+		if (!m_universe.is_valid())
+		{
+			DEBUG_PRINT_ERROR("This universe simulation should have been instantiated by a universe");
+			return;
+		}
+
+		std::unique_lock lock(m_mutex);
+
+		if (m_galaxy_load_state != LoadState::LOAD_STATE_UNLOADED)
+		{
+			DEBUG_PRINT_ERROR("This galaxy should not be loaded when we start");
+			return;
+		}
 
 		m_galaxy_load_state = LOAD_STATE_LOADING;
+		lock.unlock();
 		emit_signal(k_signals->load_state_changed, m_galaxy_load_state);
+		emit_signal(k_signals->simulation_started);
 
-		// Defer loading
+		m_thread = std::thread([&world = m_world]()
+		{
+			flecs::app_builder app(world);
 
-		m_galaxy_load_state = LOAD_STATE_LOADED;
-		emit_signal(k_signals->load_state_changed, m_galaxy_load_state);
+			app.enable_monitor(true);
+			app.enable_rest(true);
+			app.threads(godot::OS::get_singleton()->get_processor_count());
+			app.target_fps(20);
+
+			app.run();
+		});
 	}
 
 	void UniverseSimulation::StopSimulation()
 	{
-		DEBUG_ASSERT(m_galaxy_load_state == LoadState::LOAD_STATE_LOADED, "This galaxy should have loaded if we want to start unloading");
+		std::unique_lock lock(m_mutex);
+
+		if (m_galaxy_load_state == LoadState::LOAD_STATE_UNLOADED)
+		{
+			DEBUG_PRINT_ERROR("This galaxy shouldn't be unloaded if we want to start unloading");
+			return;
+		}
+
+		if (m_galaxy_load_state == LoadState::LOAD_STATE_UNLOADING) // We are already unloading
+		{
+			return;
+		}
 
 		m_galaxy_load_state = LOAD_STATE_UNLOADING;
+		lock.unlock();
 		emit_signal(k_signals->load_state_changed, m_galaxy_load_state);
 	}
 
 	bool UniverseSimulation::Progress(double delta)
 	{
-		return m_world.progress(delta);
-	}
+		if (m_thread.joinable())
+		{
+			DEBUG_PRINT_ERROR("We shouldn't call progress if we are running the simulation in another thread");
+			return true;
+		}
 
-	UniverseSimulation::LoadState UniverseSimulation::GetGalaxyLoadState()
-	{
-		return m_galaxy_load_state;
+		return m_world.progress(delta);
 	}
 
 	void UniverseSimulation::BindEnums()
@@ -131,12 +151,11 @@ namespace voxel_game
 
 	void UniverseSimulation::BindMethods()
 	{
-		godot::ClassDB::bind_method(godot::D_METHOD("get_universe_info"), &UniverseSimulation::GetUniverseInfo);
+		godot::ClassDB::bind_method(godot::D_METHOD("get_universe"), &UniverseSimulation::GetUniverse);
 		godot::ClassDB::bind_method(godot::D_METHOD("get_galaxy_info"), &UniverseSimulation::GetGalaxyInfo);
 		godot::ClassDB::bind_method(godot::D_METHOD("start_simulation"), &UniverseSimulation::StartSimulation);
 		godot::ClassDB::bind_method(godot::D_METHOD("stop_simulation"), &UniverseSimulation::StopSimulation);
 		godot::ClassDB::bind_method(godot::D_METHOD("progress", "delta"), &UniverseSimulation::Progress);
-		godot::ClassDB::bind_method(godot::D_METHOD("get_galaxy_load_state"), &UniverseSimulation::GetGalaxyLoadState);
 
 		// ####### Fragments (admin only) #######
 

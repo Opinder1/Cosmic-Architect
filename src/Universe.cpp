@@ -18,7 +18,8 @@ namespace voxel_game
 		INITIALIZE_SIGNAL(disconnected_from_galaxy_list);
 		INITIALIZE_SIGNAL(galaxy_list_query_response);
 		INITIALIZE_SIGNAL(galaxy_ping_response);
-		INITIALIZE_SIGNAL(simulation_load_state_changed);
+		INITIALIZE_SIGNAL(galaxy_simulation_started);
+		INITIALIZE_SIGNAL(galaxy_simulation_stopped);
 
 #undef INITIALIZE_SIGNAL
 	}
@@ -91,7 +92,16 @@ namespace voxel_game
 
 	void Universe::SimulationStateChanged(uint64_t load_state, const godot::Ref<UniverseSimulation>& simulation)
 	{
-		emit_signal(k_signals->simulation_load_state_changed, simulation, load_state);
+		switch (load_state)
+		{
+		case UniverseSimulation::LOAD_STATE_LOADING:
+			emit_signal(k_signals->galaxy_simulation_started, simulation);
+			break;
+
+		case UniverseSimulation::LOAD_STATE_UNLOADING:
+			emit_signal(k_signals->galaxy_simulation_stopped, simulation);
+			break;
+		}
 	}
 
 	void Universe::_bind_methods()
@@ -112,7 +122,8 @@ namespace voxel_game
 		ADD_SIGNAL(godot::MethodInfo(k_signals->disconnected_from_galaxy_list));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_list_query_response));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_ping_response));
-		ADD_SIGNAL(godot::MethodInfo(k_signals->simulation_load_state_changed, ENUM_PROPERTY("state", UniverseSimulation::LoadState), OBJECT_PROPERTY("simulation", UniverseSimulation)));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_simulation_started, OBJECT_PROPERTY("simulation", UniverseSimulation)));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_simulation_stopped, OBJECT_PROPERTY("simulation", UniverseSimulation)));
 	}
 
 	void Universe::_cleanup_methods()

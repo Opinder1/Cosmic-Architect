@@ -15,8 +15,11 @@
 
 #include <flecs/flecs.h>
 
+#include <TKRZW/tkrzw_thread_util.h>
+
 namespace voxel_game
 {
+	class CommandQueue;
 	class Universe;
 
 	class UniverseSimulation : public godot::RefCounted
@@ -52,12 +55,11 @@ namespace voxel_game
 
 		void Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, bool remote);
 
-		godot::Dictionary GetUniverseInfo();
+		godot::Ref<Universe> GetUniverse();
 		godot::Dictionary GetGalaxyInfo();
 		void StartSimulation();
 		void StopSimulation();
 		bool Progress(double delta);
-		LoadState GetGalaxyLoadState();
 
 		// ####### Fragments (admin only) #######
 
@@ -324,12 +326,17 @@ namespace voxel_game
 	private:
 		godot::Ref<Universe> m_universe;
 
+		godot::Ref<CommandQueue> m_command_queue;
+
 		LoadState m_galaxy_load_state = LOAD_STATE_UNLOADED;
 
 		flecs::world m_world;
 		flecs::entity_t m_universe_entity = 0;
 		flecs::entity_t m_galaxy_entity = 0;
 
+		std::thread m_thread;
+
+		tkrzw::SpinSharedMutex m_mutex;
 		godot::Dictionary m_galaxy_info_cache;
 		godot::Dictionary m_account_info_cache;
 		godot::Dictionary m_player_info_cache;
