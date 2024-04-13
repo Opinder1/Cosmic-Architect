@@ -6,10 +6,9 @@
 #include <godot_cpp/variant/string_name.hpp>
 #include <godot_cpp/variant/variant.hpp>
 
-#include <godot_cpp/templates/local_vector.hpp>
-
 #include <TKRZW/tkrzw_thread_util.h>
 
+#include <vector>
 #include <memory>
 
 namespace voxel_game
@@ -65,7 +64,7 @@ namespace voxel_game
 	private:
 		uint64_t m_thread_id = 0;
 		uint64_t m_object_id = 0;
-		std::vector<uint8_t> m_command_buffer;
+		CommandBuffer m_command_buffer;
 	};
 
 	class CommandQueueServer : public godot::Object
