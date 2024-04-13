@@ -24,7 +24,6 @@ namespace voxel_game
 
 		command_queue->m_thread_id = godot::OS::get_singleton()->get_thread_caller_id();
 		command_queue->m_object_id = object;
-		command_queue->m_rendering_queue = command_queue->m_object_id = godot::RenderingServer::get_singleton()->get_instance_id();
 		command_queue->m_command_buffer.reserve(4096);
 
 		return command_queue;
@@ -37,14 +36,7 @@ namespace voxel_game
 
 	CommandQueue::~CommandQueue()
 	{
-		if (m_rendering_queue)
-		{
-			CommandQueueServer::get_singleton()->AddRenderingCommands(m_object_id, std::move(m_command_buffer));
-		}
-		else
-		{
-			CommandQueueServer::get_singleton()->AddCommands(m_object_id, std::move(m_command_buffer));
-		}
+		CommandQueueServer::get_singleton()->AddCommands(m_object_id, std::move(m_command_buffer));
 	}
 
 	uint64_t CommandQueue::GetOwningThread()
@@ -55,11 +47,6 @@ namespace voxel_game
 	uint64_t CommandQueue::GetObject()
 	{
 		return m_object_id;
-	}
-
-	bool CommandQueue::IsRenderingQueue()
-	{
-		return m_rendering_queue;
 	}
 
 	void CommandQueue::_register_command_vararg(const godot::Variant** p_args, GDExtensionInt p_argcount, GDExtensionCallError& error)
@@ -117,14 +104,7 @@ namespace voxel_game
 
 		PopCommandBuffer(command_buffer);
 
-		if (m_rendering_queue)
-		{
-			CommandQueueServer::get_singleton()->AddRenderingCommands(m_object_id, std::move(command_buffer));
-		}
-		else
-		{
-			CommandQueueServer::get_singleton()->AddCommands(m_object_id, std::move(command_buffer));
-		}
+		CommandQueueServer::get_singleton()->AddCommands(m_object_id, std::move(command_buffer));
 	}
 
 	void CommandQueue::ProcessCommands(uint64_t object_id, const CommandBuffer& command_buffer)
@@ -197,7 +177,6 @@ namespace voxel_game
 		godot::ClassDB::bind_static_method(get_class_static(), godot::D_METHOD("make_queue", "object"), &CommandQueue::MakeQueue);
 		godot::ClassDB::bind_method(godot::D_METHOD("get_owner_thread"), &CommandQueue::GetObject);
 		godot::ClassDB::bind_method(godot::D_METHOD("get_object"), &CommandQueue::GetObject);
-		godot::ClassDB::bind_method(godot::D_METHOD("is_rendering_queue"), &CommandQueue::IsRenderingQueue);
 	}
 
 	std::unique_ptr<CommandQueueServer> CommandQueueServer::k_singleton;
@@ -221,33 +200,35 @@ namespace voxel_game
 
 	void CommandQueueServer::AddCommands(uint64_t object_id, CommandBuffer&& command_buffer)
 	{
-		std::lock_guard lock(m_mutex);
+		if (object_id == godot::RenderingServer::get_singleton()->get_instance_id())
+		{
+			std::lock_guard lock(m_mutex);
 
-		Commands& commands = m_command_buffers.emplace_back();
+			Commands& commands = m_command_buffers.emplace_back();
 
-		commands.object_id = object_id;
-		commands.command_buffer.swap(command_buffer);
-	}
+			commands.object_id = object_id;
+			commands.command_buffer.swap(command_buffer);
+		}
+		else
+		{
+			std::lock_guard lock(m_rendering_mutex);
 
-	void CommandQueueServer::AddRenderingCommands(uint64_t object_id, CommandBuffer&& command_buffer)
-	{
-		std::lock_guard lock(m_rendering_mutex);
+			Commands& commands = m_rendering_command_buffers.emplace_back();
 
-		Commands& commands = m_rendering_command_buffers.emplace_back();
-
-		commands.object_id = object_id;
-		commands.command_buffer.swap(command_buffer);
+			commands.object_id = object_id;
+			commands.command_buffer.swap(command_buffer);
+		}
 	}
 
 	bool CommandQueueServer::HasCommands()
 	{
-		std::lock_guard lock(m_mutex);
+		std::shared_lock lock(m_mutex);
 		return m_command_buffers.size() > 0;
 	}
 
 	bool CommandQueueServer::HasRenderingCommands()
 	{
-		std::lock_guard lock(m_rendering_mutex);
+		std::shared_lock lock(m_rendering_mutex);
 		return m_rendering_command_buffers.size() > 0;
 	}
 

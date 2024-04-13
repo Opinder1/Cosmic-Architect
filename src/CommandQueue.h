@@ -38,8 +38,6 @@ namespace voxel_game
 
 		uint64_t GetOwningThread();
 
-		bool IsRenderingQueue();
-
 		template<class... Args>
 		void RegisterCommand(const godot::StringName& command, Args... p_args)
 		{
@@ -67,7 +65,6 @@ namespace voxel_game
 	private:
 		uint64_t m_thread_id = 0;
 		uint64_t m_object_id = 0;
-		bool m_rendering_queue = false;
 		std::vector<uint8_t> m_command_buffer;
 	};
 
@@ -88,7 +85,6 @@ namespace voxel_game
 		~CommandQueueServer();
 
 		void AddCommands(uint64_t object_id, CommandBuffer&& command_buffer);
-		void AddRenderingCommands(uint64_t object_id, CommandBuffer&& command_buffer);
 
 		void Flush();
 
@@ -106,10 +102,10 @@ namespace voxel_game
 	private:
 		static std::unique_ptr<CommandQueueServer> k_singleton;
 
-		tkrzw::SpinMutex m_mutex;
+		tkrzw::SpinSharedMutex m_mutex;
 		std::vector<Commands> m_command_buffers;
 
-		tkrzw::SpinMutex m_rendering_mutex;
+		tkrzw::SpinSharedMutex m_rendering_mutex;
 		std::vector<Commands> m_rendering_command_buffers;
 	};
 }
