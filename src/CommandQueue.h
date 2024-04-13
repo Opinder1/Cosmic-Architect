@@ -14,6 +14,8 @@
 
 namespace voxel_game
 {
+	using CommandBuffer = std::vector<uint8_t>;
+
 	class CommandQueue : public godot::RefCounted
 	{
 		GDCLASS(CommandQueue, godot::RefCounted);
@@ -51,9 +53,9 @@ namespace voxel_game
 
 		void Flush();
 
-		void PopCommandBuffer(std::vector<uint8_t>& command_buffer_out);
+		void PopCommandBuffer(CommandBuffer& command_buffer_out);
 
-		static void ProcessCommands(uint64_t object_id, const std::vector<uint8_t>& command_buffer);
+		static void ProcessCommands(uint64_t object_id, const CommandBuffer& command_buffer);
 
 	public:
 		static void _bind_methods();
@@ -76,7 +78,7 @@ namespace voxel_game
 		struct Commands
 		{
 			uint64_t object_id;
-			std::vector<uint8_t> command_buffer;
+			CommandBuffer command_buffer;
 		};
 
 	public:
@@ -85,8 +87,8 @@ namespace voxel_game
 		CommandQueueServer();
 		~CommandQueueServer();
 
-		void AddCommands(uint64_t object_id, std::vector<uint8_t>& command_buffer);
-		void AddRenderingCommands(uint64_t object_id, std::vector<uint8_t>& command_buffer);
+		void AddCommands(uint64_t object_id, CommandBuffer&& command_buffer);
+		void AddRenderingCommands(uint64_t object_id, CommandBuffer&& command_buffer);
 
 		void Flush();
 

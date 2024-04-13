@@ -39,11 +39,11 @@ namespace voxel_game
 	{
 		if (m_rendering_queue)
 		{
-			CommandQueueServer::get_singleton()->AddRenderingCommands(m_object_id, m_command_buffer);
+			CommandQueueServer::get_singleton()->AddRenderingCommands(m_object_id, std::move(m_command_buffer));
 		}
 		else
 		{
-			CommandQueueServer::get_singleton()->AddCommands(m_object_id, m_command_buffer);
+			CommandQueueServer::get_singleton()->AddCommands(m_object_id, std::move(m_command_buffer));
 		}
 	}
 
@@ -101,7 +101,7 @@ namespace voxel_game
 		}
 	}
 
-	void CommandQueue::PopCommandBuffer(std::vector<uint8_t>& command_buffer_out)
+	void CommandQueue::PopCommandBuffer(CommandBuffer& command_buffer_out)
 	{
 		m_command_buffer.swap(command_buffer_out);
 
@@ -119,15 +119,15 @@ namespace voxel_game
 
 		if (m_rendering_queue)
 		{
-			CommandQueueServer::get_singleton()->AddRenderingCommands(m_object_id, command_buffer);
+			CommandQueueServer::get_singleton()->AddRenderingCommands(m_object_id, std::move(command_buffer));
 		}
 		else
 		{
-			CommandQueueServer::get_singleton()->AddCommands(m_object_id, command_buffer);
+			CommandQueueServer::get_singleton()->AddCommands(m_object_id, std::move(command_buffer));
 		}
 	}
 
-	void CommandQueue::ProcessCommands(uint64_t object_id, const std::vector<uint8_t>& command_buffer)
+	void CommandQueue::ProcessCommands(uint64_t object_id, const CommandBuffer& command_buffer)
 	{
 		godot::Object* object_ptr = godot::ObjectDB::get_instance(object_id);
 
@@ -219,7 +219,7 @@ namespace voxel_game
 		Flush();
 	}
 
-	void CommandQueueServer::AddCommands(uint64_t object_id, std::vector<uint8_t>& command_buffer)
+	void CommandQueueServer::AddCommands(uint64_t object_id, CommandBuffer&& command_buffer)
 	{
 		std::lock_guard lock(m_mutex);
 
@@ -229,7 +229,7 @@ namespace voxel_game
 		commands.command_buffer.swap(command_buffer);
 	}
 
-	void CommandQueueServer::AddRenderingCommands(uint64_t object_id, std::vector<uint8_t>& command_buffer)
+	void CommandQueueServer::AddRenderingCommands(uint64_t object_id, CommandBuffer&& command_buffer)
 	{
 		std::lock_guard lock(m_rendering_mutex);
 
