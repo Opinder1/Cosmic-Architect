@@ -3,6 +3,8 @@
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/classes/ref_counted.hpp>
 
+#include <optional>
+
 namespace voxel_game
 {
 	class UniverseSimulation;
@@ -12,9 +14,9 @@ namespace voxel_game
 		GDCLASS(Universe, godot::RefCounted);
 
 	public:
-		struct Signals;
+		struct SignalStrings;
 
-		static std::unique_ptr<const Signals> k_signals;
+		static std::optional<const SignalStrings> k_signals;
 
 	public:
 		Universe();
@@ -41,9 +43,9 @@ namespace voxel_game
 		godot::Dictionary m_universe_info_cache;
 	};
 
-	struct Universe::Signals
+	struct Universe::SignalStrings
 	{
-		Signals();
+		SignalStrings();
 
 		godot::StringName connected_to_galaxy_list;
 		godot::StringName disconnected_from_galaxy_list;

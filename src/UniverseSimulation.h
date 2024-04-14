@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CommandQueue.h"
+
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/classes/dir_access.hpp>
@@ -17,17 +19,21 @@
 
 #include <TKRZW/tkrzw_thread_util.h>
 
+#include <optional>
+
 namespace voxel_game
 {
 	class CommandQueue;
 	class Universe;
+
 
 	class UniverseSimulation : public godot::RefCounted
 	{
 		GDCLASS(UniverseSimulation, godot::RefCounted);
 
 	public:
-		struct Signals;
+		struct CommandStrings;
+		struct SignalStrings;
 
 		using UUID = godot::Color;
 		using UUIDVector = godot::PackedColorArray;
@@ -39,6 +45,18 @@ namespace voxel_game
 
 		using InfoMap = robin_hood::unordered_flat_map<UUID, godot::Dictionary, UUIDHash>;
 
+		enum ServerType
+		{
+			SERVER_TYPE_LOCAL,
+			SERVER_TYPE_REMOTE
+		};
+
+		enum ThreadMode
+		{
+			THREAD_MODE_SINGLE_THREADED,
+			THREAD_MODE_MULTI_THREADED
+		};
+
 		enum LoadState
 		{
 			LOAD_STATE_LOADING,
@@ -47,17 +65,18 @@ namespace voxel_game
 			LOAD_STATE_UNLOADED
 		};
 
-		static std::unique_ptr<const Signals> k_signals;
+		static std::optional<godot::StringName> k_emit_signal;
+		static std::optional<const CommandStrings> k_commands;
+		static std::optional<const SignalStrings> k_signals;
 
 	public:
 		UniverseSimulation();
 		~UniverseSimulation();
 
-		void Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, bool remote);
-
 		godot::Ref<Universe> GetUniverse();
 		godot::Dictionary GetGalaxyInfo();
-		void StartSimulation();
+		void Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type);
+		void StartSimulation(ThreadMode thread_mode);
 		void StopSimulation();
 		bool Progress(double delta);
 
@@ -322,14 +341,12 @@ namespace voxel_game
 		template<class... Args>
 		void QueueSignal(const godot::StringName& signal, Args... p_args)
 		{
-			m_emitted_signals->RegisterCommand("emit_signal", signal, p_args);
+			m_emitted_signals->RegisterCommand(k_emit_signal, signal, p_args);
 		}
 
 		static void BindEnums();
 		static void BindMethods();
 		static void BindSignals();
-
-		static void CleanupSignals();
 
 	private:
 		godot::Ref<Universe> m_universe;
@@ -352,9 +369,251 @@ namespace voxel_game
 		InfoMap m_info_cache;
 	};
 
-	struct UniverseSimulation::Signals
+	struct UniverseSimulation::CommandStrings
 	{
-		Signals();
+		CommandStrings();
+
+		godot::StringName get_universe;
+		godot::StringName get_galaxy_info;
+		godot::StringName start_simulation;
+		godot::StringName stop_simulation;
+		godot::StringName progress;
+
+		// ####### Fragments (admin only) #######
+
+		godot::StringName get_fragment_info;
+		godot::StringName get_current_fragment;
+		godot::StringName enter_fragment;
+
+		// ####### Account #######
+
+		godot::StringName get_account_info;
+		godot::StringName create_account;
+		godot::StringName account_login;
+		godot::StringName saved_session_login;
+		godot::StringName clear_saved_session;
+		godot::StringName delete_account;
+		godot::StringName logout_account;
+
+		// ####### Friends #######
+
+		godot::StringName get_friends;
+		godot::StringName invite_friend;
+		godot::StringName accept_friend_invite;
+		godot::StringName remove_friend;
+
+		// ####### Chat #######
+
+		godot::StringName get_channel_info;
+		godot::StringName send_message_to_channel;
+		godot::StringName send_message_to_player;
+		godot::StringName get_chat_channel_history;
+		godot::StringName get_private_chat_history;
+
+		// ####### Players #######
+
+		godot::StringName get_player_info;
+
+		// ####### Party #######
+
+		godot::StringName get_party_info;
+		godot::StringName create_party;
+		godot::StringName invite_to_party;
+		godot::StringName accept_invite;
+		godot::StringName kick_from_party;
+		godot::StringName leave_party;
+		godot::StringName get_players_in_party;
+		godot::StringName get_party_chat_channel;
+
+		// ####### Entity #######
+
+		godot::StringName get_entity_info;
+		godot::StringName request_entity_info;
+
+		// ####### Volume (is entity) #######
+
+		godot::StringName get_volume_info;
+		godot::StringName get_block_info;
+		godot::StringName place_block;
+		godot::StringName fill_blocks;
+		godot::StringName place_block_in_new_volume;
+		godot::StringName interact_block;
+		godot::StringName get_entity_position_in_volume;
+		godot::StringName fragment_position_to_volume_position;
+		godot::StringName volume_position_to_fragment_position;
+
+		// ####### Galaxy Region #######
+
+		godot::StringName get_galaxy_region_info;
+		godot::StringName request_galaxy_region_info;
+		godot::StringName get_current_galaxy_regions;
+
+		// ####### Galaxy Object (is volume) #######
+
+		godot::StringName get_galaxy_object_info;
+		godot::StringName request_galaxy_object_info;
+
+		// ####### Currency #######
+
+		godot::StringName get_currency_info;
+		godot::StringName get_bank_info;
+		godot::StringName get_bank_interface_info;
+		godot::StringName get_good_info;
+		godot::StringName get_universal_currency;
+		godot::StringName get_bank_of_interface;
+		godot::StringName get_owned_currencies;
+		godot::StringName get_balance;
+		godot::StringName withdraw;
+		godot::StringName deposit;
+		godot::StringName convert;
+		godot::StringName pay_entity;
+		godot::StringName buy_good_with_currency;
+
+		// ####### Internet #######
+
+		godot::StringName get_internet_info;
+		godot::StringName get_website_info;
+		godot::StringName get_website_page_info;
+		godot::StringName get_internet_websites;
+		godot::StringName get_website_pages;
+		godot::StringName start_internet;
+		godot::StringName stop_internet;
+		godot::StringName get_current_internet;
+		godot::StringName get_current_internet_site;
+		godot::StringName get_current_internet_page;
+		godot::StringName request_internet_url;
+
+		// ####### Faction Roles #######
+
+		godot::StringName get_role_info;
+		godot::StringName get_permission_info;
+		godot::StringName get_entity_role;
+		godot::StringName add_faction_role;
+		godot::StringName remove_faction_role;
+		godot::StringName modify_faction_role;
+		godot::StringName add_permission_to_role;
+		godot::StringName remove_permission_from_role;
+		godot::StringName set_entity_role;
+		godot::StringName entity_has_permission;
+
+		// ####### Faction (is entity) #######
+
+		godot::StringName get_faction_info;
+		godot::StringName get_joined_factions;
+		godot::StringName join_faction;
+		godot::StringName leave_faction;
+		godot::StringName invite_entity_to_faction;
+		godot::StringName kick_entity_from_faction;
+		godot::StringName add_child_faction;
+		godot::StringName remove_child_faction;
+		godot::StringName invite_child_faction;
+		godot::StringName kick_child_faction;
+
+		// ####### Player Faction (is faction) #######
+
+		godot::StringName get_global_player_faction;
+		godot::StringName get_player_faction;
+		godot::StringName request_join_player_faction;
+
+		// ####### Language #######
+
+		godot::StringName get_language_info;
+		godot::StringName get_language_translation;
+		godot::StringName get_language_string;
+
+		// ####### Culture #######
+
+		godot::StringName get_culture_info;
+
+		// ####### Level #######
+
+		godot::StringName get_level;
+		godot::StringName get_experience;
+		godot::StringName complete_level_up;
+
+		// ####### Player Control #######
+
+		godot::StringName set_move_forwards;
+		godot::StringName set_move_backwards;
+		godot::StringName set_move_left;
+		godot::StringName set_move_right;
+		godot::StringName set_move_up;
+		godot::StringName set_move_down;
+		godot::StringName set_rotate_left;
+		godot::StringName set_rotate_right;
+		godot::StringName set_look_direction;
+		godot::StringName set_sprint;
+		godot::StringName set_crouching;
+		godot::StringName set_prone;
+		godot::StringName jump;
+
+		// ####### Looking at #######
+
+		godot::StringName get_looking_at_entity;
+		godot::StringName get_looking_at_volume;
+		godot::StringName get_looking_at_block;
+
+		// ####### Inventory #######
+
+		godot::StringName get_inventory_info;
+		godot::StringName get_inventory;
+		godot::StringName get_inventory_item_entity;
+		godot::StringName trash_inventory_item;
+		godot::StringName move_inventory_item;
+		godot::StringName transfer_inventory_item;
+		godot::StringName interact_with_inventory_item;
+
+		// ####### Interact #######
+		godot::StringName store_entity;
+		godot::StringName hold_block;
+		godot::StringName hold_entity;
+		godot::StringName drop_held_entity;
+
+		godot::StringName equip_item_from_world;
+		godot::StringName equip_item_from_inventory;
+		godot::StringName drop_equip_to_world;
+		godot::StringName unequip_item_to_inventory;
+		godot::StringName set_left_hand_equip;
+		godot::StringName set_right_hand_equip;
+		godot::StringName use_equip;
+		godot::StringName toggle_equip;
+
+		godot::StringName ride_entity;
+		godot::StringName change_attachment_point;
+		godot::StringName exit_entity;
+
+		godot::StringName interact_with_entity;
+
+		// ####### Vehicle Control #######
+
+		godot::StringName accelerate;
+		godot::StringName decelerate;
+		godot::StringName activate_vehicle_control;
+		godot::StringName toggle_vehicle_control;
+		godot::StringName set_vehicle_setting;
+
+		// ####### Abilities #######
+
+		godot::StringName get_ability_info;
+		godot::StringName activate_ability;
+		godot::StringName toggle_ability;
+		godot::StringName set_player_setting;
+
+		// ####### Magic #######
+
+		godot::StringName get_spell_info;
+		godot::StringName use_spell;
+
+		// ####### Testing #######
+
+		godot::StringName create_instance;
+		godot::StringName set_instance_pos;
+		godot::StringName delete_instance;
+	};
+
+	struct UniverseSimulation::SignalStrings
+	{
+		SignalStrings();
 
 		godot::StringName simulation_started;
 		godot::StringName simulation_stopped;
@@ -526,5 +785,19 @@ namespace voxel_game
 		godot::StringName test_signal;
 	};
 }
+
+#define SIM_DEFER_COMMAND(command, ...) \
+if (m_thread.joinable() && std::this_thread::get_id() != m_thread.get_id()) \
+{ \
+	m_commands->RegisterCommand(command, __VA_ARGS__); \
+	return; \
+} \
+
+#define SIM_DEFER_COMMAND_V(command, ret, ...) \
+if (m_thread.joinable() && std::this_thread::get_id() != m_thread.get_id()) \
+{ \
+	m_commands->RegisterCommand(command, __VA_ARGS__); \
+	return ret; \
+} \
 
 VARIANT_ENUM_CAST(voxel_game::UniverseSimulation::LoadState);

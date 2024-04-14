@@ -1,5 +1,4 @@
 #include "UniverseSimulation.h"
-#include "CommandQueue.h"
 
 #include "Util/Debug.h"
 
@@ -19,10 +18,6 @@ namespace voxel_game
 
 	void UniverseSimulation::EnterFragment(UUID fragment_id, const godot::Dictionary& method)
 	{
-		if (m_thread.joinable() && std::this_thread::get_id() != m_thread.get_id())
-		{
-			m_commands->RegisterCommand("enter_fragment", fragment_id, method);
-			return;
-		}
+		SIM_DEFER_COMMAND(k_commands->enter_fragment, fragment_id, method);
 	}
 }

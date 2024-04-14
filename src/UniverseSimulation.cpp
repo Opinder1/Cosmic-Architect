@@ -1,6 +1,5 @@
 #include "UniverseSimulation.h"
 #include "Universe.h"
-#include "CommandQueue.h"
 
 #include "Universe/UniverseComponents.h"
 #include "Universe/UniverseModule.h"
@@ -12,6 +11,7 @@
 #include "Voxel/VoxelModule.h"
 
 #include "Util/Debug.h"
+#include "Util/PropertyMacros.h"
 
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/thread.hpp>
@@ -21,6 +21,10 @@
 
 namespace voxel_game
 {
+	std::optional<godot::StringName> UniverseSimulation::k_emit_signal;
+	std::optional<const UniverseSimulation::CommandStrings> UniverseSimulation::k_commands;
+	std::optional<const UniverseSimulation::SignalStrings> UniverseSimulation::k_signals;
+
 	size_t UniverseSimulation::UUIDHash::operator()(const UUID& uuid) const
 	{
 		static_assert(sizeof(size_t[2]) == sizeof(UUID));
@@ -39,14 +43,25 @@ namespace voxel_game
 		m_thread.join();
 	}
 
-	void UniverseSimulation::Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, bool remote)
+	godot::Ref<Universe> UniverseSimulation::GetUniverse()
+	{
+		return m_universe;
+	}
+
+	godot::Dictionary UniverseSimulation::GetGalaxyInfo()
+	{
+		std::shared_lock lock(m_mutex);
+		return m_galaxy_info_cache;
+	}
+
+	void UniverseSimulation::Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type)
 	{
 		DEBUG_ASSERT(!m_universe.is_valid(), "We can't initialize a simulation twice");
 
 		m_universe = universe;
 
-		m_commands.instantiate();
-		m_emitted_signals.instantiate();
+		m_commands = CommandQueue::MakeQueue();
+		m_emitted_signals = CommandQueue::MakeObjectQueue(this);
 
 		m_world.reset();
 
@@ -70,22 +85,11 @@ namespace voxel_game
 			simulated_galaxy.name = "Test";
 			simulated_galaxy.path = path;
 			simulated_galaxy.fragment_type = fragment_type;
-			simulated_galaxy.is_remote = remote;
+			simulated_galaxy.is_remote = server_type == SERVER_TYPE_REMOTE;
 		});
 	}
 
-	godot::Ref<Universe> UniverseSimulation::GetUniverse()
-	{
-		return m_universe;
-	}
-
-	godot::Dictionary UniverseSimulation::GetGalaxyInfo()
-	{
-		std::shared_lock lock(m_mutex);
-		return m_galaxy_info_cache;
-	}
-
-	void UniverseSimulation::StartSimulation()
+	void UniverseSimulation::StartSimulation(ThreadMode thread_mode)
 	{
 		if (!m_universe.is_valid())
 		{
@@ -95,7 +99,7 @@ namespace voxel_game
 
 		std::unique_lock lock(m_mutex);
 
-		if (m_galaxy_load_state != LoadState::LOAD_STATE_UNLOADED)
+		if (m_galaxy_load_state != LOAD_STATE_UNLOADED)
 		{
 			DEBUG_PRINT_ERROR("This galaxy should not be loaded when we start");
 			return;
@@ -106,20 +110,23 @@ namespace voxel_game
 		emit_signal(k_signals->load_state_changed, m_galaxy_load_state);
 		emit_signal(k_signals->simulation_started);
 
-		m_thread = std::thread(&UniverseSimulation::ThreadFunc, this);
+		if (thread_mode == THREAD_MODE_MULTI_THREADED)
+		{
+			m_thread = std::thread(&UniverseSimulation::ThreadFunc, this);
+		}
 	}
 
 	void UniverseSimulation::StopSimulation()
 	{
 		std::unique_lock lock(m_mutex);
 
-		if (m_galaxy_load_state == LoadState::LOAD_STATE_UNLOADED)
+		if (m_galaxy_load_state == LOAD_STATE_UNLOADED)
 		{
 			DEBUG_PRINT_ERROR("This galaxy shouldn't be unloaded if we want to start unloading");
 			return;
 		}
 
-		if (m_galaxy_load_state == LoadState::LOAD_STATE_UNLOADING) // We are already unloading
+		if (m_galaxy_load_state == LOAD_STATE_UNLOADING) // We are already unloading
 		{
 			return;
 		}
@@ -153,21 +160,24 @@ namespace voxel_game
 			return true;
 		}
 
-		return m_world.progress(delta);
-	}
+		CommandBuffer command_buffer;
 
-	void UniverseSimulation::BindEnums()
-	{
-		BIND_ENUM_CONSTANT(LOAD_STATE_LOADING);
-		BIND_ENUM_CONSTANT(LOAD_STATE_LOADED);
-		BIND_ENUM_CONSTANT(LOAD_STATE_UNLOADING);
-		BIND_ENUM_CONSTANT(LOAD_STATE_UNLOADED);
+		m_commands->PopCommandBuffer(command_buffer);
+
+		CommandQueue::ProcessCommands(get_instance_id(), command_buffer);
+
+		bool ret = m_world.progress(delta);
+
+		m_emitted_signals->Flush();
+
+		return ret;
 	}
 
 	void UniverseSimulation::BindMethods()
 	{
 		godot::ClassDB::bind_method(godot::D_METHOD("get_universe"), &UniverseSimulation::GetUniverse);
 		godot::ClassDB::bind_method(godot::D_METHOD("get_galaxy_info"), &UniverseSimulation::GetGalaxyInfo);
+		godot::ClassDB::bind_method(godot::D_METHOD("initialize", "universe", "path", "fragment_type", "remote"), &UniverseSimulation::Initialize);
 		godot::ClassDB::bind_method(godot::D_METHOD("start_simulation"), &UniverseSimulation::StartSimulation);
 		godot::ClassDB::bind_method(godot::D_METHOD("stop_simulation"), &UniverseSimulation::StopSimulation);
 		godot::ClassDB::bind_method(godot::D_METHOD("progress", "delta"), &UniverseSimulation::Progress);
@@ -404,8 +414,198 @@ namespace voxel_game
 		godot::ClassDB::bind_method(godot::D_METHOD("delete_instance", "instance_id"), &UniverseSimulation::DeleteInstance);
 	}
 
+	void UniverseSimulation::BindEnums()
+	{
+		BIND_ENUM_CONSTANT(SERVER_TYPE_LOCAL);
+		BIND_ENUM_CONSTANT(SERVER_TYPE_REMOTE);
+
+		BIND_ENUM_CONSTANT(THREAD_MODE_SINGLE_THREADED);
+		BIND_ENUM_CONSTANT(THREAD_MODE_MULTI_THREADED);
+
+		BIND_ENUM_CONSTANT(LOAD_STATE_LOADING);
+		BIND_ENUM_CONSTANT(LOAD_STATE_LOADED);
+		BIND_ENUM_CONSTANT(LOAD_STATE_UNLOADING);
+		BIND_ENUM_CONSTANT(LOAD_STATE_UNLOADED);
+	}
+
+	void UniverseSimulation::BindSignals()
+	{
+		ADD_SIGNAL(godot::MethodInfo(k_signals->simulation_started));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->simulation_stopped));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_remote));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->disonnected_from_remote));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->load_state_changed, ENUM_PROPERTY("state", UniverseSimulation::LoadState)));
+
+		// ####### Fragments (admin only) #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->fragment_added));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->fragment_removed));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->fragment_loaded));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->fragment_unloaded));
+
+		// ####### Account #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->account_create_request_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->account_login_request_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->account_delete_request_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->account_logout_response));
+
+		// ####### Friends #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->account_invite_friend_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->account_friend_request_received));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->account_remove_friend_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->account_friend_unfriended));
+
+		// ####### Chat #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->chat_message_received));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->chat_channel_info_response));
+
+		// ####### Players #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->player_joined_fragment));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->player_left_fragment));
+
+		// ####### Party #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->party_create_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->party_invited));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->party_invitation_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->party_kicked));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->party_player_joined));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->party_player_left));
+
+		// ####### Entity #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->entity_info_request_response));
+
+		// ####### Volume (is entity) #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->volume_block_place_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->volume_block_fill_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->new_volume_block_place_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->volume_block_interact_response));
+
+		// ####### Galaxy Region #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_region_info_request_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_region_entered));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_region_exited));
+
+		// ####### Galaxy Object (is volume) #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_object_info_request_response));
+
+		// ####### Currency #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->currency_withdraw_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->currency_deposit_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->currency_convert_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->currency_pay_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->currency_buy_good_response));
+
+		// ####### Internet #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->internet_start_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->internet_stop_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->internet_url_request_response));
+
+		// ####### Faction Roles #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->faction_role_add_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->faction_role_remove_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->faction_role_modify_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->faction_permission_add_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->faction_permission_remove_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->faction_set_entity_role_response));
+
+		// ####### Faction (is entity) #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->faction_join_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->faction_leave_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->faction_entity_invite_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->faction_invite_received));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->faction_entity_kick_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->faction_child_add_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->faction_child_remove_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->faction_child_invite_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->faction_kick_response));
+
+		// ####### Player Faction (is faction) #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->faction_request_join_response));
+
+		// ####### Level #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->levelup_available));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->complete_levelup_response));
+
+		// ####### Looking at #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->hovered_over_entity));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->hovered_over_volume));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->hovered_over_block));
+
+		// ####### Inventory #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->inventory_trashed_item_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->inventory_moved_item_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->inventory_transfer_item_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->inventory_interact_item_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->inventory_force_closed));
+
+		// ####### Interact #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->entity_store_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->block_hold_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->entity_drop_response));
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->equip_from_world_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->equip_from_inventory_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->drop_equip_to_world_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->unequip_to_inventory_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->set_left_hand_equip_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->set_right_hand_equip_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->use_equip_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->toggle_equip_response));
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->ride_entity_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->change_ride_attachment_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->exit_ride_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->ride_force_exited));
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->entity_interact_response));
+
+		// ####### Vehicle Control #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->vehicle_accelerate_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->vehicle_deccelerate_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->vehicle_control_activate_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->vehicle_control_toggle_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->vehicle_set_setting_response));
+
+		// ####### Abilities #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->activate_ability_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->toggle_ability_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->player_set_setting_response));
+
+		// ####### Magic #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->use_spell_response_response));
+
+		// ####### Testing #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->test_signal));
+	}
+
 	void UniverseSimulation::_bind_methods()
 	{
+		k_emit_signal = godot::StringName("emit_signal", true);
+		k_commands.emplace();
+		k_signals.emplace();
+
 		BindEnums();
 		BindMethods();
 		BindSignals();
@@ -413,6 +613,7 @@ namespace voxel_game
 
 	void UniverseSimulation::_cleanup_methods()
 	{
-		CleanupSignals();
+		k_commands.reset();
+		k_signals.reset();
 	}
 }

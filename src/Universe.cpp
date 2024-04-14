@@ -8,9 +8,9 @@
 
 namespace voxel_game
 {
-	std::unique_ptr<const Universe::Signals> Universe::k_signals;
+	std::optional<const Universe::SignalStrings> Universe::k_signals;
 
-	Universe::Signals::Signals()
+	Universe::SignalStrings::SignalStrings()
 	{
 #define INITIALIZE_SIGNAL(name) name = godot::StringName{ #name }
 
@@ -63,7 +63,7 @@ namespace voxel_game
 
 		simulation->connect(UniverseSimulation::k_signals->load_state_changed, godot::create_custom_callable_function_pointer(this, &Universe::SimulationStateChanged).bind(simulation));
 
-		simulation->Initialize(this, galaxy_path, "full_galaxy", false);
+		simulation->Initialize(this, galaxy_path, "full_galaxy", UniverseSimulation::SERVER_TYPE_LOCAL);
 		
 		return simulation;
 	}
@@ -74,7 +74,7 @@ namespace voxel_game
 
 		simulation.instantiate();
 
-		simulation->Initialize(this, fragment_path, fragment_type, false);
+		simulation->Initialize(this, fragment_path, fragment_type, UniverseSimulation::SERVER_TYPE_LOCAL);
 
 		return simulation;
 	}
@@ -85,7 +85,7 @@ namespace voxel_game
 
 		simulation.instantiate();
 
-		simulation->Initialize(this, galaxy_path, "full_galaxy", true);
+		simulation->Initialize(this, galaxy_path, "full_galaxy", UniverseSimulation::SERVER_TYPE_REMOTE);
 
 		return simulation;
 	}
@@ -116,7 +116,7 @@ namespace voxel_game
 		godot::ClassDB::bind_method(godot::D_METHOD("start_local_fragment", "fragment_path", "fragment_type"), &Universe::StartLocalFragment);
 		godot::ClassDB::bind_method(godot::D_METHOD("start_remote_galaxy", "galaxy_path"), &Universe::StartRemoteGalaxy);
 
-		k_signals = std::make_unique<const Signals>();
+		k_signals.emplace();
 
 		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_galaxy_list));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->disconnected_from_galaxy_list));
