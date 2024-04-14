@@ -2,6 +2,8 @@
 
 #include "CommandQueue.h"
 
+#include "Util/TripleBuffer.h"
+
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/classes/dir_access.hpp>
@@ -20,21 +22,19 @@
 #include <TKRZW/tkrzw_thread_util.h>
 
 #include <optional>
+#include <thread>
 
 namespace voxel_game
 {
 	class CommandQueue;
 	class Universe;
 
-
+	// Simulation of a section of the universe
 	class UniverseSimulation : public godot::RefCounted
 	{
 		GDCLASS(UniverseSimulation, godot::RefCounted);
 
 	public:
-		struct CommandStrings;
-		struct SignalStrings;
-
 		using UUID = godot::Color;
 		using UUIDVector = godot::PackedColorArray;
 
@@ -44,6 +44,14 @@ namespace voxel_game
 		};
 
 		using InfoMap = robin_hood::unordered_flat_map<UUID, godot::Dictionary, UUIDHash>;
+
+		struct InfoCache
+		{
+			godot::Dictionary galaxy_info;
+			godot::Dictionary account_info;
+			godot::Dictionary player_info;
+			InfoMap info_map;
+		};
 
 		enum ServerType
 		{
@@ -65,6 +73,10 @@ namespace voxel_game
 			LOAD_STATE_UNLOADED
 		};
 
+		// Cached string names for optimization
+		struct CommandStrings;
+		struct SignalStrings;
+
 		static std::optional<godot::StringName> k_emit_signal;
 		static std::optional<const CommandStrings> k_commands;
 		static std::optional<const SignalStrings> k_signals;
@@ -73,12 +85,14 @@ namespace voxel_game
 		UniverseSimulation();
 		~UniverseSimulation();
 
+		bool IsThreaded();
+
 		godot::Ref<Universe> GetUniverse();
 		godot::Dictionary GetGalaxyInfo();
 		void Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type);
 		void StartSimulation(ThreadMode thread_mode);
 		void StopSimulation();
-		bool Progress(double delta);
+		bool Progress(real_t delta);
 
 		// ####### Fragments (admin only) #######
 
@@ -164,10 +178,10 @@ namespace voxel_game
 		UUID GetBankOfInterface(UUID bank_interface_id);
 		UUIDVector GetOwnedCurrencies();
 		double GetBalance(UUID currency_id);
-		void Withdraw(UUID currency_id, double amount, UUID bank_interface_id);
-		void Deposit(UUID currency_id, double amount, UUID bank_interface_id);
-		void Convert(UUID from_currency_id, UUID to_currency_id, double amount, UUID bank_interface_id);
-		void PayEntity(UUID currency_id, UUID entity_id, double amount, UUID bank_interface_id);
+		void Withdraw(UUID currency_id, real_t amount, UUID bank_interface_id);
+		void Deposit(UUID currency_id, real_t amount, UUID bank_interface_id);
+		void Convert(UUID from_currency_id, UUID to_currency_id, real_t amount, UUID bank_interface_id);
+		void PayEntity(UUID currency_id, UUID entity_id, real_t amount, UUID bank_interface_id);
 		void BuyGoodWithCurrency(UUID good_id, UUID currency_id); // The currency may not be accepted
 
 		// ####### Internet #######
@@ -356,15 +370,12 @@ namespace voxel_game
 
 		std::thread m_thread;
 
-		tkrzw::SpinSharedMutex m_command_mutex;
-		godot::Ref<CommandQueue> m_commands;
 		godot::Ref<CommandQueue> m_emitted_signals;
 
-		tkrzw::SpinSharedMutex m_cache_mutex;
-		godot::Dictionary m_galaxy_info_cache;
-		godot::Dictionary m_account_info_cache;
-		godot::Dictionary m_player_info_cache;
-		InfoMap m_info_caches;
+		tkrzw::SpinMutex m_commands_mutex;
+		godot::Ref<CommandQueue> m_commands;
+
+		TripleBuffer<InfoCache> m_cache;
 	};
 
 	struct UniverseSimulation::CommandStrings
@@ -786,29 +797,22 @@ namespace voxel_game
 	template<class... Args>
 	void UniverseSimulation::QueueSignal(const godot::StringName& signal, const Args&... p_args)
 	{
-		if (m_thread.joinable())
-		{
-			m_emitted_signals->RegisterCommand(*k_emit_signal, signal, p_args...);
-		}
-		else
-		{
-			emit_signal(signal, p_args...);
-		}
+		m_emitted_signals->RegisterCommand(*k_emit_signal, signal, p_args...);
 	}
 }
 
 #define SIM_DEFER_COMMAND(command, ...) \
-if (m_thread.joinable() && std::this_thread::get_id() != m_thread.get_id()) \
+if (IsThreaded() && std::this_thread::get_id() != m_thread.get_id()) \
 { \
-	std::lock_guard lock(m_command_mutex); \
+	std::lock_guard lock(m_commands_mutex); \
 	m_commands->RegisterCommand(command, __VA_ARGS__); \
 	return; \
 } \
 
 #define SIM_DEFER_COMMAND_V(command, ret, ...) \
-if (m_thread.joinable() && std::this_thread::get_id() != m_thread.get_id()) \
+if (IsThreaded() && std::this_thread::get_id() != m_thread.get_id()) \
 { \
-	std::lock_guard lock(m_command_mutex); \
+	std::lock_guard lock(m_commands_mutex); \
 	m_commands->RegisterCommand(command, __VA_ARGS__); \
 	return ret; \
 } \

@@ -39,8 +39,13 @@ namespace voxel_game
 
 	UniverseSimulation::~UniverseSimulation()
 	{
-		DEBUG_ASSERT(!m_thread.joinable(), "The simulation should have been stopped before destroying it");
+		DEBUG_ASSERT(!IsThreaded(), "The simulation should have been stopped before destroying it");
 		m_thread.join();
+	}
+
+	bool UniverseSimulation::IsThreaded()
+	{
+		return m_thread.joinable();
 	}
 
 	godot::Ref<Universe> UniverseSimulation::GetUniverse()
@@ -50,8 +55,7 @@ namespace voxel_game
 
 	godot::Dictionary UniverseSimulation::GetGalaxyInfo()
 	{
-		std::shared_lock lock(m_cache_mutex);
-		return m_galaxy_info_cache;
+		return m_cache.Read().galaxy_info;
 	}
 
 	void UniverseSimulation::Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type)
@@ -139,7 +143,7 @@ namespace voxel_game
 		while (m_galaxy_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
 		{
 			{
-				std::lock_guard lock(m_command_mutex);
+				std::lock_guard lock(m_commands_mutex);
 				m_commands->PopCommandBuffer(command_buffer);
 			}
 
@@ -147,38 +151,36 @@ namespace voxel_game
 
 			m_world.progress();
 
-			{
-				std::lock_guard lock(m_cache_mutex);
-				m_galaxy_info_cache.clear();
-				m_account_info_cache.clear();
-				m_player_info_cache.clear();
+			// TODO Fill caches
 
-				for (auto&& [uuid, cache] : m_info_caches)
-				{
-					cache.clear();
-				}
+			m_cache.EndWrite();
 
-				// TODO fill caches
-			}
-
+			// Flush signals to be executed on main thread
 			m_emitted_signals->Flush();
 		}
 	}
 
-	bool UniverseSimulation::Progress(double delta)
+	bool UniverseSimulation::Progress(real_t delta)
 	{
-		if (m_thread.joinable())
+		bool ret;
+
+		if (IsThreaded())
 		{
-			DEBUG_PRINT_ERROR("We shouldn't call progress if we are running the simulation in another thread");
-			return true;
+			ret = true;
+		}
+		else
+		{
+			ret = m_world.progress(static_cast<ecs_ftime_t>(delta));
+
+			CommandBuffer command_buffer;
+			m_emitted_signals->PopCommandBuffer(command_buffer);
+
+			CommandQueue::ProcessCommands(get_instance_id(), command_buffer);
+
+			// TODO Fill caches
 		}
 
-		bool ret = m_world.progress(delta);
-
-		m_galaxy_info_cache.clear();
-		m_account_info_cache.clear();
-		m_player_info_cache.clear();
-		m_info_caches.clear();
+		m_cache.StartRead();
 
 		return ret;
 	}
