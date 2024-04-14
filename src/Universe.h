@@ -9,6 +9,7 @@ namespace voxel_game
 {
 	class UniverseSimulation;
 
+	// Main voxel game info class that spawns galaxy simulations
 	class Universe : public godot::RefCounted
 	{
 		GDCLASS(Universe, godot::RefCounted);
