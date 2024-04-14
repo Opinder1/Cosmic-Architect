@@ -28,16 +28,22 @@ namespace voxel_game
 		};
 
 	public:
+		// Make a new queue without an associated object
 		static godot::Ref<CommandQueue> MakeQueue();
+
+		// Make a new queue with an associated object. We can then call Flush() to run the commands on the main thread/render thread
 		static godot::Ref<CommandQueue> MakeObjectQueue(const godot::Variant& object);
 
 		CommandQueue();
 		~CommandQueue();
 
+		// Get the object that this queue is queueing commands form
 		uint64_t GetObject();
 
+		// Get the thread that created this queue. Only this thread should use the queue
 		uint64_t GetOwningThread();
 
+		// Register a new command for the queue
 		template<class... Args>
 		void RegisterCommand(const godot::StringName& command, const Args&... p_args)
 		{
@@ -49,10 +55,13 @@ namespace voxel_game
 			return _register_command(command, sizeof...(p_args) == 0 ? nullptr : (const godot::Variant**)argptrs, sizeof...(p_args));
 		}
 
+		// Flush the commands to the main thread or the render thread if the object is the rendering server
 		void Flush();
-
+		
+		// Get the current command buffer and reset the queues buffer 
 		void PopCommandBuffer(CommandBuffer& command_buffer_out);
 
+		// Process the commands in a command buffer on a certain object
 		static void ProcessCommands(uint64_t object_id, const CommandBuffer& command_buffer);
 
 	public:
@@ -84,8 +93,10 @@ namespace voxel_game
 		CommandQueueServer();
 		~CommandQueueServer();
 
+		// Add commands and an object to run them on to be executed when flushing
 		void AddCommands(uint64_t object_id, CommandBuffer&& command_buffer);
 
+		// Run all commands on the main thread and all rendering server commands on the render thread
 		void Flush();
 
 	public:
