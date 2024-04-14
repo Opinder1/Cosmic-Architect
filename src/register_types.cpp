@@ -63,7 +63,14 @@ void* flecs_malloc_godot(ecs_size_t size)
 
 void* flecs_realloc_godot(void* ptr, ecs_size_t size)
 {
-	return memrealloc(ptr, size);
+	if (ptr == nullptr)
+	{
+		return memalloc(size);
+	}
+	else
+	{
+		return memrealloc(ptr, size);
+	}
 }
 
 void* flecs_calloc_godot(ecs_size_t size)
