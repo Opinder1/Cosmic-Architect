@@ -373,7 +373,7 @@ namespace voxel_game
 		godot::Ref<CommandQueue> m_emitted_signals;
 
 		tkrzw::SpinMutex m_commands_mutex;
-		godot::Ref<CommandQueue> m_commands;
+		TripleBuffer<godot::Ref<CommandQueue>> m_commands;
 
 		TripleBuffer<InfoCache> m_cache;
 	};

@@ -6,21 +6,30 @@
 template<class T>
 class TripleBuffer
 {
+	enum class State
+	{
+		ShouldRead,
+		ShouldWrite,
+	};
+
 public:
 	TripleBuffer() {}
 
-	void EndWrite()
+	void ApplyWrite()
 	{
-		m_intermediate = std::move(m_write);
-		m_flag.store(true, std::memory_order_release);
+		if (m_state.load(std::memory_order_acquire) == State::ShouldWrite)
+		{
+			m_exchange = std::move(m_write);
+			m_state.store(State::ShouldRead, std::memory_order_release);
+		}
 	}
 
-	void StartRead()
+	void ObtainRead()
 	{
-		if (m_flag.load(std::memory_order_acquire))
+		if (m_state.load(std::memory_order_acquire) == State::ShouldRead)
 		{
-			m_read = std::move(m_intermediate);
-			m_flag.store(false, std::memory_order_release);
+			m_read = std::move(m_exchange);
+			m_state.store(State::ShouldWrite, std::memory_order_release);
 		}
 	}
 
@@ -35,9 +44,9 @@ public:
 	}
 
 private:
-	std::atomic_bool m_flag;
+	T m_read{};
+	T m_exchange{};
+	T m_write{};
 
-	T m_write;
-	T m_intermediate;
-	T m_read;
+	std::atomic<State> m_state = State::ShouldWrite;
 };

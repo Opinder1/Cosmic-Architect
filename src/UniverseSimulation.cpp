@@ -153,7 +153,7 @@ namespace voxel_game
 
 			// TODO Fill caches
 
-			m_cache.EndWrite();
+			m_cache.ApplyWrite();
 
 			// Flush signals to be executed on main thread
 			m_emitted_signals->Flush();
@@ -180,7 +180,7 @@ namespace voxel_game
 			// TODO Fill caches
 		}
 
-		m_cache.StartRead();
+		m_cache.ObtainRead();
 
 		return ret;
 	}
