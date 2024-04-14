@@ -28,7 +28,8 @@ namespace voxel_game
 		};
 
 	public:
-		static godot::Ref<CommandQueue> MakeQueue(const godot::Variant& object);
+		static godot::Ref<CommandQueue> MakeQueue();
+		static godot::Ref<CommandQueue> MakeObjectQueue(const godot::Variant& object);
 
 		CommandQueue();
 		~CommandQueue();

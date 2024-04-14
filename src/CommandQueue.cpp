@@ -9,7 +9,18 @@
 
 namespace voxel_game
 {
-	godot::Ref<CommandQueue> CommandQueue::MakeQueue(const godot::Variant& object)
+	godot::Ref<CommandQueue> CommandQueue::MakeQueue()
+	{
+		godot::Ref<CommandQueue> command_queue;
+
+		command_queue.instantiate();
+
+		command_queue->m_thread_id = godot::OS::get_singleton()->get_thread_caller_id();
+
+		return command_queue;
+	}
+
+	godot::Ref<CommandQueue> CommandQueue::MakeObjectQueue(const godot::Variant& object)
 	{
 		if (object.get_type() != godot::Variant::OBJECT)
 		{
@@ -24,7 +35,6 @@ namespace voxel_game
 
 		command_queue->m_thread_id = godot::OS::get_singleton()->get_thread_caller_id();
 		command_queue->m_object_id = object;
-		command_queue->m_command_buffer.reserve(4096);
 
 		return command_queue;
 	}
@@ -98,9 +108,10 @@ namespace voxel_game
 
 	void CommandQueue::Flush()
 	{
+		DEBUG_ASSERT(m_object_id != 0, "Command queue should have an assigned object");
 		DEBUG_ASSERT(godot::OS::get_singleton()->get_thread_caller_id() == m_thread_id, "Should be run by the owning thread");
 
-		std::vector<uint8_t> command_buffer;
+		CommandBuffer command_buffer;
 
 		PopCommandBuffer(command_buffer);
 
@@ -207,7 +218,7 @@ namespace voxel_game
 			Commands& commands = m_command_buffers.emplace_back();
 
 			commands.object_id = object_id;
-			commands.command_buffer.swap(command_buffer);
+			commands.command_buffer = std::move(command_buffer);
 		}
 		else
 		{
@@ -216,7 +227,7 @@ namespace voxel_game
 			Commands& commands = m_rendering_command_buffers.emplace_back();
 
 			commands.object_id = object_id;
-			commands.command_buffer.swap(command_buffer);
+			commands.command_buffer = std::move(command_buffer);
 		}
 	}
 
