@@ -336,13 +336,10 @@ namespace voxel_game
 		static void _cleanup_methods();
 
 	private:
-		void ThreadFunc();
-
 		template<class... Args>
-		void QueueSignal(const godot::StringName& signal, Args... p_args)
-		{
-			m_emitted_signals->RegisterCommand(k_emit_signal, signal, p_args);
-		}
+		void QueueSignal(const godot::StringName& signal, const Args&... p_args);
+
+		void ThreadFunc();
 
 		static void BindEnums();
 		static void BindMethods();
@@ -351,22 +348,23 @@ namespace voxel_game
 	private:
 		godot::Ref<Universe> m_universe;
 
+		std::atomic<LoadState> m_galaxy_load_state = LOAD_STATE_UNLOADED;
+
 		flecs::world m_world;
 		flecs::entity_t m_universe_entity = 0;
 		flecs::entity_t m_galaxy_entity = 0;
 
+		std::thread m_thread;
+
+		tkrzw::SpinSharedMutex m_command_mutex;
 		godot::Ref<CommandQueue> m_commands;
 		godot::Ref<CommandQueue> m_emitted_signals;
 
-		std::thread m_thread;
-		tkrzw::SpinSharedMutex m_mutex; // Protect state and info caches
-
-		LoadState m_galaxy_load_state = LOAD_STATE_UNLOADED;
-
+		tkrzw::SpinSharedMutex m_cache_mutex;
 		godot::Dictionary m_galaxy_info_cache;
 		godot::Dictionary m_account_info_cache;
 		godot::Dictionary m_player_info_cache;
-		InfoMap m_info_cache;
+		InfoMap m_info_caches;
 	};
 
 	struct UniverseSimulation::CommandStrings
@@ -784,11 +782,25 @@ namespace voxel_game
 
 		godot::StringName test_signal;
 	};
+
+	template<class... Args>
+	void UniverseSimulation::QueueSignal(const godot::StringName& signal, const Args&... p_args)
+	{
+		if (m_thread.joinable())
+		{
+			m_emitted_signals->RegisterCommand(*k_emit_signal, signal, p_args...);
+		}
+		else
+		{
+			emit_signal(signal, p_args...);
+		}
+	}
 }
 
 #define SIM_DEFER_COMMAND(command, ...) \
 if (m_thread.joinable() && std::this_thread::get_id() != m_thread.get_id()) \
 { \
+	std::lock_guard lock(m_command_mutex); \
 	m_commands->RegisterCommand(command, __VA_ARGS__); \
 	return; \
 } \
@@ -796,8 +808,11 @@ if (m_thread.joinable() && std::this_thread::get_id() != m_thread.get_id()) \
 #define SIM_DEFER_COMMAND_V(command, ret, ...) \
 if (m_thread.joinable() && std::this_thread::get_id() != m_thread.get_id()) \
 { \
+	std::lock_guard lock(m_command_mutex); \
 	m_commands->RegisterCommand(command, __VA_ARGS__); \
 	return ret; \
 } \
 
+VARIANT_ENUM_CAST(voxel_game::UniverseSimulation::ServerType);
+VARIANT_ENUM_CAST(voxel_game::UniverseSimulation::ThreadMode);
 VARIANT_ENUM_CAST(voxel_game::UniverseSimulation::LoadState);

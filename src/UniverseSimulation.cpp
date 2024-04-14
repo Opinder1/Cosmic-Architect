@@ -50,7 +50,7 @@ namespace voxel_game
 
 	godot::Dictionary UniverseSimulation::GetGalaxyInfo()
 	{
-		std::shared_lock lock(m_mutex);
+		std::shared_lock lock(m_cache_mutex);
 		return m_galaxy_info_cache;
 	}
 
@@ -97,17 +97,14 @@ namespace voxel_game
 			return;
 		}
 
-		std::unique_lock lock(m_mutex);
-
-		if (m_galaxy_load_state != LOAD_STATE_UNLOADED)
+		if (m_galaxy_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
 		{
 			DEBUG_PRINT_ERROR("This galaxy should not be loaded when we start");
 			return;
 		}
 
-		m_galaxy_load_state = LOAD_STATE_LOADING;
-		lock.unlock();
-		emit_signal(k_signals->load_state_changed, m_galaxy_load_state);
+		m_galaxy_load_state.store(LOAD_STATE_LOADING, std::memory_order_release);
+		emit_signal(k_signals->load_state_changed, LOAD_STATE_LOADING);
 		emit_signal(k_signals->simulation_started);
 
 		if (thread_mode == THREAD_MODE_MULTI_THREADED)
@@ -118,35 +115,51 @@ namespace voxel_game
 
 	void UniverseSimulation::StopSimulation()
 	{
-		std::unique_lock lock(m_mutex);
+		LoadState load_state = m_galaxy_load_state.load(std::memory_order_acquire);
 
-		if (m_galaxy_load_state == LOAD_STATE_UNLOADED)
+		if (load_state == LOAD_STATE_UNLOADED)
 		{
 			DEBUG_PRINT_ERROR("This galaxy shouldn't be unloaded if we want to start unloading");
 			return;
 		}
 
-		if (m_galaxy_load_state == LOAD_STATE_UNLOADING) // We are already unloading
+		if (load_state == LOAD_STATE_UNLOADING) // We are already unloading
 		{
 			return;
 		}
 
-		m_galaxy_load_state = LOAD_STATE_UNLOADING;
-		lock.unlock();
-		emit_signal(k_signals->load_state_changed, m_galaxy_load_state);
+		m_galaxy_load_state.store(LOAD_STATE_UNLOADING, std::memory_order_release);
+		emit_signal(k_signals->load_state_changed, LOAD_STATE_UNLOADING);
 	}
 
 	void UniverseSimulation::ThreadFunc()
 	{
 		CommandBuffer command_buffer;
 
-		while (m_galaxy_load_state != LOAD_STATE_UNLOADED)
+		while (m_galaxy_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
 		{
-			m_commands->PopCommandBuffer(command_buffer);
-			
+			{
+				std::lock_guard lock(m_command_mutex);
+				m_commands->PopCommandBuffer(command_buffer);
+			}
+
 			CommandQueue::ProcessCommands(get_instance_id(), command_buffer);
 
 			m_world.progress();
+
+			{
+				std::lock_guard lock(m_cache_mutex);
+				m_galaxy_info_cache.clear();
+				m_account_info_cache.clear();
+				m_player_info_cache.clear();
+
+				for (auto&& [uuid, cache] : m_info_caches)
+				{
+					cache.clear();
+				}
+
+				// TODO fill caches
+			}
 
 			m_emitted_signals->Flush();
 		}
@@ -160,15 +173,12 @@ namespace voxel_game
 			return true;
 		}
 
-		CommandBuffer command_buffer;
-
-		m_commands->PopCommandBuffer(command_buffer);
-
-		CommandQueue::ProcessCommands(get_instance_id(), command_buffer);
-
 		bool ret = m_world.progress(delta);
 
-		m_emitted_signals->Flush();
+		m_galaxy_info_cache.clear();
+		m_account_info_cache.clear();
+		m_player_info_cache.clear();
+		m_info_caches.clear();
 
 		return ret;
 	}

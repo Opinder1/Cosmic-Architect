@@ -39,7 +39,7 @@ namespace voxel_game
 		uint64_t GetOwningThread();
 
 		template<class... Args>
-		void RegisterCommand(const godot::StringName& command, Args... p_args)
+		void RegisterCommand(const godot::StringName& command, const Args&... p_args)
 		{
 			godot::Variant args[sizeof...(p_args) + 1] = { p_args..., godot::Variant() }; // +1 makes sure zero sized arrays are also supported.
 			const godot::Variant* argptrs[sizeof...(p_args) + 1];

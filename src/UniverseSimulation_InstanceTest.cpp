@@ -267,6 +267,8 @@ namespace voxel_game
 		entity.add<Position>();
 		entity.add<Velocity>();
 
+        QueueSignal(k_signals->levelup_available);
+
 		return entity.id();
 	}
 
@@ -282,7 +284,7 @@ namespace voxel_game
 
 	bool UniverseSimulation::DeleteInstance(uint64_t instance_id)
 	{
-        SIM_DEFER_COMMAND(k_commands->delete_instance, instance_id);
+        SIM_DEFER_COMMAND_V(k_commands->delete_instance, false, instance_id);
 
 		auto entity = m_world.entity(instance_id);
 
