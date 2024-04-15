@@ -2,7 +2,7 @@
 
 #include "CommandQueue.h"
 
-#include "Util/TripleBuffer.h"
+#include "Util/LockFree.h"
 
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/classes/ref_counted.hpp>
@@ -353,7 +353,9 @@ namespace voxel_game
 		template<class... Args>
 		void QueueSignal(const godot::StringName& signal, const Args&... p_args);
 
-		void ThreadFunc();
+		const InfoCache& GetCache();
+
+		void ThreadLoop();
 
 		static void BindEnums();
 		static void BindMethods();
@@ -370,12 +372,12 @@ namespace voxel_game
 
 		std::thread m_thread;
 
-		godot::Ref<CommandQueue> m_emitted_signals;
+		CommandBuffer m_emitted_signals;
 
 		tkrzw::SpinMutex m_commands_mutex;
-		godot::Ref<CommandQueue> m_commands;
+		CommandBuffer m_commands;
 
-		TripleBuffer<InfoCache> m_cache;
+		LockFreeTripleBuffer<InfoCache> m_cache;
 	};
 
 	struct UniverseSimulation::CommandStrings
@@ -797,7 +799,7 @@ namespace voxel_game
 	template<class... Args>
 	void UniverseSimulation::QueueSignal(const godot::StringName& signal, const Args&... p_args)
 	{
-		m_emitted_signals->RegisterCommand(*k_emit_signal, signal, p_args...);
+		CommandBuffer::AddCommand(m_emitted_signals, *k_emit_signal, signal, p_args...);
 	}
 }
 
@@ -805,7 +807,7 @@ namespace voxel_game
 if (IsThreaded() && std::this_thread::get_id() != m_thread.get_id()) \
 { \
 	std::lock_guard lock(m_commands_mutex); \
-	m_commands->RegisterCommand(command, __VA_ARGS__); \
+	CommandBuffer::AddCommand(m_commands, command, __VA_ARGS__); \
 	return; \
 } \
 
@@ -813,7 +815,7 @@ if (IsThreaded() && std::this_thread::get_id() != m_thread.get_id()) \
 if (IsThreaded() && std::this_thread::get_id() != m_thread.get_id()) \
 { \
 	std::lock_guard lock(m_commands_mutex); \
-	m_commands->RegisterCommand(command, __VA_ARGS__); \
+	CommandBuffer::AddCommand(m_commands, command, __VA_ARGS__); \
 	return ret; \
 } \
 

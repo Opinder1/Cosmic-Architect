@@ -55,7 +55,7 @@ namespace voxel_game
 
 	godot::Dictionary UniverseSimulation::GetGalaxyInfo()
 	{
-		return m_cache.Read().galaxy_info;
+		return GetCache().galaxy_info;
 	}
 
 	void UniverseSimulation::Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type)
@@ -64,8 +64,8 @@ namespace voxel_game
 
 		m_universe = universe;
 
-		m_commands = CommandQueue::MakeQueue();
-		m_emitted_signals = CommandQueue::MakeObjectQueue(this);
+		m_commands.reserve(64);
+		m_emitted_signals.reserve(64);
 
 		m_world.reset();
 
@@ -113,7 +113,7 @@ namespace voxel_game
 
 		if (thread_mode == THREAD_MODE_MULTI_THREADED)
 		{
-			m_thread = std::thread(&UniverseSimulation::ThreadFunc, this);
+			m_thread = std::thread(&UniverseSimulation::ThreadLoop, this);
 		}
 	}
 
@@ -136,27 +136,15 @@ namespace voxel_game
 		emit_signal(k_signals->load_state_changed, LOAD_STATE_UNLOADING);
 	}
 
-	void UniverseSimulation::ThreadFunc()
+	const UniverseSimulation::InfoCache& UniverseSimulation::GetCache()
 	{
-		CommandBuffer command_buffer;
-
-		while (m_galaxy_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
+		if (IsThreaded())
 		{
-			{
-				std::lock_guard lock(m_commands_mutex);
-				m_commands->PopCommandBuffer(command_buffer);
-			}
-
-			CommandQueue::ProcessCommands(get_instance_id(), command_buffer);
-
-			m_world.progress();
-
-			// TODO Fill caches
-
-			m_cache.ApplyWrite();
-
-			// Flush signals to be executed on main thread
-			m_emitted_signals->Flush();
+			return m_cache.Read();
+		}
+		else
+		{
+			return m_cache.Write(); // We are not swapping the cache so just return the write buffer
 		}
 	}
 
@@ -167,22 +155,49 @@ namespace voxel_game
 		if (IsThreaded())
 		{
 			ret = true;
+
+			m_cache.ObtainRead();
 		}
 		else
 		{
 			ret = m_world.progress(static_cast<ecs_ftime_t>(delta));
 
-			CommandBuffer command_buffer;
-			m_emitted_signals->PopCommandBuffer(command_buffer);
-
-			CommandQueue::ProcessCommands(get_instance_id(), command_buffer);
-
 			// TODO Fill caches
+
+			// Process signals
+			CommandBuffer::ProcessCommands(get_instance_id(), std::move(m_emitted_signals)); // m_emitted_signals guaranteed to be empty()
+			m_emitted_signals.reserve(64);
 		}
 
-		m_cache.ObtainRead();
-
 		return ret;
+	}
+
+	void UniverseSimulation::ThreadLoop()
+	{
+		DEBUG_ASSERT(IsThreaded(), "We should be threaded when running the thread loop");
+
+		CommandBuffer command_buffer;
+
+		while (m_galaxy_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
+		{
+			{
+				std::lock_guard lock(m_commands_mutex);
+				command_buffer = std::move(m_commands);
+				m_commands.reserve(64);
+			}
+
+			CommandBuffer::ProcessCommands(get_instance_id(), std::move(command_buffer)); // command_buffer guaranteed to be empty()
+
+			m_world.progress();
+
+			// TODO Fill caches
+
+			m_cache.ApplyWrite();
+
+			// Flush signals to be executed on main thread
+			CommandQueueServer::get_singleton()->AddCommands(get_instance_id(), std::move(m_emitted_signals)); // m_emitted_signals guaranteed to be empty()
+			m_emitted_signals.reserve(64);
+		}
 	}
 
 	void UniverseSimulation::BindMethods()

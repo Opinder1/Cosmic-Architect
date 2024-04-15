@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Util/Debug.h"
+
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/classes/ref.hpp>
 
@@ -13,26 +15,41 @@
 
 namespace voxel_game
 {
-	using CommandBuffer = std::vector<uint8_t>;
+	struct Command
+	{
+		constexpr static size_t k_max_args = 16;
+
+		godot::StringName command;
+		size_t argcount;
+	};
+
+	struct CommandBuffer : std::vector<uint8_t>
+	{
+		// Register a new command for the queue
+		template<class... Args>
+		static void AddCommand(CommandBuffer& command_buffer, const godot::StringName& command, const Args&... p_args)
+		{
+			godot::Variant args[sizeof...(p_args) + 1] = { p_args..., godot::Variant() }; // +1 makes sure zero sized arrays are also supported.
+			const godot::Variant* argptrs[sizeof...(p_args) + 1];
+			for (uint32_t i = 0; i < sizeof...(p_args); i++) {
+				argptrs[i] = &args[i];
+			}
+			return AddCommandArgArray(command_buffer, command, sizeof...(p_args) == 0 ? nullptr : (const godot::Variant**)argptrs, sizeof...(p_args));
+		}
+
+		static void AddCommandArgArray(CommandBuffer& command_buffer, const godot::StringName& command, const godot::Variant** args, size_t argcount);
+
+		// Process the commands in a command buffer on a certain object
+		static void ProcessCommands(uint64_t object_id, CommandBuffer&& command_buffer);
+	};
 
 	class CommandQueue : public godot::RefCounted
 	{
 		GDCLASS(CommandQueue, godot::RefCounted);
 
-		struct Command
-		{
-			constexpr static size_t k_max_args = 16;
-
-			godot::StringName command;
-			size_t argcount;
-		};
-
 	public:
-		// Make a new queue without an associated object
-		static godot::Ref<CommandQueue> MakeQueue();
-
 		// Make a new queue with an associated object. We can then call Flush() to run the commands on the main thread/render thread
-		static godot::Ref<CommandQueue> MakeObjectQueue(const godot::Variant& object);
+		static godot::Ref<CommandQueue> MakeQueue(const godot::Variant& object);
 
 		CommandQueue();
 		~CommandQueue();
@@ -45,31 +62,21 @@ namespace voxel_game
 
 		// Register a new command for the queue
 		template<class... Args>
-		void RegisterCommand(const godot::StringName& command, const Args&... p_args)
+		void AddCommand(const godot::StringName& command, const Args&... p_args)
 		{
-			godot::Variant args[sizeof...(p_args) + 1] = { p_args..., godot::Variant() }; // +1 makes sure zero sized arrays are also supported.
-			const godot::Variant* argptrs[sizeof...(p_args) + 1];
-			for (uint32_t i = 0; i < sizeof...(p_args); i++) {
-				argptrs[i] = &args[i];
-			}
-			return _register_command(command, sizeof...(p_args) == 0 ? nullptr : (const godot::Variant**)argptrs, sizeof...(p_args));
+			DEBUG_ASSERT(godot::OS::get_singleton()->get_thread_caller_id() == m_thread_id, "Should be run by the owning thread");
+
+			return CommandBuffer::AddCommand(m_command_buffer, command, p_args);
 		}
 
 		// Flush the commands to the main thread or the render thread if the object is the rendering server
 		void Flush();
-		
-		// Get the current command buffer and reset the queues buffer 
-		void PopCommandBuffer(CommandBuffer& command_buffer_out);
-
-		// Process the commands in a command buffer on a certain object
-		static void ProcessCommands(uint64_t object_id, const CommandBuffer& command_buffer);
 
 	public:
 		static void _bind_methods();
 
 	private:
-		void _register_command_vararg(const godot::Variant** p_args, GDExtensionInt p_argcount, GDExtensionCallError& error);
-		void _register_command(const godot::StringName& command, const godot::Variant** args, size_t argcount);
+		void _add_command_vararg(const godot::Variant** p_args, GDExtensionInt p_argcount, GDExtensionCallError& error);
 
 	private:
 		uint64_t m_thread_id = 0;
