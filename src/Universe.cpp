@@ -6,23 +6,13 @@
 
 #include <godot_cpp/variant/utility_functions.hpp>
 
+#define BIND_METHOD godot::ClassDB::bind_method
+
+#define INITIALIZE_STRINGNAME(name) name = godot::StringName{ #name }
+
 namespace voxel_game
 {
 	std::optional<const Universe::SignalStrings> Universe::k_signals;
-
-	Universe::SignalStrings::SignalStrings()
-	{
-#define INITIALIZE_SIGNAL(name) name = godot::StringName{ #name }
-
-		INITIALIZE_SIGNAL(connected_to_galaxy_list);
-		INITIALIZE_SIGNAL(disconnected_from_galaxy_list);
-		INITIALIZE_SIGNAL(galaxy_list_query_response);
-		INITIALIZE_SIGNAL(galaxy_ping_response);
-		INITIALIZE_SIGNAL(galaxy_simulation_started);
-		INITIALIZE_SIGNAL(galaxy_simulation_stopped);
-
-#undef INITIALIZE_SIGNAL
-	}
 
 	Universe::Universe()
 	{}
@@ -106,17 +96,17 @@ namespace voxel_game
 
 	void Universe::_bind_methods()
 	{
-		godot::ClassDB::bind_method(godot::D_METHOD("get_universe_info"), &Universe::GetUniverseInfo);
-		godot::ClassDB::bind_method(godot::D_METHOD("connect_to_galaxy_list", "ip"), &Universe::ConnectToGalaxyList);
-		godot::ClassDB::bind_method(godot::D_METHOD("disconnect_from_galaxy_list"), &Universe::DisconnectFromGalaxyList);
-		godot::ClassDB::bind_method(godot::D_METHOD("query_galaxy_list", "query"), &Universe::QueryGalaxyList);
-		godot::ClassDB::bind_method(godot::D_METHOD("ping_galaxy", "ip"), &Universe::PingGalaxy);
-
-		godot::ClassDB::bind_method(godot::D_METHOD("start_local_galaxy", "galaxy_path"), &Universe::StartLocalGalaxy);
-		godot::ClassDB::bind_method(godot::D_METHOD("start_local_fragment", "fragment_path", "fragment_type"), &Universe::StartLocalFragment);
-		godot::ClassDB::bind_method(godot::D_METHOD("start_remote_galaxy", "galaxy_path"), &Universe::StartRemoteGalaxy);
-
 		k_signals.emplace();
+
+		BIND_METHOD(godot::D_METHOD("get_universe_info"), &Universe::GetUniverseInfo);
+		BIND_METHOD(godot::D_METHOD("connect_to_galaxy_list", "ip"), &Universe::ConnectToGalaxyList);
+		BIND_METHOD(godot::D_METHOD("disconnect_from_galaxy_list"), &Universe::DisconnectFromGalaxyList);
+		BIND_METHOD(godot::D_METHOD("query_galaxy_list", "query"), &Universe::QueryGalaxyList);
+		BIND_METHOD(godot::D_METHOD("ping_galaxy", "ip"), &Universe::PingGalaxy);
+
+		BIND_METHOD(godot::D_METHOD("start_local_galaxy", "galaxy_path"), &Universe::StartLocalGalaxy);
+		BIND_METHOD(godot::D_METHOD("start_local_fragment", "fragment_path", "fragment_type"), &Universe::StartLocalFragment);
+		BIND_METHOD(godot::D_METHOD("start_remote_galaxy", "galaxy_path"), &Universe::StartRemoteGalaxy);
 
 		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_galaxy_list));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->disconnected_from_galaxy_list));
@@ -129,5 +119,15 @@ namespace voxel_game
 	void Universe::_cleanup_methods()
 	{
 		k_signals.reset();
+	}
+
+	Universe::SignalStrings::SignalStrings()
+	{
+		INITIALIZE_STRINGNAME(connected_to_galaxy_list);
+		INITIALIZE_STRINGNAME(disconnected_from_galaxy_list);
+		INITIALIZE_STRINGNAME(galaxy_list_query_response);
+		INITIALIZE_STRINGNAME(galaxy_ping_response);
+		INITIALIZE_STRINGNAME(galaxy_simulation_started);
+		INITIALIZE_STRINGNAME(galaxy_simulation_stopped);
 	}
 }
