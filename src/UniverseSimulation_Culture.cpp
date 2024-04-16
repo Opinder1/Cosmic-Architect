@@ -4,6 +4,7 @@ namespace voxel_game
 {
 	godot::Dictionary UniverseSimulation::GetCultureInfo(UUID culture_id)
 	{
-		return {};
+		std::shared_lock lock(m_cache_mutex);
+		return GetCacheEntry(culture_id);
 	}
 }

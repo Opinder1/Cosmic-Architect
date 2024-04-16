@@ -35,24 +35,6 @@ namespace voxel_game
 		GDCLASS(UniverseSimulation, godot::RefCounted);
 
 	public:
-		using UUID = godot::Color;
-		using UUIDVector = godot::PackedColorArray;
-
-		struct UUIDHash
-		{
-			size_t operator()(const UUID&) const;
-		};
-
-		using InfoMap = robin_hood::unordered_flat_map<UUID, godot::Dictionary, UUIDHash>;
-
-		struct InfoCache
-		{
-			godot::Dictionary galaxy_info;
-			godot::Dictionary account_info;
-			godot::Dictionary player_info;
-			InfoMap info_map;
-		};
-
 		enum ServerType
 		{
 			SERVER_TYPE_LOCAL,
@@ -73,6 +55,14 @@ namespace voxel_game
 			LOAD_STATE_UNLOADED
 		};
 
+		using UUID = godot::Color;
+		using UUIDVector = godot::PackedColorArray;
+
+		struct UUIDHash
+		{
+			size_t operator()(const UUID&) const;
+		};
+
 		// Cached string names for optimization
 		struct CommandStrings;
 		struct SignalStrings;
@@ -80,6 +70,18 @@ namespace voxel_game
 		static std::optional<godot::StringName> k_emit_signal;
 		static std::optional<const CommandStrings> k_commands;
 		static std::optional<const SignalStrings> k_signals;
+
+	private:
+		using InfoMap = robin_hood::unordered_flat_map<UUID, godot::Dictionary, UUIDHash>;
+
+		struct InfoCache
+		{
+			UUID universal_currency;
+			godot::Dictionary galaxy_info;
+			godot::Dictionary account_info;
+			godot::Dictionary player_info;
+			InfoMap info_map;
+		};
 
 	public:
 		UniverseSimulation();
@@ -210,7 +212,7 @@ namespace voxel_game
 		void RemovePermissionFromRole(UUID faction_id, UUID role_id, UUID permission_id); // Only can do this if we have permissions
 		void SetEntityRole(UUID faction_id, UUID entity_id, UUID role_id); // Only can do this if we have permissions
 		bool EntityHasPermission(UUID faction_id, UUID entity_id, UUID permission_id);
-		
+
 		// ####### Faction (is entity) #######
 
 		godot::Dictionary GetFactionInfo(UUID faction_id);
@@ -246,11 +248,11 @@ namespace voxel_game
 		godot::Dictionary GetCultureInfo(UUID culture_id);
 
 		// ####### Religion (is culture) #######
-		
+
 		// ####### Buisiness (is culture) #######
-		
+
 		// ####### Politics (is culture) #######
-		
+
 		// ####### Economics (is culture) #######
 
 		// ####### Civilization (is faction) #######
@@ -316,7 +318,7 @@ namespace voxel_game
 		void InteractWithEntity(UUID entity_id, const godot::Dictionary& interaction_info);
 
 		// ####### Vehicle Control #######
-		
+
 		void Accelerate(bool is_accelerating);
 		void Deccelerate(bool is_decelerating);
 		void ActivateVehicleControl(UUID system_id);
@@ -353,9 +355,9 @@ namespace voxel_game
 		template<class... Args>
 		void QueueSignal(const godot::StringName& signal, const Args&... p_args);
 
-		const InfoCache& GetCache();
-
 		void ThreadLoop();
+
+		godot::Dictionary GetCacheEntry(UUID id);
 
 		static void BindEnums();
 		static void BindMethods();
@@ -372,12 +374,19 @@ namespace voxel_game
 
 		std::thread m_thread;
 
-		CommandBuffer m_emitted_signals;
-
+		// Commands deferred to be processed when the internal thread is ready
 		tkrzw::SpinMutex m_commands_mutex;
-		CommandBuffer m_commands;
+		CommandBuffer m_deferred_commands;
 
-		SwapBuffer<InfoCache> m_cache;
+		// Signals deferred to be emitted when finished progressing
+		CommandBuffer m_deferred_signals;
+
+		// Cache buffer to be written to by the internal thread
+		SwapBuffer<InfoCache> m_write_cache;
+
+		// Cache buffer to be read from by commands
+		tkrzw::SpinSharedMutex m_cache_mutex;
+		InfoCache m_read_cache;
 	};
 
 	struct UniverseSimulation::CommandStrings
@@ -386,6 +395,7 @@ namespace voxel_game
 
 		godot::StringName get_universe;
 		godot::StringName get_galaxy_info;
+		godot::StringName initialize;
 		godot::StringName start_simulation;
 		godot::StringName stop_simulation;
 		godot::StringName progress;
@@ -614,12 +624,6 @@ namespace voxel_game
 
 		godot::StringName get_spell_info;
 		godot::StringName use_spell;
-
-		// ####### Testing #######
-
-		godot::StringName create_instance;
-		godot::StringName set_instance_pos;
-		godot::StringName delete_instance;
 	};
 
 	struct UniverseSimulation::SignalStrings
@@ -790,34 +794,22 @@ namespace voxel_game
 		// ####### Magic #######
 
 		godot::StringName use_spell_response_response;
-
-		// ####### Testing #######
-
-		godot::StringName test_signal;
 	};
 
 	template<class... Args>
 	void UniverseSimulation::QueueSignal(const godot::StringName& signal, const Args&... p_args)
 	{
-		CommandBuffer::AddCommand(m_emitted_signals, *k_emit_signal, signal, p_args...);
+		CommandBuffer::AddCommand(m_deferred_signals, *k_emit_signal, signal, p_args...);
 	}
-}
 
 #define SIM_DEFER_COMMAND(command, ...) \
-if (IsThreaded() && std::this_thread::get_id() != m_thread.get_id()) \
-{ \
-	std::lock_guard lock(m_commands_mutex); \
-	CommandBuffer::AddCommand(m_commands, command, __VA_ARGS__); \
-	return; \
-} \
-
-#define SIM_DEFER_COMMAND_V(command, ret, ...) \
-if (IsThreaded() && std::this_thread::get_id() != m_thread.get_id()) \
-{ \
-	std::lock_guard lock(m_commands_mutex); \
-	CommandBuffer::AddCommand(m_commands, command, __VA_ARGS__); \
-	return ret; \
-} \
+	if (IsThreaded() && std::this_thread::get_id() != m_thread.get_id()) \
+	{ \
+		std::lock_guard lock(m_commands_mutex); \
+		CommandBuffer::AddCommand(m_deferred_commands, command, __VA_ARGS__); \
+		return; \
+	}
+}
 
 VARIANT_ENUM_CAST(voxel_game::UniverseSimulation::ServerType);
 VARIANT_ENUM_CAST(voxel_game::UniverseSimulation::ThreadMode);

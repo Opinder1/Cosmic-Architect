@@ -244,8 +244,6 @@ namespace voxel_game
 
 	uint64_t UniverseSimulation::CreateInstance(godot::RID mesh, godot::RID scenario)
 	{
-        SIM_DEFER_COMMAND_V(k_commands->create_instance, 0, mesh, scenario);
-
         if (static bool once = true; once)
         {
             print_limits();
@@ -274,8 +272,6 @@ namespace voxel_game
 
 	void UniverseSimulation::SetInstancePos(uint64_t instance_id, const godot::Vector3& pos)
 	{
-        SIM_DEFER_COMMAND(k_commands->set_instance_pos, instance_id, pos);
-
 		auto entity = m_world.entity(instance_id);
 
 		entity.get_mut<Position>()->position = pos;
@@ -284,8 +280,6 @@ namespace voxel_game
 
 	bool UniverseSimulation::DeleteInstance(uint64_t instance_id)
 	{
-        SIM_DEFER_COMMAND_V(k_commands->delete_instance, false, instance_id);
-
 		auto entity = m_world.entity(instance_id);
 
 		entity.destruct();
