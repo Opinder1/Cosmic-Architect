@@ -162,8 +162,6 @@ namespace voxel_game
 		{
 			ret = m_world.progress(static_cast<ecs_ftime_t>(delta));
 
-			// TODO Fill caches
-
 			// Process signals
 			CommandBuffer::ProcessCommands(get_instance_id(), std::move(m_emitted_signals)); // m_emitted_signals guaranteed to be empty()
 			m_emitted_signals.reserve(64);
@@ -189,8 +187,6 @@ namespace voxel_game
 			CommandBuffer::ProcessCommands(get_instance_id(), std::move(command_buffer)); // command_buffer guaranteed to be empty()
 
 			m_world.progress();
-
-			// TODO Fill caches
 
 			m_cache.ApplyWrite();
 

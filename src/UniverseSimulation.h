@@ -2,7 +2,7 @@
 
 #include "CommandQueue.h"
 
-#include "Util/LockFree.h"
+#include "Util/SwapBuffer.h"
 
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/classes/ref_counted.hpp>
@@ -377,7 +377,7 @@ namespace voxel_game
 		tkrzw::SpinMutex m_commands_mutex;
 		CommandBuffer m_commands;
 
-		LockFreeTripleBuffer<InfoCache> m_cache;
+		SwapBuffer<InfoCache> m_cache;
 	};
 
 	struct UniverseSimulation::CommandStrings

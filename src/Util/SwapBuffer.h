@@ -1,10 +1,63 @@
 #pragma once
 
+#include <TKRZW/tkrzw_thread_util.h>
+
 #include <atomic>
 #include <utility>
 
 template<class T>
-class LockFreeSwapBuffer
+class SwapBuffer
+{
+public:
+	SwapBuffer() {}
+
+	// Write the changes to the exchange buffer
+	void ApplyWrite()
+	{
+		if (m_mutex.try_lock())
+		{
+			m_exchange = std::move(m_write);
+
+			m_mutex.unlock();
+
+			m_ready.store(true, std::memory_order_release);
+		}
+	}
+
+	// Obtain the latest changes made by the writer if there are any
+	void ObtainRead()
+	{
+		if (m_ready.load(std::memory_order_acquire))
+		{
+			std::lock_guard lock(m_mutex);
+
+			m_ready.store(false, std::memory_order_release);
+			m_read = std::move(m_exchange);
+		}
+	}
+
+	T& Write()
+	{
+		return m_write;
+	}
+
+	const T& Read()
+	{
+		return m_read;
+	}
+
+private:
+	T m_read{};
+	T m_exchange{};
+	T m_write{};
+
+	std::atomic_bool m_ready = false;
+
+	tkrzw::SpinMutex m_mutex;
+};
+
+template<class T>
+class WaitSwapBuffer
 {
 	enum class State : std::uint_fast8_t
 	{
@@ -13,8 +66,9 @@ class LockFreeSwapBuffer
 	};
 
 public:
-	LockFreeSwapBuffer() {}
+	WaitSwapBuffer() {}
 
+	// Write the changes to the exchange buffer if the exchange buffer was read from
 	void ApplyWrite()
 	{
 		if (m_state.load(std::memory_order_acquire) == State::ShouldWrite)
@@ -24,6 +78,7 @@ public:
 		}
 	}
 
+	// Obtain the latest changes made by the writer if there are any
 	void ObtainRead()
 	{
 		if (m_state.load(std::memory_order_acquire) == State::ShouldRead)
@@ -52,13 +107,13 @@ private:
 };
 
 template<class T>
-class LockFreeTripleBuffer
+class BlockFreeSwapBuffer
 {
 	static const std::uint_fast8_t k_ready_bit = 0b0100;
 	static const std::uint_fast8_t k_index_mask = 0b0011;
 
 public:
-	LockFreeTripleBuffer() {}
+	BlockFreeSwapBuffer() {}
 
 	// Set our changes to a written buffer and get a new write buffer. The written buffer can then swap the changes with the read buffer.
 	void ApplyWrite()
