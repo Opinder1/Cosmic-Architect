@@ -1,4 +1,5 @@
 #include "UniverseSimulation.h"
+#include "UniverseSimulation_StringNames.h"
 #include "Universe.h"
 
 #include "Universe/UniverseComponents.h"

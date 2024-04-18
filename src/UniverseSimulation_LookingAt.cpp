@@ -1,19 +1,22 @@
 #include "UniverseSimulation.h"
+#include "UniverseSimulation_StringNames.h"
 
 namespace voxel_game
 {
 	UniverseSimulation::UUID UniverseSimulation::GetLookingAtEntity()
 	{
-		return {};
+		std::shared_lock lock(m_cache_mutex);
+		return m_read_cache.player_info.find_key("looking_at_entity");
 	}
 
 	UniverseSimulation::UUID UniverseSimulation::GetLookingAtVolume()
 	{
-		return {};
+		std::shared_lock lock(m_cache_mutex);
+		return m_read_cache.player_info.find_key("looking_at_volume");
 	}
 
 	godot::Vector4i UniverseSimulation::GetLookingAtBlock()
 	{
-		return {};
+		return m_read_cache.player_info.find_key("looking_at_block");
 	}
 }

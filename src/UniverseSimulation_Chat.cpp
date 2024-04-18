@@ -1,4 +1,5 @@
 #include "UniverseSimulation.h"
+#include "UniverseSimulation_StringNames.h"
 
 namespace voxel_game
 {
@@ -28,13 +29,13 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 
-		godot::Variant relationship = m_read_cache.account_info.find_key(account_id);
+		godot::Dictionary private_chats = m_read_cache.account_info.find_key("private_chats");
 
-		if (relationship.get_type() == godot::Variant::DICTIONARY)
+		if (private_chats.is_empty())
 		{
-			return relationship.operator godot::Dictionary().find_key("chat_history");
+			return godot::Array{};
 		}
 
-		return godot::Array{};
+		return private_chats.find_key(account_id);
 	}
 }

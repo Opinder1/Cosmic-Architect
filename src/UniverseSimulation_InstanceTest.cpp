@@ -1,4 +1,5 @@
 #include "UniverseSimulation.h"
+#include "UniverseSimulation_StringNames.h"
 
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/rd_texture_format.hpp>

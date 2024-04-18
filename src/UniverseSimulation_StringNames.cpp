@@ -1,4 +1,5 @@
 #include "UniverseSimulation.h"
+#include "UniverseSimulation_StringNames.h"
 
 #define INITIALIZE_STRINGNAME(name) name = godot::StringName{ #name }
 
