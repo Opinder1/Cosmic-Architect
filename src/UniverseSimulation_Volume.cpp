@@ -6,14 +6,24 @@ namespace voxel_game
 	godot::Dictionary UniverseSimulation::GetVolumeInfo(UUID volume_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(volume_id);
+		
+		auto it = m_read_cache.volume_info_map.find(volume_id);
+
+		if (it != m_read_cache.volume_info_map.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			return godot::Dictionary{};
+		}
 	}
 
 	godot::Dictionary UniverseSimulation::GetBlockInfo(UUID volume_id, const godot::Vector4i& position)
 	{
 		std::shared_lock lock(m_cache_mutex);
 		
-		godot::Dictionary volume = GetCacheEntry(volume_id);
+		godot::Dictionary volume = GetVolumeInfo(volume_id);
 
 		if (volume.is_empty())
 		{
@@ -54,7 +64,7 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 
-		godot::Dictionary volume = GetCacheEntry(volume_id);
+		godot::Dictionary volume = GetVolumeInfo(volume_id);
 
 		if (volume.is_empty())
 		{
@@ -75,7 +85,7 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 
-		godot::Dictionary volume = GetCacheEntry(volume_id);
+		godot::Dictionary volume = GetVolumeInfo(volume_id);
 
 		if (volume.is_empty())
 		{
@@ -95,7 +105,7 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 
-		godot::Dictionary volume = GetCacheEntry(volume_id);
+		godot::Dictionary volume = GetVolumeInfo(volume_id);
 
 		if (volume.is_empty())
 		{

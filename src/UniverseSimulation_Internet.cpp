@@ -6,31 +6,61 @@ namespace voxel_game
 	godot::Dictionary UniverseSimulation::GetInternetInfo(UUID internet_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(internet_id);
+		
+		auto it = m_read_cache.internet_info_map.find(internet_id);
+
+		if (it != m_read_cache.internet_info_map.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			return godot::Dictionary{};
+		}
 	}
 
 	godot::Dictionary UniverseSimulation::GetWebsiteInfo(UUID website_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(website_id);
+		
+		auto it = m_read_cache.website_info_map.find(website_id);
+
+		if (it != m_read_cache.website_info_map.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			return godot::Dictionary{};
+		}
 	}
 
 	godot::Dictionary UniverseSimulation::GetWebsitePageInfo(UUID website_page_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(website_page_id);
+		
+		auto it = m_read_cache.webpage_info_map.find(website_page_id);
+
+		if (it != m_read_cache.webpage_info_map.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			return godot::Dictionary{};
+		}
 	}
 
 	UniverseSimulation::UUIDVector UniverseSimulation::GetInternetWebsites(UUID internet_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(internet_id).find_key("websites");
+		return GetInternetInfo(internet_id).find_key("websites");
 	}
 
 	UniverseSimulation::UUIDVector UniverseSimulation::GetWebsitePages(UUID website_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(website_id).find_key("pages");
+		return GetWebsiteInfo(website_id).find_key("pages");
 	}
 
 	void UniverseSimulation::UniverseSimulation::StartInternet(UUID internet_id, UUID device_id)

@@ -6,7 +6,17 @@ namespace voxel_game
 	godot::Dictionary UniverseSimulation::GetFactionInfo(UUID faction_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(faction_id);
+
+		auto it = m_read_cache.faction_info_map.find(faction_id);
+
+		if (it != m_read_cache.faction_info_map.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			return godot::Dictionary{};
+		}
 	}
 
 	UniverseSimulation::UUIDVector UniverseSimulation::GetJoinedFactions()

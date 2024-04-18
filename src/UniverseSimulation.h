@@ -78,10 +78,34 @@ namespace voxel_game
 		{
 			UUID universal_currency;
 			UUID global_faction;
+
 			godot::Dictionary galaxy_info;
 			godot::Dictionary account_info;
 			godot::Dictionary player_info;
-			InfoMap info_map;
+
+			InfoMap fragment_info_map;
+			InfoMap chat_channel_info_map;
+			InfoMap player_info_map;
+			InfoMap party_info_map;
+			InfoMap entity_info_map;
+			InfoMap volume_info_map;
+			InfoMap galaxy_region_info_map;
+			InfoMap galaxy_object_info_map;
+			InfoMap currency_info_map;
+			InfoMap bank_info_map;
+			InfoMap bank_interface_info_map;
+			InfoMap good_info_map;
+			InfoMap internet_info_map;
+			InfoMap website_info_map;
+			InfoMap webpage_info_map;
+			InfoMap role_info_map;
+			InfoMap permission_info_map;
+			InfoMap faction_info_map;
+			InfoMap language_info_map;
+			InfoMap culture_info_map;
+			InfoMap inventory_info_map;
+			InfoMap ability_info_map;
+			InfoMap spell_info_map;
 		};
 
 	public:
@@ -357,8 +381,6 @@ namespace voxel_game
 		void QueueSignal(const godot::StringName& signal, const Args&... p_args);
 
 		void ThreadLoop();
-
-		godot::Dictionary GetCacheEntry(UUID id);
 
 		static void BindEnums();
 		static void BindMethods();

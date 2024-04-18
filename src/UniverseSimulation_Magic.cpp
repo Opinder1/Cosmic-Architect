@@ -6,7 +6,17 @@ namespace voxel_game
 	godot::Dictionary UniverseSimulation::GetSpellInfo(UUID spell_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(spell_id);
+		
+		auto it = m_read_cache.spell_info_map.find(spell_id);
+
+		if (it != m_read_cache.spell_info_map.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			return godot::Dictionary{};
+		}
 	}
 
 	void UniverseSimulation::UseSpell(uint64_t spell_index, const godot::Dictionary& params)

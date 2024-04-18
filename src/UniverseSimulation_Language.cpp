@@ -6,7 +6,17 @@ namespace voxel_game
 	godot::Dictionary UniverseSimulation::GetLanguageInfo(UUID language_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(language_id);
+		
+		auto it = m_read_cache.language_info_map.find(language_id);
+
+		if (it != m_read_cache.language_info_map.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			return godot::Dictionary{};
+		}
 	}
 
 	void UniverseSimulation::GetLanguageTranslation(UUID language_id, const godot::StringName& string)

@@ -6,7 +6,17 @@ namespace voxel_game
 	godot::Dictionary UniverseSimulation::GetPartyInfo(UUID party_host_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(party_host_id);
+		
+		auto it = m_read_cache.party_info_map.find(party_host_id);
+
+		if (it != m_read_cache.party_info_map.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			return godot::Dictionary{};
+		}
 	}
 
 	void UniverseSimulation::CreateParty()

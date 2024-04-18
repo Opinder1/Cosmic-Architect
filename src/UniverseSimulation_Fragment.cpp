@@ -8,7 +8,17 @@ namespace voxel_game
 	godot::Dictionary UniverseSimulation::GetFragmentInfo(UUID fragment_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(fragment_id);
+
+		auto it = m_read_cache.fragment_info_map.find(fragment_id);
+
+		if (it != m_read_cache.fragment_info_map.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			return godot::Dictionary{};
+		}
 	}
 
 	UniverseSimulation::UUID UniverseSimulation::GetCurrentFragment()

@@ -6,25 +6,65 @@ namespace voxel_game
 	godot::Dictionary UniverseSimulation::GetCurrencyInfo(UUID currency_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(currency_id);
+
+		auto it = m_read_cache.currency_info_map.find(currency_id);
+
+		if (it != m_read_cache.currency_info_map.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			return godot::Dictionary{};
+		}
 	}
 
 	godot::Dictionary UniverseSimulation::GetBankInfo(UUID bank_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(bank_id);
+
+		auto it = m_read_cache.bank_info_map.find(bank_id);
+
+		if (it != m_read_cache.bank_info_map.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			return godot::Dictionary{};
+		}
 	}
 
 	godot::Dictionary UniverseSimulation::GetBankInterfaceInfo(UUID bank_interface_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(bank_interface_id);
+
+		auto it = m_read_cache.bank_interface_info_map.find(bank_interface_id);
+
+		if (it != m_read_cache.bank_interface_info_map.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			return godot::Dictionary{};
+		}
 	}
 
 	godot::Dictionary UniverseSimulation::GetGoodInfo(UUID good_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(good_id);
+
+		auto it = m_read_cache.good_info_map.find(good_id);
+
+		if (it != m_read_cache.good_info_map.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			return godot::Dictionary{};
+		}
 	}
 
 	UniverseSimulation::UUID UniverseSimulation::GetUniversalCurrency()
@@ -35,8 +75,7 @@ namespace voxel_game
 
 	UniverseSimulation::UUID UniverseSimulation::GetBankOfInterface(UUID bank_interface_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(bank_interface_id).find_key("bank");
+		return GetBankInterfaceInfo(bank_interface_id).find_key("bank");
 	}
 
 	UniverseSimulation::UUIDVector UniverseSimulation::GetOwnedCurrencies()
@@ -48,7 +87,15 @@ namespace voxel_game
 	double UniverseSimulation::GetBalance(UUID currency_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return m_read_cache.player_info.find_key("balance");
+		
+		godot::Dictionary balances = m_read_cache.player_info.find_key("balances");
+
+		if (balances.is_empty())
+		{
+			return NAN;
+		}
+
+		return balances.find_key(currency_id);
 	}
 
 	void UniverseSimulation::Withdraw(UUID currency_id, real_t amount, UUID bank_interface_id)

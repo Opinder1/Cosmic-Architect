@@ -189,20 +189,6 @@ namespace voxel_game
 		}
 	}
 
-	godot::Dictionary UniverseSimulation::GetCacheEntry(UUID id)
-	{
-		auto it = m_read_cache.info_map.find(id);
-
-		if (it != m_read_cache.info_map.end())
-		{
-			return it->second;
-		}
-		else
-		{
-			return godot::Dictionary{};
-		}
-	}
-
 	void UniverseSimulation::BindMethods()
 	{
 		BIND_METHOD(godot::D_METHOD(k_commands->get_universe), &UniverseSimulation::GetUniverse);

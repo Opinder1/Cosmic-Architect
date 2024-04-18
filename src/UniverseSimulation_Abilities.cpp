@@ -6,7 +6,17 @@ namespace voxel_game
 	godot::Dictionary UniverseSimulation::GetAbilityInfo(UUID ability_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return GetCacheEntry(ability_id);
+
+		auto it = m_read_cache.ability_info_map.find(ability_id);
+
+		if (it != m_read_cache.ability_info_map.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			return godot::Dictionary{};
+		}
 	}
 
 	void UniverseSimulation::ActivateAbility(UUID ability_id)
