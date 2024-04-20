@@ -86,7 +86,7 @@ namespace voxel_game
 		update.key = UUID();
 		update.value = info;
 
-		if (!update.info)
+		if (update.info == nullptr)
 		{
 			DEBUG_PRINT_ERROR("Invalid universe info type");
 			return;
@@ -103,7 +103,7 @@ namespace voxel_game
 		update.key = id;
 		update.value = info;
 
-		if (!update.info_map)
+		if (update.info_map == nullptr)
 		{
 			DEBUG_PRINT_ERROR("Invalid universe info map type");
 			return;
@@ -314,7 +314,7 @@ namespace voxel_game
 		BIND_METHOD(godot::D_METHOD(k_commands->get_universe), &UniverseSimulation::GetUniverse);
 		BIND_METHOD(godot::D_METHOD(k_commands->get_galaxy_info), &UniverseSimulation::GetGalaxyInfo);
 		BIND_METHOD(godot::D_METHOD(k_commands->initialize, "universe", "path", "fragment_type", "remote"), &UniverseSimulation::Initialize);
-		BIND_METHOD(godot::D_METHOD(k_commands->start_simulation), &UniverseSimulation::StartSimulation);
+		BIND_METHOD(godot::D_METHOD(k_commands->start_simulation, "thread_mode"), &UniverseSimulation::StartSimulation);
 		BIND_METHOD(godot::D_METHOD(k_commands->stop_simulation), &UniverseSimulation::StopSimulation);
 		BIND_METHOD(godot::D_METHOD(k_commands->progress, "delta"), &UniverseSimulation::Progress);
 
