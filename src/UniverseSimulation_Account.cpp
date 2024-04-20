@@ -6,7 +6,7 @@ namespace voxel_game
 	godot::Dictionary UniverseSimulation::GetAccountInfo()
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return m_read_cache.account_info;
+		return m_info_cache.account_info;
 	}
 
 	void UniverseSimulation::CreateAccount(const godot::String& username, const godot::String& password_hash)

@@ -7,9 +7,9 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 		
-		auto it = m_read_cache.role_info_map.find(role_id);
+		auto it = m_info_cache.role_info_map.find(role_id);
 
-		if (it != m_read_cache.role_info_map.end())
+		if (it != m_info_cache.role_info_map.end())
 		{
 			return it->second;
 		}
@@ -23,9 +23,9 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 
-		auto it = m_read_cache.permission_info_map.find(permission_id);
+		auto it = m_info_cache.permission_info_map.find(permission_id);
 
-		if (it != m_read_cache.permission_info_map.end())
+		if (it != m_info_cache.permission_info_map.end())
 		{
 			return it->second;
 		}
@@ -35,7 +35,7 @@ namespace voxel_game
 		}
 	}
 
-	UniverseSimulation::UUID UniverseSimulation::GetEntityRole(UUID faction_id, UUID entity_id)
+	UUID UniverseSimulation::GetEntityRole(UUID faction_id, UUID entity_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
 

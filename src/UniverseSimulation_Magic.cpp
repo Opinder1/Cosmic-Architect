@@ -7,9 +7,9 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 		
-		auto it = m_read_cache.spell_info_map.find(spell_id);
+		auto it = m_info_cache.spell_info_map.find(spell_id);
 
-		if (it != m_read_cache.spell_info_map.end())
+		if (it != m_info_cache.spell_info_map.end())
 		{
 			return it->second;
 		}

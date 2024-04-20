@@ -7,9 +7,9 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 		
-		auto it = m_read_cache.inventory_info_map.find(inventory_id);
+		auto it = m_info_cache.inventory_info_map.find(inventory_id);
 
-		if (it != m_read_cache.inventory_info_map.end())
+		if (it != m_info_cache.inventory_info_map.end())
 		{
 			return it->second;
 		}
@@ -19,13 +19,13 @@ namespace voxel_game
 		}
 	}
 
-	UniverseSimulation::UUID UniverseSimulation::GetInventory()
+	UUID UniverseSimulation::GetInventory()
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return m_read_cache.player_info.find_key("inventory");
+		return m_info_cache.player_info.find_key("inventory");
 	}
 
-	UniverseSimulation::UUID UniverseSimulation::GetInventoryItemEntity(UUID inventory_id, uint64_t item_index)
+	UUID UniverseSimulation::GetInventoryItemEntity(UUID inventory_id, uint64_t item_index)
 	{
 		std::shared_lock lock(m_cache_mutex);
 

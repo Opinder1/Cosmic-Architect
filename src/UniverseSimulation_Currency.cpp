@@ -7,9 +7,9 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 
-		auto it = m_read_cache.currency_info_map.find(currency_id);
+		auto it = m_info_cache.currency_info_map.find(currency_id);
 
-		if (it != m_read_cache.currency_info_map.end())
+		if (it != m_info_cache.currency_info_map.end())
 		{
 			return it->second;
 		}
@@ -23,9 +23,9 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 
-		auto it = m_read_cache.bank_info_map.find(bank_id);
+		auto it = m_info_cache.bank_info_map.find(bank_id);
 
-		if (it != m_read_cache.bank_info_map.end())
+		if (it != m_info_cache.bank_info_map.end())
 		{
 			return it->second;
 		}
@@ -39,9 +39,9 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 
-		auto it = m_read_cache.bank_interface_info_map.find(bank_interface_id);
+		auto it = m_info_cache.bank_interface_info_map.find(bank_interface_id);
 
-		if (it != m_read_cache.bank_interface_info_map.end())
+		if (it != m_info_cache.bank_interface_info_map.end())
 		{
 			return it->second;
 		}
@@ -55,9 +55,9 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 
-		auto it = m_read_cache.good_info_map.find(good_id);
+		auto it = m_info_cache.good_info_map.find(good_id);
 
-		if (it != m_read_cache.good_info_map.end())
+		if (it != m_info_cache.good_info_map.end())
 		{
 			return it->second;
 		}
@@ -67,28 +67,28 @@ namespace voxel_game
 		}
 	}
 
-	UniverseSimulation::UUID UniverseSimulation::GetUniversalCurrency()
+	UUID UniverseSimulation::GetUniversalCurrency()
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return m_read_cache.universal_currency;
+		return m_info_cache.galaxy_info.find_key("universal_currency");
 	}
 
-	UniverseSimulation::UUID UniverseSimulation::GetBankOfInterface(UUID bank_interface_id)
+	UUID UniverseSimulation::GetBankOfInterface(UUID bank_interface_id)
 	{
 		return GetBankInterfaceInfo(bank_interface_id).find_key("bank");
 	}
 
-	UniverseSimulation::UUIDVector UniverseSimulation::GetOwnedCurrencies()
+	UUIDVector UniverseSimulation::GetOwnedCurrencies()
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return m_read_cache.player_info.find_key("owned_currencies");
+		return m_info_cache.player_info.find_key("owned_currencies");
 	}
 
 	double UniverseSimulation::GetBalance(UUID currency_id)
 	{
 		std::shared_lock lock(m_cache_mutex);
 		
-		godot::Dictionary balances = m_read_cache.player_info.find_key("balances");
+		godot::Dictionary balances = m_info_cache.player_info.find_key("balances");
 
 		if (balances.is_empty())
 		{

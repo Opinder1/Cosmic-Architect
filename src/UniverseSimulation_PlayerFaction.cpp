@@ -3,16 +3,16 @@
 
 namespace voxel_game
 {
-	UniverseSimulation::UUID UniverseSimulation::GetGlobalPlayerFaction()
+	UUID UniverseSimulation::GetGlobalPlayerFaction()
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return m_read_cache.global_faction;
+		return m_info_cache.galaxy_info.find_key("player_faction");
 	}
 
-	UniverseSimulation::UUID UniverseSimulation::GetPlayerFaction()
+	UUID UniverseSimulation::GetPlayerFaction()
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return m_read_cache.player_info.find_key("faction");
+		return m_info_cache.player_info.find_key("faction");
 	}
 
 	void UniverseSimulation::RequestJoinPlayerFaction(UUID faction_id, const godot::String& message)

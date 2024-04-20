@@ -7,9 +7,9 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 		
-		auto it = m_read_cache.party_info_map.find(party_host_id);
+		auto it = m_info_cache.party_info_map.find(party_host_id);
 
-		if (it != m_read_cache.party_info_map.end())
+		if (it != m_info_cache.party_info_map.end())
 		{
 			return it->second;
 		}
@@ -44,11 +44,11 @@ namespace voxel_game
 		SIM_DEFER_COMMAND(k_commands->leave_party);
 	}
 
-	UniverseSimulation::UUIDVector UniverseSimulation::GetPlayersInParty()
+	UUIDVector UniverseSimulation::GetPlayersInParty()
 	{
 		std::shared_lock lock(m_cache_mutex);
 		
-		godot::Dictionary party = m_read_cache.player_info.find_key("party");
+		godot::Dictionary party = m_info_cache.player_info.find_key("party");
 
 		if (party.is_empty())
 		{
@@ -58,11 +58,11 @@ namespace voxel_game
 		return party.find_key("players");
 	}
 
-	UniverseSimulation::UUID UniverseSimulation::GetPartyChatChannel()
+	UUID UniverseSimulation::GetPartyChatChannel()
 	{
 		std::shared_lock lock(m_cache_mutex);
 
-		godot::Dictionary party = m_read_cache.player_info.find_key("party");
+		godot::Dictionary party = m_info_cache.player_info.find_key("party");
 
 		if (party.is_empty())
 		{

@@ -7,9 +7,9 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 
-		auto it = m_read_cache.faction_info_map.find(faction_id);
+		auto it = m_info_cache.faction_info_map.find(faction_id);
 
-		if (it != m_read_cache.faction_info_map.end())
+		if (it != m_info_cache.faction_info_map.end())
 		{
 			return it->second;
 		}
@@ -19,10 +19,10 @@ namespace voxel_game
 		}
 	}
 
-	UniverseSimulation::UUIDVector UniverseSimulation::GetJoinedFactions()
+	UUIDVector UniverseSimulation::GetJoinedFactions()
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return m_read_cache.player_info.find_key("joined_factions");
+		return m_info_cache.player_info.find_key("joined_factions");
 	}
 
 	void UniverseSimulation::JoinFaction(UUID faction_id, const godot::Dictionary& request_info)

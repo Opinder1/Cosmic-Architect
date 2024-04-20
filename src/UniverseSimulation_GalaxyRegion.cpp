@@ -7,9 +7,9 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 
-		auto it = m_read_cache.galaxy_region_info_map.find(galaxy_region_id);
+		auto it = m_info_cache.galaxy_region_info_map.find(galaxy_region_id);
 
-		if (it != m_read_cache.galaxy_region_info_map.end())
+		if (it != m_info_cache.galaxy_region_info_map.end())
 		{
 			return it->second;
 		}
@@ -19,10 +19,10 @@ namespace voxel_game
 		}
 	}
 
-	UniverseSimulation::UUIDVector UniverseSimulation::GetCurrentGalaxyRegions()
+	UUIDVector UniverseSimulation::GetCurrentGalaxyRegions()
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return m_read_cache.player_info.find_key("galaxy_regions");
+		return m_info_cache.player_info.find_key("galaxy_regions");
 	}
 
 	void UniverseSimulation::RequestGalaxyRegionInfo(UUID entity_id)

@@ -3,10 +3,10 @@
 
 namespace voxel_game
 {
-	UniverseSimulation::UUIDVector UniverseSimulation::GetFriends()
+	UUIDVector UniverseSimulation::GetFriends()
 	{
 		std::shared_lock lock(m_cache_mutex);
-		return m_read_cache.account_info.find_key("friends");
+		return m_info_cache.account_info.find_key("friends");
 	}
 
 	void UniverseSimulation::InviteFriend(UUID account_id)

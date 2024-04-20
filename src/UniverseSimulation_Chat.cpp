@@ -7,9 +7,9 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 
-		auto it = m_read_cache.chat_channel_info_map.find(channel_id);
+		auto it = m_info_cache.chat_channel_info_map.find(channel_id);
 
-		if (it != m_read_cache.chat_channel_info_map.end())
+		if (it != m_info_cache.chat_channel_info_map.end())
 		{
 			return it->second;
 		}
@@ -38,7 +38,7 @@ namespace voxel_game
 	{
 		std::shared_lock lock(m_cache_mutex);
 
-		godot::Dictionary private_chats = m_read_cache.account_info.find_key("private_chats");
+		godot::Dictionary private_chats = m_info_cache.account_info.find_key("private_chats");
 
 		if (private_chats.is_empty())
 		{
