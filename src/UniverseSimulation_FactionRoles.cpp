@@ -88,6 +88,8 @@ namespace voxel_game
 
 	bool UniverseSimulation::EntityHasPermission(UUID faction_id, UUID entity_id, UUID permission_id)
 	{
+		// TODO: Have some better return value than just a bool so we can also have an error return value
+
 		UUID entity_role = GetEntityRole(faction_id, entity_id);
 
 		if (entity_role == UUID())
@@ -97,25 +99,10 @@ namespace voxel_game
 
 		std::shared_lock lock(m_cache_mutex);
 
-		godot::Dictionary faction = GetFactionInfo(faction_id);
-
-		if (faction.is_empty())
-		{
-			return false;
-		}
-
-		godot::Dictionary faction_roles = faction.find_key("roles");
-
-		if (faction_roles.is_empty())
-		{
-			return false;
-		}
-
-		godot::Dictionary faction_role = faction_roles.find_key(entity_role);
+		godot::Dictionary faction_role = GetRoleInfo(entity_role);
 
 		if (faction_role.is_empty())
 		{
-			DEBUG_PRINT_ERROR("The faction role was not in the cache");
 			return false;
 		}
 
