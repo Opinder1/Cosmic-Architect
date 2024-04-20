@@ -193,9 +193,6 @@ namespace voxel_game
 
 		m_world.reset();
 
-		m_world.set_target_fps(20);
-		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
-
 		m_world.import<flecs::monitor>();
 		m_world.import<UniverseModule>();
 		m_world.import<SpatialModule>();
@@ -213,7 +210,7 @@ namespace voxel_game
 			simulated_galaxy.name = "Test";
 			simulated_galaxy.path = path;
 			simulated_galaxy.fragment_type = fragment_type;
-			simulated_galaxy.is_remote = server_type == SERVER_TYPE_REMOTE;
+			simulated_galaxy.is_remote = (server_type == SERVER_TYPE_REMOTE);
 		});
 	}
 
@@ -230,6 +227,8 @@ namespace voxel_game
 			DEBUG_PRINT_ERROR("This galaxy should not be loaded when we start");
 			return;
 		}
+
+		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
 
 		m_galaxy_load_state.store(LOAD_STATE_LOADING, std::memory_order_release);
 		emit_signal(k_signals->load_state_changed, LOAD_STATE_LOADING);
@@ -286,6 +285,8 @@ namespace voxel_game
 	void UniverseSimulation::ThreadLoop()
 	{
 		DEBUG_ASSERT(IsThreaded(), "We should be threaded when running the thread loop");
+
+		m_world.set_target_fps(20);
 
 		CommandBuffer command_buffer;
 
