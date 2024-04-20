@@ -20,7 +20,7 @@ namespace voxel_game
 		constexpr static size_t k_max_args = 16;
 
 		godot::StringName command;
-		size_t argcount;
+		size_t argcount = 0;
 	};
 
 	struct CommandBuffer : std::vector<uint8_t>

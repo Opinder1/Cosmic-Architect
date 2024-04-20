@@ -12,7 +12,7 @@ namespace voxel_game
 		DEBUG_ASSERT(argcount <= Command::k_max_args, godot::vformat("The max args that is supported for commands is %d", Command::k_max_args));
 
 		uint32_t command_offset = command_buffer.size();
-		uint32_t command_size = sizeof(godot::StringName) + (sizeof(godot::Variant) * argcount);
+		uint32_t command_size = sizeof(Command) + (sizeof(godot::Variant) * argcount);
 
 		command_buffer.resize(command_offset + command_size);
 
@@ -21,13 +21,13 @@ namespace voxel_game
 		Command* command_ptr = memnew_placement(buffer_pos, Command);
 		command_ptr->command = command;
 		command_ptr->argcount = argcount;
-		buffer_pos += sizeof(godot::StringName);
+		buffer_pos += sizeof(Command);
 
 		for (size_t arg = 0; arg < argcount; arg++)
 		{
 			godot::Variant* arg_ptr = memnew_placement(buffer_pos, godot::Variant);
-			buffer_pos += sizeof(godot::Variant);
 			*arg_ptr = *args[arg];
+			buffer_pos += sizeof(godot::Variant);
 		}
 	}
 
@@ -50,8 +50,10 @@ namespace voxel_game
 		{
 			DEBUG_ASSERT(buffer_pos + sizeof(Command) <= command_buffer.end(), "Command buffer doesn't fit the command and its arguments");
 
-			const Command& command_ptr = reinterpret_cast<Command&>(*buffer_pos);
+			const Command& command_ptr = reinterpret_cast<const Command&>(*buffer_pos);
 			buffer_pos += sizeof(Command);
+
+			DEBUG_ASSERT(command_ptr.argcount < Command::k_max_args, "The command has more than the maximum allowed arguments");
 
 			const godot::Variant* argptrs[Command::k_max_args];
 
@@ -59,7 +61,7 @@ namespace voxel_game
 			{
 				DEBUG_ASSERT(buffer_pos + sizeof(godot::Variant) <= command_buffer.end(), "Command buffer doesn't fit the command and its arguments");
 
-				const godot::Variant& arg = reinterpret_cast<const godot::Variant&>(buffer_pos);
+				const godot::Variant& arg = reinterpret_cast<const godot::Variant&>(*buffer_pos);
 				buffer_pos += sizeof(godot::Variant);
 
 				argptrs[i] = &arg;
@@ -89,12 +91,12 @@ namespace voxel_game
 			}
 
 			// We can call destructors on const objects for some reason but the memory is indeed owned by us
-			command_ptr.~Command();
-
 			for (size_t i = 0; i < command_ptr.argcount; i++)
 			{
 				argptrs[i]->~Variant();
 			}
+
+			command_ptr.~Command();
 		}
 	}
 
