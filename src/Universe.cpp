@@ -46,20 +46,23 @@ namespace voxel_game
 
 	}
 
-	godot::Ref<UniverseSimulation> Universe::StartLocalGalaxy(const godot::String& galaxy_path)
+	godot::Ref<UniverseSimulation> Universe::InitializeLocalGalaxy(const godot::String& galaxy_path)
 	{
 		godot::Ref<UniverseSimulation> simulation;
 
 		simulation.instantiate();
 
-		simulation->connect(UniverseSimulation::k_signals->load_state_changed, godot::create_custom_callable_function_pointer(this, &Universe::SimulationStateChanged).bind(simulation));
+		simulation->connect(UniverseSimulation::k_signals->load_state_changed, godot::create_custom_callable_function_pointer(this, &Universe::OnSimulationStateChanged).bind(simulation));
+		simulation->connect(UniverseSimulation::k_signals->simulation_uninitialized, godot::create_custom_callable_function_pointer(this, &Universe::OnSimulationUninitialized).bind(simulation));
 
 		simulation->Initialize(this, galaxy_path, "full_galaxy", UniverseSimulation::SERVER_TYPE_LOCAL);
+
+		// m_simulations.emplace(simulation);
 		
 		return simulation;
 	}
 
-	godot::Ref<UniverseSimulation> Universe::StartLocalFragment(const godot::String& fragment_path, const godot::String& fragment_type)
+	godot::Ref<UniverseSimulation> Universe::InitializeLocalFragment(const godot::String& fragment_path, const godot::String& fragment_type)
 	{
 		godot::Ref<UniverseSimulation> simulation;
 
@@ -70,7 +73,7 @@ namespace voxel_game
 		return simulation;
 	}
 
-	godot::Ref<UniverseSimulation> Universe::StartRemoteGalaxy(const godot::String& galaxy_path)
+	godot::Ref<UniverseSimulation> Universe::InitializeRemoteGalaxy(const godot::String& galaxy_path)
 	{
 		godot::Ref<UniverseSimulation> simulation;
 
@@ -81,7 +84,12 @@ namespace voxel_game
 		return simulation;
 	}
 
-	void Universe::SimulationStateChanged(uint64_t load_state, const godot::Ref<UniverseSimulation>& simulation)
+	void Universe::Uninitialize(const godot::Ref<UniverseSimulation>& simulation)
+	{
+		simulation->Uninitialize();
+	}
+
+	void Universe::OnSimulationStateChanged(uint64_t load_state, const godot::Ref<UniverseSimulation>& simulation)
 	{
 		switch (load_state)
 		{
@@ -95,6 +103,11 @@ namespace voxel_game
 		}
 	}
 
+	void Universe::OnSimulationUninitialized(const godot::Ref<UniverseSimulation>& simulation)
+	{
+		// m_simulations.erase(simulation);
+	}
+
 	void Universe::_bind_methods()
 	{
 		k_signals.emplace();
@@ -105,9 +118,10 @@ namespace voxel_game
 		BIND_METHOD(godot::D_METHOD("query_galaxy_list", "query"), &Universe::QueryGalaxyList);
 		BIND_METHOD(godot::D_METHOD("ping_galaxy", "ip"), &Universe::PingGalaxy);
 
-		BIND_METHOD(godot::D_METHOD("start_local_galaxy", "galaxy_path"), &Universe::StartLocalGalaxy);
-		BIND_METHOD(godot::D_METHOD("start_local_fragment", "fragment_path", "fragment_type"), &Universe::StartLocalFragment);
-		BIND_METHOD(godot::D_METHOD("start_remote_galaxy", "galaxy_path"), &Universe::StartRemoteGalaxy);
+		BIND_METHOD(godot::D_METHOD("initialize_local_galaxy", "galaxy_path"), &Universe::InitializeLocalGalaxy);
+		BIND_METHOD(godot::D_METHOD("initialize_local_fragment", "fragment_path", "fragment_type"), &Universe::InitializeLocalFragment);
+		BIND_METHOD(godot::D_METHOD("initialize_remote_galaxy", "galaxy_path"), &Universe::InitializeRemoteGalaxy);
+		BIND_METHOD(godot::D_METHOD("uninitialize", "simulation"), &Universe::Uninitialize);
 
 		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_galaxy_list));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->disconnected_from_galaxy_list));

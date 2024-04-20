@@ -162,8 +162,13 @@ namespace voxel_game
 
 	UniverseSimulation::~UniverseSimulation()
 	{
-		DEBUG_ASSERT(!IsThreaded(), "The simulation should have been stopped before destroying it");
-		m_thread.join();
+		DEBUG_ASSERT(!m_universe.is_valid(), "We should have uninitialized first");
+
+		// Join the thread just in case
+		if (IsThreaded())
+		{
+			m_thread.join();
+		}
 	}
 
 	bool UniverseSimulation::IsThreaded()
@@ -173,7 +178,7 @@ namespace voxel_game
 
 	godot::Ref<Universe> UniverseSimulation::GetUniverse()
 	{
-		return m_universe;
+		return m_universe->get_ref();
 	}
 
 	godot::Dictionary UniverseSimulation::GetGalaxyInfo()
@@ -186,18 +191,20 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(!m_universe.is_valid(), "We can't initialize a simulation twice");
 
-		m_universe = universe;
+		m_universe = godot::UtilityFunctions::weakref(universe);
 
 		m_deferred_commands.reserve(64);
 		m_deferred_signals.reserve(64);
 
 		m_world.reset();
 
+		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
+
 		m_world.import<flecs::monitor>();
 		m_world.import<UniverseModule>();
 		m_world.import<SpatialModule>();
 
-		m_world.add<flecs::Rest>();
+		m_world.set<flecs::Rest>({});
 
 		m_universe_entity = m_world.entity().add<UniverseComponent>();
 
@@ -214,6 +221,29 @@ namespace voxel_game
 		});
 	}
 
+	void UniverseSimulation::Uninitialize()
+	{
+		DEBUG_ASSERT(m_universe.is_valid(), "The simulation should have been initialized");
+
+		if (m_galaxy_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
+		{
+			DEBUG_PRINT_ERROR("This galaxy should not be loaded when we uninitialize");
+		}
+
+		if (IsThreaded())
+		{
+			m_thread.join();
+		}
+
+		m_world.set_threads(0);
+
+		m_world.reset();
+
+		emit_signal(k_signals->simulation_uninitialized);
+
+		m_universe.unref();
+	}
+
 	void UniverseSimulation::StartSimulation(ThreadMode thread_mode)
 	{
 		if (!m_universe.is_valid())
@@ -227,8 +257,6 @@ namespace voxel_game
 			DEBUG_PRINT_ERROR("This galaxy should not be loaded when we start");
 			return;
 		}
-
-		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
 
 		m_galaxy_load_state.store(LOAD_STATE_LOADING, std::memory_order_release);
 		emit_signal(k_signals->load_state_changed, LOAD_STATE_LOADING);
@@ -261,25 +289,21 @@ namespace voxel_game
 
 	bool UniverseSimulation::Progress(real_t delta)
 	{
-		bool ret;
-
 		if (IsThreaded())
 		{
-			ret = true;
-
 			std::lock_guard lock(m_cache_mutex);
 			m_info_updater.ApplyUpdates(m_info_cache);
-		}
-		else
-		{
-			ret = m_world.progress(static_cast<ecs_ftime_t>(delta));
 
-			// Process signals
-			CommandBuffer::ProcessCommands(get_instance_id(), std::move(m_deferred_signals)); // m_deferred_signals guaranteed to be empty()
-			m_deferred_signals.reserve(64);
+			return true;
 		}
 
-		return ret;
+		bool keep_running = m_world.progress(static_cast<ecs_ftime_t>(delta));
+
+		// Process signals
+		CommandBuffer::ProcessCommands(get_instance_id(), std::move(m_deferred_signals)); // m_deferred_signals guaranteed to be empty()
+		m_deferred_signals.reserve(64);
+
+		return keep_running;
 	}
 
 	void UniverseSimulation::ThreadLoop()
@@ -288,10 +312,10 @@ namespace voxel_game
 
 		m_world.set_target_fps(20);
 
-		CommandBuffer command_buffer;
-
 		while (m_galaxy_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
 		{
+			CommandBuffer command_buffer;
+
 			{
 				std::lock_guard lock(m_commands_mutex);
 				command_buffer = std::move(m_deferred_commands);
@@ -314,7 +338,6 @@ namespace voxel_game
 	{
 		BIND_METHOD(godot::D_METHOD(k_commands->get_universe), &UniverseSimulation::GetUniverse);
 		BIND_METHOD(godot::D_METHOD(k_commands->get_galaxy_info), &UniverseSimulation::GetGalaxyInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->initialize, "universe", "path", "fragment_type", "remote"), &UniverseSimulation::Initialize);
 		BIND_METHOD(godot::D_METHOD(k_commands->start_simulation, "thread_mode"), &UniverseSimulation::StartSimulation);
 		BIND_METHOD(godot::D_METHOD(k_commands->stop_simulation), &UniverseSimulation::StopSimulation);
 		BIND_METHOD(godot::D_METHOD(k_commands->progress, "delta"), &UniverseSimulation::Progress);
@@ -567,6 +590,7 @@ namespace voxel_game
 
 	void UniverseSimulation::BindSignals()
 	{
+		ADD_SIGNAL(godot::MethodInfo(k_signals->simulation_uninitialized));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->simulation_started));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->simulation_stopped));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_remote));

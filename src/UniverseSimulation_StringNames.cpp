@@ -9,7 +9,6 @@ namespace voxel_game
 	{
 		INITIALIZE_STRINGNAME(get_universe);
 		INITIALIZE_STRINGNAME(get_galaxy_info);
-		INITIALIZE_STRINGNAME(initialize);
 		INITIALIZE_STRINGNAME(start_simulation);
 		INITIALIZE_STRINGNAME(stop_simulation);
 		INITIALIZE_STRINGNAME(progress);
@@ -242,6 +241,7 @@ namespace voxel_game
 
 	UniverseSimulation::SignalStrings::SignalStrings()
 	{
+		INITIALIZE_STRINGNAME(simulation_uninitialized);
 		INITIALIZE_STRINGNAME(simulation_started);
 		INITIALIZE_STRINGNAME(simulation_stopped);
 		INITIALIZE_STRINGNAME(connected_to_remote);

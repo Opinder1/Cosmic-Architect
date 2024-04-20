@@ -8,7 +8,6 @@ namespace voxel_game
 
 		godot::StringName get_universe;
 		godot::StringName get_galaxy_info;
-		godot::StringName initialize;
 		godot::StringName start_simulation;
 		godot::StringName stop_simulation;
 		godot::StringName progress;
@@ -243,6 +242,7 @@ namespace voxel_game
 	{
 		SignalStrings();
 
+		godot::StringName simulation_uninitialized;
 		godot::StringName simulation_started;
 		godot::StringName simulation_stopped;
 		godot::StringName connected_to_remote;

@@ -4,6 +4,7 @@
 
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/weak_ref.hpp>
 #include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/color.hpp>
@@ -181,6 +182,7 @@ namespace voxel_game
 		godot::Ref<Universe> GetUniverse();
 		godot::Dictionary GetGalaxyInfo();
 		void Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type);
+		void Uninitialize();
 		void StartSimulation(ThreadMode thread_mode);
 		void StopSimulation();
 		bool Progress(real_t delta);
@@ -451,7 +453,7 @@ namespace voxel_game
 		static void BindSignals();
 
 	private:
-		godot::Ref<Universe> m_universe;
+		godot::Ref<godot::WeakRef> m_universe;
 
 		std::atomic<LoadState> m_galaxy_load_state = LOAD_STATE_UNLOADED;
 
