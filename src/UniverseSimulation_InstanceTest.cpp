@@ -245,6 +245,8 @@ namespace voxel_game
 
 	uint64_t UniverseSimulation::CreateInstance(godot::RID mesh, godot::RID scenario)
 	{
+        DEBUG_ASSERT(!IsThreaded(), "Instance testing is singlethreaded only");
+
         if (static bool once = true; once)
         {
             print_limits();
@@ -266,13 +268,13 @@ namespace voxel_game
 		entity.add<Position>();
 		entity.add<Velocity>();
 
-        QueueSignal(k_signals->levelup_available);
-
 		return entity.id();
 	}
 
 	void UniverseSimulation::SetInstancePos(uint64_t instance_id, const godot::Vector3& pos)
 	{
+        DEBUG_ASSERT(!IsThreaded(), "Instance testing is singlethreaded only");
+
 		auto entity = m_world.entity(instance_id);
 
 		entity.get_mut<Position>()->position = pos;
@@ -281,6 +283,8 @@ namespace voxel_game
 
 	bool UniverseSimulation::DeleteInstance(uint64_t instance_id)
 	{
+        DEBUG_ASSERT(!IsThreaded(), "Instance testing is singlethreaded only");
+
 		auto entity = m_world.entity(instance_id);
 
 		entity.destruct();
