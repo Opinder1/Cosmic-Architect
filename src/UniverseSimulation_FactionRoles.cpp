@@ -88,6 +88,44 @@ namespace voxel_game
 
 	bool UniverseSimulation::EntityHasPermission(UUID faction_id, UUID entity_id, UUID permission_id)
 	{
-		return false;
+		std::shared_lock lock(m_cache_mutex);
+
+		UUID entity_role = GetEntityRole(faction_id, entity_id);
+
+		if (entity_role == UUID())
+		{
+			return false;
+		}
+
+		godot::Dictionary faction = GetFactionInfo(faction_id);
+
+		if (faction.is_empty())
+		{
+			return false;
+		}
+
+		godot::Dictionary faction_roles = faction.find_key("roles");
+
+		if (faction_roles.is_empty())
+		{
+			return false;
+		}
+
+		godot::Dictionary faction_role = faction_roles.find_key(entity_role);
+
+		if (faction_role.is_empty())
+		{
+			DEBUG_PRINT_ERROR("The faction role was not in the cache");
+			return false;
+		}
+
+		UUIDVector permissions = faction_role.find_key("permissions");
+
+		if (permissions.is_empty())
+		{
+			return false;
+		}
+
+		return permissions.find(permission_id);
 	}
 }
