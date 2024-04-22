@@ -208,14 +208,14 @@ namespace voxel_game
 		m_world.set<flecs::Rest>({});
 
 		m_universe_entity = m_world.entity()
-			.add<UniverseComponent>()
-			.add<SpatialWorld3DComponent>();
+			.add<SpatialWorld3DComponent>()
+			.add<UniverseComponent>();
 
 		m_galaxy_entity = m_world.entity()
 			.child_of(m_universe_entity)
-			.add<GalaxyComponent>()
-			.add<UniverseObjectComponent>()
 			.add<SpatialEntity3DComponent>()
+			.add<UniverseObjectComponent>()
+			.add<GalaxyComponent>()
 			.set([&](SimulatedGalaxyComponent& simulated_galaxy)
 		{
 			simulated_galaxy.name = "Test";
