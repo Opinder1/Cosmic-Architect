@@ -206,7 +206,7 @@ namespace voxel_game
 
 				for (godot::Vector3i& pos : commands.nodes_load)
 				{
-					scale.nodes.try_emplace(pos);
+					scale.nodes.try_emplace(pos, nullptr);
 				}
 
 				for (godot::Vector3i& pos : commands.nodes_unload)
