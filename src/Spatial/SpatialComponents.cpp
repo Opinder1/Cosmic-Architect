@@ -6,6 +6,20 @@
 
 namespace voxel_game
 {
+	// Add a cached query for all of a spatial worlds child nodes for fast access
+	void WorldAddChildQuery(flecs::entity entity, SpatialWorld3DComponent& spatial_world)
+	{
+		spatial_world.commands_query = entity.world().query_builder<SpatialCommands3DComponent>()
+			.term(flecs::ChildOf, entity)
+			.build();
+	}
+
+	// Clean up the commands query when destroying a world
+	void WorldRemoveChildQuery(flecs::entity entity, SpatialWorld3DComponent& spatial_world)
+	{
+		spatial_world.commands_query.destruct();
+	}
+
 	SpatialComponents::SpatialComponents(flecs::world& world)
 	{
 		world.module<SpatialComponents>();
@@ -37,5 +51,14 @@ namespace voxel_game
 		world.entity<WorldRegionProgressPhase>().add(flecs::Phase).depends_on<WorldNodeProgressPhase>();
 		world.entity<WorldScaleProgressPhase>().add(flecs::Phase).depends_on<WorldRegionProgressPhase>();
 		world.entity<WorldProgressPhase>().add(flecs::Phase).depends_on<WorldScaleProgressPhase>();
+
+		// Observers
+		world.observer<SpatialWorld3DComponent>()
+			.event(flecs::OnAdd)
+			.each(WorldAddChildQuery);
+
+		world.observer<SpatialWorld3DComponent>()
+			.event(flecs::OnRemove)
+			.each(WorldRemoveChildQuery);
 	}
 }
