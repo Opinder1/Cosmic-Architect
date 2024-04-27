@@ -29,7 +29,7 @@ namespace voxel_game
 
 	struct SpatialScale3DComponent
 	{
-		uint8_t scale;
+		uint8_t scale = 0;
 	};
 
 	struct SpatialCommands3DComponent
@@ -42,15 +42,15 @@ namespace voxel_game
 	{
 		SpatialCoord3D coord;
 
-		uint8_t dist_per_lod; // The number of nodes there are until the next lod starts
-		uint8_t min_lod; // The minimum lod this camera can see
-		uint8_t max_lod; // The maximum lod this camera can see
-		uint8_t update_frequency; // The frequency
+		uint8_t dist_per_lod = 0; // The number of nodes there are until the next lod starts
+		uint8_t min_lod = 0; // The minimum lod this camera can see
+		uint8_t max_lod = 0; // The maximum lod this camera can see
+		uint8_t update_frequency = 0; // The frequency
 	};
 
 	struct SpatialScaleThread3DComponent
 	{
-		uint8_t scale;
+		uint8_t scale = 0;
 	};
 
 	struct SpatialRegionThread3DComponent
@@ -66,7 +66,7 @@ namespace voxel_game
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct SpatialWorld3DComponent
 	{
-		SpatialWorld3D* world = nullptr;
+		SpatialWorld3D world;
 
 		flecs::query<SpatialCommands3DComponent> commands_query;
 	};

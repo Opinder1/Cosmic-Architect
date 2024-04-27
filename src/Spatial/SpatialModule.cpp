@@ -75,11 +75,9 @@ namespace voxel_game
 	// Example where we run each loader in different worker threads
 	void SpatialWorldLoaderExample(const SpatialLoader3DComponent& spatial_loader, SpatialWorld3DComponent& spatial_world)
 	{
-		DEBUG_ASSERT(spatial_world.world != nullptr, "World component must have a world");
-
 		for (size_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
 		{
-			const SpatialScale3D& spatial_scale = spatial_world.world->scales[scale_index];
+			const SpatialScale3D& spatial_scale = spatial_world.world.scales[scale_index];
 
 			ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [scale_index, &spatial_scale](godot::Vector3i pos)
 			{
@@ -98,13 +96,11 @@ namespace voxel_game
 	// Example where we run each world region in different worker threads
 	void SpatialWorldRegionExample(const SpatialRegionThread3DComponent& spatial_world_region, SpatialWorld3DComponent& spatial_world)
 	{
-		DEBUG_ASSERT(spatial_world.world != nullptr, "World component must have a world");
-
 		uint32_t scale_index = spatial_world_region.region.scale;
 		godot::Vector3i start = spatial_world_region.region.pos;
 		godot::Vector3i end = spatial_world_region.region.pos + spatial_world_region.region.size;
 
-		SpatialScale3D& scale = spatial_world.world->scales[scale_index];
+		SpatialScale3D& scale = spatial_world.world.scales[scale_index];
 
 		ForEachCoordInRegion(start, end, [&scale](godot::Vector3i pos)
 		{
@@ -120,9 +116,7 @@ namespace voxel_game
 	// Example where we run multiple non overlapping nodes in each thread
 	void SpatialWorldNodeExample(const SpatialNodeThread3DComponent& spatial_world_node, SpatialWorld3DComponent& spatial_world)
 	{
-		DEBUG_ASSERT(spatial_world.world != nullptr, "World component must have a world");
-
-		SpatialScale3D& scale = spatial_world.world->scales[spatial_world_node.node.scale];
+		SpatialScale3D& scale = spatial_world.world.scales[spatial_world_node.node.scale];
 
 		auto it = scale.nodes.find(spatial_world_node.node.pos);
 
@@ -140,9 +134,7 @@ namespace voxel_game
 	// Example where we run each world scale in a different thread
 	void SpatialWorldScaleExample(const SpatialScaleThread3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world)
 	{
-		DEBUG_ASSERT(spatial_world.world != nullptr, "World component must have a world");
-
-		SpatialScale3D& scale = spatial_world.world->scales[spatial_world_scale.scale];
+		SpatialScale3D& scale = spatial_world.world.scales[spatial_world_scale.scale];
 
 		for (auto&& [pos, node] : scale.nodes)
 		{
@@ -153,9 +145,7 @@ namespace voxel_game
 	// Example where we run each world in a different thread
 	void SpatialWorldExample(SpatialWorld3DComponent& spatial_world)
 	{
-		DEBUG_ASSERT(spatial_world.world != nullptr, "World component must have a world");
-
-		for (SpatialScale3D& scale : spatial_world.world->scales)
+		for (SpatialScale3D& scale : spatial_world.world.scales)
 		{
 			for (auto&& [pos, node] : scale.nodes)
 			{
@@ -167,11 +157,9 @@ namespace voxel_game
 	// System to keep alive all nodes around a loader and request the loading of any missing
 	void SpatialWorldLoaderUpdateNodes(const SpatialLoader3DComponent& spatial_loader, SpatialWorld3DComponent& spatial_world, SpatialCommands3DComponent& spatial_commands, const SimulationGlobal& world_time)
 	{
-		DEBUG_ASSERT(spatial_world.world != nullptr, "World component must have a world");
-
 		for (size_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
 		{
-			const SpatialScale3D& spatial_scale = spatial_world.world->scales[scale_index];
+			const SpatialScale3D& spatial_scale = spatial_world.world.scales[scale_index];
 
 			ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [scale_index, &spatial_scale, &spatial_commands, &world_time](godot::Vector3i pos)
 			{
@@ -192,9 +180,7 @@ namespace voxel_game
 	// System to erase any nodes that are no longer being observed by any loader
 	void SpatialWorldUnloadUnusedNodes(const SpatialScaleThread3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world, const SimulationGlobal& world_time)
 	{
-		DEBUG_ASSERT(spatial_world.world != nullptr, "World component must have a world");
-
-		SpatialScale3D& scale = spatial_world.world->scales[spatial_world_scale.scale];
+		SpatialScale3D& scale = spatial_world.world.scales[spatial_world_scale.scale];
 
 		for (auto&& [coord, node] : scale.nodes)
 		{
@@ -208,8 +194,6 @@ namespace voxel_game
 	// System to process all commands added for each node
 	void SpatialWorldApplyCommands(flecs::entity entity, SpatialWorld3DComponent& spatial_world)
 	{
-		DEBUG_ASSERT(spatial_world.world != nullptr, "World component must have a world");
-
 		auto stage_command_query = flecs::query<SpatialCommands3DComponent>(entity.world(), spatial_world.commands_query);
 
 		// For each command list that is a child of the world
@@ -219,7 +203,7 @@ namespace voxel_game
 			for (size_t scale_index = 0; scale_index < k_max_world_scale; scale_index++)
 			{
 				SpatialCommands3D& commands = spatial_commands.scales[scale_index];
-				SpatialScale3D& scale = spatial_world.world->scales[scale_index];
+				SpatialScale3D& scale = spatial_world.world.scales[scale_index];
 
 				for (godot::Vector3i& pos : commands.nodes_load)
 				{
