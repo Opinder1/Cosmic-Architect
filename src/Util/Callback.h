@@ -4,15 +4,6 @@
 
 namespace cb
 {
-	// A callback to the () operator of a struct
-	template<class Callable, class Ret, class... Args>
-	Ret ObjectCallback(void* data, Args... args)
-	{
-		Callable* obj = reinterpret_cast<Callable*>(data);
-
-		return obj->operator()(std::forward<Args>(args)...);
-	}
-
 	// A callback to a function pointer
 	template<auto Func, class Ret, class... Args>
 	Ret FuncCallback(void* data, Args... args)
@@ -83,14 +74,6 @@ namespace cb
 			m_callback(callback),
 			m_data(data)
 		{}
-
-		// Initialize with an object that has operator()
-		template<class Object>
-		Callback(const Object& object)
-		{
-			m_callback = ObjectCallback<Object, Ret, Args...>;
-			m_data = const_cast<void*>(reinterpret_cast<const void*>(&object));
-		}
 
 		bool operator==(const Callback& other) const
 		{
