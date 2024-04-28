@@ -5,6 +5,7 @@
 #include "Simulation/SimulationComponents.h"
 
 #include "Util/Debug.h"
+#include "Util/Callback.h"
 
 #include <flecs/flecs.h>
 
@@ -72,87 +73,148 @@ namespace voxel_game
 		}
 	}
 
-	// Example where we run each loader in different worker threads
-	void SpatialWorldLoaderExample(const SpatialLoader3DComponent& spatial_loader, SpatialWorld3DComponent& spatial_world)
+	// Wrapper to run world loaders in different threads
+	template<class... Args>
+	struct SpatialWorldLoaderSystem
 	{
-		for (size_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
+		using Callback = cb::Callback<void(const SpatialLoader3DComponent&, SpatialWorld3DComponent&, SpatialNode3D*, Args...)>;
+
+		SpatialWorldLoaderSystem(const Callback& callback) :
+			callback(callback)
+		{}
+
+		void operator()(const SpatialLoader3DComponent& spatial_loader, SpatialWorld3DComponent& spatial_world, Args&&... args) const
 		{
-			const SpatialScale3D& spatial_scale = spatial_world.world.scales[scale_index];
-
-			ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [scale_index, &spatial_scale](godot::Vector3i pos)
+			for (size_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
 			{
-				auto it = spatial_scale.nodes.find(pos);
+				const SpatialScale3D& spatial_scale = spatial_world.world.scales[scale_index];
 
-				if (it != spatial_scale.nodes.end())
+				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&, scale_index](godot::Vector3i pos)
 				{
-					SpatialNode3D* node = it->second;
+					auto it = spatial_scale.nodes.find(pos);
 
-					node;
-				}
-			});
-		}
-	}
-
-	// Example where we run each world region in different worker threads
-	void SpatialWorldRegionExample(const SpatialRegionThread3DComponent& spatial_world_region, SpatialWorld3DComponent& spatial_world)
-	{
-		uint32_t scale_index = spatial_world_region.region.scale;
-		godot::Vector3i start = spatial_world_region.region.pos;
-		godot::Vector3i end = spatial_world_region.region.pos + spatial_world_region.region.size;
-
-		SpatialScale3D& scale = spatial_world.world.scales[scale_index];
-
-		ForEachCoordInRegion(start, end, [&scale](godot::Vector3i pos)
-		{
-			SpatialNode3D* node = scale.nodes[pos];
-
-			ForEachChildNodeRecursive(node, [](SpatialNode3D* node)
-			{
-				node;
-			});
-		});
-	}
-	
-	// Example where we run multiple non overlapping nodes in each thread
-	void SpatialWorldNodeExample(const SpatialNodeThread3DComponent& spatial_world_node, SpatialWorld3DComponent& spatial_world)
-	{
-		SpatialScale3D& scale = spatial_world.world.scales[spatial_world_node.node.scale];
-
-		auto it = scale.nodes.find(spatial_world_node.node.pos);
-
-		if (it != scale.nodes.end())
-		{
-			SpatialNode3D* node = it->second;
-
-			ForEachChildNodeRecursive(node, [](SpatialNode3D* node)
-			{
-				node;
-			});
-		}
-	}
-
-	// Example where we run each world scale in a different thread
-	void SpatialWorldScaleExample(const SpatialScaleThread3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world)
-	{
-		SpatialScale3D& scale = spatial_world.world.scales[spatial_world_scale.scale];
-
-		for (auto&& [pos, node] : scale.nodes)
-		{
-			node;
-		}
-	}
-
-	// Example where we run each world in a different thread
-	void SpatialWorldExample(SpatialWorld3DComponent& spatial_world)
-	{
-		for (SpatialScale3D& scale : spatial_world.world.scales)
-		{
-			for (auto&& [pos, node] : scale.nodes)
-			{
-				node;
+					if (it != spatial_scale.nodes.end())
+					{
+						callback(spatial_loader, spatial_world, it->second, args...);
+					}
+					else
+					{
+						callback(spatial_loader, spatial_world, nullptr, args...);
+					}
+				});
 			}
 		}
-	}
+
+		Callback callback;
+	};
+
+	template<class... Args>
+	struct SpatialWorldRegionSystem
+	{
+		using Callback = cb::Callback<void(const SpatialRegion3DComponent&, SpatialWorld3DComponent&, SpatialNode3D*, Args...)>;
+
+		SpatialWorldRegionSystem(const Callback& callback) :
+			callback(callback)
+		{}
+
+		void operator()(const SpatialRegion3DComponent& spatial_world_region, SpatialWorld3DComponent& spatial_world, Args&&... args) const
+		{
+			uint32_t scale_index = spatial_world_region.region.scale;
+			godot::Vector3i start = spatial_world_region.region.pos;
+			godot::Vector3i end = spatial_world_region.region.pos + spatial_world_region.region.size;
+
+			SpatialScale3D& scale = spatial_world.world.scales[scale_index];
+
+			ForEachCoordInRegion(start, end, [&](godot::Vector3i pos)
+			{
+				SpatialNode3D* root_node = scale.nodes[pos];
+
+				ForEachChildNodeRecursive(root_node, [&](SpatialNode3D* node)
+				{
+					callback(spatial_world_region, spatial_world, node, args...);
+				});
+			});
+		}
+
+		Callback callback;
+	};
+
+	template<class... Args>
+	struct SpatialWorldNodeSystem
+	{
+		using Callback = cb::Callback<void(const SpatialNode3DComponent&, SpatialWorld3DComponent&, SpatialNode3D*, Args...)>;
+
+		SpatialWorldNodeSystem(const Callback& callback) :
+			callback(callback)
+		{}
+
+		void operator()(const SpatialNode3DComponent& spatial_world_node, SpatialWorld3DComponent& spatial_world, Args&&... args) const
+		{
+			SpatialScale3D& scale = spatial_world.world.scales[spatial_world_node.node.scale];
+
+			auto it = scale.nodes.find(spatial_world_node.node.pos);
+
+			if (it == scale.nodes.end())
+			{
+				DEBUG_PRINT_WARN("This spatial node components node is not loaded");
+				return;
+			}
+
+			SpatialNode3D* node = it->second;
+
+			ForEachChildNodeRecursive(node, [&](SpatialNode3D* node)
+			{
+				callback(spatial_world_node, spatial_world, node, args...);
+			});
+		}
+
+		Callback callback;
+	};
+
+	template<class... Args>
+	struct SpatialWorldScaleSystem
+	{
+		using Callback = cb::Callback<void(const SpatialScale3DComponent&, SpatialWorld3DComponent&, SpatialNode3D*, Args...)>;
+
+		SpatialWorldScaleSystem(const Callback& callback) :
+			callback(callback)
+		{}
+
+		void operator()(const SpatialScale3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world, Args&&... args) const
+		{
+			SpatialScale3D& scale = spatial_world.world.scales[spatial_world_scale.scale];
+
+			for (auto&& [pos, node] : scale.nodes)
+			{
+				callback(spatial_world_scale, spatial_world, node, args...);
+			}
+		}
+
+		Callback callback;
+	};
+
+	template<class... Args>
+	struct SpatialWorldSystem
+	{
+		using Callback = cb::Callback<void(SpatialWorld3DComponent&, SpatialNode3D*, Args...)>;
+
+		SpatialWorldSystem(const Callback& callback) :
+			callback(callback)
+		{}
+
+		void operator()(SpatialWorld3DComponent& spatial_world, Args&&... args) const
+		{
+			for (SpatialScale3D& scale : spatial_world.world.scales)
+			{
+				for (auto&& [pos, node] : scale.nodes)
+				{
+					callback(spatial_world, node, args...);
+				}
+			}
+		}
+
+		Callback callback;
+	};
 
 	// System to keep alive all nodes around a loader and request the loading of any missing
 	void SpatialWorldLoaderUpdateNodes(const SpatialLoader3DComponent& spatial_loader, SpatialWorld3DComponent& spatial_world, SpatialCommands3DComponent& spatial_commands, const SimulationGlobal& world_time)
@@ -178,7 +240,7 @@ namespace voxel_game
 	}
 
 	// System to erase any nodes that are no longer being observed by any loader
-	void SpatialWorldUnloadUnusedNodes(const SpatialScaleThread3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world, const SimulationGlobal& world_time)
+	void SpatialWorldUnloadUnusedNodes(const SpatialScale3DComponent& spatial_world_scale, SpatialWorld3DComponent& spatial_world, const SimulationGlobal& world_time)
 	{
 		SpatialScale3D& scale = spatial_world.world.scales[spatial_world_scale.scale];
 
@@ -202,27 +264,25 @@ namespace voxel_game
 			// Commands for each scale
 			for (size_t scale_index = 0; scale_index < k_max_world_scale; scale_index++)
 			{
-				SpatialCommands3D& commands = spatial_commands.scales[scale_index];
+				SpatialScaleCommands& scale_commands = spatial_commands.scales[scale_index];
 				SpatialScale3D& scale = spatial_world.world.scales[scale_index];
 
-				for (godot::Vector3i& pos : commands.nodes_load)
+				for (godot::Vector3i& pos : scale_commands.nodes_load)
 				{
-					scale.nodes.try_emplace(pos, nullptr);
+					scale.nodes.try_emplace(pos, spatial_world.world.create_node());
 				}
 
-				for (godot::Vector3i& pos : commands.nodes_unload)
+				for (godot::Vector3i& pos : scale_commands.nodes_unload)
 				{
-					scale.nodes.erase(pos);
+					auto it = scale.nodes.find(pos);
+
+					spatial_world.world.destroy_node(it->second);
+
+					scale.nodes.erase(it);
 				}
 
-				for (godot::Vector3i& coord : commands.nodes_changed)
-				{
-
-				}
-
-				commands.nodes_load.clear();
-				commands.nodes_unload.clear();
-				commands.nodes_changed.clear();
+				scale_commands.nodes_load.clear();
+				scale_commands.nodes_unload.clear();
 			}
 		});
 	}
@@ -244,8 +304,9 @@ namespace voxel_game
 		world.system<const SpatialLoader3DComponent, SpatialWorld3DComponent>("SpatialWorldLoaderExample")
 			.multi_threaded()
 			.kind<WorldLoaderProgressPhase>()
+			.term<SpatialThread3DComponent>()
 			.term_at(2).parent()
-			.each(SpatialWorldLoaderExample);
+			.each(SpatialWorldLoaderSystem({}));
 
 		world.system<const SpatialLoader3DComponent, SpatialWorld3DComponent, SpatialCommands3DComponent, const SimulationGlobal>("SpatialWorldLoaderUpdateNodes")
 			.multi_threaded()
@@ -260,11 +321,12 @@ namespace voxel_game
 			.kind<WorldNodeProgressPhase>()
 			.iter([](flecs::iter& it) {});
 
-		world.system<const SpatialNodeThread3DComponent, SpatialWorld3DComponent>("SpatialWorldNodeExample")
+		world.system<const SpatialNode3DComponent, SpatialWorld3DComponent>("SpatialWorldNodeExample")
 			.multi_threaded()
 			.kind<WorldNodeProgressPhase>()
+			.term<SpatialThread3DComponent>()
 			.term_at(2).parent()
-			.each(SpatialWorldNodeExample);
+			.each(SpatialWorldNodeSystem({}));
 
 		// Spatial world region systems
 		world.system("WorldRegionProgressSync")
@@ -272,11 +334,12 @@ namespace voxel_game
 			.kind<WorldRegionProgressPhase>()
 			.iter([](flecs::iter& it) {});
 
-		world.system<const SpatialRegionThread3DComponent, SpatialWorld3DComponent>("SpatialWorldRegionExample")
+		world.system<const SpatialRegion3DComponent, SpatialWorld3DComponent>("SpatialWorldRegionExample")
 			.multi_threaded()
 			.kind<WorldRegionProgressPhase>()
+			.term<SpatialThread3DComponent>()
 			.term_at(2).parent()
-			.each(SpatialWorldRegionExample);
+			.each(SpatialWorldRegionSystem({}));
 
 		// Spatial world scale systems
 		world.system("WorldScaleProgressSync")
@@ -284,15 +347,17 @@ namespace voxel_game
 			.kind<WorldScaleProgressPhase>()
 			.iter([](flecs::iter& it) {});
 
-		world.system<const SpatialScaleThread3DComponent, SpatialWorld3DComponent>("SpatialWorldScaleExample")
+		world.system<const SpatialScale3DComponent, SpatialWorld3DComponent>("SpatialWorldScaleExample")
 			.multi_threaded()
 			.kind<WorldScaleProgressPhase>()
+			.term<SpatialThread3DComponent>()
 			.term_at(2).parent()
-			.each(SpatialWorldScaleExample);
+			.each(SpatialWorldScaleSystem({}));
 
-		world.system<const SpatialScaleThread3DComponent, SpatialWorld3DComponent, const SimulationGlobal>("SpatialWorldUnloadUnusedNodes")
+		world.system<const SpatialScale3DComponent, SpatialWorld3DComponent, const SimulationGlobal>("SpatialWorldUnloadUnusedNodes")
 			.multi_threaded()
 			.kind<WorldScaleProgressPhase>()
+			.term<SpatialThread3DComponent>()
 			.term_at(2).parent()
 			.term_at(3).src<SimulationGlobal>()
 			.each(SpatialWorldUnloadUnusedNodes);
@@ -306,7 +371,7 @@ namespace voxel_game
 		world.system<SpatialWorld3DComponent>("SpatialWorldExample")
 			.multi_threaded()
 			.kind<WorldProgressPhase>()
-			.each(SpatialWorldExample);
+			.each(SpatialWorldSystem({}));
 
 		world.system<SpatialWorld3DComponent>("SpatialWorldApplyCommands")
 			.multi_threaded()

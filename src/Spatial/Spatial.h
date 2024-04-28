@@ -19,6 +19,8 @@
 
 namespace voxel_game
 {
+	struct SpatialWorld3D;
+
     constexpr const uint8_t k_max_world_scale = 16;
 
 	// A single node in a spatial world. This is meant to be inherited from for custom data
@@ -41,7 +43,6 @@ namespace voxel_game
 		};
 
 		SpatialNode3D* neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
-
 	};
 
 	// A level of detail map for a world. The world will have multiple of these
@@ -50,21 +51,20 @@ namespace voxel_game
 		robin_hood::unordered_flat_map<godot::Vector3i, SpatialNode3D*> nodes;
 	};
 
+	using SpatialWorldApplicator = void (*)(SpatialWorld3D&, SpatialNode3D&, size_t);
+
+	// A spatial world that has multiple scales each with nodes that form a lod tree
 	struct SpatialWorld3D : Nocopy
 	{
-		SpatialAABB region;
+		SpatialAABB bounds;
 
 		// Random access map for each scale
 		size_t max_scale = k_max_world_scale;
 		std::array<SpatialScale3D, k_max_world_scale> scales;
-	};
 
-	struct SpatialCommands3D : Nocopy
-	{
-		// Per thread lists for which the thread adds commands to be resolved later.
-		std::vector<godot::Vector3i> nodes_load;
-		std::vector<godot::Vector3i> nodes_unload;
+		SpatialNode3D* (*create_node)();
+		void (*destroy_node)(SpatialNode3D*);
 
-		std::vector<godot::Vector3i> nodes_changed; // List of nodes marked as updated. Useful for knowing which nodes to update for renderer
+		std::vector<SpatialWorldApplicator> applicators;
 	};
 }

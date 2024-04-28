@@ -16,25 +16,45 @@ namespace flecs
 
 namespace voxel_game
 {
-	struct SpatialNode3D;
-	struct SpatialWorld3D;
-
+	// Phases which are used to synchronise the ecs between running each thread type in parallel
 	struct WorldLoaderProgressPhase {};
 	struct WorldRegionProgressPhase {};
 	struct WorldNodeProgressPhase {};
 	struct WorldScaleProgressPhase {};
 	struct WorldProgressPhase {};
 
+	// Specify that this entity is within a spatial world (the world is the entities parent)
 	struct SpatialEntity3DComponent {};
 
+	// Per thread lists for which the thread adds commands to be resolved later.
+	struct SpatialScaleCommands
+	{
+		std::vector<godot::Vector3i> nodes_load;
+		std::vector<godot::Vector3i> nodes_unload;
+	};
+
+	// Add this component to a child of a spatial world to specify that it will add commands that will execute on the world
+	struct SpatialCommands3DComponent
+	{
+		SpatialScaleCommands scales[k_max_world_scale];
+	};
+
+	// Define which scale an entity is within
 	struct SpatialScale3DComponent
 	{
 		uint8_t scale = 0;
 	};
 
-	struct SpatialCommands3DComponent
+	// Add this component to a child of a spatial world to signify it represents a region in that world
+	struct SpatialRegion3DComponent
 	{
-		std::array<SpatialCommands3D, k_max_world_scale> scales;
+		SpatialAABB region;
+	};
+
+	// Add this component to a child of a spatial world to signify it represents a node in that world
+	struct SpatialNode3DComponent
+	{
+		SpatialCoord3D node;
 	};
 
 	// An object that tells a spatial world where to load nodes and at what lods
@@ -48,20 +68,8 @@ namespace voxel_game
 		uint8_t update_frequency = 0; // The frequency
 	};
 
-	struct SpatialScaleThread3DComponent
-	{
-		uint8_t scale = 0;
-	};
-
-	struct SpatialRegionThread3DComponent
-	{
-		SpatialAABB region;
-	};
-
-	struct SpatialNodeThread3DComponent
-	{
-		SpatialCoord3D node;
-	};
+	// Add this component to a child of a spatial world to specify the entity wants to modify the world in parallel
+	struct SpatialThread3DComponent {};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct SpatialWorld3DComponent
