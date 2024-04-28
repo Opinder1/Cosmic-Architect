@@ -26,13 +26,15 @@ namespace voxel_game
 	// A single node in a spatial world. This is meant to be inherited from for custom data
 	struct SpatialNode3D : Nocopy
 	{
+		SpatialCoord3D coord;
+
 		uint8_t parent_index = 0; // The index we are in our parent
 		uint8_t children_mask = 0; // Each bit determines a child [0-7]
 		uint8_t neighbour_mask = 0; // Each bit determines a neighbour [0-5]
 
-		Clock::time_point last_update_time; // Time since a loader last updated our unload timer
 		uint32_t num_observers = 0; // Number of observers looking at me (1 for write, more than 1 means shared read)
 		uint32_t network_version = 0; // The version of this node. We use this to check if we should update to a newer version if there is one
+		Clock::time_point last_update_time; // Time since a loader last updated our unload timer
 
 		SpatialNode3D* parent = nullptr; // Octree parent
 
