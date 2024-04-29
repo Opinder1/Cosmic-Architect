@@ -4,10 +4,10 @@ struct Nocopy
 {
 	Nocopy() {}
 
-	Nocopy(Nocopy&) = delete;
+	Nocopy(const Nocopy&) = delete;
 	Nocopy(Nocopy&&) = default;
 
-	Nocopy& operator=(Nocopy&) = delete;
+	Nocopy& operator=(const Nocopy&) = delete;
 	Nocopy& operator=(Nocopy&&) = default;
 };
 
@@ -15,9 +15,9 @@ struct Nomove
 {
 	Nomove() {}
 	
-	Nomove(Nomove&) = default;
+	Nomove(const Nomove&) = default;
 	Nomove(Nomove&&) = delete;
 
-	Nomove& operator=(Nomove&) = default;
+	Nomove& operator=(const Nomove&) = default;
 	Nomove& operator=(Nomove&&) = delete;
 };
