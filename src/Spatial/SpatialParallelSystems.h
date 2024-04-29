@@ -10,145 +10,90 @@
 namespace voxel_game
 {
 	// Wrapper to run world loaders in different threads
-	template<class... Args>
-	struct SpatialWorldLoaderSystem
+	template<auto callback, class... Args>
+	void Loader3DParallelSystem(SpatialWorld3DComponent& spatial_world, const SpatialLoader3DComponent& spatial_loader, Args... args)
 	{
-		using Callback = cb::Callback<void(SpatialCoord3D, SpatialNode3D*, SpatialWorld3DComponent&, const SpatialLoader3DComponent&, Args...)>;
-
-		SpatialWorldLoaderSystem(const Callback& callback) :
-			callback(callback)
-		{}
-
-		void operator()(SpatialWorld3DComponent& spatial_world, const SpatialLoader3DComponent& spatial_loader, Args&&... args) const
+		for (uint8_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
 		{
-			for (uint8_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
+			const SpatialScale3D& spatial_scale = spatial_world.world.scales[scale_index];
+
+			ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&, scale_index](godot::Vector3i pos)
 			{
-				const SpatialScale3D& spatial_scale = spatial_world.world.scales[scale_index];
+				auto it = spatial_scale.nodes.find(pos);
 
-				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&, scale_index](godot::Vector3i pos)
+				if (it != spatial_scale.nodes.end())
 				{
-					auto it = spatial_scale.nodes.find(pos);
-
-					if (it != spatial_scale.nodes.end())
-					{
-						callback(SpatialCoord3D{ it->first, scale_index }, it->second, spatial_world, spatial_loader, args...);
-					}
-					else
-					{
-						callback(SpatialCoord3D{}, nullptr, spatial_world, spatial_loader, args...);
-					}
-				});
-			}
-		}
-
-		Callback callback;
-	};
-
-	template<class... Args>
-	struct SpatialWorldRegionSystem
-	{
-		using Callback = cb::Callback<void(SpatialNode3D*, SpatialWorld3DComponent&, const SpatialRegion3DComponent&, Args...)>;
-
-		SpatialWorldRegionSystem(const Callback& callback) :
-			callback(callback)
-		{}
-
-		void operator()(SpatialWorld3DComponent& spatial_world, const SpatialRegion3DComponent& spatial_world_region, Args&&... args) const
-		{
-			uint32_t scale_index = spatial_world_region.region.scale;
-			godot::Vector3i start = spatial_world_region.region.pos;
-			godot::Vector3i end = spatial_world_region.region.pos + spatial_world_region.region.size;
-
-			SpatialScale3D& scale = spatial_world.world.scales[scale_index];
-
-			ForEachCoordInRegion(start, end, [&](godot::Vector3i pos)
-			{
-				SpatialNode3D* root_node = scale.nodes[pos];
-
-				ForEachChildNodeRecursive(root_node, [&](SpatialNode3D* node)
+					callback(SpatialCoord3D{ it->first, scale_index }, it->second, spatial_world, spatial_loader, args...);
+				}
+				else
 				{
-					callback(node, spatial_world, spatial_world_region, args...);
-				});
+					callback(SpatialCoord3D{}, nullptr, spatial_world, spatial_loader, args...);
+				}
 			});
 		}
+	}
 
-		Callback callback;
-	};
-
-	template<class... Args>
-	struct SpatialWorldNodeSystem
+	template<auto callback, class... Args>
+	void Region3DParallelSystem(SpatialWorld3DComponent& spatial_world, const SpatialRegion3DComponent& spatial_world_region, Args... args)
 	{
-		using Callback = cb::Callback<void(SpatialNode3D*, SpatialWorld3DComponent&, const SpatialNode3DComponent&, Args...)>;
+		uint32_t scale_index = spatial_world_region.region.scale;
+		godot::Vector3i start = spatial_world_region.region.pos;
+		godot::Vector3i end = spatial_world_region.region.pos + spatial_world_region.region.size;
 
-		SpatialWorldNodeSystem(const Callback& callback) :
-			callback(callback)
-		{}
+		SpatialScale3D& scale = spatial_world.world.scales[scale_index];
 
-		void operator()(SpatialWorld3DComponent& spatial_world, const SpatialNode3DComponent& spatial_world_node, Args&&... args) const
+		ForEachCoordInRegion(start, end, [&](godot::Vector3i pos)
 		{
-			SpatialScale3D& scale = spatial_world.world.scales[spatial_world_node.node.scale];
+			SpatialNode3D* root_node = scale.nodes[pos];
 
-			auto it = scale.nodes.find(spatial_world_node.node.pos);
-
-			if (it == scale.nodes.end())
+			ForEachChildNodeRecursive(root_node, [&](SpatialNode3D* node)
 			{
-				DEBUG_PRINT_WARN("This spatial node components node is not loaded");
-				return;
-			}
-
-			SpatialNode3D* node = it->second;
-
-			ForEachChildNodeRecursive(node, [&](SpatialNode3D* node)
-			{
-				callback(node, spatial_world, spatial_world_node, args...);
+				callback(node, spatial_world, spatial_world_region, args...);
 			});
+		});
+	}
+
+	template<auto callback, class... Args>
+	void Node3DParallelSystem(SpatialWorld3DComponent& spatial_world, const SpatialNode3DComponent& spatial_world_node, Args... args)
+	{
+		SpatialScale3D& scale = spatial_world.world.scales[spatial_world_node.node.scale];
+
+		auto it = scale.nodes.find(spatial_world_node.node.pos);
+
+		if (it == scale.nodes.end())
+		{
+			DEBUG_PRINT_WARN("This spatial node components node is not loaded");
+			return;
 		}
 
-		Callback callback;
-	};
+		SpatialNode3D* node = it->second;
 
-	template<class... Args>
-	struct SpatialWorldScaleSystem
-	{
-		using Callback = cb::Callback<void(SpatialNode3D*, SpatialWorld3DComponent&, const SpatialScale3DComponent&, Args...)>;
-
-		SpatialWorldScaleSystem(const Callback& callback) :
-			callback(callback)
-		{}
-
-		void operator()(SpatialWorld3DComponent& spatial_world, const SpatialScale3DComponent& spatial_world_scale, Args&&... args) const
+		ForEachChildNodeRecursive(node, [&](SpatialNode3D* node)
 		{
-			SpatialScale3D& scale = spatial_world.world.scales[spatial_world_scale.scale];
+			callback(node, spatial_world, spatial_world_node, args...);
+		});
+	}
 
+	template<auto callback, class... Args>
+	void Scale3DParallelSystem(SpatialWorld3DComponent& spatial_world, const SpatialScale3DComponent& spatial_world_scale, Args... args)
+	{
+		SpatialScale3D& scale = spatial_world.world.scales[spatial_world_scale.scale];
+
+		for (auto&& [pos, node] : scale.nodes)
+		{
+			callback(node, spatial_world, spatial_world_scale, args...);
+		}
+	}
+
+	template<auto callback, class... Args>
+	void World3DParallelSystem(SpatialWorld3DComponent& spatial_world, Args... args)
+	{
+		for (SpatialScale3D& scale : spatial_world.world.scales)
+		{
 			for (auto&& [pos, node] : scale.nodes)
 			{
-				callback(node, spatial_world, spatial_world_scale, args...);
+				callback(node, spatial_world, args...);
 			}
 		}
-
-		Callback callback;
-	};
-
-	template<class... Args>
-	struct SpatialWorldSystem
-	{
-		using Callback = cb::Callback<void(SpatialNode3D*, SpatialWorld3DComponent&, Args...)>;
-
-		SpatialWorldSystem(const Callback& callback) :
-			callback(callback)
-		{}
-
-		void operator()(SpatialWorld3DComponent& spatial_world, Args&&... args) const
-		{
-			for (SpatialScale3D& scale : spatial_world.world.scales)
-			{
-				for (auto&& [pos, node] : scale.nodes)
-				{
-					callback(node, spatial_world, args...);
-				}
-			}
-		}
-
-		Callback callback;
-	};
+	}
 }
