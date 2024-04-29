@@ -53,8 +53,6 @@ namespace voxel_game
 		robin_hood::unordered_flat_map<godot::Vector3i, SpatialNode3D*> nodes;
 	};
 
-	using SpatialWorldApplicator = void (*)(SpatialWorld3D&, SpatialNode3D&, size_t);
-
 	// A spatial world that has multiple scales each with nodes that form a lod tree
 	struct SpatialWorld3D : Nocopy
 	{
@@ -66,7 +64,5 @@ namespace voxel_game
 
 		SpatialNode3D* (*create_node)();
 		void (*destroy_node)(SpatialNode3D*);
-
-		std::vector<SpatialWorldApplicator> applicators;
 	};
 }
