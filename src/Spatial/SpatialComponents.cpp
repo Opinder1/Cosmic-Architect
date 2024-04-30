@@ -27,11 +27,11 @@ namespace voxel_game
 		world.import<PhysicsComponents>();
 
 		// Components
+		world.component<ParallelWorkerComponent>();
 		world.component<SpatialEntity3DComponent>();
 		world.component<SpatialScale3DComponent>();
 		world.component<SpatialWorld3DComponent>();
 		world.component<SpatialCommands3DComponent>();
-		world.component<SpatialThread3DComponent>();
 		world.component<SpatialScale3DComponent>();
 		world.component<SpatialRegion3DComponent>();
 		world.component<SpatialNode3DComponent>();
@@ -39,9 +39,6 @@ namespace voxel_game
 
 		// Relationships
 		world.component<SpatialEntity3DComponent>()
-			.add_second<SpatialWorld3DComponent>(flecs::OneOf);
-
-		world.component<SpatialThread3DComponent>()
 			.add_second<SpatialWorld3DComponent>(flecs::OneOf);
 
 		world.component<SpatialCommands3DComponent>()

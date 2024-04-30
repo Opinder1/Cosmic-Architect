@@ -23,6 +23,9 @@ namespace voxel_game
 	struct WorldScaleProgressPhase {};
 	struct WorldProgressPhase {};
 
+	// Add this component to a child of an entity to specify the worker wants to access the world in parallel
+	struct ParallelWorkerComponent {}; // TODO: Move out of the spatial module ideally
+
 	// Specify that this entity is within a spatial world (the world is the entities parent)
 	struct SpatialEntity3DComponent {};
 
@@ -67,9 +70,6 @@ namespace voxel_game
 		uint8_t max_lod = 0; // The maximum lod this camera can see
 		uint8_t update_frequency = 0; // The frequency
 	};
-
-	// Add this component to a child of a spatial world to specify the entity wants to modify the world in parallel
-	struct SpatialThread3DComponent {};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct SpatialWorld3DComponent

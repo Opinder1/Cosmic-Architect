@@ -102,7 +102,7 @@ namespace voxel_game
 		world.system<SpatialWorld3DComponent, const SpatialLoader3DComponent>("SpatialWorldLoaderExample")
 			.multi_threaded()
 			.kind<WorldLoaderProgressPhase>()
-			.term<SpatialThread3DComponent>()
+			.term<ParallelWorkerComponent>()
 			.term_at(1).parent()
 			.each(Loader3DParallelSystem<&SpatialWorldLoaderExample>);
 
@@ -122,7 +122,7 @@ namespace voxel_game
 		world.system<SpatialWorld3DComponent, const SpatialNode3DComponent>("SpatialWorldNodeExample")
 			.multi_threaded()
 			.kind<WorldNodeProgressPhase>()
-			.term<SpatialThread3DComponent>()
+			.term<ParallelWorkerComponent>()
 			.term_at(1).parent()
 			.each(Node3DParallelSystem<&SpatialWorldNodeExample>);
 
@@ -135,7 +135,7 @@ namespace voxel_game
 		world.system<SpatialWorld3DComponent, const SpatialRegion3DComponent>("SpatialWorldRegionExample")
 			.multi_threaded()
 			.kind<WorldRegionProgressPhase>()
-			.term<SpatialThread3DComponent>()
+			.term<ParallelWorkerComponent>()
 			.term_at(1).parent()
 			.each(Region3DParallelSystem<&SpatialWorldRegionExample>);
 
@@ -148,14 +148,14 @@ namespace voxel_game
 		world.system<SpatialWorld3DComponent, const SpatialScale3DComponent>("SpatialWorldScaleExample")
 			.multi_threaded()
 			.kind<WorldScaleProgressPhase>()
-			.term<SpatialThread3DComponent>()
+			.term<ParallelWorkerComponent>()
 			.term_at(1).parent()
 			.each(Scale3DParallelSystem<&SpatialWorldScaleExample>);
 
 		world.system<SpatialWorld3DComponent, const SpatialScale3DComponent, SpatialCommands3DComponent, const SimulationGlobal>("SpatialWorldUnloadUnusedNodes")
 			.multi_threaded()
 			.kind<WorldScaleProgressPhase>()
-			.term<SpatialThread3DComponent>()
+			.term<ParallelWorkerComponent>()
 			.term_at(1).parent()
 			.term_at(4).src<SimulationGlobal>()
 			.each(Scale3DParallelSystem<&SpatialWorldUnloadUnusedNodes, SpatialCommands3DComponent&, const SimulationGlobal&>);
