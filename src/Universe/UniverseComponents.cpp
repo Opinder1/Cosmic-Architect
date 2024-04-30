@@ -1,5 +1,4 @@
 #include "UniverseComponents.h"
-#include "Spatial/SpatialComponents.h"
 
 #include "Util/Debug.h"
 
@@ -10,8 +9,6 @@ namespace voxel_game
 	UniverseComponents::UniverseComponents(flecs::world& world)
 	{
 		world.module<UniverseComponents>();
-
-		world.import<SpatialComponents>();
 
 		world.component<UniverseComponent>();
 		world.component<UniverseObjectComponent>();
