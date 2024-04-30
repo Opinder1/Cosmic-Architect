@@ -29,17 +29,17 @@ namespace voxel_game
 	// Specify that this entity is within a spatial world (the world is the entities parent)
 	struct SpatialEntity3DComponent {};
 
-	// Per thread lists for which the thread adds commands to be resolved later.
-	struct SpatialScaleCommands
-	{
-		std::vector<godot::Vector3i> nodes_load;
-		std::vector<godot::Vector3i> nodes_unload;
-	};
-
 	// Add this component to a child of a spatial world to specify that it will add commands that will execute on the world
 	struct SpatialCommands3DComponent
 	{
-		SpatialScaleCommands scales[k_max_world_scale];
+		// Per thread lists for which the thread adds commands to be resolved later.
+		struct Commands
+		{
+			std::vector<godot::Vector3i> nodes_load;
+			std::vector<godot::Vector3i> nodes_unload;
+		};
+
+		Commands scales[k_max_world_scale];
 	};
 
 	// Define which scale an entity is within
@@ -72,7 +72,7 @@ namespace voxel_game
 	};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
-	struct SpatialWorld3DComponent
+	struct SpatialWorld3DComponent : Nocopy
 	{
 		SpatialWorld3D world;
 

@@ -61,8 +61,5 @@ namespace voxel_game
 		// Random access map for each scale
 		size_t max_scale = k_max_world_scale;
 		std::array<SpatialScale3D, k_max_world_scale> scales;
-
-		SpatialNode3D* (*create_node)();
-		void (*destroy_node)(SpatialNode3D*);
 	};
 }
