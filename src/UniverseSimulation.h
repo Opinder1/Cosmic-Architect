@@ -460,6 +460,7 @@ namespace voxel_game
 		flecs::world m_world;
 		flecs::entity_t m_universe_entity = 0;
 		flecs::entity_t m_galaxy_entity = 0;
+		flecs::entity_t m_player_entity = 0;
 
 		std::thread m_thread;
 

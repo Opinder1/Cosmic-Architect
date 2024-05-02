@@ -1,6 +1,7 @@
 #include "UniverseSimulation.h"
 #include "UniverseSimulation_StringNames.h"
 #include "Universe.h"
+#include "GenericComponents.h"
 
 #include "Universe/UniverseComponents.h"
 #include "Universe/GalaxyComponents.h"
@@ -208,15 +209,16 @@ namespace voxel_game
 		m_world.set<flecs::Rest>({});
 
 		m_universe_entity = m_world.entity()
-			.add<SpatialWorld3DComponent>()
-			.add<UniverseComponent>();
+			.add<UniverseComponent>()
+			.add<SpatialWorld3DComponent>();
 
 		m_galaxy_entity = m_world.entity()
 			.child_of(m_universe_entity)
-			.add<SpatialEntity3DComponent>()
-			.add<UniverseObjectComponent>()
 			.add<GalaxyComponent>()
-			.set([&](SimulatedGalaxyComponent& simulated_galaxy)
+			.add<UniverseObjectComponent>()
+			.add<SpatialEntity3DComponent>()
+			.add<SignalsComponent>()
+			.set([&path, &fragment_type, &server_type](SimulatedGalaxyComponent& simulated_galaxy)
 		{
 			simulated_galaxy.name = "Test";
 			simulated_galaxy.path = path;
