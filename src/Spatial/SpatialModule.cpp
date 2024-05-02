@@ -28,7 +28,7 @@ namespace voxel_game
 			}
 			else
 			{
-				spatial_commands.scales[coord.scale].nodes_load.push_back(coord.pos);
+				spatial_commands.scales[coord.scale].nodes_create.push_back(coord.pos);
 			}
 		});
 	}

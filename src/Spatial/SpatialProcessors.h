@@ -126,35 +126,30 @@ namespace voxel_game
 				SpatialCommands3DComponent::Commands& scale_commands = spatial_commands.scales[scale_index];
 				SpatialScale3D& scale = spatial_world.world.scales[scale_index];
 
-				for (godot::Vector3i& pos : scale_commands.nodes_load)
-				{
-					SpatialNode3D* node = processor.CreateNode(scale_index, pos);
-
-					if (node == nullptr)
-					{
-						continue;
-					}
-
-					scale.nodes.try_emplace(pos, node);
-				}
-
-				scale_commands.nodes_load.clear();
-
-				for (godot::Vector3i& pos : scale_commands.nodes_unload)
+				for (godot::Vector3i& pos : scale_commands.nodes_create)
 				{
 					auto it = scale.nodes.find(pos);
 
 					if (it == scale.nodes.end())
 					{
-						continue;
+						scale.nodes.emplace(pos, processor.CreateNode(scale_index, pos));
+					}
+				}
+				scale_commands.nodes_load = std::move(scale_commands.nodes_create);
+
+				for (godot::Vector3i& pos : scale_commands.nodes_delete)
+				{
+					auto it = scale.nodes.find(pos);
+
+					if (it != scale.nodes.end())
+					{
+						processor.DestroyNode(scale_index, pos, it->second);
+
+						scale.nodes.erase(it);
 					}
 
-					processor.DestroyNode(scale_index, pos, it->second);
-
-					scale.nodes.erase(it);
 				}
-
-				scale_commands.nodes_unload.clear();
+				scale_commands.nodes_delete.clear();
 			}
 		});
 	}

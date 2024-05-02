@@ -35,8 +35,10 @@ namespace voxel_game
 		// Per thread lists for which the thread adds commands to be resolved later.
 		struct Commands
 		{
+			std::vector<godot::Vector3i> nodes_create;
 			std::vector<godot::Vector3i> nodes_load;
 			std::vector<godot::Vector3i> nodes_unload;
+			std::vector<godot::Vector3i> nodes_delete;
 		};
 
 		Commands scales[k_max_world_scale];
