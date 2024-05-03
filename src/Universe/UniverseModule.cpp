@@ -10,68 +10,12 @@
 
 namespace voxel_game
 {
-	struct UniverseNodeProcessor
+	void LoadUniverseNodes(flecs::entity entity, UniverseComponent& universe, SpatialWorld3DComponent& spatial_world, const SpatialScale3DComponent& spatial_scale)
 	{
-		SpatialNode3D* CreateNode(size_t scale, godot::Vector3i pos)
+		SpatialScale3DLoaderProcessor(entity.world(), spatial_world, spatial_scale, [&](SpatialCoord3D coord, SpatialNode3D* node)
 		{
-			UniverseNode* node = new UniverseNode();
 
-			for (size_t i = 0; i < 8; i++)
-			{
-				flecs::entity galaxy = world.entity()
-					.child_of(universe_entity)
-					.add<GalaxyComponent>()
-					.add<UniverseObjectComponent>()
-					.add<SpatialEntity3DComponent>();
-
-				node->entities.push_back(galaxy);
-			}
-
-			return node;
-		}
-
-		void DestroyNode(size_t scale, godot::Vector3i pos, SpatialNode3D* node)
-		{
-			UniverseNode* universe_node = static_cast<UniverseNode*>(node);
-
-			for (flecs::entity_t entity : universe_node->entities)
-			{
-				if (world.is_alive(entity))
-				{
-					flecs::entity(world, entity).destruct();
-				}
-			}
-
-			delete universe_node;
-		}
-
-		flecs::world& world;
-		flecs::entity_t universe_entity;
-		UniverseComponent& universe;
-
-	};
-
-	void UniverseSpatialCommands(flecs::entity entity, UniverseComponent& universe, SpatialWorld3DComponent& spatial_world)
-	{
-		SpatialCommands3DProcessor(entity, spatial_world, UniverseNodeProcessor{ entity.world(), entity, universe });
-	}
-
-	struct GalaxyNodeProcessor
-	{
-		SpatialNode3D* CreateNode(size_t scale, godot::Vector3i pos)
-		{
-			return new SpatialNode3D();
-		}
-
-		void DestroyNode(size_t scale, godot::Vector3i pos, SpatialNode3D* node)
-		{
-			delete node;
-		}
-	};
-
-	void GalaxySpatialCommands(flecs::entity entity, SimulatedGalaxyComponent& simulated_galaxy, SpatialWorld3DComponent& spatial_world)
-	{
-		SpatialCommands3DProcessor(entity, spatial_world, GalaxyNodeProcessor());
+		});
 	}
 
 	UniverseModule::UniverseModule(flecs::world& world)
@@ -82,14 +26,12 @@ namespace voxel_game
 		world.import<GalaxyComponents>();
 		world.import<SpatialComponents>();
 
-		world.system<UniverseComponent, SpatialWorld3DComponent>("UniverseSpatialCommands")
+		world.system<UniverseComponent, SpatialWorld3DComponent, const SpatialScale3DComponent>("LoaderKeepAliveNodes")
 			.multi_threaded()
 			.kind<WorldProgressPhase>()
-			.each(UniverseSpatialCommands);
-
-		world.system<SimulatedGalaxyComponent, SpatialWorld3DComponent>("GalaxySpatialCommands")
-			.multi_threaded()
-			.kind<WorldProgressPhase>()
-			.each(GalaxySpatialCommands);
+			.term<ParallelWorkerComponent>()
+			.term_at(1).parent()
+			.term_at(2).parent()
+			.each(LoadUniverseNodes);
 	}
 }

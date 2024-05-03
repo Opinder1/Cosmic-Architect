@@ -78,6 +78,7 @@ namespace voxel_game
 	{
 		SpatialWorld3D world;
 
+		flecs::query<SpatialLoader3DComponent> loaders_query;
 		flecs::query<SpatialCommands3DComponent> commands_query;
 	};
 

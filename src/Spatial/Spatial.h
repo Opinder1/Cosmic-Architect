@@ -50,7 +50,7 @@ namespace voxel_game
 	// A level of detail map for a world. The world will have multiple of these
 	struct SpatialScale3D : Nocopy
 	{
-		robin_hood::unordered_flat_map<godot::Vector3i, SpatialNode3D*> nodes;
+		robin_hood::unordered_flat_map<godot::Vector3i, std::unique_ptr<SpatialNode3D>> nodes;
 	};
 
 	// A spatial world that has multiple scales each with nodes that form a lod tree

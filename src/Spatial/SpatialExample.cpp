@@ -51,7 +51,7 @@ namespace voxel_game
 
 	void SpatialCommands3DExample(flecs::entity entity, SpatialWorld3DComponent& spatial_world)
 	{
-		SpatialCommands3DProcessor(entity, spatial_world, ExampleProcessor());
+		SpatialWorld3DCommandsProcessor(entity.world(), spatial_world, ExampleProcessor());
 	}
 
 	struct SpatialExampleModule

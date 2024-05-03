@@ -26,10 +26,6 @@ namespace voxel_game
 			{
 				node->last_update_time = world_time.frame_start;
 			}
-			else
-			{
-				spatial_commands.scales[coord.scale].nodes_create.push_back(coord.pos);
-			}
 		});
 	}
 
@@ -117,6 +113,6 @@ namespace voxel_game
 			return nullptr;
 		}
 
-		return it->second;
+		return it->second.get();
 	}
 }
