@@ -10,7 +10,7 @@
 #include "Spatial/SpatialComponents.h"
 #include "Spatial/SpatialModule.h"
 
-#include "Voxel/Voxel.h"
+#include "Voxel/VoxelComponents.h"
 #include "Voxel/VoxelModule.h"
 
 #include "Util/Debug.h"
@@ -215,6 +215,7 @@ namespace voxel_game
 		m_galaxy_entity = m_world.entity()
 			.child_of(m_universe_entity)
 			.add<GalaxyComponent>()
+			.add<SpatialWorld3DComponent>()
 			.add<UniverseObjectComponent>()
 			.add<SpatialEntity3DComponent>()
 			.add<SignalsComponent>()

@@ -13,7 +13,11 @@ namespace voxel_game
 			.term(flecs::ChildOf, entity)
 			.build();
 
-		spatial_world.commands_query = entity.world().query_builder<SpatialCommands3DComponent>()
+		spatial_world.load_commands_query = entity.world().query_builder<SpatialLoadCommands3DComponent>()
+			.term(flecs::ChildOf, entity)
+			.build();
+
+		spatial_world.unload_commands_query = entity.world().query_builder<SpatialUnloadCommands3DComponent>()
 			.term(flecs::ChildOf, entity)
 			.build();
 	}
@@ -21,7 +25,8 @@ namespace voxel_game
 	// Clean up the commands query when destroying a world
 	void WorldRemoveChildQuery(flecs::entity entity, SpatialWorld3DComponent& spatial_world)
 	{
-		spatial_world.commands_query.destruct();
+		spatial_world.unload_commands_query.destruct();
+		spatial_world.load_commands_query.destruct();
 		spatial_world.loaders_query.destruct();
 	}
 
@@ -32,36 +37,41 @@ namespace voxel_game
 		world.import<PhysicsComponents>();
 
 		// Components
-		world.component<ParallelWorkerComponent>();
 		world.component<SpatialEntity3DComponent>();
-		world.component<SpatialScale3DComponent>();
 		world.component<SpatialWorld3DComponent>();
-		world.component<SpatialCommands3DComponent>();
-		world.component<SpatialScale3DComponent>();
-		world.component<SpatialRegion3DComponent>();
-		world.component<SpatialNode3DComponent>();
+		world.component<SpatialScale3DWorkerComponent>();
+		world.component<SpatialScale3DWorkerComponent>();
+		world.component<SpatialRegion3DWorkerComponent>();
+		world.component<SpatialNode3DWorkerComponent>();
 		world.component<SpatialLoader3DComponent>();
+		world.component<SpatialLoadCommands3DComponent>();
+		world.component<SpatialUnloadCommands3DComponent>();
 
 		// Relationships
 		world.component<SpatialEntity3DComponent>()
+			.add_second<Position3DComponent>(flecs::With)
 			.add_second<SpatialWorld3DComponent>(flecs::OneOf);
 
-		world.component<SpatialCommands3DComponent>()
+		world.component<SpatialScale3DWorkerComponent>()
 			.add_second<SpatialWorld3DComponent>(flecs::OneOf);
 
-		world.component<SpatialScale3DComponent>()
+		world.component<SpatialRegion3DWorkerComponent>()
 			.add_second<SpatialWorld3DComponent>(flecs::OneOf);
 
-		world.component<SpatialRegion3DComponent>()
+		world.component<SpatialNode3DWorkerComponent>()
 			.add_second<SpatialWorld3DComponent>(flecs::OneOf);
 
-		world.component<SpatialNode3DComponent>()
+		world.component<SpatialLoadCommands3DComponent>()
+			.add_second<SpatialWorld3DComponent>(flecs::OneOf);
+
+		world.component<SpatialUnloadCommands3DComponent>()
 			.add_second<SpatialWorld3DComponent>(flecs::OneOf);
 
 		world.component<SpatialLoader3DComponent>()
 			.add_second<Position3DComponent>(flecs::With)
-			.add_second<SpatialScale3DComponent>(flecs::With)
-			.add_second<SpatialCommands3DComponent>(flecs::With);
+			.add_second<SpatialEntity3DComponent>(flecs::With)
+			.add_second<SpatialLoadCommands3DComponent>(flecs::With)
+			.add_second<SpatialUnloadCommands3DComponent>(flecs::With);
 
 		// Phases
 		world.entity<WorldLoaderProgressPhase>()

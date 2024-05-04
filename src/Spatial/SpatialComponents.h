@@ -1,13 +1,21 @@
 #pragma once
 
-#include "Spatial.h"
+#include "SpatialCoord.h"
+#include "SpatialAABB.h"
 
+#include "Util/Time.h"
+#include "Util/Hash.h"
 #include "Util/Nocopy.h"
 
 #include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/variant/vector3i.hpp>
 
+#include <robin_hood/robin_hood.h>
+
+#include <flecs/flecs.h>
+
 #include <vector>
+#include <array>
 
 namespace flecs
 {
@@ -16,6 +24,8 @@ namespace flecs
 
 namespace voxel_game
 {
+	constexpr const uint8_t k_max_world_scale = 16;
+
 	// Phases which are used to synchronise the ecs between running each thread type in parallel
 	struct WorldLoaderProgressPhase {};
 	struct WorldRegionProgressPhase {};
@@ -23,41 +33,23 @@ namespace voxel_game
 	struct WorldScaleProgressPhase {};
 	struct WorldProgressPhase {};
 
-	// Add this component to a child of an entity to specify the worker wants to access the world in parallel
-	struct ParallelWorkerComponent {}; // TODO: Move out of the spatial module ideally
-
 	// Specify that this entity is within a spatial world (the world is the entities parent)
 	struct SpatialEntity3DComponent {};
 
-	// Add this component to a child of a spatial world to specify that it will add commands that will execute on the world
-	struct SpatialCommands3DComponent
-	{
-		// Per thread lists for which the thread adds commands to be resolved later.
-		struct Commands
-		{
-			std::vector<godot::Vector3i> nodes_create;
-			std::vector<godot::Vector3i> nodes_load;
-			std::vector<godot::Vector3i> nodes_unload;
-			std::vector<godot::Vector3i> nodes_delete;
-		};
-
-		Commands scales[k_max_world_scale];
-	};
-
 	// Define which scale an entity is within
-	struct SpatialScale3DComponent
+	struct SpatialScale3DWorkerComponent
 	{
 		uint8_t scale = 0;
 	};
 
 	// Add this component to a child of a spatial world to signify it represents a region in that world
-	struct SpatialRegion3DComponent
+	struct SpatialRegion3DWorkerComponent
 	{
 		SpatialAABB region;
 	};
 
 	// Add this component to a child of a spatial world to signify it represents a node in that world
-	struct SpatialNode3DComponent
+	struct SpatialNode3DWorkerComponent
 	{
 		SpatialCoord3D node;
 	};
@@ -73,13 +65,60 @@ namespace voxel_game
 		uint8_t update_frequency = 0; // The frequency
 	};
 
+	// Add this component to a child of a spatial world to specify that it will add commands that will execute on the world
+	struct SpatialLoadCommands3DComponent
+	{
+		std::array<std::vector<godot::Vector3i>, k_max_world_scale> scales;
+	};
+
+	// Add this component to a child of a spatial world to specify that it will add commands that will execute on the world
+	struct SpatialUnloadCommands3DComponent
+	{
+		std::array<std::vector<godot::Vector3i>, k_max_world_scale> scales;
+	};
+
+	// A single node in a spatial world. This is meant to be inherited from for custom data
+	struct SpatialNode3D : Nocopy
+	{
+		SpatialCoord3D coord;
+
+		uint8_t parent_index = 0; // The index we are in our parent
+		uint8_t children_mask = 0; // Each bit determines a child [0-7]
+		uint8_t neighbour_mask = 0; // Each bit determines a neighbour [0-5]
+
+		uint32_t num_observers = 0; // Number of observers looking at me (1 for write, more than 1 means shared read)
+		uint32_t network_version = 0; // The version of this node. We use this to check if we should update to a newer version if there is one
+		Clock::time_point last_update_time; // Time since a loader last updated our unload timer
+
+		SpatialNode3D* parent = nullptr; // Octree parent
+
+		union
+		{
+			SpatialNode3D* children[2][2][2] = { nullptr }; // Octree children
+			SpatialNode3D* children_array[8];
+		};
+
+		SpatialNode3D* neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
+	};
+
+	// A level of detail map for a world. The world will have multiple of these
+	struct SpatialScale3D : Nocopy
+	{
+		robin_hood::unordered_flat_map<godot::Vector3i, std::unique_ptr<SpatialNode3D>> nodes;
+	};
+
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct SpatialWorld3DComponent : Nocopy
 	{
-		SpatialWorld3D world;
+		SpatialAABB bounds;
+
+		// Random access map for each scale
+		size_t max_scale = k_max_world_scale;
+		std::array<SpatialScale3D, k_max_world_scale> scales;
 
 		flecs::query<SpatialLoader3DComponent> loaders_query;
-		flecs::query<SpatialCommands3DComponent> commands_query;
+		flecs::query<SpatialLoadCommands3DComponent> load_commands_query;
+		flecs::query<SpatialUnloadCommands3DComponent> unload_commands_query;
 	};
 
 	struct SpatialComponents

@@ -1,13 +1,12 @@
 #pragma once
 
-#include "Spatial.h"
 #include "SpatialComponents.h"
 #include "SpatialTraverse.h"
 
 #include "Util/Callback.h"
 #include "Util/Debug.h"
 
-#define PARALLEL_ACCESS(...) __VA_ARGS__
+#define PARALLEL_ACCESS(...) __VA_ARGS__;
 
 namespace voxel_game
 {
@@ -19,7 +18,7 @@ namespace voxel_game
 
 		for (uint8_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
 		{
-			const SpatialScale3D& spatial_scale = spatial_world.world.scales[scale_index];
+			const SpatialScale3D& spatial_scale = spatial_world.scales[scale_index];
 
 			ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&spatial_scale, scale_index, &processor](godot::Vector3i pos)
 			{
@@ -39,13 +38,13 @@ namespace voxel_game
 
 	// Wrapper to run world nodes in different threads
 	template<class Callable>
-	void SpatialNode3DNodeProcessor(SpatialWorld3DComponent& spatial_world, const SpatialNode3DComponent& spatial_node, Callable&& processor)
+	void SpatialNode3DNodeProcessor(SpatialWorld3DComponent& spatial_world, const SpatialNode3DWorkerComponent& node_worker, Callable&& processor)
 	{
 		PARALLEL_ACCESS(spatial_world);
 
-		SpatialScale3D& scale = spatial_world.world.scales[spatial_node.node.scale];
+		SpatialScale3D& scale = spatial_world.scales[node_worker.node.scale];
 
-		auto it = scale.nodes.find(spatial_node.node.pos);
+		auto it = scale.nodes.find(node_worker.node.pos);
 
 		if (it == scale.nodes.end())
 		{
@@ -60,17 +59,17 @@ namespace voxel_game
 
 	// Wrapper to run world regions in different threads
 	template<class Callable>
-	void SpatialRegion3DNodeProcessor(SpatialWorld3DComponent& spatial_world, const SpatialRegion3DComponent& spatial_region, Callable&& processor)
+	void SpatialRegion3DNodeProcessor(SpatialWorld3DComponent& spatial_world, const SpatialRegion3DWorkerComponent& region_worker, Callable&& processor)
 	{
 		PARALLEL_ACCESS(spatial_world);
 
-		uint32_t scale_index = spatial_region.region.scale;
-		godot::Vector3i start = spatial_region.region.pos;
-		godot::Vector3i end = spatial_region.region.pos + spatial_region.region.size;
+		uint32_t scale_index = region_worker.region.scale;
+		godot::Vector3i start = region_worker.region.pos;
+		godot::Vector3i end = region_worker.region.pos + region_worker.region.size;
 
-		SpatialScale3D& scale = spatial_world.world.scales[scale_index];
+		SpatialScale3D& scale = spatial_world.scales[scale_index];
 
-		ForEachCoordInRegion(start, end, [&spatial_world, &spatial_region, &scale, &processor](godot::Vector3i pos)
+		ForEachCoordInRegion(start, end, [&spatial_world, &scale, &processor](godot::Vector3i pos)
 		{
 			auto it = scale.nodes.find(pos);
 
@@ -88,11 +87,11 @@ namespace voxel_game
 
 	// Wrapper to run world scales in different threads
 	template<class Callable>
-	void SpatialScale3DNodeProcessor(SpatialWorld3DComponent& spatial_world, const SpatialScale3DComponent& spatial_scale, Callable&& processor)
+	void SpatialScale3DNodeProcessor(SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker, Callable&& processor)
 	{
 		PARALLEL_ACCESS(spatial_world);
 
-		SpatialScale3D& scale = spatial_world.world.scales[spatial_scale.scale];
+		SpatialScale3D& scale = spatial_world.scales[scale_worker.scale];
 
 		for (auto&& [pos, node] : scale.nodes)
 		{
@@ -104,7 +103,7 @@ namespace voxel_game
 	template<class Callable>
 	void SpatialWorld3DNodeProcessor(SpatialWorld3DComponent& spatial_world, Callable&& processor)
 	{
-		for (SpatialScale3D& scale : spatial_world.world.scales)
+		for (SpatialScale3D& scale : spatial_world.scales)
 		{
 			for (auto&& [pos, node] : scale.nodes)
 			{
@@ -115,13 +114,13 @@ namespace voxel_game
 
 	// System to process all commands added for each node
 	template<class Processor>
-	void SpatialScale3DLoaderProcessor(flecs::world& stage, SpatialWorld3DComponent& spatial_world, const SpatialScale3DComponent& spatial_scale, Processor&& processor)
+	void SpatialScale3DLoaderProcessor(flecs::world& stage, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker, Processor&& processor)
 	{
 		PARALLEL_ACCESS(spatial_world);
 
-		uint8_t scale_index = spatial_scale.scale;
+		uint8_t scale_index = scale_worker.scale;
 
-		SpatialScale3D& scale = spatial_world.world.scales[spatial_scale.scale];
+		SpatialScale3D& scale = spatial_world.scales[scale_worker.scale];
 
 		flecs::query<SpatialLoader3DComponent> staged_loaders_query(stage, spatial_world.loaders_query);
 
@@ -148,43 +147,70 @@ namespace voxel_game
 
 	// System to process all commands added for each node
 	template<class Processor>
-	void SpatialWorld3DCommandsProcessor(flecs::world& stage, SpatialWorld3DComponent& spatial_world, Processor&& processor)
+	void SpatialScale3DLoadCommandsProcessor(flecs::world& stage, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker, Processor&& processor)
 	{
-		flecs::query<SpatialCommands3DComponent> staged_commands_query(stage, spatial_world.commands_query);
+		PARALLEL_ACCESS(spatial_world);
+
+		flecs::query<SpatialLoadCommands3DComponent> staged_load_commands_query(stage, spatial_world.load_commands_query);
+
+		uint8_t scale_index = scale_worker.scale;
+
+		SpatialScale3D& scale = spatial_world.scales[scale_index];
 
 		// For each command list that is a child of the world
-		staged_commands_query.each([&spatial_world, &processor](SpatialCommands3DComponent& spatial_commands)
+		staged_load_commands_query.each([&scale_index, &scale, &processor](SpatialLoadCommands3DComponent& load_commands)
 		{
-			// Commands for each scale
-			for (uint8_t scale_index = 0; scale_index < k_max_world_scale; scale_index++)
+			PARALLEL_ACCESS(load_commands);
+
+			std::vector<godot::Vector3i>& scale_commands = load_commands.scales[scale_index];
+
+			for (godot::Vector3i& pos : scale_commands)
 			{
-				SpatialCommands3DComponent::Commands& scale_commands = spatial_commands.scales[scale_index];
-				SpatialScale3D& scale = spatial_world.world.scales[scale_index];
+				auto it = scale.nodes.find(pos);
 
-				for (godot::Vector3i& pos : scale_commands.nodes_create)
+				if (it != scale.nodes.end())
 				{
-					auto it = scale.nodes.find(pos);
-
-					if (it == scale.nodes.end())
-					{
-						scale.nodes.emplace(pos, processor.CreateNode(scale_index, pos));
-					}
+					processor(SpatialCoord3D{ pos, scale_index }, it->second.get());
 				}
-				scale_commands.nodes_load = std::move(scale_commands.nodes_create);
-
-				for (godot::Vector3i& pos : scale_commands.nodes_delete)
+				else
 				{
-					auto it = scale.nodes.find(pos);
-
-					if (it != scale.nodes.end())
-					{
-						processor.DestroyNode(scale_index, pos, it->second.get());
-
-						scale.nodes.erase(it);
-					}
-
+					processor(SpatialCoord3D{ pos, scale_index }, nullptr);
 				}
-				scale_commands.nodes_delete.clear();
+			}
+		});
+	}
+
+	// System to process all commands added for each node
+	template<class Processor>
+	void SpatialScale3DUnloadCommandsProcessor(flecs::world& stage, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker, Processor&& processor)
+	{
+		PARALLEL_ACCESS(spatial_world);
+
+		flecs::query<SpatialUnloadCommands3DComponent> staged_unload_commands_query(stage, spatial_world.unload_commands_query);
+
+		uint8_t scale_index = scale_worker.scale;
+
+		SpatialScale3D& scale = spatial_world.scales[scale_index];
+
+		// For each command list that is a child of the world
+		staged_unload_commands_query.each([&scale_index, &scale, &processor](SpatialUnloadCommands3DComponent& unload_commands)
+		{
+			PARALLEL_ACCESS(unload_commands);
+
+			std::vector<godot::Vector3i>& scale_commands = unload_commands.scales[scale_index];
+
+			for (godot::Vector3i& pos : scale_commands)
+			{
+				auto it = scale.nodes.find(pos);
+
+				if (it != scale.nodes.end())
+				{
+					processor(SpatialCoord3D{ pos, scale_index }, it->second.get());
+				}
+				else
+				{
+					processor(SpatialCoord3D{ pos, scale_index }, nullptr);
+				}
 			}
 		});
 	}

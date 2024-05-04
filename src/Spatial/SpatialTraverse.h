@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Spatial.h"
+#include "SpatialComponents.h"
 
 namespace voxel_game
 {

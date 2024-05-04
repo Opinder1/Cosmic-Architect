@@ -15,7 +15,6 @@ namespace voxel_game
 	void LoaderKeepAliveNodes(
 		SpatialWorld3DComponent& spatial_world,
 		const SpatialLoader3DComponent& spatial_loader,
-		SpatialCommands3DComponent& spatial_commands,
 		const SimulationGlobal& world_time)
 	{
 		PARALLEL_ACCESS(spatial_world, world_time);
@@ -32,17 +31,17 @@ namespace voxel_game
 	// System to erase any nodes that are no longer being observed by any loader
 	void SpatialWorldUnloadUnusedNodes(
 		SpatialWorld3DComponent& spatial_world,
-		const SpatialScale3DComponent& spatial_world_scale,
-		SpatialCommands3DComponent& spatial_commands,
+		const SpatialScale3DWorkerComponent& scale_worker,
+		SpatialUnloadCommands3DComponent& spatial_commands,
 		const SimulationGlobal& world_time)
 	{
 		PARALLEL_ACCESS(spatial_world, world_time);
 
-		SpatialWorld3DNodeProcessor(spatial_world, [&](SpatialNode3D* node)
+		SpatialScale3DNodeProcessor(spatial_world, scale_worker, [&](SpatialNode3D* node)
 		{
 			if (world_time.frame_start - node->last_update_time > 20s)
 			{
-				spatial_commands.scales[spatial_world_scale.scale].nodes_unload.push_back(node->coord.pos);
+				spatial_commands.scales[scale_worker.scale].push_back(node->coord.pos);
 			}
 		});
 	}
@@ -83,24 +82,22 @@ namespace voxel_game
 
 		// Systems
 
-		world.system<SpatialWorld3DComponent, const SpatialLoader3DComponent, SpatialCommands3DComponent, const SimulationGlobal>("LoaderKeepAliveNodes")
+		world.system<SpatialWorld3DComponent, const SpatialLoader3DComponent, const SimulationGlobal>("LoaderKeepAliveNodes")
 			.multi_threaded()
 			.kind<WorldProgressPhase>()
-			.term<ParallelWorkerComponent>()
 			.term_at(1).parent()
 			.term_at(4).src<SimulationGlobal>()
 			.each(LoaderKeepAliveNodes);
 
-		world.system<SpatialWorld3DComponent, const SpatialScale3DComponent, SpatialCommands3DComponent, const SimulationGlobal>("SpatialWorldUnloadUnusedNodes")
+		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent, SpatialUnloadCommands3DComponent, const SimulationGlobal>("SpatialWorldUnloadUnusedNodes")
 			.multi_threaded()
 			.kind<WorldProgressPhase>()
-			.term<ParallelWorkerComponent>()
 			.term_at(1).parent()
 			.term_at(4).src<SimulationGlobal>()
 			.each(SpatialWorldUnloadUnusedNodes);
 	}
 
-	SpatialNode3D* SpatialModule::GetNode(const SpatialWorld3D& world, SpatialCoord3D coord)
+	SpatialNode3D* SpatialModule::GetNode(const SpatialWorld3DComponent& world, SpatialCoord3D coord)
 	{
 		DEBUG_ASSERT(coord.scale < k_max_world_scale, "The coordinates scale is out of range");
 
