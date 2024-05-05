@@ -209,23 +209,25 @@ namespace voxel_game
 		m_world.set<flecs::Rest>({});
 
 		m_universe_entity = m_world.entity()
-			.add<UniverseComponent>()
-			.add<SpatialWorld3DComponent>();
+			.add<UniverseComponent>();
 
 		m_galaxy_entity = m_world.entity()
 			.child_of(m_universe_entity)
-			.add<GalaxyComponent>()
-			.add<SpatialWorld3DComponent>()
-			.add<UniverseObjectComponent>()
-			.add<SpatialEntity3DComponent>()
-			.add<SignalsComponent>()
 			.set([&path, &fragment_type, &server_type](SimulatedGalaxyComponent& simulated_galaxy)
-		{
-			simulated_galaxy.name = "Test";
-			simulated_galaxy.path = path;
-			simulated_galaxy.fragment_type = fragment_type;
-			simulated_galaxy.is_remote = (server_type == SERVER_TYPE_REMOTE);
-		});
+			{
+				simulated_galaxy.name = "Test";
+				simulated_galaxy.path = path;
+				simulated_galaxy.fragment_type = fragment_type;
+				simulated_galaxy.is_remote = (server_type == SERVER_TYPE_REMOTE);
+			})
+			.add<UniverseObjectComponent>()
+			.set([](SpatialLoader3DComponent& spatial_loader)
+			{
+				spatial_loader.dist_per_lod = 16;
+				spatial_loader.min_lod = 0;
+				spatial_loader.max_lod = 8;
+			})
+			.add<SignalsComponent>();
 	}
 
 	void UniverseSimulation::Uninitialize()
