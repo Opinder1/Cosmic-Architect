@@ -10,6 +10,8 @@ namespace voxel_game
 	{
 		world.module<UniverseComponents>();
 
+		world.import<SpatialComponents>();
+
 		world.component<UniverseComponent>();
 		world.component<UniverseObjectComponent>();
 

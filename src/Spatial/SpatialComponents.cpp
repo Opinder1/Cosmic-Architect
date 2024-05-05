@@ -2,6 +2,8 @@
 
 #include "Physics/PhysicsComponents.h"
 
+#include "Util/Debug.h"
+
 #include <flecs/flecs.h>
 
 namespace voxel_game
@@ -9,25 +11,19 @@ namespace voxel_game
 	// Add a cached query for all of a spatial worlds child nodes for fast access
 	void WorldAddChildQuery(flecs::entity entity, SpatialWorld3DComponent& spatial_world)
 	{
-		spatial_world.loaders_query = entity.world().query_builder<SpatialLoader3DComponent>()
+		flecs::scoped_world world = entity.world().scope(entity); // Add the queries as children of the entity so they are automatically destructed
+
+		spatial_world.loaders_query = world.query_builder<SpatialLoader3DComponent>()
 			.term(flecs::ChildOf, entity)
 			.build();
 
-		spatial_world.load_commands_query = entity.world().query_builder<SpatialLoadCommands3DComponent>()
+		spatial_world.load_commands_query = world.query_builder<SpatialLoadCommands3DComponent>()
 			.term(flecs::ChildOf, entity)
 			.build();
 
-		spatial_world.unload_commands_query = entity.world().query_builder<SpatialUnloadCommands3DComponent>()
+		spatial_world.unload_commands_query = world.query_builder<SpatialUnloadCommands3DComponent>()
 			.term(flecs::ChildOf, entity)
 			.build();
-	}
-
-	// Clean up the commands query when destroying a world
-	void WorldRemoveChildQuery(flecs::entity entity, SpatialWorld3DComponent& spatial_world)
-	{
-		spatial_world.unload_commands_query.destruct();
-		spatial_world.load_commands_query.destruct();
-		spatial_world.loaders_query.destruct();
 	}
 
 	SpatialComponents::SpatialComponents(flecs::world& world)
@@ -98,9 +94,5 @@ namespace voxel_game
 		world.observer<SpatialWorld3DComponent>()
 			.event(flecs::OnAdd)
 			.each(WorldAddChildQuery);
-
-		world.observer<SpatialWorld3DComponent>()
-			.event(flecs::OnRemove)
-			.each(WorldRemoveChildQuery);
 	}
 }

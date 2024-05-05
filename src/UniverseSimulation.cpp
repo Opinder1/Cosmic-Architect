@@ -1,7 +1,7 @@
 #include "UniverseSimulation.h"
 #include "UniverseSimulation_StringNames.h"
 #include "Universe.h"
-#include "GenericComponents.h"
+#include "GodotComponents.h"
 
 #include "Universe/UniverseComponents.h"
 #include "Universe/GalaxyComponents.h"
@@ -203,8 +203,9 @@ namespace voxel_game
 		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
 
 		m_world.import<flecs::monitor>();
-		m_world.import<UniverseModule>();
+		m_world.import<GodotComponents>();
 		m_world.import<SpatialModule>();
+		m_world.import<UniverseModule>();
 
 		m_world.set<flecs::Rest>({});
 
@@ -213,21 +214,23 @@ namespace voxel_game
 
 		m_galaxy_entity = m_world.entity()
 			.child_of(m_universe_entity)
-			.set([&path, &fragment_type, &server_type](SimulatedGalaxyComponent& simulated_galaxy)
-			{
-				simulated_galaxy.name = "Test";
-				simulated_galaxy.path = path;
-				simulated_galaxy.fragment_type = fragment_type;
-				simulated_galaxy.is_remote = (server_type == SERVER_TYPE_REMOTE);
-			})
+			.add<SimulatedGalaxyComponent>()
+			.add<SimulatedGalaxyComponent>()
 			.add<UniverseObjectComponent>()
-			.set([](SpatialLoader3DComponent& spatial_loader)
-			{
-				spatial_loader.dist_per_lod = 16;
-				spatial_loader.min_lod = 0;
-				spatial_loader.max_lod = 8;
-			})
+			.add<SpatialLoader3DComponent>()
 			.add<SignalsComponent>();
+
+		flecs::entity(m_world, m_galaxy_entity).set([&path, &fragment_type, &server_type](SimulatedGalaxyComponent& simulated_galaxy, SpatialLoader3DComponent& spatial_loader)
+		{
+			simulated_galaxy.name = "Test";
+			simulated_galaxy.path = path;
+			simulated_galaxy.fragment_type = fragment_type;
+			simulated_galaxy.is_remote = (server_type == SERVER_TYPE_REMOTE);
+
+			spatial_loader.dist_per_lod = 16;
+			spatial_loader.min_lod = 0;
+			spatial_loader.max_lod = 8;
+		});
 	}
 
 	void UniverseSimulation::Uninitialize()

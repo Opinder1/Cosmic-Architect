@@ -31,9 +31,9 @@ namespace voxel_game
 	{
 		world.module<UniverseModule>("UniverseModule");
 
+		world.import<SpatialComponents>();
 		world.import<UniverseComponents>();
 		world.import<GalaxyComponents>();
-		world.import<SpatialComponents>();
 
 		world.system<UniverseComponent, SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>("UniverseLoaderCreateNodes")
 			.multi_threaded()

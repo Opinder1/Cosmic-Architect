@@ -86,7 +86,7 @@ namespace voxel_game
 			.multi_threaded()
 			.kind<WorldProgressPhase>()
 			.term_at(1).parent()
-			.term_at(4).src<SimulationGlobal>()
+			.term_at(3).src<SimulationGlobal>()
 			.each(LoaderKeepAliveNodes);
 
 		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent, SpatialUnloadCommands3DComponent, const SimulationGlobal>("SpatialWorldUnloadUnusedNodes")
