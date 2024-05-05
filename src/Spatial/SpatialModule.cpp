@@ -19,7 +19,7 @@ namespace voxel_game
 	{
 		PARALLEL_ACCESS(spatial_world, world_time);
 
-		SpatialLoader3DNodeProcessor(spatial_world, spatial_loader, [&](SpatialCoord3D coord, SpatialNode3D* node)
+		SpatialLoader3DNodeProcessor(spatial_world, spatial_loader, [&world_time](SpatialCoord3D coord, SpatialNode3D* node)
 		{
 			if (node != nullptr)
 			{
