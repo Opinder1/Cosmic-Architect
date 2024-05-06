@@ -212,31 +212,27 @@ namespace voxel_game
 		m_universe_entity = m_world.entity()
 			.add<UniverseComponent>();
 
-		flecs::entity galaxy_entity = m_world.entity()
+		m_galaxy_entity = m_world.entity()
 			.child_of(m_universe_entity)
 			.add<SimulatedGalaxyComponent>()
 			.add<UniverseObjectComponent>()
 			.add<SpatialLoader3DComponent>()
-			.add<SignalsComponent>();
+			.add<SignalsComponent>()
+			.set([&path, &fragment_type, &server_type](SimulatedGalaxyComponent& simulated_galaxy)
+			{
+				simulated_galaxy.name = "Test";
+				simulated_galaxy.path = path;
+				simulated_galaxy.fragment_type = fragment_type;
+				simulated_galaxy.is_remote = (server_type == SERVER_TYPE_REMOTE);
+			})
+			.set([](SpatialLoader3DComponent& spatial_loader)
+			{
+				spatial_loader.dist_per_lod = 16;
+				spatial_loader.min_lod = 0;
+				spatial_loader.max_lod = 8;
+			});
 
-		galaxy_entity.set([&path, &fragment_type, &server_type](SimulatedGalaxyComponent& simulated_galaxy)
-		{
-			simulated_galaxy.name = "Test";
-			simulated_galaxy.path = path;
-			simulated_galaxy.fragment_type = fragment_type;
-			simulated_galaxy.is_remote = (server_type == SERVER_TYPE_REMOTE);
-		});
-
-		galaxy_entity.set([](SpatialLoader3DComponent& spatial_loader)
-		{
-			spatial_loader.dist_per_lod = 16;
-			spatial_loader.min_lod = 0;
-			spatial_loader.max_lod = 8;
-		});
-
-		m_galaxy_entity = galaxy_entity;
-
-		SpatialModule::AddSpatialScaleWorkers(m_world, galaxy_entity);
+		SpatialModule::AddSpatialScaleWorkers(m_world, m_galaxy_entity);
 	}
 
 	void UniverseSimulation::Uninitialize()
