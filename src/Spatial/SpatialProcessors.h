@@ -124,10 +124,10 @@ namespace voxel_game
 
 		SpatialScale3D& scale = spatial_world.scales[scale_index];
 
-		flecs::query<SpatialLoader3DComponent> staged_loaders_query(stage, spatial_world.loaders_query);
+		flecs::query<const SpatialLoader3DComponent> staged_loaders_query(stage, spatial_world.loaders_query);
 
 		// For each command list that is a child of the world
-		staged_loaders_query.each([&scale, scale_index, &processor](SpatialLoader3DComponent& spatial_loader)
+		staged_loaders_query.each([&scale, scale_index, &processor](const SpatialLoader3DComponent& spatial_loader)
 		{
 			PARALLEL_ACCESS(spatial_loader);
 

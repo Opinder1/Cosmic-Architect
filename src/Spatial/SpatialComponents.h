@@ -116,9 +116,9 @@ namespace voxel_game
 		size_t max_scale = k_max_world_scale;
 		std::array<SpatialScale3D, k_max_world_scale> scales;
 
-		flecs::query<SpatialLoader3DComponent> loaders_query;
-		flecs::query<SpatialLoadCommands3DComponent> load_commands_query;
-		flecs::query<SpatialUnloadCommands3DComponent> unload_commands_query;
+		flecs::query_t* loaders_query;
+		flecs::query_t* load_commands_query;
+		flecs::query_t* unload_commands_query;
 	};
 
 	struct SpatialComponents

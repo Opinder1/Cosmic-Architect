@@ -13,16 +13,17 @@ namespace voxel_game
 	{
 		flecs::scoped_world world = entity.world().scope(entity); // Add the queries as children of the entity so they are automatically destructed
 
-		spatial_world.loaders_query = world.query_builder<SpatialLoader3DComponent>()
-			.term(flecs::ChildOf, entity)
+		// Use read() as its required for queries run inside systems
+		spatial_world.loaders_query = world.query_builder<const SpatialLoader3DComponent>()
+			.term(flecs::ChildOf, entity).read()
 			.build();
 
-		spatial_world.load_commands_query = world.query_builder<SpatialLoadCommands3DComponent>()
-			.term(flecs::ChildOf, entity)
+		spatial_world.load_commands_query = world.query_builder<const SpatialLoadCommands3DComponent>()
+			.term(flecs::ChildOf, entity).read()
 			.build();
 
-		spatial_world.unload_commands_query = world.query_builder<SpatialUnloadCommands3DComponent>()
-			.term(flecs::ChildOf, entity)
+		spatial_world.unload_commands_query = world.query_builder<const SpatialUnloadCommands3DComponent>()
+			.term(flecs::ChildOf, entity).read()
 			.build();
 	}
 
