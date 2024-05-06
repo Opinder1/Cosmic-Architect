@@ -13,6 +13,11 @@ namespace flecs
 
 namespace voxel_game
 {
+	struct GalaxyNode : SpatialNode3D
+	{
+		std::vector<flecs::entity_t> entities;
+	};
+
 	struct GalaxyComponent
 	{
 		godot::Color color;
