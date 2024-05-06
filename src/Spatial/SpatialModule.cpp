@@ -7,8 +7,6 @@
 #include "Util/Debug.h"
 #include "Util/Callback.h"
 
-#include <flecs/flecs.h>
-
 namespace voxel_game
 {
 	// System to keep alive all nodes around a loader and request the loading of any missing
@@ -95,6 +93,27 @@ namespace voxel_game
 			.term_at(1).parent()
 			.term_at(4).src<SimulationGlobal>()
 			.each(SpatialWorldUnloadUnusedNodes);
+	}
+
+	void SpatialModule::AddSpatialScaleWorkers(flecs::world& world, flecs::entity_t spatial_world_entity)
+	{
+		const SpatialWorld3DComponent* spatial_world = flecs::entity(world, spatial_world_entity).get<SpatialWorld3DComponent>();
+
+		DEBUG_ASSERT(spatial_world != nullptr, "The entity should have a spatial world to add spatial workers");
+
+		for (uint8_t scale_index = 0; scale_index < spatial_world->max_scale; scale_index++)
+		{
+			flecs::entity scale_worker_entity = world.entity()
+				.child_of(spatial_world_entity)
+				.add<SpatialScale3DWorkerComponent>()
+				.add<SpatialLoadCommands3DComponent>()
+				.add<SpatialUnloadCommands3DComponent>();
+
+			scale_worker_entity.set([scale_index](SpatialScale3DWorkerComponent& scale_worker)
+			{
+				scale_worker.scale = scale_index;
+			});
+		}
 	}
 
 	SpatialNode3D* SpatialModule::GetNode(const SpatialWorld3DComponent& world, SpatialCoord3D coord)
