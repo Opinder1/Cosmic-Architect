@@ -1,10 +1,14 @@
 #pragma once
 
+#include "Spatial/SpatialComponents.h"
+
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/classes/dir_access.hpp>
 
 #include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/variant/string_name.hpp>
+
+#include <flecs/flecs.h>
 
 namespace flecs
 {
