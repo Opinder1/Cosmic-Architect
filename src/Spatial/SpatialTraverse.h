@@ -34,9 +34,9 @@ namespace voxel_game
 
 		for (; start.x < end.x; start.x++)
 		{
-			for (; start.y < end.x; start.y++)
+			for (; start.y < end.y; start.y++)
 			{
-				for (; start.z < end.x; start.z++)
+				for (; start.z < end.z; start.z++)
 				{
 					callback(start);
 				}
@@ -51,15 +51,17 @@ namespace voxel_game
 		godot::Vector3i start = pos - godot::Vector3i(radius, radius, radius);
 		godot::Vector3i end = pos + godot::Vector3i(radius, radius, radius);
 
-		for (; start.x < end.x; start.x++)
+		godot::Vector3i it;
+
+		for (it.x = start.x; it.x < end.x; it.x++)
 		{
-			for (; start.y < end.x; start.y++)
+			for (it.y = start.y; it.y < end.y; it.y++)
 			{
-				for (; start.z < end.x; start.z++)
+				for (it.z = start.z; it.z < end.z; it.z++)
 				{
-					if (pos.distance_squared_to(start) < radius)
+					if (pos.distance_squared_to(it) < radius)
 					{
-						callback(start);
+						callback(it);
 					}
 				}
 			}
