@@ -98,7 +98,7 @@ namespace voxel_game
 		{
 			const SpatialScale3D& spatial_scale = spatial_world.scales[scale_index];
 
-			ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&spatial_scale, scale_index, &processor](godot::Vector3i pos)
+			ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [scale_index, &spatial_scale, &processor](godot::Vector3i pos)
 			{
 				auto it = spatial_scale.nodes.find(pos);
 
@@ -127,7 +127,7 @@ namespace voxel_game
 		flecs::query<const SpatialLoader3DComponent> staged_loaders_query(stage, spatial_world.loaders_query);
 
 		// For each command list that is a child of the world
-		staged_loaders_query.each([&scale, scale_index, &processor](const SpatialLoader3DComponent& spatial_loader)
+		staged_loaders_query.each([scale_index, &scale, &processor](const SpatialLoader3DComponent& spatial_loader)
 		{
 			PARALLEL_ACCESS(spatial_loader);
 
@@ -160,7 +160,7 @@ namespace voxel_game
 		SpatialScale3D& scale = spatial_world.scales[scale_index];
 
 		// For each command list that is a child of the world
-		staged_load_commands_query.each([&scale_index, &scale, &processor](SpatialLoadCommands3DComponent& load_commands)
+		staged_load_commands_query.each([scale_index, &scale, &processor](SpatialLoadCommands3DComponent& load_commands)
 		{
 			PARALLEL_ACCESS(load_commands);
 
@@ -195,7 +195,7 @@ namespace voxel_game
 		SpatialScale3D& scale = spatial_world.scales[scale_index];
 
 		// For each command list that is a child of the world
-		staged_unload_commands_query.each([&scale_index, &scale, &processor](SpatialUnloadCommands3DComponent& unload_commands)
+		staged_unload_commands_query.each([scale_index, &scale, &processor](SpatialUnloadCommands3DComponent& unload_commands)
 		{
 			PARALLEL_ACCESS(unload_commands);
 

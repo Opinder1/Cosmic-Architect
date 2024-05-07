@@ -27,11 +27,11 @@ namespace voxel_game
 	constexpr const uint8_t k_max_world_scale = 16;
 
 	// Phases which are used to synchronise the ecs between running each thread type in parallel
-	struct WorldLoaderProgressPhase {};
-	struct WorldRegionProgressPhase {};
-	struct WorldNodeProgressPhase {};
-	struct WorldScaleProgressPhase {};
-	struct WorldProgressPhase {};
+	struct WorldLoaderWorkerPhase {};
+	struct WorldRegionWorkerPhase {};
+	struct WorldNodeWorkerPhase {};
+	struct WorldScaleWorkerPhase {};
+	struct WorldWorkerPhase {};
 
 	// Specify that this entity is within a spatial world (the world is the entities parent)
 	struct SpatialEntity3DComponent {};

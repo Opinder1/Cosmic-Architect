@@ -59,36 +59,36 @@ namespace voxel_game
 
 			world.system<SpatialWorld3DComponent, const SpatialLoader3DComponent>("SpatialWorldLoaderExample")
 				.multi_threaded()
-				.kind<WorldLoaderProgressPhase>()
+				.kind<WorldLoaderWorkerPhase>()
 				.term_at(1).parent()
 				.each(SpatialLoader3DExample);
 
 			world.system<SpatialWorld3DComponent, const SpatialNode3DWorkerComponent>("SpatialWorldNodeExample")
 				.multi_threaded()
-				.kind<WorldNodeProgressPhase>()
+				.kind<WorldNodeWorkerPhase>()
 				.term_at(1).parent()
 				.each(SpatialNode3DExample);
 
 			world.system<SpatialWorld3DComponent, const SpatialRegion3DWorkerComponent>("SpatialWorldRegionExample")
 				.multi_threaded()
-				.kind<WorldRegionProgressPhase>()
+				.kind<WorldRegionWorkerPhase>()
 				.term_at(1).parent()
 				.each(SpatialRegion3DExample);
 
 			world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>("SpatialWorldScaleExample")
 				.multi_threaded()
-				.kind<WorldScaleProgressPhase>()
+				.kind<WorldScaleWorkerPhase>()
 				.term_at(1).parent()
 				.each(SpatialScale3DExample);
 
 			world.system<SpatialWorld3DComponent>("SpatialWorldExample")
 				.multi_threaded()
-				.kind<WorldProgressPhase>()
+				.kind<WorldWorkerPhase>()
 				.each(SpatialWorld3DExample);
 
 			world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>("WorldCommandsExample")
 				.multi_threaded()
-				.kind<WorldProgressPhase>()
+				.kind<WorldWorkerPhase>()
 				.term_at(1).parent()
 				.each(SpatialCommands3DExample);
 		}

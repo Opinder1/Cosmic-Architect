@@ -71,25 +71,25 @@ namespace voxel_game
 			.add_second<SpatialUnloadCommands3DComponent>(flecs::With);
 
 		// Phases
-		world.entity<WorldLoaderProgressPhase>()
+		world.entity<WorldLoaderWorkerPhase>()
 			.add(flecs::Phase)
 			.depends_on(flecs::OnUpdate);
 
-		world.entity<WorldNodeProgressPhase>()
+		world.entity<WorldNodeWorkerPhase>()
 			.add(flecs::Phase)
-			.depends_on<WorldLoaderProgressPhase>();
+			.depends_on<WorldLoaderWorkerPhase>();
 
-		world.entity<WorldRegionProgressPhase>()
+		world.entity<WorldRegionWorkerPhase>()
 			.add(flecs::Phase)
-			.depends_on<WorldNodeProgressPhase>();
+			.depends_on<WorldNodeWorkerPhase>();
 
-		world.entity<WorldScaleProgressPhase>()
+		world.entity<WorldScaleWorkerPhase>()
 			.add(flecs::Phase)
-			.depends_on<WorldRegionProgressPhase>();
+			.depends_on<WorldRegionWorkerPhase>();
 
-		world.entity<WorldProgressPhase>()
+		world.entity<WorldWorkerPhase>()
 			.add(flecs::Phase)
-			.depends_on<WorldScaleProgressPhase>();
+			.depends_on<WorldScaleWorkerPhase>();
 
 		// Observers
 		world.observer<SpatialWorld3DComponent>()
