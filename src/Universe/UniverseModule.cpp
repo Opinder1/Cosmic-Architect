@@ -63,6 +63,7 @@ namespace voxel_game
 			.kind<WorldScaleWorkerPhase>()
 			.term_at(1).parent()
 			.term_at(2).parent()
+			.interval(1.0 / 20.0)
 			.each(UniverseLoaderCreateNodes);
 
 		world.system<GalaxyComponent, SpatialWorld3DComponent, const SpatialScale3DWorkerComponent, SpatialLoadCommands3DComponent>("GalaxyLoaderCreateNodes")
@@ -70,6 +71,7 @@ namespace voxel_game
 			.kind<WorldScaleWorkerPhase>()
 			.term_at(1).parent()
 			.term_at(2).parent()
+			.interval(1.0 / 20.0)
 			.each(GalaxyLoaderCreateNodes);
 	}
 }
