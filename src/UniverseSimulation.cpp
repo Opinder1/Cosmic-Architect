@@ -209,10 +209,10 @@ namespace voxel_game
 
 		m_world.set<flecs::Rest>({});
 
-		m_universe_entity = m_world.entity()
+		m_universe_entity = m_world.entity("Universe")
 			.add<UniverseComponent>();
 
-		m_galaxy_entity = m_world.entity()
+		m_galaxy_entity = m_world.entity("SimulatedGalaxy")
 			.child_of(m_universe_entity)
 			.add<SimulatedGalaxyComponent>()
 			.add<UniverseObjectComponent>()
