@@ -9,6 +9,7 @@
 
 namespace voxel_game
 {
+	// RID object allocation system where all the objects are stored in a contiguous array
 	template<class T>
 	class RIDContiguousOwner
 	{
