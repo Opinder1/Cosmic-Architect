@@ -1,6 +1,7 @@
 #pragma once
 
 #include <godot_cpp/variant/vector3.hpp>
+#include <godot_cpp/variant/Quaternion.hpp>
 #include <godot_cpp/variant/AABB.hpp>
 
 namespace flecs
@@ -20,6 +21,11 @@ namespace voxel_game
 	struct Position3DComponent
 	{
 		godot::Vector3 position;
+	};
+
+	struct Rotation3DComponent
+	{
+		godot::Quaternion rotation;
 	};
 
 	struct Velocity3DComponent
