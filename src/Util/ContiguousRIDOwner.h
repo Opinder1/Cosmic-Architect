@@ -13,16 +13,18 @@ namespace voxel_game
 	template<class T>
 	class RIDContiguousOwner
 	{
+		constexpr static size_t k_item_size = sizeof(T) / sizeof(float);
+
 	public:
 		RIDContiguousOwner()
 		{
-			m_buffer.resize(sizeof(T) * 8);
+			m_buffer.resize(k_item_size * 8);
 		}
 
 		godot::RID Add(const T& input)
 		{
 			uint64_t offset = m_buffer.size();
-			m_buffer.resize(offset + sizeof(T));
+			m_buffer.resize(offset + k_item_size);
 
 			T* item = reinterpret_cast<T*>(m_buffer.ptrw() + offset);
 
@@ -68,13 +70,13 @@ namespace voxel_game
 			std::copy(target_item, end, target_item - 1);
 		}
 
-		const godot::PackedByteArray& GetBuffer()
+		const godot::PackedFloat32Array& GetBuffer()
 		{
 			return m_buffer;
 		}
 
 	private:
 		godot::RID_PtrOwner<T> m_item_offsets;
-		godot::PackedByteArray m_buffer;
+		godot::PackedFloat32Array m_buffer;
 	};
 }
