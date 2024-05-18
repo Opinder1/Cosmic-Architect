@@ -39,7 +39,7 @@ namespace voxel_game
 	{
 		switch (type)
 		{
-		case Type::Galaxy:			return &UniverseCache::player_info;
+		case Type::Galaxy:			return &UniverseCache::galaxy_info;
 		case Type::Account:			return &UniverseCache::account_info;
 		case Type::Player:			return &UniverseCache::player_info;
 		default:					return nullptr;
