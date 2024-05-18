@@ -5,6 +5,7 @@
 #include "Util/PropertyMacros.h"
 #include "Util/Debug.h"
 
+#include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
 #define BIND_METHOD godot::ClassDB::bind_method

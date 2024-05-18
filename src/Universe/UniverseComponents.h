@@ -6,12 +6,12 @@
 
 namespace voxel_game
 {
+	struct UniverseComponent {};
+
 	struct UniverseNode : SpatialNode3D
 	{
 		std::vector<flecs::entity_t> entities;
 	};
-
-	struct UniverseComponent {};
 
 	struct UniverseObjectComponent {};
 
