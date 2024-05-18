@@ -1,6 +1,7 @@
 #include "CommandQueue.h"
 #include "Universe.h"
 #include "UniverseSimulation.h"
+#include "UniverseRenderInfo.h"
 
 #include "Util/Debug.h"
 
@@ -118,6 +119,7 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 		godot::ClassDB::register_class<voxel_game::CommandQueueServer>();
 		godot::ClassDB::register_class<voxel_game::Universe>();
 		godot::ClassDB::register_class<voxel_game::UniverseSimulation>();
+		godot::ClassDB::register_class<voxel_game::UniverseRenderInfo>();
 
 		godot::Engine::get_singleton()->register_singleton("CommandQueueServer", voxel_game::CommandQueueServer::get_singleton());
 
