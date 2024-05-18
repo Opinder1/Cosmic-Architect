@@ -1,11 +1,14 @@
 #include "UniverseSimulation.h"
 #include "UniverseSimulation_StringNames.h"
 #include "Universe.h"
-#include "GodotComponents.h"
+#include "UniverseRenderInfo.h"
 
 #include "Universe/UniverseComponents.h"
-#include "Universe/GalaxyComponents.h"
 #include "Universe/UniverseModule.h"
+
+#include "Galaxy/GalaxyComponents.h"
+#include "Galaxy/GalaxyModule.h"
+#include "Galaxy/GalaxyRenderModule.h"
 
 #include "Spatial/SpatialComponents.h"
 #include "Spatial/SpatialModule.h"
@@ -131,7 +134,7 @@ namespace voxel_game
 	}
 
 	// Obtain the latest changes made by the writer if there are any
-	void UniverseCacheUpdater::ApplyUpdates(UniverseCache& out)
+	void UniverseCacheUpdater::RetrieveUpdates(UniverseCache& out)
 	{
 		std::vector<InfoUpdate> updates;
 
@@ -203,9 +206,10 @@ namespace voxel_game
 		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
 
 		m_world.import<flecs::monitor>();
-		m_world.import<GodotComponents>();
 		m_world.import<SpatialModule>();
 		m_world.import<UniverseModule>();
+		m_world.import<GalaxyModule>();
+		m_world.import<GalaxyRenderModule>();
 
 		m_world.set<flecs::Rest>({});
 
@@ -217,7 +221,6 @@ namespace voxel_game
 			.add<SimulatedGalaxyComponent>()
 			.add<UniverseObjectComponent>()
 			.add<SpatialLoader3DComponent>()
-			.add<SignalsComponent>()
 			.set([&path, &fragment_type, &server_type](SimulatedGalaxyComponent& simulated_galaxy)
 			{
 				simulated_galaxy.name = "Test";
@@ -256,6 +259,14 @@ namespace voxel_game
 		emit_signal(k_signals->simulation_uninitialized);
 
 		m_universe.unref();
+	}
+
+	void UniverseSimulation::StartRenderer(UniverseRenderInfo* render_info)
+	{
+		m_world.component<GalaxyRenderContext>().get([render_info](GalaxyRenderContext& context)
+		{
+			context.scenario = render_info->GetGalaxyScenario();
+		});
 	}
 
 	void UniverseSimulation::StartSimulation(ThreadMode thread_mode)
@@ -305,19 +316,24 @@ namespace voxel_game
 	{
 		if (IsThreaded())
 		{
-			std::lock_guard lock(m_cache_mutex);
-			m_info_updater.ApplyUpdates(m_info_cache);
+			// If we we are threaded then get the latest info cache data
+			{
+				std::lock_guard lock(m_cache_mutex);
+				m_info_updater.RetrieveUpdates(m_info_cache);
+			}
 
 			return true;
 		}
+		else
+		{
+			bool keep_running = m_world.progress(static_cast<ecs_ftime_t>(delta));
 
-		bool keep_running = m_world.progress(static_cast<ecs_ftime_t>(delta));
+			// Process signals
+			CommandBuffer::ProcessCommands(get_instance_id(), std::move(m_deferred_signals));
+			m_deferred_signals.reserve(64);
 
-		// Process signals
-		CommandBuffer::ProcessCommands(get_instance_id(), std::move(m_deferred_signals)); // m_deferred_signals guaranteed to be empty()
-		m_deferred_signals.reserve(64);
-
-		return keep_running;
+			return keep_running;
+		}
 	}
 
 	void UniverseSimulation::ThreadLoop()
@@ -329,21 +345,22 @@ namespace voxel_game
 		while (m_galaxy_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
 		{
 			CommandBuffer command_buffer;
-
 			{
 				std::lock_guard lock(m_commands_mutex);
 				command_buffer = std::move(m_deferred_commands);
 				m_deferred_commands.reserve(64);
 			}
 
-			CommandBuffer::ProcessCommands(get_instance_id(), std::move(command_buffer)); // command_buffer guaranteed to be empty()
+			// Process the deferred commands sent by other threads
+			CommandBuffer::ProcessCommands(get_instance_id(), std::move(command_buffer));
 
 			m_world.progress();
 
+			// Publish updates to the info caches to be read on the main thread
 			m_info_updater.PublishUpdates();
 
 			// Flush signals to be executed on main thread
-			CommandQueueServer::get_singleton()->AddCommands(get_instance_id(), std::move(m_deferred_signals)); // m_deferred_signals guaranteed to be empty()
+			CommandQueueServer::get_singleton()->AddCommands(get_instance_id(), std::move(m_deferred_signals));
 			m_deferred_signals.reserve(64);
 		}
 	}
@@ -352,6 +369,7 @@ namespace voxel_game
 	{
 		BIND_METHOD(godot::D_METHOD(k_commands->get_universe), &UniverseSimulation::GetUniverse);
 		BIND_METHOD(godot::D_METHOD(k_commands->get_galaxy_info), &UniverseSimulation::GetGalaxyInfo);
+		BIND_METHOD(godot::D_METHOD(k_commands->start_renderer), &UniverseSimulation::StartRenderer);
 		BIND_METHOD(godot::D_METHOD(k_commands->start_simulation, "thread_mode"), &UniverseSimulation::StartSimulation);
 		BIND_METHOD(godot::D_METHOD(k_commands->stop_simulation), &UniverseSimulation::StopSimulation);
 		BIND_METHOD(godot::D_METHOD(k_commands->progress, "delta"), &UniverseSimulation::Progress);

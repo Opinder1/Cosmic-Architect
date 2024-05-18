@@ -8,6 +8,7 @@ namespace voxel_game
 
 		godot::StringName get_universe;
 		godot::StringName get_galaxy_info;
+		godot::StringName start_renderer;
 		godot::StringName start_simulation;
 		godot::StringName stop_simulation;
 		godot::StringName progress;

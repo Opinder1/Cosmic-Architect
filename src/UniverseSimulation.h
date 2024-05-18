@@ -6,6 +6,8 @@
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/classes/weak_ref.hpp>
 #include <godot_cpp/classes/dir_access.hpp>
+
+#include <godot_cpp/variant/rid.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/color.hpp>
 #include <godot_cpp/variant/packed_color_array.hpp>
@@ -27,6 +29,7 @@ namespace voxel_game
 {
 	class CommandQueue;
 	class Universe;
+	class UniverseRenderInfo;
 
 	using UUID = godot::Color;
 	using UUIDVector = godot::PackedColorArray;
@@ -127,7 +130,7 @@ namespace voxel_game
 		void PublishUpdates();
 
 		// Obtain the latest changes made by the writer if there are any
-		void ApplyUpdates(UniverseCache& cache);
+		void RetrieveUpdates(UniverseCache& cache);
 
 	private:
 		void AddInfoUpdate(InfoUpdate&& update);
@@ -183,6 +186,7 @@ namespace voxel_game
 		godot::Dictionary GetGalaxyInfo();
 		void Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type);
 		void Uninitialize();
+		void StartRenderer(UniverseRenderInfo* render_info);
 		void StartSimulation(ThreadMode thread_mode);
 		void StopSimulation();
 		bool Progress(real_t delta);
