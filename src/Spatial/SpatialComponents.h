@@ -93,18 +93,21 @@ namespace voxel_game
 		SpatialNode3D* neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
 	};
 
-	// A level of detail map for a world. The world will have multiple of these
-	struct SpatialScale3D : Nocopy
-	{
-		robin_hood::unordered_flat_map<godot::Vector3i, std::unique_ptr<SpatialNode3D>> nodes;
-	};
-
 	using SpatialScaleNodeCommands = std::vector<godot::Vector3i>;
-	using SpatialWorldNodeCommands = std::array<SpatialScaleNodeCommands, k_max_world_scale>;
 
 	using SpatialNodeCreateCB = cb::Callback<std::unique_ptr<SpatialNode3D>()>;
 	using SpatialNodeDestroyCB = cb::Callback<void(std::unique_ptr<SpatialNode3D>&)>;
 	using SpatialNodeProcessCB = cb::Callback<void(SpatialNode3D&)>;
+
+	// A level of detail map for a world. The world will have multiple of these
+	struct SpatialScale3D : Nocopy
+	{
+		robin_hood::unordered_flat_map<godot::Vector3i, std::unique_ptr<SpatialNode3D>> nodes;
+
+		SpatialScaleNodeCommands load_commands;
+		SpatialScaleNodeCommands unload_commands;
+		SpatialScaleNodeCommands tick_commands;
+	};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct SpatialWorld3DComponent : Nocopy
@@ -116,10 +119,6 @@ namespace voxel_game
 		std::array<SpatialScale3D, k_max_world_scale> scales;
 
 		flecs::query_t* loaders_query = nullptr;
-
-		SpatialWorldNodeCommands load_commands;
-		SpatialWorldNodeCommands unload_commands;
-		SpatialWorldNodeCommands tick_commands;
 
 		SpatialNodeCreateCB create_node;
 		SpatialNodeDestroyCB destroy_node;

@@ -64,10 +64,10 @@ namespace voxel_game
 		PARALLEL_ACCESS(spatial_world);
 
 		uint32_t scale_index = region_worker.region.scale;
+		SpatialScale3D& scale = spatial_world.scales[scale_index];
+
 		godot::Vector3i start = region_worker.region.pos;
 		godot::Vector3i end = region_worker.region.pos + region_worker.region.size;
-
-		SpatialScale3D& scale = spatial_world.scales[scale_index];
 
 		ForEachCoordInRegion(start, end, [&spatial_world, &scale, &processor](godot::Vector3i pos)
 		{
@@ -92,7 +92,6 @@ namespace voxel_game
 		PARALLEL_ACCESS(spatial_world);
 
 		uint8_t scale_index = scale_worker.scale;
-
 		SpatialScale3D& scale = spatial_world.scales[scale_index];
 
 		for (auto&& [pos, node] : scale.nodes)

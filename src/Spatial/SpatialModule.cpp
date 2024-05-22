@@ -167,16 +167,14 @@ namespace voxel_game
 
 			SpatialScale3D& scale = spatial_world.scales[scale_index];
 
-			SpatialScaleNodeCommands& scale_load_commands = spatial_world.load_commands[scale_index];
-
 			flecs::query<const SpatialLoader3DComponent> staged_loaders_query(entity.world(), spatial_world.loaders_query);
 
 			// For each command list that is a child of the world
-			staged_loaders_query.each([&spatial_world, scale_index, &scale, &scale_load_commands](const SpatialLoader3DComponent& spatial_loader)
+			staged_loaders_query.each([&spatial_world, scale_index, &scale](const SpatialLoader3DComponent& spatial_loader)
 			{
 				PARALLEL_ACCESS(spatial_loader);
 
-				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&spatial_world, scale_index, &scale, &scale_load_commands](godot::Vector3i pos)
+				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&spatial_world, scale_index, &scale](godot::Vector3i pos)
 				{
 					auto it = scale.nodes.find(pos);
 
@@ -186,7 +184,7 @@ namespace voxel_game
 						SpatialNode3D* node = it->second.get();
 
 						scale.nodes.emplace(coord.pos, spatial_world.create_node());
-						scale_load_commands.push_back(coord.pos);
+						scale.load_commands.push_back(coord.pos);
 					}
 				});
 			});
@@ -202,13 +200,14 @@ namespace voxel_game
 		{
 			PARALLEL_ACCESS(spatial_world, world_time);
 
-			SpatialScaleNodeCommands& scale_unload_commands = spatial_world.unload_commands[scale_worker.scale];
+			size_t scale_index = scale_worker.scale;
+			SpatialScale3D& scale = spatial_world.scales[scale_index];
 
-			SpatialScale3DNodeProcessor(spatial_world, scale_worker, [&world_time, &scale_unload_commands](SpatialNode3D* node)
+			SpatialScale3DNodeProcessor(spatial_world, scale_worker, [&world_time, &scale](SpatialNode3D* node)
 			{
 				if (world_time.frame_start - node->last_update_time > 20s)
 				{
-					scale_unload_commands.push_back(node->coord.pos);
+					scale.unload_commands.push_back(node->coord.pos);
 				}
 			});
 		});
@@ -224,9 +223,7 @@ namespace voxel_game
 				SpatialScale3D& scale = spatial_world.scales[scale_index];
 				SpatialScale3D& parent_scale = spatial_world.scales[scale_index + 1];
 
-				SpatialScaleNodeCommands& scale_load_commands = spatial_world.load_commands[scale_index];
-
-				for (godot::Vector3i pos : scale_load_commands)
+				for (godot::Vector3i pos : scale.load_commands)
 				{
 					auto it = scale.nodes.find(pos);
 
@@ -245,7 +242,7 @@ namespace voxel_game
 					}
 				}
 
-				scale_load_commands.clear();
+				scale.load_commands.clear();
 			}
 		});
 
@@ -260,9 +257,7 @@ namespace voxel_game
 				SpatialScale3D& scale = spatial_world.scales[scale_index];
 				SpatialScale3D& parent_scale = spatial_world.scales[scale_index + 1];
 
-				SpatialScaleNodeCommands& scale_unload_commands = spatial_world.unload_commands[scale_index];
-
-				for (godot::Vector3i pos : scale_unload_commands)
+				for (godot::Vector3i pos : scale.unload_commands)
 				{
 					auto it = scale.nodes.find(pos);
 
@@ -285,7 +280,7 @@ namespace voxel_game
 					scale.nodes.erase(it);
 				}
 
-				scale_unload_commands.clear();
+				scale.unload_commands.clear();
 			}
 		});
 	}
