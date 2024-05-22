@@ -6,7 +6,8 @@
 #include "Util/Callback.h"
 #include "Util/Debug.h"
 
-#define PARALLEL_ACCESS(...) __VA_ARGS__;
+// Macro to declare what variables are being accessed in parallel
+#define PARALLEL_ACCESS(...)
 
 namespace voxel_game
 {
