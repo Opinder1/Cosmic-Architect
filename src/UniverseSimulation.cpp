@@ -209,7 +209,6 @@ namespace voxel_game
 		m_world.import<SpatialModule>();
 		m_world.import<UniverseModule>();
 		m_world.import<GalaxyModule>();
-		m_world.import<GalaxyRenderModule>();
 
 		m_world.set<flecs::Rest>({});
 
@@ -263,6 +262,8 @@ namespace voxel_game
 
 	void UniverseSimulation::StartRenderer(UniverseRenderInfo* render_info)
 	{
+		m_world.import<GalaxyRenderModule>();
+
 		m_world.component<GalaxyRenderContext>().get([render_info](GalaxyRenderContext& context)
 		{
 			context.scenario = render_info->GetGalaxyScenario();
