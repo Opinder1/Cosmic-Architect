@@ -42,13 +42,6 @@ namespace voxel_game
 		SpatialWorld3DNodeProcessor(spatial_world, [](...) {});
 	}
 
-	void SpatialCommands3DExample(flecs::entity entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
-	{
-		SpatialScale3DLoadCommandsProcessor(entity.world(), spatial_world, scale_worker, [](...) {});
-
-		SpatialScale3DUnloadCommandsProcessor(entity.world(), spatial_world, scale_worker, [](...) {});
-	}
-
 	struct SpatialExampleModule
 	{
 		SpatialExampleModule(flecs::world& world)
@@ -85,12 +78,6 @@ namespace voxel_game
 				.multi_threaded()
 				.kind<WorldWorkerPhase>()
 				.each(SpatialWorld3DExample);
-
-			world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>("WorldCommandsExample")
-				.multi_threaded()
-				.kind<WorldWorkerPhase>()
-				.term_at(1).parent()
-				.each(SpatialCommands3DExample);
 		}
 	};
 }

@@ -6,6 +6,7 @@
 #include "Util/Time.h"
 #include "Util/Hash.h"
 #include "Util/Nocopy.h"
+#include "Util/Callback.h"
 
 #include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/variant/vector3i.hpp>
@@ -16,6 +17,7 @@
 
 #include <vector>
 #include <array>
+#include <bitset>
 
 namespace flecs
 {
@@ -24,14 +26,16 @@ namespace flecs
 
 namespace voxel_game
 {
+	struct SpatialWorld3DComponent;
+
 	constexpr const uint8_t k_max_world_scale = 16;
 
 	// Phases which are used to synchronise the ecs between running each thread type in parallel
-	struct WorldLoaderWorkerPhase {};
-	struct WorldRegionWorkerPhase {};
-	struct WorldNodeWorkerPhase {};
-	struct WorldScaleWorkerPhase {};
-	struct WorldWorkerPhase {};
+	struct WorldLoaderWorkerPhase {}; // In this phase we process all loaders of all worlds in parallel
+	struct WorldRegionWorkerPhase {}; // In this phase we process select regions from different worlds in parallel
+	struct WorldNodeWorkerPhase {}; // In this phase we process select nodes from different worlds in parallel
+	struct WorldScaleWorkerPhase {}; // In this phase we process all scales of all worlds in parallel
+	struct WorldWorkerPhase {}; // In this phase we process all worlds in parallel
 
 	// Specify that this entity is within a spatial world (the world is the entities parent)
 	struct SpatialEntity3DComponent {};
@@ -65,18 +69,6 @@ namespace voxel_game
 		uint8_t update_frequency = 0; // The frequency
 	};
 
-	// Add this component to a child of a spatial world to specify that it will add commands that will execute on the world
-	struct SpatialLoadCommands3DComponent
-	{
-		std::array<std::vector<godot::Vector3i>, k_max_world_scale> scales;
-	};
-
-	// Add this component to a child of a spatial world to specify that it will add commands that will execute on the world
-	struct SpatialUnloadCommands3DComponent
-	{
-		std::array<std::vector<godot::Vector3i>, k_max_world_scale> scales;
-	};
-
 	// A single node in a spatial world. This is meant to be inherited from for custom data
 	struct SpatialNode3D : Nocopy
 	{
@@ -107,6 +99,13 @@ namespace voxel_game
 		robin_hood::unordered_flat_map<godot::Vector3i, std::unique_ptr<SpatialNode3D>> nodes;
 	};
 
+	using SpatialScaleNodeCommands = std::vector<godot::Vector3i>;
+	using SpatialWorldNodeCommands = std::array<SpatialScaleNodeCommands, k_max_world_scale>;
+
+	using SpatialNodeCreateCB = cb::Callback<std::unique_ptr<SpatialNode3D>()>;
+	using SpatialNodeDestroyCB = cb::Callback<void(std::unique_ptr<SpatialNode3D>&)>;
+	using SpatialNodeProcessCB = cb::Callback<void(SpatialNode3D&)>;
+
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct SpatialWorld3DComponent : Nocopy
 	{
@@ -116,9 +115,18 @@ namespace voxel_game
 		size_t max_scale = k_max_world_scale;
 		std::array<SpatialScale3D, k_max_world_scale> scales;
 
-		flecs::query_t* loaders_query;
-		flecs::query_t* load_commands_query;
-		flecs::query_t* unload_commands_query;
+		flecs::query_t* loaders_query = nullptr;
+
+		SpatialWorldNodeCommands load_commands;
+		SpatialWorldNodeCommands unload_commands;
+		SpatialWorldNodeCommands tick_commands;
+
+		SpatialNodeCreateCB create_node;
+		SpatialNodeDestroyCB destroy_node;
+
+		std::vector<SpatialNodeProcessCB> load_command_processors;
+		std::vector<SpatialNodeProcessCB> unload_command_processors;
+		std::vector<SpatialNodeProcessCB> tick_command_processors;
 	};
 
 	struct SpatialComponents

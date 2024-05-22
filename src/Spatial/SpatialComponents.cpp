@@ -11,18 +11,10 @@ namespace voxel_game
 	// Add a cached query for all of a spatial worlds child nodes for fast access
 	void WorldAddChildQuery(flecs::entity entity, SpatialWorld3DComponent& spatial_world)
 	{
-		flecs::scoped_world world = entity.world().scope(entity); // Add the queries as children of the entity so they are automatically destructed
+		flecs::scoped_world scope = entity.world().scope(entity); // Add the queries as children of the entity so they are automatically destructed
 
 		// Use read() as its required for queries run inside systems
-		spatial_world.loaders_query = world.query_builder<const SpatialLoader3DComponent>("SpatialWorldLoaderQuery")
-			.term(flecs::ChildOf, entity).read()
-			.build();
-
-		spatial_world.load_commands_query = world.query_builder<const SpatialLoadCommands3DComponent>("SpatialWorldLoadCommandQuery")
-			.term(flecs::ChildOf, entity).read()
-			.build();
-
-		spatial_world.unload_commands_query = world.query_builder<const SpatialUnloadCommands3DComponent>("SpatialWorldUnloadCommandQuery")
+		spatial_world.loaders_query = scope.query_builder<const SpatialLoader3DComponent>("SpatialWorldLoaderQuery")
 			.term(flecs::ChildOf, entity).read()
 			.build();
 	}
@@ -41,8 +33,6 @@ namespace voxel_game
 		world.component<SpatialRegion3DWorkerComponent>();
 		world.component<SpatialNode3DWorkerComponent>();
 		world.component<SpatialLoader3DComponent>();
-		world.component<SpatialLoadCommands3DComponent>();
-		world.component<SpatialUnloadCommands3DComponent>();
 
 		// Relationships
 		world.component<SpatialEntity3DComponent>()
@@ -58,17 +48,9 @@ namespace voxel_game
 		world.component<SpatialNode3DWorkerComponent>()
 			.add_second<SpatialWorld3DComponent>(flecs::OneOf);
 
-		world.component<SpatialLoadCommands3DComponent>()
-			.add_second<SpatialWorld3DComponent>(flecs::OneOf);
-
-		world.component<SpatialUnloadCommands3DComponent>()
-			.add_second<SpatialWorld3DComponent>(flecs::OneOf);
-
 		world.component<SpatialLoader3DComponent>()
 			.add_second<Position3DComponent>(flecs::With)
-			.add_second<SpatialEntity3DComponent>(flecs::With)
-			.add_second<SpatialLoadCommands3DComponent>(flecs::With)
-			.add_second<SpatialUnloadCommands3DComponent>(flecs::With);
+			.add_second<SpatialEntity3DComponent>(flecs::With);
 
 		// Phases
 		world.entity<WorldLoaderWorkerPhase>()

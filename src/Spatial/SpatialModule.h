@@ -16,7 +16,10 @@ namespace voxel_game
 	{
 		SpatialModule(flecs::world& world);
 
+		// Add scale workers to a world for each scale the world currently has
 		static void AddSpatialScaleWorkers(flecs::world& world, flecs::entity_t spatial_world_entity);
+
+		static void RemoveSpatialScaleWorkers(flecs::world& world, flecs::entity_t spatial_world_entity);
 
 		static SpatialNode3D* GetNode(const SpatialWorld3DComponent& world, SpatialCoord3D coord);
 	};
