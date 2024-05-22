@@ -3,6 +3,8 @@
 
 #include "Physics/PhysicsComponents.h"
 
+#include "Util/Debug.h"
+
 #include <godot_cpp/classes/rendering_server.hpp>
 
 #include <flecs/flecs.h>
@@ -34,16 +36,43 @@ namespace voxel_game
 
 			std::unique_ptr<GalaxyRenderMesh>& mesh = render_context.node_meshes[position.position / 16];
 
+			// The node doesn't have a mesh yet
 			if (!mesh)
 			{
 				mesh = std::make_unique<GalaxyRenderMesh>();
+
+				mesh->multimesh = rendering_server->multimesh_create();
+				rendering_server->multimesh_set_mesh(mesh->multimesh, render_context.mesh);
+
+				mesh->instance = rendering_server->instance_create2(mesh->multimesh, render_context.scenario);
 			}
 
 			godot::RID id = mesh->buffer.Add(data);
 
-			rendering_server->multimesh_set_buffer(mesh->mesh, mesh->buffer.GetBuffer());
+			rendering_server->multimesh_set_buffer(mesh->multimesh, mesh->buffer.GetBuffer());
 
 			entity.emplace<GalaxyRenderComponent>(id);
+		});
+
+		world.observer<const GalaxyComponent, const GalaxyRenderComponent, const Position3DComponent, GalaxyRenderContext>()
+			.event(flecs::OnRemove)
+			.term_at(2).src<GalaxyRenderContext>()
+			.each([rendering_server](const GalaxyComponent& galaxy, const GalaxyRenderComponent galaxy_render, const Position3DComponent& position, GalaxyRenderContext& render_context)
+		{
+			std::unique_ptr<GalaxyRenderMesh>& mesh = render_context.node_meshes[position.position / 16];
+
+			DEBUG_ASSERT(mesh, "The galaxy should have a mesh its part of");
+
+			mesh->buffer.Remove(galaxy_render.id);
+
+			// No longer any instances using the mesh
+			if (mesh->buffer.IsEmpty())
+			{
+				rendering_server->free_rid(mesh->instance);
+				rendering_server->free_rid(mesh->multimesh);
+
+				render_context.node_meshes.erase(position.position / 16);
+			}
 		});
 	}
 }

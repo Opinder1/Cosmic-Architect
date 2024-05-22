@@ -33,7 +33,7 @@ namespace voxel_game
 	struct GalaxyRenderMesh : Nocopy, Nomove
 	{
 		godot::RID instance;
-		godot::RID mesh;
+		godot::RID multimesh;
 
 		RIDContiguousOwner<GalaxyRenderData> buffer;
 	};
@@ -41,6 +41,8 @@ namespace voxel_game
 	struct GalaxyRenderContext : Nocopy
 	{
 		godot::RID scenario;
+
+		godot::RID mesh;
 		
 		robin_hood::unordered_map<godot::Vector3i, std::unique_ptr<GalaxyRenderMesh>> node_meshes;
 	};
