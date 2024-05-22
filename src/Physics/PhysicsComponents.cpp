@@ -9,6 +9,7 @@ namespace voxel_game
 		world.module<PhysicsComponents>();
 
 		world.component<Position3DComponent>();
+		world.component<Rotation3DComponent>();
 		world.component<Velocity3DComponent>();
 		world.component<MassComponent>();
 		world.component<BouncinessComponent>();
