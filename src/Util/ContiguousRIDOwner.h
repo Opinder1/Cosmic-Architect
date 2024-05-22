@@ -21,6 +21,16 @@ namespace voxel_game
 			m_buffer.resize(k_item_size * 8);
 		}
 
+		size_t Size()
+		{
+			return m_item_offsets.get_rid_count();
+		}
+
+		bool IsEmpty()
+		{
+			return Size() == 0;
+		}
+
 		godot::RID Add(const T& input)
 		{
 			uint64_t offset = m_buffer.size();
@@ -52,20 +62,19 @@ namespace voxel_game
 
 			m_item_offsets.fill_owned_buffer(rids.get());
 
-			godot::RID* end = rids.get() + count;
-			for (godot::RID* rid = rids.get(); rid < end; rid++)
+			for (godot::RID* rid = rids.get(); rid < rids.get() + count; rid++)
 			{
-				T* item = m_item_offsets.get_or_null(rid);
+				T* item = m_item_offsets.get_or_null(*rid);
 
 				if (item > target_item)
 				{
-					m_item_offsets.replace(rid, item - 1);
+					m_item_offsets.replace(*rid, item - 1);
 				}
 			}
 
 			m_item_offsets.free(id);
 
-			T* end = reinterpret_cast<T*>(m_buffer.ptrw() + m_buffer.count());
+			T* end = reinterpret_cast<T*>(m_buffer.ptrw() + m_buffer.size());
 
 			std::copy(target_item, end, target_item - 1);
 		}
