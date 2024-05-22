@@ -21,18 +21,18 @@ namespace voxel_game
 			const SpatialScale3D& spatial_scale = spatial_world.scales[scale_index];
 
 			ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [scale_index, &spatial_scale, &processor](godot::Vector3i pos)
-				{
-					auto it = spatial_scale.nodes.find(pos);
+			{
+				auto it = spatial_scale.nodes.find(pos);
 
-					if (it != spatial_scale.nodes.end())
-					{
-						processor(SpatialCoord3D{ pos, scale_index }, it->second.get());
-					}
-					else
-					{
-						processor(SpatialCoord3D{ pos, scale_index }, nullptr);
-					}
-				});
+				if (it != spatial_scale.nodes.end())
+				{
+					processor(SpatialCoord3D{ pos, scale_index }, it->second.get());
+				}
+				else
+				{
+					processor(SpatialCoord3D{ pos, scale_index }, nullptr);
+				}
+			});
 		}
 	}
 

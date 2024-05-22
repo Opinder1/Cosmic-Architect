@@ -300,9 +300,8 @@ namespace voxel_game
 		{
 			flecs::entity scale_worker_entity = world.entity()
 				.child_of(spatial_world_entity)
-				.add<SpatialScale3DWorkerComponent>();
-
-			scale_worker_entity.set([scale_index](SpatialScale3DWorkerComponent& scale_worker)
+				.add<SpatialScale3DWorkerComponent>()
+				.set([scale_index](SpatialScale3DWorkerComponent& scale_worker)
 			{
 				scale_worker.scale = scale_index;
 			});
