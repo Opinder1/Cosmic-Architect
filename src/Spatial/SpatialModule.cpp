@@ -37,7 +37,7 @@ namespace voxel_game
 		return (pos.x) + (pos.y * 2) + (pos.z * 4);
 	}
 
-	void InitializeSpatialNode(SpatialNode3D& node, SpatialScale3D& scale, SpatialScale3D& parent_scale)
+	void InitializeSpatialNodeNeighbours(SpatialNode3D& node, SpatialScale3D& scale)
 	{
 		for (uint8_t neighbour_index = 0; neighbour_index < 6; neighbour_index++)
 		{
@@ -58,28 +58,29 @@ namespace voxel_game
 			neighbour_node->neighbours[5 - neighbour_index] = &node;
 			neighbour_node->neighbour_mask |= 1 << (5 - neighbour_index);
 		}
-
-		{
-			godot::Vector3i parent_pos = node.coord.pos / 2;
-
-			auto it = parent_scale.nodes.find(parent_pos);
-
-			if (it == parent_scale.nodes.end())
-			{
-				return;
-			}
-
-			SpatialNode3D* parent_node = it->second.get();
-
-			node.parent = parent_node;
-			node.parent_index = GetNodeParentIndex(node.coord.pos);
-
-			parent_node->children_array[node.parent_index] = &node;
-			parent_node->children_mask |= 1 << node.parent_index;
-		}
 	}
 
-	void UninitializeSpatialNode(SpatialNode3D& node, SpatialScale3D& scale, SpatialScale3D& parent_scale)
+	void InitializeSpatialNodeParent(SpatialNode3D& node, SpatialScale3D& scale, SpatialScale3D& parent_scale)
+	{
+		godot::Vector3i parent_pos = node.coord.pos / 2;
+
+		auto it = parent_scale.nodes.find(parent_pos);
+
+		if (it == parent_scale.nodes.end())
+		{
+			return;
+		}
+
+		SpatialNode3D* parent_node = it->second.get();
+
+		node.parent = parent_node;
+		node.parent_index = GetNodeParentIndex(node.coord.pos);
+
+		parent_node->children_array[node.parent_index] = &node;
+		parent_node->children_mask |= 1 << node.parent_index;
+	}
+
+	void UninitializeSpatialNodeNeighbours(SpatialNode3D& node, SpatialScale3D& scale)
 	{
 		for (uint8_t neighbour_index = 0; neighbour_index < 6; neighbour_index++)
 		{
@@ -89,7 +90,10 @@ namespace voxel_game
 				neighbour_node->neighbour_mask &= ~(1 << (5 - neighbour_index));
 			}
 		}
+	}
 
+	void UninitializeSpatialNodeParent(SpatialNode3D& node, SpatialScale3D& scale, SpatialScale3D& parent_scale)
+	{
 		if (SpatialNode3D* parent_node = node.parent)
 		{
 			parent_node->children_array[node.parent_index] = nullptr;
@@ -99,42 +103,15 @@ namespace voxel_game
 
 	SpatialModule::SpatialModule(flecs::world& world)
 	{
-		world.module<SpatialModule>("SpatialModule");
+		world.module<SpatialModule>(DEBUG_ONLY("SpatialModule"));
 
 		world.import<SpatialComponents>();
 		world.import<SimulationComponents>();
 
-		// Syncs
-
-		world.system("WorldLoaderWorkerSync")
-			.no_readonly()
-			.kind<WorldLoaderWorkerPhase>()
-			.iter([](flecs::iter& it) {});
-
-		world.system("WorldNodeWorkerSync")
-			.no_readonly()
-			.kind<WorldNodeWorkerPhase>()
-			.iter([](flecs::iter& it) {});
-
-		world.system("WorldRegionWorkerSync")
-			.no_readonly()
-			.kind<WorldRegionWorkerPhase>()
-			.iter([](flecs::iter& it) {});
-
-		world.system("WorldScaleWorkerSync")
-			.no_readonly()
-			.kind<WorldScaleWorkerPhase>()
-			.iter([](flecs::iter& it) {});
-
-		world.system("WorldWorkerSync")
-			.no_readonly()
-			.kind<WorldWorkerPhase>()
-			.iter([](flecs::iter& it) {});
-
 		// Systems
 
 		// System to keep alive all nodes around a loader and request the loading of any missing
-		world.system<SpatialWorld3DComponent, const SpatialLoader3DComponent, const SimulationGlobal>("SpatialLoaderKeepAliveNodes")
+		world.system<SpatialWorld3DComponent, const SpatialLoader3DComponent, const SimulationGlobal>(DEBUG_ONLY("SpatialLoaderKeepAliveNodes"))
 			.multi_threaded()
 			.kind<WorldLoaderWorkerPhase>()
 			.term_at(1).parent()
@@ -154,7 +131,8 @@ namespace voxel_game
 			});
 		});
 
-		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>("SpatialScaleCreateNodes")
+		// System to run all loaders in each scale in parallel
+		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialLoaderLoadScaleNodes"))
 			.multi_threaded()
 			.kind<WorldScaleWorkerPhase>()
 			.term_at(1).parent()
@@ -164,34 +142,29 @@ namespace voxel_game
 			PARALLEL_ACCESS(spatial_world);
 
 			uint8_t scale_index = scale_worker.scale;
-
 			SpatialScale3D& scale = spatial_world.scales[scale_index];
 
 			flecs::query<const SpatialLoader3DComponent> staged_loaders_query(entity.world(), spatial_world.loaders_query);
 
 			// For each command list that is a child of the world
-			staged_loaders_query.each([&spatial_world, scale_index, &scale](const SpatialLoader3DComponent& spatial_loader)
+			staged_loaders_query.each([&scale](const SpatialLoader3DComponent& spatial_loader)
 			{
 				PARALLEL_ACCESS(spatial_loader);
 
-				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&spatial_world, scale_index, &scale](godot::Vector3i pos)
+				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&scale](godot::Vector3i pos)
 				{
 					auto it = scale.nodes.find(pos);
 
 					if (it == scale.nodes.end())
 					{
-						SpatialCoord3D coord{ pos, scale_index };
-						SpatialNode3D* node = it->second.get();
-
-						scale.nodes.emplace(coord.pos, spatial_world.create_node());
-						scale.load_commands.push_back(coord.pos);
+						scale.load_commands.push_back(pos);
 					}
 				});
 			});
 		});
 
 		// System to mark any nodes that are no longer being observed by any loader to be unloaded
-		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent, const SimulationGlobal>("SpatialScaleUnloadUnusedNodes")
+		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent, const SimulationGlobal>(DEBUG_ONLY("SpatialScaleUnloadUnusedNodes"))
 			.multi_threaded()
 			.kind<WorldScaleWorkerPhase>()
 			.term_at(1).parent()
@@ -213,10 +186,10 @@ namespace voxel_game
 		});
 
 		// System to initialize spatial nodes that have been added
-		world.system<SpatialWorld3DComponent>("SpatialWorldLoadNodes")
+		world.system<SpatialWorld3DComponent>(DEBUG_ONLY("SpatialWorldInitializeNodes"))
 			.multi_threaded()
-			.kind<WorldWorkerPhase>()
-			.each([](flecs::entity entity, SpatialWorld3DComponent& spatial_world)
+			.kind<WorldCreatePhase>()
+			.each([](SpatialWorld3DComponent& spatial_world)
 		{
 			for (uint8_t scale_index = 0; scale_index < spatial_world.max_scale - 1; scale_index++)
 			{
@@ -225,34 +198,98 @@ namespace voxel_game
 
 				for (godot::Vector3i pos : scale.load_commands)
 				{
-					auto it = scale.nodes.find(pos);
+					DEBUG_ASSERT(scale.nodes.find(pos) == scale.nodes.end(), "The load command is trying to load a node that already has been loaded");
 
-					if (it == scale.nodes.end())
-					{
-						continue;
-					}
+					auto&& [it, success] = scale.nodes.emplace(pos, spatial_world.create_node());
+					DEBUG_ASSERT(success, "The node should have been emplaced");
 
 					SpatialNode3D& node = *it->second;
 
-					InitializeSpatialNode(node, scale, parent_scale);
-
-					for (SpatialNodeProcessCB& command_processor : spatial_world.load_command_processors)
-					{
-						command_processor(node);
-					}
+					InitializeSpatialNodeNeighbours(node, scale);
+					InitializeSpatialNodeParent(node, scale, parent_scale);
 				}
+			}
 
-				scale.load_commands.clear();
+			{
+				SpatialScale3D& scale = spatial_world.scales[spatial_world.max_scale - 1];
+
+				for (godot::Vector3i pos : scale.load_commands)
+				{
+					DEBUG_ASSERT(scale.nodes.find(pos) == scale.nodes.end(), "The load command is trying to load a node that already has been loaded");
+
+					auto&& [it, success] = scale.nodes.emplace(pos, spatial_world.create_node());
+					DEBUG_ASSERT(success, "The node should have been emplaced");
+
+					SpatialNode3D& node = *it->second;
+
+					InitializeSpatialNodeNeighbours(node, scale);
+				}
 			}
 		});
 
-		// System to uninitialize and delete spatial nodes that have been marked to unload
-		world.system<SpatialWorld3DComponent>("SpatialWorldUnloadNodes")
+		// System to load spatial nodes that have been added
+		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialWorldLoadNodes"))
 			.multi_threaded()
-			.kind<WorldWorkerPhase>()
-			.each([](flecs::entity entity, SpatialWorld3DComponent& spatial_world)
+			.kind<WorldLoadPhase>()
+			.term_at(1).parent()
+			.each([](SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
 		{
-			for (uint8_t scale_index = 0; scale_index < spatial_world.max_scale - 1; scale_index++)
+			PARALLEL_ACCESS(spatial_world);
+
+			uint8_t scale_index = scale_worker.scale;
+			SpatialScale3D& scale = spatial_world.scales[scale_index];
+
+			for (godot::Vector3i pos : scale.load_commands)
+			{
+				auto it = scale.nodes.find(pos);
+				DEBUG_ASSERT(it != scale.nodes.end(), "The node should have been initialized");
+				DEBUG_ASSERT(it->second, "The node should have been initialized with data");
+
+				SpatialNode3D& node = *it->second;
+
+				for (SpatialNodeProcessCB& command_processor : spatial_world.load_command_processors)
+				{
+					command_processor(node);
+				}
+			}
+
+			scale.load_commands.clear();
+		});
+
+		// System to unload spatial nodes that have been marked to unload
+		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialWorldUnloadNodes"))
+			.multi_threaded()
+			.kind<WorldUnloadPhase>()
+			.term_at(1).parent()
+			.each([](SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
+		{
+			PARALLEL_ACCESS(spatial_world);
+
+			uint8_t scale_index = scale_worker.scale;
+			SpatialScale3D& scale = spatial_world.scales[scale_index];
+
+			for (godot::Vector3i pos : scale.unload_commands)
+			{
+				auto it = scale.nodes.find(pos);
+				DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
+
+				SpatialNode3D& node = *it->second;
+
+				for (SpatialNodeProcessCB& command_processor : spatial_world.unload_command_processors)
+				{
+					command_processor(node);
+				}
+			}
+		});
+
+		// System to delete spatial nodes that have been marked to unload
+		world.system<SpatialWorld3DComponent>(DEBUG_ONLY("SpatialWorldDestroyNodes"))
+			.multi_threaded()
+			.kind<WorldDestroyPhase>()
+			.each([](SpatialWorld3DComponent& spatial_world)
+		{
+			size_t scale_index = spatial_world.max_scale - 1;
+			do
 			{
 				SpatialScale3D& scale = spatial_world.scales[scale_index];
 				SpatialScale3D& parent_scale = spatial_world.scales[scale_index + 1];
@@ -260,20 +297,35 @@ namespace voxel_game
 				for (godot::Vector3i pos : scale.unload_commands)
 				{
 					auto it = scale.nodes.find(pos);
-
-					if (it == scale.nodes.end())
-					{
-						continue;
-					}
+					DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
 
 					SpatialNode3D& node = *it->second;
 
-					for (SpatialNodeProcessCB& command_processor : spatial_world.unload_command_processors)
-					{
-						command_processor(node);
-					}
+					UninitializeSpatialNodeParent(node, scale, parent_scale);
+					UninitializeSpatialNodeNeighbours(node, scale);
 
-					UninitializeSpatialNode(node, scale, parent_scale);
+					spatial_world.destroy_node(it->second);
+
+					scale.nodes.erase(it);
+				}
+
+				scale.unload_commands.clear();
+
+				scale_index--;
+			} 
+			while (scale_index > 0);
+
+			{
+				SpatialScale3D& scale = spatial_world.scales[scale_index];
+
+				for (godot::Vector3i pos : scale.unload_commands)
+				{
+					auto it = scale.nodes.find(pos);
+					DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
+
+					SpatialNode3D& node = *it->second;
+
+					UninitializeSpatialNodeNeighbours(node, scale);
 
 					spatial_world.destroy_node(it->second);
 

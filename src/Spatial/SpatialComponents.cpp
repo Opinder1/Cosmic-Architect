@@ -14,9 +14,32 @@ namespace voxel_game
 		flecs::scoped_world scope = entity.world().scope(entity); // Add the queries as children of the entity so they are automatically destructed
 
 		// Use read() as its required for queries run inside systems
-		spatial_world.loaders_query = scope.query_builder<const SpatialLoader3DComponent>("SpatialWorldLoaderQuery")
+		spatial_world.loaders_query = scope.query_builder<const SpatialLoader3DComponent>(DEBUG_ONLY("SpatialWorldLoaderQuery"))
 			.term(flecs::ChildOf, entity).read()
 			.build();
+	}
+
+	template<typename PhaseT, typename DependT>
+	void CreateSyncedPhase(flecs::world& world)
+	{
+		world.entity<PhaseT>()
+			.add(flecs::Phase)
+			.depends_on<DependT>();
+
+		world.system()
+			.no_readonly()
+			.kind<PhaseT>()
+			.iter([](flecs::iter&) {});
+
+#if DEBUG
+		world.system<const SpatialScale3DWorkerComponent>("ProfileSlowSystem")
+			.multi_threaded()
+			.kind<PhaseT>()
+			.each([](const SpatialScale3DWorkerComponent&)
+		{
+			for (volatile size_t i = 0; i < 1000 * 1000; i++) {}
+		});
+#endif
 	}
 
 	SpatialComponents::SpatialComponents(flecs::world& world)
@@ -52,26 +75,21 @@ namespace voxel_game
 			.add_second<Position3DComponent>(flecs::With)
 			.add_second<SpatialEntity3DComponent>(flecs::With);
 
-		// Phases
-		world.entity<WorldLoaderWorkerPhase>()
+		// The phase that all spatial wrold processing happens in
+		world.entity<SpatialWorldMultithreadPhase>()
 			.add(flecs::Phase)
 			.depends_on(flecs::OnUpdate);
 
-		world.entity<WorldNodeWorkerPhase>()
-			.add(flecs::Phase)
-			.depends_on<WorldLoaderWorkerPhase>();
-
-		world.entity<WorldRegionWorkerPhase>()
-			.add(flecs::Phase)
-			.depends_on<WorldNodeWorkerPhase>();
-
-		world.entity<WorldScaleWorkerPhase>()
-			.add(flecs::Phase)
-			.depends_on<WorldRegionWorkerPhase>();
-
-		world.entity<WorldWorkerPhase>()
-			.add(flecs::Phase)
-			.depends_on<WorldScaleWorkerPhase>();
+		CreateSyncedPhase<WorldLoaderWorkerPhase, SpatialWorldMultithreadPhase>(world);
+		CreateSyncedPhase<WorldNodeWorkerPhase, WorldLoaderWorkerPhase>(world);
+		CreateSyncedPhase<WorldRegionWorkerPhase, WorldNodeWorkerPhase>(world);
+		CreateSyncedPhase<WorldScaleWorkerPhase, WorldRegionWorkerPhase>(world);
+		CreateSyncedPhase<WorldWorkerPhase, WorldScaleWorkerPhase>(world);
+		CreateSyncedPhase<WorldCreatePhase, WorldWorkerPhase>(world);
+		CreateSyncedPhase<WorldLoadPhase, WorldCreatePhase>(world);
+		CreateSyncedPhase<WorldUnloadPhase, WorldLoadPhase>(world);
+		CreateSyncedPhase<WorldDestroyPhase, WorldUnloadPhase>(world);
+		CreateSyncedPhase<WorldMultiworldPhase, WorldDestroyPhase>(world);
 
 		// Observers
 		world.observer<SpatialWorld3DComponent>()
