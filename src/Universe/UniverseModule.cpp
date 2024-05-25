@@ -1,6 +1,8 @@
 #include "UniverseModule.h"
 #include "UniverseComponents.h"
 
+#include "Galaxy/GalaxyComponents.h"
+
 #include "Spatial/SpatialComponents.h"
 #include "Spatial/SpatialProcessors.h"
 
@@ -8,17 +10,31 @@
 
 namespace voxel_game
 {
-	std::unique_ptr<SpatialNode3D> CreateUniverseNode()
+	struct UniverseNodeLoaderProcessor
 	{
-		return std::make_unique<UniverseNode>();
-	}
+		const UniverseComponent* universe;
 
-	void DestroyUniverseNode(std::unique_ptr<SpatialNode3D>& node)
-	{
-		std::unique_ptr<UniverseNode>& universe_node = reinterpret_cast<std::unique_ptr<UniverseNode>&>(node);
+		UniverseNodeLoaderProcessor(flecs::entity entity, SpatialWorld3DComponent& spatial_world)
+		{
+			universe = entity.get<UniverseComponent>();
+		}
 
-		universe_node.reset();
-	}
+		void Process(flecs::entity entity, SpatialScale3D& spatial_scale, SpatialNode3D& spatial_node)
+		{
+			flecs::world world(entity.world());
+
+			UniverseNode& universe_node = static_cast<UniverseNode&>(spatial_node);
+
+			for (size_t i = 0; i < 10; i++)
+			{
+				flecs::entity galaxy = world.entity()
+					.add<GalaxyComponent>()
+					.child_of(entity);
+
+				universe_node.entities.push_back(galaxy);
+			}
+		}
+	};
 
 	UniverseModule::UniverseModule(flecs::world& world)
 	{
@@ -31,8 +47,9 @@ namespace voxel_game
 			.event(flecs::OnAdd)
 			.each([](UniverseComponent& universe, SpatialWorld3DComponent& spatial_world)
 		{
-			spatial_world.create_node = cb::Bind<&CreateUniverseNode>();
-			spatial_world.destroy_node = cb::Bind<&DestroyUniverseNode>();
+			spatial_world.node_builder = SpatialNodeBuilder<UniverseNode>();
+
+			spatial_world.load_command_processors.push_back(SpatialNodeProcessor<UniverseNodeLoaderProcessor>());
 		});
 	}
 }

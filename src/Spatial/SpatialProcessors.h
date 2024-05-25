@@ -39,13 +39,11 @@ namespace voxel_game
 
 	// Wrapper to run world nodes in different threads
 	template<class Callable>
-	void SpatialNode3DNodeProcessor(SpatialWorld3DComponent& spatial_world, const SpatialNode3DWorkerComponent& node_worker, Callable&& processor)
+	void SpatialNode3DNodeProcessor(SpatialWorld3DComponent& spatial_world, SpatialScale3D& scale, godot::Vector3i pos, Callable&& processor)
 	{
 		PARALLEL_ACCESS(spatial_world);
 
-		SpatialScale3D& scale = spatial_world.scales[node_worker.node.scale];
-
-		auto it = scale.nodes.find(node_worker.node.pos);
+		auto it = scale.nodes.find(pos);
 
 		if (it == scale.nodes.end())
 		{
@@ -67,22 +65,18 @@ namespace voxel_game
 		uint32_t scale_index = region_worker.region.scale;
 		SpatialScale3D& scale = spatial_world.scales[scale_index];
 
+		if (region_worker.region.size == godot::Vector3i(1, 1, 1))
+		{
+			SpatialNode3DNodeProcessor(spatial_world, scale, region_worker.region.pos, processor);
+			return;
+		}
+
 		godot::Vector3i start = region_worker.region.pos;
 		godot::Vector3i end = region_worker.region.pos + region_worker.region.size;
 
 		ForEachCoordInRegion(start, end, [&spatial_world, &scale, &processor](godot::Vector3i pos)
 		{
-			auto it = scale.nodes.find(pos);
-
-			if (it == scale.nodes.end())
-			{
-				DEBUG_PRINT_WARN("This spatial node components node is not loaded");
-				return;
-			}
-
-			SpatialNode3D* root_node = it->second.get();
-
-			ForEachChildNodeRecursive(root_node, processor);
+			SpatialNode3DNodeProcessor(spatial_world, scale, pos, processor);
 		});
 	}
 

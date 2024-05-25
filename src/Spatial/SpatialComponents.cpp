@@ -54,7 +54,6 @@ namespace voxel_game
 		world.component<SpatialScale3DWorkerComponent>();
 		world.component<SpatialScale3DWorkerComponent>();
 		world.component<SpatialRegion3DWorkerComponent>();
-		world.component<SpatialNode3DWorkerComponent>();
 		world.component<SpatialLoader3DComponent>();
 
 		// Relationships
@@ -68,9 +67,6 @@ namespace voxel_game
 		world.component<SpatialRegion3DWorkerComponent>()
 			.add_second<SpatialWorld3DComponent>(flecs::OneOf);
 
-		world.component<SpatialNode3DWorkerComponent>()
-			.add_second<SpatialWorld3DComponent>(flecs::OneOf);
-
 		world.component<SpatialLoader3DComponent>()
 			.add_second<Position3DComponent>(flecs::With)
 			.add_second<SpatialEntity3DComponent>(flecs::With);
@@ -81,8 +77,7 @@ namespace voxel_game
 			.depends_on(flecs::OnUpdate);
 
 		CreateSyncedPhase<WorldLoaderWorkerPhase, SpatialWorldMultithreadPhase>(world);
-		CreateSyncedPhase<WorldNodeWorkerPhase, WorldLoaderWorkerPhase>(world);
-		CreateSyncedPhase<WorldRegionWorkerPhase, WorldNodeWorkerPhase>(world);
+		CreateSyncedPhase<WorldRegionWorkerPhase, WorldLoaderWorkerPhase>(world);
 		CreateSyncedPhase<WorldScaleWorkerPhase, WorldRegionWorkerPhase>(world);
 		CreateSyncedPhase<WorldWorkerPhase, WorldScaleWorkerPhase>(world);
 		CreateSyncedPhase<WorldCreatePhase, WorldWorkerPhase>(world);

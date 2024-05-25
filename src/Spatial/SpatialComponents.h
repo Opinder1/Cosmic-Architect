@@ -27,6 +27,78 @@ namespace flecs
 namespace voxel_game
 {
 	struct SpatialWorld3DComponent;
+	struct SpatialScale3D;
+	struct SpatialNode3D;
+
+	using SpatialScaleNodeCommands = std::vector<godot::Vector3i>;
+
+	struct SpatialNodeBuilderBase
+	{
+		std::unique_ptr<SpatialNode3D>(*node_create)();
+		void(*node_destroy)(std::unique_ptr<SpatialNode3D>&);
+	};
+
+	template<class NodeT>
+	struct SpatialNodeBuilder : SpatialNodeBuilderBase
+	{
+		SpatialNodeBuilder()
+		{
+			node_create = &NodeCreate;
+			node_destroy = &NodeDestroy;
+		}
+
+		static std::unique_ptr<SpatialNode3D> NodeCreate()
+		{
+			return std::make_unique<NodeT>();
+		}
+
+		static void NodeDestroy(std::unique_ptr<SpatialNode3D>& node)
+		{
+			reinterpret_cast<std::unique_ptr<NodeT>&>(node).reset();
+		}
+	};
+
+	struct SpatialNodeProcessorBase
+	{
+		size_t state_size;
+		void(*state_initialize)(void*, flecs::entity, SpatialWorld3DComponent&);
+		void(*state_destroy)(void*);
+		void(*process)(void*, flecs::entity, SpatialScale3D&, SpatialNode3D&);
+	};
+
+	template<class StateT>
+	struct SpatialNodeProcessor : SpatialNodeProcessorBase
+	{
+		SpatialNodeProcessor()
+		{
+			state_size = sizeof(StateT);
+			state_initialize = &StateInitializeProc;
+			state_destroy = &StateDestroyProc;
+			process = &ProcessProc;
+		}
+
+	private:
+		static void StateInitializeProc(void* state_ptr, flecs::entity entity, SpatialWorld3DComponent& spatial_world)
+		{
+			StateT* state = static_cast<StateT*>(state_ptr);
+
+			new (state) StateT(entity, spatial_world);
+		}
+
+		static void StateDestroyProc(void* state_ptr)
+		{
+			StateT* state = static_cast<StateT*>(state_ptr);
+
+			std::destroy_at(state);
+		}
+
+		static void ProcessProc(void* state_ptr, flecs::entity entity, SpatialScale3D& spatial_scale, SpatialNode3D& spatial_node)
+		{
+			StateT* state = static_cast<StateT*>(state_ptr);
+
+			state->Process(entity, spatial_scale, spatial_node);
+		}
+	};
 
 	constexpr const uint8_t k_max_world_scale = 16;
 
@@ -34,7 +106,6 @@ namespace voxel_game
 	struct SpatialWorldMultithreadPhase {};
 	struct WorldLoaderWorkerPhase {}; // In this phase we process all loaders of all worlds in parallel
 	struct WorldRegionWorkerPhase {}; // In this phase we process select regions from different worlds in parallel
-	struct WorldNodeWorkerPhase {}; // In this phase we process select nodes from different worlds in parallel
 	struct WorldScaleWorkerPhase {}; // In this phase we process all scales of all worlds in parallel
 	struct WorldWorkerPhase {}; // In this phase we process all worlds in parallel
 	struct WorldCreatePhase {};
@@ -56,12 +127,6 @@ namespace voxel_game
 	struct SpatialRegion3DWorkerComponent
 	{
 		SpatialAABB region;
-	};
-
-	// Add this component to a child of a spatial world to signify it represents a node in that world
-	struct SpatialNode3DWorkerComponent
-	{
-		SpatialCoord3D node;
 	};
 
 	// An object that tells a spatial world where to load nodes and at what lods
@@ -99,12 +164,6 @@ namespace voxel_game
 		SpatialNode3D* neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
 	};
 
-	using SpatialScaleNodeCommands = std::vector<godot::Vector3i>;
-
-	using SpatialNodeCreateCB = cb::Callback<std::unique_ptr<SpatialNode3D>()>;
-	using SpatialNodeDestroyCB = cb::Callback<void(std::unique_ptr<SpatialNode3D>&)>;
-	using SpatialNodeProcessCB = cb::Callback<void(SpatialNode3D&)>;
-
 	// A level of detail map for a world. The world will have multiple of these
 	struct SpatialScale3D : Nocopy
 	{
@@ -126,12 +185,11 @@ namespace voxel_game
 
 		flecs::query_t* loaders_query = nullptr;
 
-		SpatialNodeCreateCB create_node;
-		SpatialNodeDestroyCB destroy_node;
+		SpatialNodeBuilderBase node_builder;
 
-		std::vector<SpatialNodeProcessCB> load_command_processors;
-		std::vector<SpatialNodeProcessCB> unload_command_processors;
-		std::vector<SpatialNodeProcessCB> tick_command_processors;
+		std::vector<SpatialNodeProcessorBase> load_command_processors;
+		std::vector<SpatialNodeProcessorBase> unload_command_processors;
+		std::vector<SpatialNodeProcessorBase> tick_command_processors;
 	};
 
 	struct SpatialComponents
