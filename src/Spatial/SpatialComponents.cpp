@@ -30,16 +30,6 @@ namespace voxel_game
 			.no_readonly()
 			.kind<PhaseT>()
 			.iter([](flecs::iter&) {});
-
-#if DEBUG
-		world.system<const SpatialScale3DWorkerComponent>("ProfileSlowSystem")
-			.multi_threaded()
-			.kind<PhaseT>()
-			.each([](const SpatialScale3DWorkerComponent&)
-		{
-			for (volatile size_t i = 0; i < 1000 * 1000; i++) {}
-		});
-#endif
 	}
 
 	SpatialComponents::SpatialComponents(flecs::world& world)

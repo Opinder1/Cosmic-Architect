@@ -4,7 +4,7 @@
 #include "Galaxy/GalaxyComponents.h"
 
 #include "Spatial/SpatialComponents.h"
-#include "Spatial/SpatialProcessors.h"
+#include "Spatial/SpatialCommands.h"
 
 #include <flecs/flecs.h>
 

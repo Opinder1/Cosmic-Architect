@@ -1,12 +1,13 @@
 #include "SpatialModule.h"
 #include "SpatialComponents.h"
-#include "SpatialProcessors.h"
+#include "SpatialTraverse.h"
+#include "SpatialCommands.h"
 
 #include "Simulation/SimulationComponents.h"
 
 #include "Util/Debug.h"
 #include "Util/Callback.h"
-#include "Util/DynamicArray.h"
+#include "Util/VariableLengthArray.h"
 
 namespace voxel_game
 {
@@ -118,15 +119,24 @@ namespace voxel_game
 		{
 			PARALLEL_ACCESS(spatial_world, world_time);
 
-			SpatialLoader3DNodeProcessor(spatial_world, spatial_loader, [&world_time](SpatialCoord3D coord, SpatialNode3D* node)
+			for (uint8_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
 			{
-				PARALLEL_ACCESS(node);
+				const SpatialScale3D& spatial_scale = spatial_world.scales[scale_index];
 
-				if (node != nullptr)
+				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&spatial_scale, &world_time](godot::Vector3i pos)
 				{
-					node->last_update_time = world_time.frame_start;
-				}
-			});
+					auto it = spatial_scale.nodes.find(pos);
+
+					if (it == spatial_scale.nodes.end())
+					{
+						return;
+					}
+
+					SpatialNode3D& node = *it->second;
+
+					node.last_update_time = world_time.frame_start;
+				});
+			}
 		});
 
 		// System to run all loaders in each scale in parallel
@@ -174,13 +184,13 @@ namespace voxel_game
 			size_t scale_index = scale_worker.scale;
 			SpatialScale3D& scale = spatial_world.scales[scale_index];
 
-			SpatialScale3DNodeProcessor(spatial_world, scale_worker, [&world_time, &scale](SpatialNode3D* node)
+			for (auto&& [pos, node] : scale.nodes)
 			{
 				if (world_time.frame_start - node->last_update_time > 20s)
 				{
 					scale.unload_commands.push_back(node->coord.pos);
 				}
-			});
+			}
 		});
 
 		// System to initialize spatial nodes that have been added
@@ -207,91 +217,6 @@ namespace voxel_game
 
 					InitializeSpatialNode(node, scale, parent_scale);
 				}
-			}
-		});
-
-		// System to load spatial nodes that have been added
-		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialWorldLoadNodes"))
-			.multi_threaded()
-			.kind<WorldLoadPhase>()
-			.term_at(1).parent()
-			.each([](flecs::entity entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
-		{
-			PARALLEL_ACCESS(spatial_world);
-
-			size_t scale_index = scale_worker.scale;
-			SpatialScale3D& scale = spatial_world.scales[scale_index];
-			std::vector<SpatialNodeProcessorBase>& processors = spatial_world.load_command_processors;
-
-			DynamicArray<void*> states = DYNAMIC_ARRAY(void*, processors.size());
-
-			for (size_t i = 0; i < states.size(); i++)
-			{
-				states[i] = alloca(processors[i].state_size);
-
-				processors[i].state_initialize(states[i], entity, spatial_world);
-			}
-
-			for (godot::Vector3i pos : scale.load_commands)
-			{
-				auto it = scale.nodes.find(pos);
-				DEBUG_ASSERT(it != scale.nodes.end(), "The node should have been initialized");
-				DEBUG_ASSERT(it->second, "The node should have been initialized with data");
-
-				SpatialNode3D& node = *it->second;
-
-				for (size_t i = 0; i < states.size(); i++)
-				{
-					processors[i].process(states[i], entity, scale, node);
-				}
-			}
-
-			for (size_t i = 0; i < states.size(); i++)
-			{
-				processors[i].state_destroy(states[i]);
-			}
-
-			scale.load_commands.clear();
-		});
-
-		// System to unload spatial nodes that have been marked to unload
-		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialWorldUnloadNodes"))
-			.multi_threaded()
-			.kind<WorldUnloadPhase>()
-			.term_at(1).parent()
-			.each([](flecs::entity entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
-		{
-			PARALLEL_ACCESS(spatial_world);
-
-			size_t scale_index = scale_worker.scale;
-			SpatialScale3D& scale = spatial_world.scales[scale_index];
-			std::vector<SpatialNodeProcessorBase>& processors = spatial_world.unload_command_processors;
-
-			DynamicArray<void*> states = DYNAMIC_ARRAY(void*, processors.size());
-
-			for (size_t i = 0; i < states.size(); i++)
-			{
-				states[i] = alloca(processors[i].state_size);
-
-				processors[i].state_initialize(states[i], entity, spatial_world);
-			}
-
-			for (godot::Vector3i pos : scale.unload_commands)
-			{
-				auto it = scale.nodes.find(pos);
-				DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
-
-				SpatialNode3D& node = *it->second;
-
-				for (size_t i = 0; i < states.size(); i++)
-				{
-					processors[i].process(states[i], entity, scale, node);
-				}
-			}
-
-			for (size_t i = 0; i < states.size(); i++)
-			{
-				processors[i].state_destroy(states[i]);
 			}
 		});
 
@@ -324,11 +249,139 @@ namespace voxel_game
 				scale.unload_commands.clear();
 			}
 		});
+
+		// System to load spatial nodes that have been added
+		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialWorldProcessLoadNodeCommands"))
+			.multi_threaded()
+			.kind<WorldLoadPhase>()
+			.term_at(1).parent()
+			.each([](flecs::entity entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
+		{
+			PARALLEL_ACCESS(spatial_world);
+
+			size_t scale_index = scale_worker.scale;
+			SpatialScale3D& scale = spatial_world.scales[scale_index];
+			std::vector<SpatialNodeCommandProcessorBase>& processors = spatial_world.load_command_processors;
+
+			VariableLengthArray<void*> states = MakeVariableLengthArray(void*, processors.size());
+
+			for (size_t i = 0; i < states.size(); i++)
+			{
+				states[i] = alloca(processors[i].state_size);
+
+				processors[i].state_initialize(states[i], entity, spatial_world);
+			}
+
+			for (godot::Vector3i pos : scale.load_commands)
+			{
+				auto it = scale.nodes.find(pos);
+				DEBUG_ASSERT(it != scale.nodes.end(), "The node should have been initialized");
+				DEBUG_ASSERT(it->second, "The node should have been initialized with data");
+
+				SpatialNode3D& node = *it->second;
+
+				for (size_t i = 0; i < states.size(); i++)
+				{
+					processors[i].process(states[i], scale, node);
+				}
+			}
+
+			for (size_t i = 0; i < states.size(); i++)
+			{
+				processors[i].state_destroy(states[i]);
+			}
+
+			scale.load_commands.clear();
+		});
+
+		// System to unload spatial nodes that have been marked to unload
+		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialWorldProcessUnloadNodeCommands"))
+			.multi_threaded()
+			.kind<WorldUnloadPhase>()
+			.term_at(1).parent()
+			.each([](flecs::entity entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
+		{
+			PARALLEL_ACCESS(spatial_world);
+
+			size_t scale_index = scale_worker.scale;
+			SpatialScale3D& scale = spatial_world.scales[scale_index];
+			std::vector<SpatialNodeCommandProcessorBase>& processors = spatial_world.unload_command_processors;
+
+			VariableLengthArray<void*> states = MakeVariableLengthArray(void*, processors.size());
+
+			for (size_t i = 0; i < states.size(); i++)
+			{
+				states[i] = alloca(processors[i].state_size);
+
+				processors[i].state_initialize(states[i], entity, spatial_world);
+			}
+
+			for (godot::Vector3i pos : scale.unload_commands)
+			{
+				auto it = scale.nodes.find(pos);
+				DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
+
+				SpatialNode3D& node = *it->second;
+
+				for (size_t i = 0; i < states.size(); i++)
+				{
+					processors[i].process(states[i], scale, node);
+				}
+			}
+
+			for (size_t i = 0; i < states.size(); i++)
+			{
+				processors[i].state_destroy(states[i]);
+			}
+		});
+
+		// System to unload spatial nodes that have been marked to unload
+		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialWorldProcessTickCommands"))
+			.multi_threaded()
+			.kind<WorldUnloadPhase>()
+			.term_at(1).parent()
+			.each([](flecs::entity entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
+		{
+			PARALLEL_ACCESS(spatial_world);
+
+			size_t scale_index = scale_worker.scale;
+			SpatialScale3D& scale = spatial_world.scales[scale_index];
+			std::vector<SpatialNodeCommandProcessorBase>& processors = spatial_world.tick_command_processors;
+
+			VariableLengthArray<void*> states = MakeVariableLengthArray(void*, processors.size());
+
+			for (size_t i = 0; i < states.size(); i++)
+			{
+				states[i] = alloca(processors[i].state_size);
+
+				processors[i].state_initialize(states[i], entity, spatial_world);
+			}
+
+			for (godot::Vector3i pos : scale.tick_commands)
+			{
+				auto it = scale.nodes.find(pos);
+				DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
+
+				SpatialNode3D& node = *it->second;
+
+				for (size_t i = 0; i < states.size(); i++)
+				{
+					processors[i].process(states[i], scale, node);
+				}
+			}
+
+			for (size_t i = 0; i < states.size(); i++)
+			{
+				processors[i].state_destroy(states[i]);
+			}
+		});
 	}
 
-	void SpatialModule::AddSpatialScaleWorkers(flecs::world& world, flecs::entity_t spatial_world_entity)
+	void SpatialModule::AddSpatialScaleWorkers(flecs::entity spatial_world_entity)
 	{
-		const SpatialWorld3DComponent* spatial_world = flecs::entity(world, spatial_world_entity).get<SpatialWorld3DComponent>();
+		flecs::world world(spatial_world_entity.world());
+
+		const SpatialWorld3DComponent* spatial_world = spatial_world_entity.get<SpatialWorld3DComponent>();
 
 		DEBUG_ASSERT(spatial_world != nullptr, "The entity should have a spatial world to add spatial workers");
 
@@ -344,8 +397,10 @@ namespace voxel_game
 		}
 	}
 
-	void SpatialModule::RemoveSpatialScaleWorkers(flecs::world& world, flecs::entity_t spatial_world_entity)
+	void SpatialModule::RemoveSpatialScaleWorkers(flecs::entity spatial_world_entity)
 	{
+		flecs::world world(spatial_world_entity.world());
+
 		world.filter_builder()
 			.read<SpatialScale3DWorkerComponent>()
 			.read(flecs::ChildOf, spatial_world_entity)

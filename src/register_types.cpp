@@ -92,7 +92,7 @@ void initialize_flecs()
 	ecs_os_init();
 
 	ecs_os_api.log_ = flecs_log_to_godot;
-	ecs_os_api.log_level_ = -1;
+	ecs_os_api.log_level_ = 0;
 
 	ecs_os_api.malloc_ = flecs_malloc_godot;
 	ecs_os_api.realloc_ = flecs_realloc_godot;

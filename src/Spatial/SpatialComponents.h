@@ -2,13 +2,13 @@
 
 #include "SpatialCoord.h"
 #include "SpatialAABB.h"
+#include "SpatialCommands.h"
 
 #include "Util/Time.h"
 #include "Util/Hash.h"
 #include "Util/Nocopy.h"
 #include "Util/Callback.h"
 
-#include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/variant/vector3i.hpp>
 
 #include <robin_hood/robin_hood.h>
@@ -17,7 +17,6 @@
 
 #include <vector>
 #include <array>
-#include <bitset>
 
 namespace flecs
 {
@@ -26,79 +25,7 @@ namespace flecs
 
 namespace voxel_game
 {
-	struct SpatialWorld3DComponent;
-	struct SpatialScale3D;
-	struct SpatialNode3D;
-
-	using SpatialScaleNodeCommands = std::vector<godot::Vector3i>;
-
-	struct SpatialNodeBuilderBase
-	{
-		std::unique_ptr<SpatialNode3D>(*node_create)();
-		void(*node_destroy)(std::unique_ptr<SpatialNode3D>&);
-	};
-
-	template<class NodeT>
-	struct SpatialNodeBuilder : SpatialNodeBuilderBase
-	{
-		SpatialNodeBuilder()
-		{
-			node_create = &NodeCreate;
-			node_destroy = &NodeDestroy;
-		}
-
-		static std::unique_ptr<SpatialNode3D> NodeCreate()
-		{
-			return std::make_unique<NodeT>();
-		}
-
-		static void NodeDestroy(std::unique_ptr<SpatialNode3D>& node)
-		{
-			reinterpret_cast<std::unique_ptr<NodeT>&>(node).reset();
-		}
-	};
-
-	struct SpatialNodeProcessorBase
-	{
-		size_t state_size;
-		void(*state_initialize)(void*, flecs::entity, SpatialWorld3DComponent&);
-		void(*state_destroy)(void*);
-		void(*process)(void*, flecs::entity, SpatialScale3D&, SpatialNode3D&);
-	};
-
-	template<class StateT>
-	struct SpatialNodeProcessor : SpatialNodeProcessorBase
-	{
-		SpatialNodeProcessor()
-		{
-			state_size = sizeof(StateT);
-			state_initialize = &StateInitializeProc;
-			state_destroy = &StateDestroyProc;
-			process = &ProcessProc;
-		}
-
-	private:
-		static void StateInitializeProc(void* state_ptr, flecs::entity entity, SpatialWorld3DComponent& spatial_world)
-		{
-			StateT* state = static_cast<StateT*>(state_ptr);
-
-			new (state) StateT(entity, spatial_world);
-		}
-
-		static void StateDestroyProc(void* state_ptr)
-		{
-			StateT* state = static_cast<StateT*>(state_ptr);
-
-			std::destroy_at(state);
-		}
-
-		static void ProcessProc(void* state_ptr, flecs::entity entity, SpatialScale3D& spatial_scale, SpatialNode3D& spatial_node)
-		{
-			StateT* state = static_cast<StateT*>(state_ptr);
-
-			state->Process(entity, spatial_scale, spatial_node);
-		}
-	};
+	struct SpatialNodeCommandProcessorBase;
 
 	constexpr const uint8_t k_max_world_scale = 16;
 
@@ -164,6 +91,8 @@ namespace voxel_game
 		SpatialNode3D* neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
 	};
 
+	using SpatialScaleNodeCommands = std::vector<godot::Vector3i>;
+
 	// A level of detail map for a world. The world will have multiple of these
 	struct SpatialScale3D : Nocopy
 	{
@@ -187,9 +116,10 @@ namespace voxel_game
 
 		SpatialNodeBuilderBase node_builder;
 
-		std::vector<SpatialNodeProcessorBase> load_command_processors;
-		std::vector<SpatialNodeProcessorBase> unload_command_processors;
-		std::vector<SpatialNodeProcessorBase> tick_command_processors;
+		std::vector<SpatialNodeCommandProcessorBase> load_command_processors;
+		std::vector<SpatialNodeCommandProcessorBase> unload_command_processors;
+
+		std::vector<SpatialNodeCommandProcessorBase> tick_command_processors;
 	};
 
 	struct SpatialComponents

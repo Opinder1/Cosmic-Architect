@@ -234,7 +234,7 @@ namespace voxel_game
 				spatial_loader.max_lod = 8;
 			});
 
-		SpatialModule::AddSpatialScaleWorkers(m_world, m_galaxy_entity);
+		SpatialModule::AddSpatialScaleWorkers(flecs::entity(m_world, m_galaxy_entity));
 	}
 
 	void UniverseSimulation::Uninitialize()

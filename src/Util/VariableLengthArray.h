@@ -6,10 +6,10 @@
 #include <memory>
 
 template<class T>
-class DynamicArray : Nocopy, Nomove
+class VariableLengthArray : Nocopy, Nomove
 {
 public:
-	DynamicArray(void* data, size_t size) :
+	VariableLengthArray(void* data, size_t size) :
 		m_data(static_cast<T*>(data)),
 		m_size(size)
 	{
@@ -19,7 +19,7 @@ public:
 		}
 	}
 
-	~DynamicArray()
+	~VariableLengthArray()
 	{
 		std::destroy_n(m_data, m_size);
 	}
@@ -54,4 +54,4 @@ private:
 	uint32_t m_size;
 };
 
-#define DYNAMIC_ARRAY(T, S) DynamicArray<T>(alloca(S * sizeof(T)), S)
+#define MakeVariableLengthArray(T, S) VariableLengthArray<T>(alloca(S * sizeof(T)), S)
