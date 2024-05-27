@@ -21,11 +21,14 @@ namespace voxel_game
 		world.component<GalaxyRenderComponent>();
 		world.component<GalaxyRenderContext>();
 
+		world.add<GalaxyRenderContext>();
+
 		auto* rendering_server = godot::RenderingServer::get_singleton();
 
 		world.observer<const GalaxyComponent, const Position3DComponent, const Rotation3DComponent, GalaxyRenderContext>()
 			.event(flecs::OnAdd)
-			.term_at(2).src<GalaxyRenderContext>()
+			.yield_existing()
+			.term_at(4).src<GalaxyRenderContext>()
 			.each([rendering_server](flecs::entity entity, const GalaxyComponent& galaxy, const Position3DComponent& position, const Rotation3DComponent rotation, GalaxyRenderContext& render_context)
 		{
 			GalaxyRenderData data;
