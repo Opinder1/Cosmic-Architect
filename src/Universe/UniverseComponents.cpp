@@ -10,16 +10,12 @@ namespace voxel_game
 	{
 		world.module<UniverseComponents>();
 
-		world.import<SpatialComponents>();
-
 		world.component<UniverseComponent>();
 		world.component<UniverseObjectComponent>();
 
-		world.component<UniverseComponent>()
-			.add_second<SpatialWorld3DComponent>(flecs::With);
+		world.component<UniverseComponent>();
 
 		world.component<UniverseObjectComponent>()
-			.add_second<UniverseComponent>(flecs::OneOf)
-			.add_second<SpatialEntity3DComponent>(flecs::With);
+			.add_second<UniverseComponent>(flecs::OneOf);
 	}
 }

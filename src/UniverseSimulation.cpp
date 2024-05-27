@@ -16,6 +16,9 @@
 #include "Voxel/VoxelComponents.h"
 #include "Voxel/VoxelModule.h"
 
+#include "Physics/PhysicsComponents.h"
+#include "Physics/PhysicsModule.h"
+
 #include "Util/Debug.h"
 #include "Util/PropertyMacros.h"
 
@@ -176,22 +179,6 @@ namespace voxel_game
 		}
 	}
 
-	bool UniverseSimulation::IsThreaded()
-	{
-		return m_thread.joinable();
-	}
-
-	godot::Ref<Universe> UniverseSimulation::GetUniverse()
-	{
-		return m_universe->get_ref();
-	}
-
-	godot::Dictionary UniverseSimulation::GetGalaxyInfo()
-	{
-		std::shared_lock lock(m_cache_mutex);
-		return m_info_cache.galaxy_info;
-	}
-
 	void UniverseSimulation::Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type)
 	{
 		DEBUG_ASSERT(!m_universe.is_valid(), "We can't initialize a simulation twice");
@@ -206,35 +193,49 @@ namespace voxel_game
 		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
 
 		m_world.import<flecs::monitor>();
+		m_world.import<PhysicsModule>();
 		m_world.import<SpatialModule>();
-		m_world.import<UniverseModule>();
+		m_world.import<VoxelModule>();
 		m_world.import<GalaxyModule>();
+		m_world.import<UniverseModule>();
 
 		m_world.set<flecs::Rest>({});
 
 		m_universe_entity = m_world.entity("Universe")
+			.add<SpatialWorld3DComponent>()
 			.add<UniverseComponent>();
+
+		SpatialModule::AddSpatialScaleWorkers(flecs::entity(m_world, m_universe_entity));
 
 		m_galaxy_entity = m_world.entity("SimulatedGalaxy")
 			.child_of(m_universe_entity)
+			.add<SpatialWorld3DComponent>()
+			.add<GalaxyComponent>()
 			.add<SimulatedGalaxyComponent>()
+			.add<SpatialEntity3DComponent>()
 			.add<UniverseObjectComponent>()
+			.add<Position3DComponent>()
 			.add<SpatialLoader3DComponent>()
 			.set([&path, &fragment_type, &server_type](SimulatedGalaxyComponent& simulated_galaxy)
-			{
-				simulated_galaxy.name = "Test";
-				simulated_galaxy.path = path;
-				simulated_galaxy.fragment_type = fragment_type;
-				simulated_galaxy.is_remote = (server_type == SERVER_TYPE_REMOTE);
-			})
+		{
+			simulated_galaxy.name = "Test";
+			simulated_galaxy.path = path;
+			simulated_galaxy.fragment_type = fragment_type;
+			simulated_galaxy.is_remote = (server_type == SERVER_TYPE_REMOTE);
+		})
 			.set([](SpatialLoader3DComponent& spatial_loader)
-			{
-				spatial_loader.dist_per_lod = 16;
-				spatial_loader.min_lod = 0;
-				spatial_loader.max_lod = 8;
-			});
+		{
+			spatial_loader.dist_per_lod = 16;
+			spatial_loader.min_lod = 0;
+			spatial_loader.max_lod = 8;
+		});
 
 		SpatialModule::AddSpatialScaleWorkers(flecs::entity(m_world, m_galaxy_entity));
+
+#if DEBUG
+		UniverseRenderInfo info;
+		StartRenderer(&info);
+#endif
 	}
 
 	void UniverseSimulation::Uninitialize()
@@ -260,11 +261,27 @@ namespace voxel_game
 		m_universe.unref();
 	}
 
+	bool UniverseSimulation::IsThreaded()
+	{
+		return m_thread.joinable();
+	}
+
+	godot::Ref<Universe> UniverseSimulation::GetUniverse()
+	{
+		return m_universe->get_ref();
+	}
+
+	godot::Dictionary UniverseSimulation::GetGalaxyInfo()
+	{
+		std::shared_lock lock(m_cache_mutex);
+		return m_info_cache.galaxy_info;
+	}
+
 	void UniverseSimulation::StartRenderer(UniverseRenderInfo* render_info)
 	{
 		m_world.import<GalaxyRenderModule>();
 
-		m_world.component<GalaxyRenderContext>().get([render_info](GalaxyRenderContext& context)
+		m_world.singleton<GalaxyRenderContext>().get([render_info](GalaxyRenderContext& context)
 		{
 			context.scenario = render_info->GetGalaxyScenario();
 		});
@@ -368,6 +385,7 @@ namespace voxel_game
 
 	void UniverseSimulation::BindMethods()
 	{
+		BIND_METHOD(godot::D_METHOD(k_commands->is_threaded), &UniverseSimulation::IsThreaded);
 		BIND_METHOD(godot::D_METHOD(k_commands->get_universe), &UniverseSimulation::GetUniverse);
 		BIND_METHOD(godot::D_METHOD(k_commands->get_galaxy_info), &UniverseSimulation::GetGalaxyInfo);
 		BIND_METHOD(godot::D_METHOD(k_commands->start_renderer), &UniverseSimulation::StartRenderer);

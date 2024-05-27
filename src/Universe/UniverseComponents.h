@@ -6,7 +6,10 @@
 
 namespace voxel_game
 {
-	struct UniverseComponent {};
+	struct UniverseComponent
+	{
+		size_t seed = 0;
+	};
 
 	struct UniverseNode : SpatialNode3D
 	{

@@ -34,16 +34,22 @@ namespace voxel_game
 	struct SpatialNodeCommandProcessorBase : SpatialCommandProcessorBase
 	{
 		void(*process)(void*, SpatialScale3D&, SpatialNode3D&);
+
+		bool operator==(const SpatialNodeCommandProcessorBase& other) { return process == other.process; }
 	};
 
 	struct SpatialRegionCommandProcessorBase : SpatialCommandProcessorBase
 	{
 		void(*process)(void*, SpatialAABB);
+
+		bool operator==(const SpatialRegionCommandProcessorBase& other) { return process == other.process; }
 	};
 
 	struct SpatialScaleCommandProcessorBase : SpatialCommandProcessorBase
 	{
 		void(*process)(void*, size_t, SpatialScale3D&);
+
+		bool operator==(const SpatialScaleCommandProcessorBase& other) { return process == other.process; }
 	};
 
 	template<class NodeT>

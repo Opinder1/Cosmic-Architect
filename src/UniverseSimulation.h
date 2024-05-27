@@ -180,12 +180,12 @@ namespace voxel_game
 		UniverseSimulation();
 		~UniverseSimulation();
 
-		bool IsThreaded();
-
-		godot::Ref<Universe> GetUniverse();
-		godot::Dictionary GetGalaxyInfo();
 		void Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type);
 		void Uninitialize();
+
+		bool IsThreaded();
+		godot::Ref<Universe> GetUniverse();
+		godot::Dictionary GetGalaxyInfo();
 		void StartRenderer(UniverseRenderInfo* render_info);
 		void StartSimulation(ThreadMode thread_mode);
 		void StopSimulation();

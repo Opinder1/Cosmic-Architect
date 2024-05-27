@@ -6,6 +6,7 @@ namespace voxel_game
 	{
 		CommandStrings();
 
+		godot::StringName is_threaded;
 		godot::StringName get_universe;
 		godot::StringName get_galaxy_info;
 		godot::StringName start_renderer;

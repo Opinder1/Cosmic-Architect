@@ -263,6 +263,17 @@ namespace voxel_game
 			SpatialScale3D& scale = spatial_world.scales[scale_index];
 			std::vector<SpatialNodeCommandProcessorBase>& processors = spatial_world.load_command_processors;
 
+			if (scale.load_commands.empty()) // Don't continue if there aren't any commands
+			{
+				return;
+			}
+			
+			if (processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
+			{
+				scale.load_commands.clear();
+				return;
+			}
+
 			VariableLengthArray<void*> states = MakeVariableLengthArray(void*, processors.size());
 
 			for (size_t i = 0; i < states.size(); i++)
@@ -307,6 +318,17 @@ namespace voxel_game
 			SpatialScale3D& scale = spatial_world.scales[scale_index];
 			std::vector<SpatialNodeCommandProcessorBase>& processors = spatial_world.unload_command_processors;
 
+			if (scale.unload_commands.empty()) // Don't continue if there aren't any commands
+			{
+				return;
+			}
+
+			if (processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
+			{
+				scale.unload_commands.clear();
+				return;
+			}
+
 			VariableLengthArray<void*> states = MakeVariableLengthArray(void*, processors.size());
 
 			for (size_t i = 0; i < states.size(); i++)
@@ -347,6 +369,17 @@ namespace voxel_game
 			size_t scale_index = scale_worker.scale;
 			SpatialScale3D& scale = spatial_world.scales[scale_index];
 			std::vector<SpatialNodeCommandProcessorBase>& processors = spatial_world.tick_command_processors;
+
+			if (scale.tick_commands.empty()) // Don't continue if there aren't any commands
+			{
+				return;
+			}
+
+			if (processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
+			{
+				scale.tick_commands.clear();
+				return;
+			}
 
 			VariableLengthArray<void*> states = MakeVariableLengthArray(void*, processors.size());
 
@@ -402,8 +435,8 @@ namespace voxel_game
 		flecs::world world(spatial_world_entity.world());
 
 		world.filter_builder()
-			.read<SpatialScale3DWorkerComponent>()
 			.read(flecs::ChildOf, spatial_world_entity)
+			.read<SpatialScale3DWorkerComponent>()
 			.each([](flecs::entity entity)
 		{
 			entity.destruct();

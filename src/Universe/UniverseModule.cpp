@@ -6,28 +6,29 @@
 #include "Spatial/SpatialComponents.h"
 #include "Spatial/SpatialCommands.h"
 
+#include "Util/VectorHelpers.h"
+#include "Util/Debug.h"
+
 #include <flecs/flecs.h>
 
 namespace voxel_game
 {
 	struct UniverseLoadNodeCommandProcessor
 	{
-		flecs::world& world;
-		flecs::entity_t world_entity;
-		const UniverseComponent* universe;
+		flecs::entity world_entity;
 
-		UniverseLoadNodeCommandProcessor(flecs::entity entity, SpatialWorld3DComponent& spatial_world) :
-			world(entity.world())
+		UniverseLoadNodeCommandProcessor(flecs::entity entity, SpatialWorld3DComponent& spatial_world)
 		{
 			world_entity = entity;
-			universe = entity.get<UniverseComponent>();
 		}
 
 		void Process(SpatialScale3D& spatial_scale, SpatialNode3D& spatial_node)
 		{
+			flecs::world world = world_entity.world();
+
 			UniverseNode& universe_node = static_cast<UniverseNode&>(spatial_node);
 
-			for (size_t i = 0; i < 10; i++)
+			for (size_t i = 0; i < 0; i++)
 			{
 				flecs::entity galaxy = world.entity()
 					.add<GalaxyComponent>()
@@ -45,10 +46,12 @@ namespace voxel_game
 		world.import<SpatialComponents>();
 		world.import<UniverseComponents>();
 
-		world.observer<UniverseComponent, SpatialWorld3DComponent>()
+		world.observer<SpatialWorld3DComponent, UniverseComponent>("UniverseInitializeSpatialProcessors")
 			.event(flecs::OnAdd)
-			.each([](UniverseComponent& universe, SpatialWorld3DComponent& spatial_world)
+			.each([](SpatialWorld3DComponent& spatial_world, UniverseComponent& universe)
 		{
+			DEBUG_ASSERT(spatial_world.node_builder.node_create == nullptr, "The node builder was already initialized");
+
 			spatial_world.node_builder = SpatialNodeBuilder<UniverseNode>();
 
 			spatial_world.load_command_processors.push_back(SpatialNodeCommandProcessor<UniverseLoadNodeCommandProcessor>());

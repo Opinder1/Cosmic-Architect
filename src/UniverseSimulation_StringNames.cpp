@@ -7,6 +7,7 @@ namespace voxel_game
 {
 	UniverseSimulation::CommandStrings::CommandStrings()
 	{
+		INITIALIZE_STRINGNAME(is_threaded);
 		INITIALIZE_STRINGNAME(get_universe);
 		INITIALIZE_STRINGNAME(get_galaxy_info);
 		INITIALIZE_STRINGNAME(start_renderer);
