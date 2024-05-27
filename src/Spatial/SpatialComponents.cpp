@@ -37,7 +37,8 @@ namespace voxel_game
 
 		// Relationships
 		world.component<SpatialEntity3DComponent>()
-			.add_second<SpatialWorld3DComponent>(flecs::OneOf);
+			.add_second<SpatialWorld3DComponent>(flecs::OneOf)
+			.add_second<Position3DComponent>(flecs::With);
 
 		world.component<SpatialScale3DWorkerComponent>()
 			.add_second<SpatialWorld3DComponent>(flecs::OneOf);
@@ -45,7 +46,8 @@ namespace voxel_game
 		world.component<SpatialRegion3DWorkerComponent>()
 			.add_second<SpatialWorld3DComponent>(flecs::OneOf);
 
-		world.component<SpatialLoader3DComponent>();
+		world.component<SpatialLoader3DComponent>()
+			.add_second<SpatialEntity3DComponent>(flecs::With);
 
 		// Phases
 

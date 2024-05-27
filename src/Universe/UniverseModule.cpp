@@ -46,8 +46,9 @@ namespace voxel_game
 		world.import<SpatialComponents>();
 		world.import<UniverseComponents>();
 
-		world.observer<SpatialWorld3DComponent, UniverseComponent>("UniverseInitializeSpatialProcessors")
+		world.observer<SpatialWorld3DComponent, UniverseComponent>(DEBUG_ONLY("UniverseInitializeSpatialProcessors"))
 			.event(flecs::OnAdd)
+			.term_at(2).filter()
 			.each([](SpatialWorld3DComponent& spatial_world, UniverseComponent& universe)
 		{
 			DEBUG_ASSERT(spatial_world.node_builder.node_create == nullptr, "The node builder was already initialized");

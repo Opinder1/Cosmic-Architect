@@ -201,20 +201,15 @@ namespace voxel_game
 
 		m_world.set<flecs::Rest>({});
 
-		m_universe_entity = m_world.entity("Universe")
-			.add<SpatialWorld3DComponent>()
+		m_universe_entity = m_world.entity(DEBUG_ONLY("Universe"))
 			.add<UniverseComponent>();
 
 		SpatialModule::AddSpatialScaleWorkers(flecs::entity(m_world, m_universe_entity));
 
-		m_galaxy_entity = m_world.entity("SimulatedGalaxy")
+		m_galaxy_entity = m_world.entity(DEBUG_ONLY("SimulatedGalaxy"))
 			.child_of(m_universe_entity)
-			.add<SpatialWorld3DComponent>()
-			.add<GalaxyComponent>()
 			.add<SimulatedGalaxyComponent>()
-			.add<SpatialEntity3DComponent>()
 			.add<UniverseObjectComponent>()
-			.add<Position3DComponent>()
 			.add<SpatialLoader3DComponent>()
 			.set([&path, &fragment_type, &server_type](SimulatedGalaxyComponent& simulated_galaxy)
 		{
