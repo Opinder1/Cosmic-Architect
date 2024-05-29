@@ -53,13 +53,15 @@ namespace voxel_game
 
 		godot::Vector3i it;
 
+		double radius_squared = radius * radius;
+
 		for (it.x = start.x; it.x < end.x; it.x++)
 		{
 			for (it.y = start.y; it.y < end.y; it.y++)
 			{
 				for (it.z = start.z; it.z < end.z; it.z++)
 				{
-					if (pos.distance_squared_to(it) < radius)
+					if (pos.distance_squared_to(it) < radius_squared)
 					{
 						callback(it);
 					}
