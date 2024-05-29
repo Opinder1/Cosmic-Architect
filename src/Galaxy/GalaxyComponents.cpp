@@ -25,7 +25,6 @@ namespace voxel_game
 
 		world.component<GalaxyComponent>()
 			.add_second<UniverseComponent>(flecs::OneOf)
-			.add_second<SpatialWorld3DComponent>(flecs::With)
 			.add_second<Position3DComponent>(flecs::With)
 			.add_second<Rotation3DComponent>(flecs::With);
 
@@ -37,6 +36,7 @@ namespace voxel_game
 			.add_second<GalaxyObjectComponent>(flecs::With);
 
 		world.component<SimulatedGalaxyComponent>()
-			.add_second<GalaxyComponent>(flecs::With);
+			.add_second<GalaxyComponent>(flecs::With)
+			.add_second<SpatialWorld3DComponent>(flecs::With);
 	}
 }
