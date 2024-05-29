@@ -24,6 +24,7 @@
 
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/thread.hpp>
+#include <godot_cpp/classes/rendering_server.hpp>
 
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/type_info.hpp>
@@ -220,9 +221,9 @@ namespace voxel_game
 		})
 			.set([](SpatialLoader3DComponent& spatial_loader)
 		{
-			spatial_loader.dist_per_lod = 16;
+			spatial_loader.dist_per_lod = 8;
 			spatial_loader.min_lod = 0;
-			spatial_loader.max_lod = 8;
+			spatial_loader.max_lod = k_max_world_scale;
 		});
 
 		SpatialModule::AddSpatialScaleWorkers(flecs::entity(m_world, m_galaxy_entity));
@@ -276,9 +277,10 @@ namespace voxel_game
 	{
 		m_world.import<GalaxyRenderModule>();
 
-		m_world.singleton<GalaxyRenderContext>().get([render_info](GalaxyRenderContext& context)
+		m_world.set([render_info](GalaxyRenderContext& context)
 		{
 			context.scenario = render_info->GetGalaxyScenario();
+			context.mesh = godot::RenderingServer::get_singleton()->get_test_cube();
 		});
 	}
 
@@ -383,7 +385,7 @@ namespace voxel_game
 		BIND_METHOD(godot::D_METHOD(k_commands->is_threaded), &UniverseSimulation::IsThreaded);
 		BIND_METHOD(godot::D_METHOD(k_commands->get_universe), &UniverseSimulation::GetUniverse);
 		BIND_METHOD(godot::D_METHOD(k_commands->get_galaxy_info), &UniverseSimulation::GetGalaxyInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->start_renderer), &UniverseSimulation::StartRenderer);
+		BIND_METHOD(godot::D_METHOD(k_commands->start_renderer, "render_info"), &UniverseSimulation::StartRenderer);
 		BIND_METHOD(godot::D_METHOD(k_commands->start_simulation, "thread_mode"), &UniverseSimulation::StartSimulation);
 		BIND_METHOD(godot::D_METHOD(k_commands->stop_simulation), &UniverseSimulation::StopSimulation);
 		BIND_METHOD(godot::D_METHOD(k_commands->progress, "delta"), &UniverseSimulation::Progress);
