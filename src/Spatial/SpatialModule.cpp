@@ -35,7 +35,6 @@ namespace voxel_game
 
 	uint8_t GetNodeParentIndex(godot::Vector3i pos)
 	{
-		pos %= 2;
 		return (pos.x) + (pos.y * 2) + (pos.z * 4);
 	}
 
@@ -63,16 +62,18 @@ namespace voxel_game
 
 		if (&scale != &parent_scale)
 		{
-			godot::Vector3i parent_pos = node.coord.pos / 2;
+			SpatialCoord3D parent_pos = node.coord.GetParent();
 
-			auto it = parent_scale.nodes.find(parent_pos);
+			auto it = parent_scale.nodes.find(parent_pos.pos);
 
 			DEBUG_ASSERT(it != parent_scale.nodes.end(), "The parent node should already exist if we try to load this node");
 
 			SpatialNode3D* parent_node = it->second.get();
 
 			node.parent = parent_node;
-			node.parent_index = GetNodeParentIndex(node.coord.pos);
+			node.parent_index = GetNodeParentIndex(node.coord.GetParentRelPos());
+
+			DEBUG_ASSERT(node.parent_index < 8, "The parent index is out of range");
 
 			parent_node->children_array[node.parent_index] = &node;
 			parent_node->children_mask |= 1 << node.parent_index;
@@ -155,9 +156,14 @@ namespace voxel_game
 			flecs::query<const SpatialLoader3DComponent> staged_loaders_query(entity.world(), spatial_world.loaders_query);
 
 			// For each command list that is a child of the world
-			staged_loaders_query.each([&scale](const SpatialLoader3DComponent& spatial_loader)
+			staged_loaders_query.each([scale_index, &scale](const SpatialLoader3DComponent& spatial_loader)
 			{
 				PARALLEL_ACCESS(spatial_loader);
+
+				if (scale_index < spatial_loader.min_lod || scale_index > spatial_loader.max_lod)
+				{
+					return;
+				}
 
 				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&scale](godot::Vector3i pos)
 				{
@@ -165,6 +171,7 @@ namespace voxel_game
 
 					if (it == scale.nodes.end())
 					{
+						DEBUG_ASSERT(std::find(scale.load_commands.begin(), scale.load_commands.end(), pos) == scale.load_commands.end(), "Already exists");
 						scale.load_commands.push_back(pos);
 					}
 				});
@@ -215,6 +222,8 @@ namespace voxel_game
 
 					SpatialNode3D& node = *it->second;
 
+					node.coord = SpatialCoord3D(pos, scale_index);
+
 					InitializeSpatialNode(node, scale, parent_scale);
 				}
 			}
@@ -252,10 +261,10 @@ namespace voxel_game
 
 		// System to load spatial nodes that have been added
 		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialWorldProcessLoadNodeCommands"))
-			.multi_threaded()
+			//.multi_threaded()
 			.kind<WorldLoadPhase>()
 			.term_at(1).parent()
-			.each([](flecs::entity entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
+			.each([](flecs::entity worker_entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
 		{
 			PARALLEL_ACCESS(spatial_world);
 
@@ -274,13 +283,15 @@ namespace voxel_game
 				return;
 			}
 
+			flecs::entity world_entity = worker_entity.parent();
+
 			VariableLengthArray<void*> states = MakeVariableLengthArray(void*, processors.size());
 
 			for (size_t i = 0; i < states.size(); i++)
 			{
 				states[i] = alloca(processors[i].state_size);
 
-				processors[i].state_initialize(states[i], entity, spatial_world);
+				processors[i].state_initialize(states[i], world_entity, spatial_world);
 			}
 
 			for (godot::Vector3i pos : scale.load_commands)
@@ -310,7 +321,7 @@ namespace voxel_game
 			.multi_threaded()
 			.kind<WorldUnloadPhase>()
 			.term_at(1).parent()
-			.each([](flecs::entity entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
+			.each([](flecs::entity worker_entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
 		{
 			PARALLEL_ACCESS(spatial_world);
 
@@ -329,13 +340,15 @@ namespace voxel_game
 				return;
 			}
 
+			flecs::entity world_entity = worker_entity.parent();
+
 			VariableLengthArray<void*> states = MakeVariableLengthArray(void*, processors.size());
 
 			for (size_t i = 0; i < states.size(); i++)
 			{
 				states[i] = alloca(processors[i].state_size);
 
-				processors[i].state_initialize(states[i], entity, spatial_world);
+				processors[i].state_initialize(states[i], world_entity, spatial_world);
 			}
 
 			for (godot::Vector3i pos : scale.unload_commands)
@@ -362,7 +375,7 @@ namespace voxel_game
 			.multi_threaded()
 			.kind<WorldUnloadPhase>()
 			.term_at(1).parent()
-			.each([](flecs::entity entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
+			.each([](flecs::entity worker_entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
 		{
 			PARALLEL_ACCESS(spatial_world);
 
@@ -381,13 +394,15 @@ namespace voxel_game
 				return;
 			}
 
+			flecs::entity world_entity = worker_entity.parent();
+
 			VariableLengthArray<void*> states = MakeVariableLengthArray(void*, processors.size());
 
 			for (size_t i = 0; i < states.size(); i++)
 			{
 				states[i] = alloca(processors[i].state_size);
 
-				processors[i].state_initialize(states[i], entity, spatial_world);
+				processors[i].state_initialize(states[i], world_entity, spatial_world);
 			}
 
 			for (godot::Vector3i pos : scale.tick_commands)
@@ -412,7 +427,7 @@ namespace voxel_game
 
 	void SpatialModule::AddSpatialScaleWorkers(flecs::entity spatial_world_entity)
 	{
-		flecs::world world(spatial_world_entity.world());
+		flecs::scoped_world world = spatial_world_entity.scope();
 
 		const SpatialWorld3DComponent* spatial_world = spatial_world_entity.get<SpatialWorld3DComponent>();
 
@@ -421,7 +436,6 @@ namespace voxel_game
 		for (size_t scale_index = 0; scale_index < spatial_world->max_scale; scale_index++)
 		{
 			flecs::entity scale_worker_entity = world.entity()
-				.child_of(spatial_world_entity)
 				.add<SpatialScale3DWorkerComponent>()
 				.set([scale_index](SpatialScale3DWorkerComponent& scale_worker)
 			{
