@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Util/ContiguousRIDOwner.h"
 #include "Util/Hash.h"
 #include "Util/Nocopy.h"
+
+#include <godot_cpp/templates/rid_owner.hpp>
 
 #include <godot_cpp/variant/rid.hpp>
 #include <godot_cpp/variant/vector3.hpp>
@@ -21,6 +22,7 @@ namespace voxel_game
 	struct GalaxyRenderComponent
 	{
 		godot::RID id;
+		godot::Vector3i mesh_pos;
 	};
 
 	struct GalaxyRenderData
@@ -35,7 +37,10 @@ namespace voxel_game
 		godot::RID instance;
 		godot::RID multimesh;
 
-		RIDContiguousOwner<GalaxyRenderData> buffer;
+		uint32_t allocated = 0;
+		uint32_t dirty = false;
+
+		godot::RID_Owner<GalaxyRenderData> render_data;
 	};
 
 	struct GalaxyRenderContext : Nocopy
