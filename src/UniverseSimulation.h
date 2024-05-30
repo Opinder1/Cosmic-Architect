@@ -2,6 +2,8 @@
 
 #include "CommandQueue.h"
 
+#include "Util/Debug.h"
+
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/classes/weak_ref.hpp>
@@ -436,12 +438,6 @@ namespace voxel_game
 
 		// ####### Chaos #######
 
-		// ####### Testing #######
-
-		uint64_t CreateInstance(godot::RID mesh, godot::RID scenario);
-		void SetInstancePos(uint64_t instance_id, const godot::Vector3& pos);
-		bool DeleteInstance(uint64_t instance_id);
-
 	public:
 		static void _bind_methods();
 		static void _cleanup_methods();
@@ -486,6 +482,8 @@ namespace voxel_game
 	template<class... Args>
 	void UniverseSimulation::QueueSignal(const godot::StringName& signal, const Args&... p_args)
 	{
+		DEBUG_ASSERT(!IsThreaded() || std::this_thread::get_id() == m_thread.get_id(), "When in threaded mode this should only be called by the worker");
+
 		CommandBuffer::AddCommand(m_deferred_signals, *k_emit_signal, signal, p_args...);
 	}
 

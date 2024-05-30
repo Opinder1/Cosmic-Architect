@@ -325,6 +325,10 @@ namespace voxel_game
 
 		m_galaxy_load_state.store(LOAD_STATE_UNLOADING, std::memory_order_release);
 		emit_signal(k_signals->load_state_changed, LOAD_STATE_UNLOADING);
+
+		// TODO : Implement unloading
+		m_galaxy_load_state.store(LOAD_STATE_UNLOADED, std::memory_order_release);
+		emit_signal(k_signals->load_state_changed, LOAD_STATE_UNLOADED);
 	}
 
 	bool UniverseSimulation::Progress(real_t delta)
@@ -614,12 +618,6 @@ namespace voxel_game
 
 		BIND_METHOD(godot::D_METHOD(k_commands->get_spell_info, "spell_id"), &UniverseSimulation::GetSpellInfo);
 		BIND_METHOD(godot::D_METHOD(k_commands->use_spell, "spell_index", "params"), &UniverseSimulation::UseSpell);
-
-		// ####### Testing #######
-
-		BIND_METHOD(godot::D_METHOD("create_instance", "mesh", "scenario"), &UniverseSimulation::CreateInstance);
-		BIND_METHOD(godot::D_METHOD("set_instance_pos", "instance_id", "pos"), &UniverseSimulation::SetInstancePos);
-		BIND_METHOD(godot::D_METHOD("delete_instance", "instance_id"), &UniverseSimulation::DeleteInstance);
 	}
 
 	void UniverseSimulation::BindEnums()
