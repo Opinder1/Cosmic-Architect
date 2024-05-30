@@ -61,14 +61,8 @@ namespace voxel_game
 			.event(flecs::OnAdd)
 			.yield_existing()
 			.term_at(4).src<GalaxyRenderContext>()
-			.each([&rendering_server](flecs::entity entity, const GalaxyComponent& galaxy, const Position3DComponent& position, const Rotation3DComponent rotation, GalaxyRenderContext& render_context)
+			.each([&rendering_server](flecs::entity entity, const GalaxyComponent& galaxy, const Position3DComponent& position, const Rotation3DComponent& rotation, GalaxyRenderContext& render_context)
 		{
-			GalaxyRenderData render_data;
-
-			render_data.position = position.position;
-			render_data.rotation = rotation.rotation;
-			render_data.texture_index = galaxy.galaxy_texture_index;
-
 			godot::Vector3i mesh_pos = position.position / 16;
 
 			std::unique_ptr<GalaxyRenderMesh>& mesh = render_context.node_meshes[mesh_pos];
@@ -84,6 +78,12 @@ namespace voxel_game
 				mesh->instance = rendering_server.instance_create2(mesh->multimesh, render_context.scenario);
 			}
 
+			GalaxyRenderData render_data;
+
+			render_data.position = position.position;
+			render_data.rotation = rotation.rotation;
+			render_data.texture_index = galaxy.galaxy_texture_index;
+
 			godot::RID id = mesh->render_data.make_rid(render_data);
 
 			entity.emplace<GalaxyRenderComponent>(id, mesh_pos);
@@ -91,28 +91,55 @@ namespace voxel_game
 			mesh->dirty = true;
 		});
 
-		world.observer<const GalaxyRenderComponent, const GalaxyComponent, const Position3DComponent, const Rotation3DComponent, GalaxyRenderContext>()
+		world.observer<GalaxyRenderComponent, const GalaxyComponent, const Position3DComponent, const Rotation3DComponent, GalaxyRenderContext>()
 			.event(flecs::OnSet)
 			.term_at(5).src<GalaxyRenderContext>()
-			.each([&rendering_server](const GalaxyRenderComponent galaxy_render, const GalaxyComponent& galaxy, const Position3DComponent& position, const Rotation3DComponent rotation, GalaxyRenderContext& render_context)
+			.each([&rendering_server](GalaxyRenderComponent& galaxy_render, const GalaxyComponent& galaxy, const Position3DComponent& position, const Rotation3DComponent& rotation, GalaxyRenderContext& render_context)
 		{
 			godot::Vector3i mesh_pos = galaxy_render.mesh_pos;
 
-			std::unique_ptr<GalaxyRenderMesh>& mesh = render_context.node_meshes[mesh_pos];
+			godot::Vector3i new_mesh_pos = position.position / 16;
 
-			GalaxyRenderData* render_data = mesh->render_data.get_or_null(galaxy_render.id);
+			if (new_mesh_pos != mesh_pos)
+			{
+				std::unique_ptr<GalaxyRenderMesh>& old_mesh = render_context.node_meshes[mesh_pos];
 
-			render_data->position = position.position;
-			render_data->rotation = rotation.rotation;
-			render_data->texture_index = galaxy.galaxy_texture_index;
+				old_mesh->render_data.free(galaxy_render.id);
 
-			mesh->dirty = true;
+				old_mesh->dirty = true;
+
+				std::unique_ptr<GalaxyRenderMesh>& new_mesh = render_context.node_meshes[mesh_pos];
+
+				GalaxyRenderData render_data;
+
+				render_data.position = position.position;
+				render_data.rotation = rotation.rotation;
+				render_data.texture_index = galaxy.galaxy_texture_index;
+
+				godot::RID id = new_mesh->render_data.make_rid(render_data);
+
+				galaxy_render.id = id;
+
+				new_mesh->dirty = true;
+			}
+			else
+			{
+				std::unique_ptr<GalaxyRenderMesh>& mesh = render_context.node_meshes[mesh_pos];
+
+				GalaxyRenderData* render_data = mesh->render_data.get_or_null(galaxy_render.id);
+
+				render_data->position = position.position;
+				render_data->rotation = rotation.rotation;
+				render_data->texture_index = galaxy.galaxy_texture_index;
+
+				mesh->dirty = true;
+			}
 		});
 
 		world.observer<const GalaxyRenderComponent, const GalaxyComponent, GalaxyRenderContext>()
 			.event(flecs::OnRemove)
 			.term_at(3).src<GalaxyRenderContext>()
-			.each([&rendering_server](const GalaxyRenderComponent galaxy_render, const GalaxyComponent& galaxy, GalaxyRenderContext& render_context)
+			.each([&rendering_server](const GalaxyRenderComponent& galaxy_render, const GalaxyComponent& galaxy, GalaxyRenderContext& render_context)
 		{
 			godot::Vector3i mesh_pos = galaxy_render.mesh_pos;
 

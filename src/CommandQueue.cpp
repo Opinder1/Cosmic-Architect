@@ -196,6 +196,11 @@ namespace voxel_game
 
 	void CommandQueueServer::AddCommands(uint64_t object_id, CommandBuffer&& command_buffer)
 	{
+		if (command_buffer.empty())
+		{
+			return;
+		}
+
 		if (object_id == godot::RenderingServer::get_singleton()->get_instance_id())
 		{
 			std::lock_guard lock(m_mutex);
