@@ -3,7 +3,7 @@
 #include "Nocopy.h"
 
 #include <cstdint>
-#include <memory>
+#include <malloc.h>
 
 template<class T>
 class VariableLengthArray : Nocopy, Nomove
