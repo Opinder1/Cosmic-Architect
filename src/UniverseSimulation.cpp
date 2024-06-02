@@ -8,13 +8,15 @@
 
 #include "Galaxy/GalaxyComponents.h"
 #include "Galaxy/GalaxyModule.h"
-#include "Galaxy/GalaxyRenderModule.h"
 
 #include "Spatial/SpatialComponents.h"
 #include "Spatial/SpatialModule.h"
 
 #include "Voxel/VoxelComponents.h"
 #include "Voxel/VoxelModule.h"
+
+#include "Render/RenderComponents.h"
+#include "Render/RenderModule.h"
 
 #include "Physics/PhysicsComponents.h"
 #include "Physics/PhysicsModule.h"
@@ -275,6 +277,7 @@ namespace voxel_game
 
 	void UniverseSimulation::StartRenderer(UniverseRenderInfo* render_info)
 	{
+		/*
 		m_world.import<GalaxyRenderModule>();
 
 		m_world.set([render_info](GalaxyRenderContext& context)
@@ -282,6 +285,9 @@ namespace voxel_game
 			context.scenario = render_info->GetGalaxyScenario();
 			context.mesh = godot::RenderingServer::get_singleton()->get_test_cube();
 		});
+		*/
+
+		m_world.import<RenderModule>();
 	}
 
 	void UniverseSimulation::StartSimulation(ThreadMode thread_mode)
