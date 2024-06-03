@@ -2,6 +2,8 @@
 
 #include "CommandQueue.h"
 
+#include "Util/Nocopy.h"
+
 #include <godot_cpp/classes/rendering_server.hpp>
 
 #include <godot_cpp/variant/rid.hpp>
@@ -16,10 +18,15 @@ namespace flecs
 
 namespace voxel_game
 {
-	struct RenderingServerContext
+	struct RenderingServerContext : Nocopy
 	{
 		godot::RenderingServer* server;
 		std::vector<CommandBuffer> thread_buffers;
+	};
+
+	struct RenderScenario
+	{
+		godot::RID id;
 	};
 
 	struct RenderInstance
@@ -41,11 +48,6 @@ namespace voxel_game
 	};
 
 	struct RenderMultiInstance {};
-
-	struct RenderScenario
-	{
-		godot::RID id;
-	};
 
 	struct RenderComponents
 	{

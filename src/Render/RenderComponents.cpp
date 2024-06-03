@@ -11,9 +11,13 @@ namespace voxel_game
 		world.module<RenderComponents>();
 
         world.component<RenderingServerContext>();
+        world.component<RenderScenario>();
         world.component<RenderInstance>();
         world.component<RenderMesh>();
-        world.component<RenderScenario>();
+        world.component<RenderMultiMesh>();
+
+        world.entity<RenderBase>().add(flecs::Relationship).add(flecs::Traversable);
+        world.entity<RenderMultiInstance>().add(flecs::Relationship).add(flecs::Traversable);
 
         world.set([](RenderingServerContext& context)
         {
@@ -25,7 +29,7 @@ namespace voxel_game
             .term_at(2).src<RenderingServerContext>().filter()
             .each([](flecs::entity entity, RenderInstance& instance, RenderingServerContext& context)
         {
-            auto& commands = context.thread_buffers[entity.world().get_stage_id()];
+            CommandBuffer& commands = context.thread_buffers[entity.world().get_stage_id()];
 
             instance.id = context.server->instance_create();
 
@@ -37,7 +41,7 @@ namespace voxel_game
             .term_at(2).src<RenderingServerContext>().filter()
             .each([](flecs::entity entity, const RenderInstance& instance, RenderingServerContext& context)
         {
-            auto& commands = context.thread_buffers[entity.world().get_stage_id()];
+            CommandBuffer& commands = context.thread_buffers[entity.world().get_stage_id()];
 
             CommandBuffer::AddCommand(commands, "free_rid", instance.id);
         });
@@ -45,7 +49,7 @@ namespace voxel_game
         world.observer<RenderScenario, RenderingServerContext>()
             .event(flecs::OnAdd)
             .term_at(2).src<RenderingServerContext>().filter()
-            .each([](flecs::entity entity, RenderScenario& scenario, RenderingServerContext& context)
+            .each([](RenderScenario& scenario, RenderingServerContext& context)
         {
             scenario.id = context.server->scenario_create();
         });
@@ -55,7 +59,7 @@ namespace voxel_game
             .term_at(2).src<RenderingServerContext>().filter()
             .each([](flecs::entity entity, const RenderScenario& scenario, RenderingServerContext& context)
         {
-            auto& commands = context.thread_buffers[entity.world().get_stage_id()];
+            CommandBuffer& commands = context.thread_buffers[entity.world().get_stage_id()];
 
             CommandBuffer::AddCommand(commands, "free_rid", scenario.id);
         });
@@ -73,7 +77,7 @@ namespace voxel_game
             .term_at(2).src<RenderingServerContext>().filter()
             .each([](flecs::entity entity, const RenderMesh& mesh, RenderingServerContext& context)
         {
-            auto& commands = context.thread_buffers[entity.world().get_stage_id()];
+            CommandBuffer& commands = context.thread_buffers[entity.world().get_stage_id()];
 
             CommandBuffer::AddCommand(commands, "free_rid", mesh.id);
         });

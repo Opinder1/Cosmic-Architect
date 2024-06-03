@@ -19,66 +19,103 @@ namespace voxel_game
             .event(flecs::OnSet)
             .term_at(2).up<RenderBase>()
             .term_at(3).src<RenderingServerContext>().filter()
-            .each([](flecs::entity entity, const RenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
+            .each([](flecs::iter it, size_t, const RenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
         {
-            auto& commands = context.thread_buffers[entity.world().get_stage_id()];
+            CommandBuffer& render_commands = context.thread_buffers[it.world().get_stage_id()];
 
-            CommandBuffer::AddCommand(commands, "instance_set_base", instance.id, mesh.id);
+            CommandBuffer::AddCommand(render_commands, "instance_set_base", instance.id, mesh.id);
         });
 
         world.observer<const RenderInstance, const RenderMesh, RenderingServerContext>()
             .event(flecs::OnRemove)
             .term_at(2).up<RenderBase>()
             .term_at(3).src<RenderingServerContext>().filter()
-            .each([](flecs::entity entity, const RenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
+            .each([](flecs::iter it, size_t, const RenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
         {
-            auto& commands = context.thread_buffers[entity.world().get_stage_id()];
+            CommandBuffer& render_commands = context.thread_buffers[it.world().get_stage_id()];
 
-            CommandBuffer::AddCommand(commands, "instance_set_base", instance.id, context.server->get_test_cube());
+            CommandBuffer::AddCommand(render_commands, "instance_set_base", instance.id, context.server->get_test_cube());
         });
 
         world.observer<const RenderInstance, const RenderScenario, RenderingServerContext>()
             .event(flecs::OnSet)
             .term_at(2).parent()
             .term_at(3).src<RenderingServerContext>().filter()
-            .each([](flecs::entity entity, const RenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
+            .each([](flecs::iter it, size_t, const RenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
         {
-            auto& commands = context.thread_buffers[entity.world().get_stage_id()];
+            CommandBuffer& render_commands = context.thread_buffers[it.world().get_stage_id()];
 
-            CommandBuffer::AddCommand(commands, "instance_set_scenario", instance.id, scenario.id);
+            CommandBuffer::AddCommand(render_commands, "instance_set_scenario", instance.id, scenario.id);
         });
 
         world.observer<const RenderInstance, const RenderScenario, RenderingServerContext>()
             .event(flecs::OnRemove)
             .term_at(2).parent()
             .term_at(3).src<RenderingServerContext>().filter()
-            .each([](flecs::entity entity, const RenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
+            .each([](flecs::iter it, size_t, const RenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
         {
-            auto& commands = context.thread_buffers[entity.world().get_stage_id()];
+            CommandBuffer& render_commands = context.thread_buffers[it.world().get_stage_id()];
 
-            CommandBuffer::AddCommand(commands, "instance_set_scenario", instance.id, godot::RID());
+            CommandBuffer::AddCommand(render_commands, "instance_set_scenario", instance.id, godot::RID());
         });
 
-        world.system<const RenderInstance, const Position3DComponent, const Rotation3DComponent, RenderingServerContext>()
-            .term_at(2).src<RenderingServerContext>().filter()
+        world.observer<RenderInstance, const Position3DComponent>()
+            .event(flecs::OnSet)
+            .each([](RenderInstance& instance, const Position3DComponent& position)
+        {
+            instance.dirty = true;
+        });
+
+        world.observer<RenderInstance, const Rotation3DComponent>()
+            .event(flecs::OnSet)
+            .each([](RenderInstance& instance, const Rotation3DComponent& rotation)
+        {
+            instance.dirty = true;
+        });
+
+        world.system<const RenderInstance>()
+            .multi_threaded()
             .term<const Position3DComponent>().optional()
             .term<const Rotation3DComponent>().optional()
-            .each([](flecs::entity entity, const RenderInstance& instance, const Position3DComponent& position, const Rotation3DComponent& rotation, RenderingServerContext& context)
+            .term<RenderingServerContext>().src<RenderingServerContext>()
+            .iter([](flecs::iter it, const RenderInstance* instances)
         {
-            if (!instance.dirty)
+            auto& positions = it.field<const Position3DComponent>(2);
+            auto& rotations = it.field<const Rotation3DComponent>(3);
+
+            bool has_positions = it.is_set(2);
+            bool has_rotations = it.is_set(3);
+
+            if (!has_positions || !has_rotations)
             {
                 return;
             }
 
-            auto& commands = context.thread_buffers[entity.world().get_stage_id()];
+            RenderingServerContext& context = *it.field<RenderingServerContext>(4);
 
-            godot::Transform3D transform;
+            CommandBuffer& render_commands = context.thread_buffers[it.world().get_stage_id()];
 
-            transform.origin = position.position;
+            for (size_t index : it)
+            {
+                if (!instances[index].dirty)
+                {
+                    return;
+                }
 
-            transform.rotate(rotation.rotation.get_axis(), rotation.rotation.get_angle());
+                godot::Transform3D transform;
 
-            CommandBuffer::AddCommand(commands, "instance_set_transform", instance.id, transform);
+                if (has_positions)
+                {
+                    transform.origin = positions[index].position;
+                }
+
+                if (has_rotations)
+                {
+                    transform.rotate(rotations[index].rotation.get_axis(), rotations[index].rotation.get_angle());
+                }
+
+                CommandBuffer::AddCommand(render_commands, "instance_set_transform", instances[index].id, transform);
+            }
         });
 	}
 }
