@@ -11,6 +11,8 @@ namespace voxel_game
 	struct UniverseNode : SpatialNode3D
 	{
 		std::vector<flecs::entity_t> entities;
+
+		std::vector<godot::Vector3i> galaxies_to_load;
 	};
 
 	struct UniverseObjectComponent {};

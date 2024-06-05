@@ -38,11 +38,7 @@ namespace voxel_game
 				godot::Vector3 position = spatial_node.coord.pos * s;
 				position += godot::Vector3(godot::UtilityFunctions::randf_range(0, s), godot::UtilityFunctions::randf_range(0, s), godot::UtilityFunctions::randf_range(0, s));
 
-				flecs::entity galaxy = world.entity()
-					.add<GalaxyComponent>()
-					.set<Position3DComponent>({ position });
-
-				universe_node.entities.push_back(galaxy);
+				universe_node.galaxies_to_load.push_back(position);
 			}
 		}
 	};
