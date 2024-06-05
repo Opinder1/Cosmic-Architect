@@ -2,6 +2,8 @@
 
 #include "SpatialAABB.h"
 
+#include "Util/VariableLengthArray.h"
+
 #include <godot_cpp/variant/vector3i.hpp>
 
 #include <flecs/flecs.h>
@@ -27,30 +29,66 @@ namespace voxel_game
 	struct SpatialCommandProcessorBase
 	{
 		size_t state_size;
-		void(*state_initialize)(void*, flecs::entity, SpatialWorld3DComponent&);
+		void(*state_initialize)(void*, flecs::entity);
 		void(*state_destroy)(void*);
 	};
 
 	struct SpatialNodeCommandProcessorBase : SpatialCommandProcessorBase
 	{
-		void(*process)(void*, SpatialScale3D&, SpatialNode3D&);
+		void(*process)(void*, SpatialWorld3DComponent&, SpatialScale3D&, SpatialNode3D&);
 
 		bool operator==(const SpatialNodeCommandProcessorBase& other) { return process == other.process; }
 	};
 
 	struct SpatialRegionCommandProcessorBase : SpatialCommandProcessorBase
 	{
-		void(*process)(void*, SpatialAABB);
+		void(*process)(void*, SpatialWorld3DComponent&, SpatialAABB);
 
 		bool operator==(const SpatialRegionCommandProcessorBase& other) { return process == other.process; }
 	};
 
 	struct SpatialScaleCommandProcessorBase : SpatialCommandProcessorBase
 	{
-		void(*process)(void*, size_t, SpatialScale3D&);
+		void(*process)(void*, SpatialWorld3DComponent&, size_t, SpatialScale3D&);
 
 		bool operator==(const SpatialScaleCommandProcessorBase& other) { return process == other.process; }
 	};
+
+	template<class ProcessorT, class CommandT, class Callable>
+	void ProcessCommands(flecs::entity entity, const std::vector<ProcessorT>& processors, const std::vector<CommandT>& commands, Callable&& command_processor)
+	{
+		static_assert(std::is_base_of_v<SpatialCommandProcessorBase, ProcessorT>);
+
+		if (commands.empty()) // Don't continue if there aren't any commands
+		{
+			return;
+		}
+
+		VariableLengthArray<void*> states = MakeVariableLengthArray(void*, processors.size());
+
+		for (size_t i = 0; i < states.size(); i++)
+		{
+			states[i] = alloca(processors[i].state_size);
+
+			processors[i].state_initialize(states[i], entity);
+		}
+
+		for (const CommandT& command : commands)
+		{
+			command_processor(command, [&processors, &states](auto&&... args)
+			{
+				for (size_t i = 0; i < states.size(); i++)
+				{
+					processors[i].process(states[i], args...);
+				}
+			});
+		}
+
+		for (size_t i = 0; i < states.size(); i++)
+		{
+			processors[i].state_destroy(states[i]);
+		}
+	}
 
 	template<class NodeT>
 	struct SpatialNodeBuilder : SpatialNodeBuilderBase
@@ -84,9 +122,9 @@ namespace voxel_game
 		}
 
 	private:
-		static void StateInitializeProc(void* state_ptr, flecs::entity entity, SpatialWorld3DComponent& spatial_world)
+		static void StateInitializeProc(void* state_ptr, flecs::entity entity)
 		{
-			new (state_ptr) StateT(entity, spatial_world);
+			new (state_ptr) StateT(entity);
 		}
 
 		static void StateDestroyProc(void* state_ptr)
@@ -94,9 +132,9 @@ namespace voxel_game
 			std::destroy_at(static_cast<StateT*>(state_ptr));
 		}
 
-		static void ProcessProc(void* state_ptr, SpatialScale3D& spatial_scale, SpatialNode3D& spatial_node)
+		static void ProcessProc(void* state_ptr, SpatialWorld3DComponent& spatial_world, SpatialScale3D& spatial_scale, SpatialNode3D& spatial_node)
 		{
-			static_cast<StateT*>(state_ptr)->Process(spatial_scale, spatial_node);
+			static_cast<StateT*>(state_ptr)->Process(spatial_world, spatial_scale, spatial_node);
 		}
 	};
 
@@ -112,9 +150,9 @@ namespace voxel_game
 		}
 
 	private:
-		static void StateInitializeProc(void* state_ptr, flecs::entity entity, SpatialWorld3DComponent& spatial_world)
+		static void StateInitializeProc(void* state_ptr, flecs::entity entity)
 		{
-			new (state_ptr) StateT(entity, spatial_world);
+			new (state_ptr) StateT(entity);
 		}
 
 		static void StateDestroyProc(void* state_ptr)
@@ -122,9 +160,9 @@ namespace voxel_game
 			std::destroy_at(static_cast<StateT*>(state_ptr));
 		}
 
-		static void ProcessProc(void* state_ptr, SpatialAABB region)
+		static void ProcessProc(void* state_ptr, SpatialWorld3DComponent& spatial_world, SpatialAABB region)
 		{
-			static_cast<StateT*>(state_ptr)->Process(region);
+			static_cast<StateT*>(state_ptr)->Process(spatial_world, region);
 		}
 	};
 
@@ -140,9 +178,9 @@ namespace voxel_game
 		}
 
 	private:
-		static void StateInitializeProc(void* state_ptr, flecs::entity entity, SpatialWorld3DComponent& spatial_world)
+		static void StateInitializeProc(void* state_ptr, flecs::entity entity)
 		{
-			new (state_ptr) StateT(entity, spatial_world);
+			new (state_ptr) StateT(entity);
 		}
 
 		static void StateDestroyProc(void* state_ptr)
@@ -150,9 +188,9 @@ namespace voxel_game
 			std::destroy_at(static_cast<StateT*>(state_ptr));
 		}
 
-		static void ProcessProc(void* state_ptr, size_t scale_index, SpatialScale3D& scale)
+		static void ProcessProc(void* state_ptr, SpatialWorld3DComponent& spatial_world, size_t scale_index, SpatialScale3D& scale)
 		{
-			static_cast<StateT*>(state_ptr)->Process(scale_index, scale);
+			static_cast<StateT*>(state_ptr)->Process(spatial_world, scale_index, scale);
 		}
 	};
 }

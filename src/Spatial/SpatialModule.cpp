@@ -7,22 +7,9 @@
 
 #include "Util/Debug.h"
 #include "Util/Callback.h"
-#include "Util/VariableLengthArray.h"
 
 namespace voxel_game
 {
-	const godot::Vector3i node_child_offsets[8] =
-	{
-		{0, 0, 0},
-		{0, 0, 1},
-		{0, 1, 0},
-		{0, 1, 1},
-		{1, 0, 0},
-		{1, 0, 1},
-		{1, 1, 0},
-		{1, 1, 1},
-	};
-
 	const godot::Vector3i node_neighbour_offsets[6] =
 	{
 		{0, 0, -1},
@@ -261,7 +248,7 @@ namespace voxel_game
 
 		// System to load spatial nodes that have been added
 		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialWorldProcessLoadNodeCommands"))
-			//.multi_threaded()
+			.multi_threaded()
 			.kind<WorldLoadPhase>()
 			.term_at(1).parent()
 			.each([](flecs::entity worker_entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
@@ -270,31 +257,14 @@ namespace voxel_game
 
 			size_t scale_index = scale_worker.scale;
 			SpatialScale3D& scale = spatial_world.scales[scale_index];
-			std::vector<SpatialNodeCommandProcessorBase>& processors = spatial_world.load_command_processors;
 
-			if (scale.load_commands.empty()) // Don't continue if there aren't any commands
-			{
-				return;
-			}
-			
-			if (processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
+			if (spatial_world.load_command_processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
 			{
 				scale.load_commands.clear();
 				return;
 			}
 
-			flecs::entity world_entity = worker_entity.parent();
-
-			VariableLengthArray<void*> states = MakeVariableLengthArray(void*, processors.size());
-
-			for (size_t i = 0; i < states.size(); i++)
-			{
-				states[i] = alloca(processors[i].state_size);
-
-				processors[i].state_initialize(states[i], world_entity, spatial_world);
-			}
-
-			for (godot::Vector3i pos : scale.load_commands)
+			ProcessCommands(worker_entity.parent(), spatial_world.load_command_processors, scale.load_commands, [&spatial_world, &scale](godot::Vector3i pos, auto& run_processors)
 			{
 				auto it = scale.nodes.find(pos);
 				DEBUG_ASSERT(it != scale.nodes.end(), "The node should have been initialized");
@@ -302,16 +272,8 @@ namespace voxel_game
 
 				SpatialNode3D& node = *it->second;
 
-				for (size_t i = 0; i < states.size(); i++)
-				{
-					processors[i].process(states[i], scale, node);
-				}
-			}
-
-			for (size_t i = 0; i < states.size(); i++)
-			{
-				processors[i].state_destroy(states[i]);
-			}
+				run_processors(spatial_world, scale, node);
+			});
 
 			scale.load_commands.clear();
 		});
@@ -327,47 +289,22 @@ namespace voxel_game
 
 			size_t scale_index = scale_worker.scale;
 			SpatialScale3D& scale = spatial_world.scales[scale_index];
-			std::vector<SpatialNodeCommandProcessorBase>& processors = spatial_world.unload_command_processors;
 
-			if (scale.unload_commands.empty()) // Don't continue if there aren't any commands
-			{
-				return;
-			}
-
-			if (processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
+			if (spatial_world.unload_command_processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
 			{
 				scale.unload_commands.clear();
 				return;
 			}
 
-			flecs::entity world_entity = worker_entity.parent();
-
-			VariableLengthArray<void*> states = MakeVariableLengthArray(void*, processors.size());
-
-			for (size_t i = 0; i < states.size(); i++)
-			{
-				states[i] = alloca(processors[i].state_size);
-
-				processors[i].state_initialize(states[i], world_entity, spatial_world);
-			}
-
-			for (godot::Vector3i pos : scale.unload_commands)
+			ProcessCommands(worker_entity.parent(), spatial_world.unload_command_processors, scale.unload_commands, [&spatial_world, &scale](godot::Vector3i pos, auto& run_processors)
 			{
 				auto it = scale.nodes.find(pos);
 				DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
 
 				SpatialNode3D& node = *it->second;
 
-				for (size_t i = 0; i < states.size(); i++)
-				{
-					processors[i].process(states[i], scale, node);
-				}
-			}
-
-			for (size_t i = 0; i < states.size(); i++)
-			{
-				processors[i].state_destroy(states[i]);
-			}
+				run_processors(spatial_world, scale, node);
+			});
 		});
 
 		// System to unload spatial nodes that have been marked to unload
@@ -381,47 +318,22 @@ namespace voxel_game
 
 			size_t scale_index = scale_worker.scale;
 			SpatialScale3D& scale = spatial_world.scales[scale_index];
-			std::vector<SpatialNodeCommandProcessorBase>& processors = spatial_world.tick_command_processors;
 
-			if (scale.tick_commands.empty()) // Don't continue if there aren't any commands
-			{
-				return;
-			}
-
-			if (processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
+			if (spatial_world.tick_command_processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
 			{
 				scale.tick_commands.clear();
 				return;
 			}
 
-			flecs::entity world_entity = worker_entity.parent();
-
-			VariableLengthArray<void*> states = MakeVariableLengthArray(void*, processors.size());
-
-			for (size_t i = 0; i < states.size(); i++)
-			{
-				states[i] = alloca(processors[i].state_size);
-
-				processors[i].state_initialize(states[i], world_entity, spatial_world);
-			}
-
-			for (godot::Vector3i pos : scale.tick_commands)
+			ProcessCommands(worker_entity.parent(), spatial_world.tick_command_processors, scale.tick_commands, [&spatial_world, &scale](godot::Vector3i pos, auto& run_processors)
 			{
 				auto it = scale.nodes.find(pos);
 				DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
 
 				SpatialNode3D& node = *it->second;
 
-				for (size_t i = 0; i < states.size(); i++)
-				{
-					processors[i].process(states[i], scale, node);
-				}
-			}
-
-			for (size_t i = 0; i < states.size(); i++)
-			{
-				processors[i].state_destroy(states[i]);
-			}
+				run_processors(spatial_world, scale, node);
+			});
 		});
 	}
 

@@ -20,12 +20,12 @@ namespace voxel_game
 	{
 		flecs::entity world_entity;
 
-		UniverseLoadNodeCommandProcessor(flecs::entity entity, SpatialWorld3DComponent& spatial_world)
+		UniverseLoadNodeCommandProcessor(flecs::entity entity)
 		{
 			world_entity = entity;
 		}
 
-		void Process(SpatialScale3D& spatial_scale, SpatialNode3D& spatial_node)
+		void Process(SpatialWorld3DComponent& spatial_world, SpatialScale3D& spatial_scale, SpatialNode3D& spatial_node)
 		{
 			flecs::scoped_world world = world_entity.scope();
 
