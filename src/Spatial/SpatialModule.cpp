@@ -31,7 +31,7 @@ namespace voxel_game
 		{
 			godot::Vector3i neighbour_pos = node.coord.pos + node_neighbour_offsets[neighbour_index];
 
-			auto it = scale.nodes.find(neighbour_pos);
+			SpatialNodeMap::iterator it = scale.nodes.find(neighbour_pos);
 
 			if (it == scale.nodes.end())
 			{
@@ -51,7 +51,7 @@ namespace voxel_game
 		{
 			SpatialCoord3D parent_pos = node.coord.GetParent();
 
-			auto it = parent_scale.nodes.find(parent_pos.pos);
+			SpatialNodeMap::iterator it = parent_scale.nodes.find(parent_pos.pos);
 
 			DEBUG_ASSERT(it != parent_scale.nodes.end(), "The parent node should already exist if we try to load this node");
 
@@ -107,13 +107,15 @@ namespace voxel_game
 		{
 			PARALLEL_ACCESS(spatial_world, world_time);
 
+			DEBUG_ASSERT(spatial_loader.max_lod <= spatial_world.max_scale, "The max lod is out of range for the world");
+
 			for (uint8_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
 			{
-				const SpatialScale3D& spatial_scale = spatial_world.scales[scale_index];
+				SpatialScale3D& spatial_scale = *spatial_world.scales[scale_index];
 
 				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&spatial_scale, &world_time](godot::Vector3i pos)
 				{
-					auto it = spatial_scale.nodes.find(pos);
+					SpatialNodeMap::iterator it = spatial_scale.nodes.find(pos);
 
 					if (it == spatial_scale.nodes.end())
 					{
@@ -138,7 +140,7 @@ namespace voxel_game
 			PARALLEL_ACCESS(spatial_world);
 
 			size_t scale_index = scale_worker.scale;
-			SpatialScale3D& scale = spatial_world.scales[scale_index];
+			SpatialScale3D& scale = *spatial_world.scales[scale_index];
 
 			flecs::query<const SpatialLoader3DComponent> staged_loaders_query(entity.world(), spatial_world.loaders_query);
 
@@ -154,7 +156,7 @@ namespace voxel_game
 
 				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&scale](godot::Vector3i pos)
 				{
-					auto it = scale.nodes.find(pos);
+					SpatialNodeMap::iterator it = scale.nodes.find(pos);
 
 					if (it == scale.nodes.end())
 					{
@@ -176,7 +178,7 @@ namespace voxel_game
 			PARALLEL_ACCESS(spatial_world, world_time);
 
 			size_t scale_index = scale_worker.scale;
-			SpatialScale3D& scale = spatial_world.scales[scale_index];
+			SpatialScale3D& scale = *spatial_world.scales[scale_index];
 
 			for (auto&& [pos, node] : scale.nodes)
 			{
@@ -193,12 +195,14 @@ namespace voxel_game
 			.kind<WorldCreatePhase>()
 			.each([](SpatialWorld3DComponent& spatial_world)
 		{
+			DEBUG_ASSERT(spatial_world.max_scale > 0, "The spatial world should have at least one scale");
+
 			// Initialize the largest scales first
 			for (size_t scale_index = spatial_world.max_scale; scale_index --> 0;)
 			{
-				SpatialScale3D& scale = spatial_world.scales[scale_index];
+				SpatialScale3D& scale = *spatial_world.scales[scale_index];
 				uint8_t parent_scale_index = std::min(scale_index + 1, spatial_world.max_scale - 1);
-				SpatialScale3D& parent_scale = spatial_world.scales[parent_scale_index];
+				SpatialScale3D& parent_scale = *spatial_world.scales[parent_scale_index];
 
 				for (godot::Vector3i pos : scale.load_commands)
 				{
@@ -224,13 +228,13 @@ namespace voxel_game
 		{
 			for (size_t scale_index = 0; scale_index < spatial_world.max_scale - 1; scale_index++)
 			{
-				SpatialScale3D& scale = spatial_world.scales[scale_index];
+				SpatialScale3D& scale = *spatial_world.scales[scale_index];
 				uint8_t parent_scale_index = std::min(scale_index + 1, spatial_world.max_scale - 1);
-				SpatialScale3D& parent_scale = spatial_world.scales[parent_scale_index];
+				SpatialScale3D& parent_scale = *spatial_world.scales[parent_scale_index];
 
 				for (godot::Vector3i pos : scale.unload_commands)
 				{
-					auto it = scale.nodes.find(pos);
+					SpatialNodeMap::iterator it = scale.nodes.find(pos);
 					DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
 
 					SpatialNode3D& node = *it->second;
@@ -256,7 +260,7 @@ namespace voxel_game
 			PARALLEL_ACCESS(spatial_world);
 
 			size_t scale_index = scale_worker.scale;
-			SpatialScale3D& scale = spatial_world.scales[scale_index];
+			SpatialScale3D& scale = *spatial_world.scales[scale_index];
 
 			if (spatial_world.load_command_processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
 			{
@@ -266,7 +270,7 @@ namespace voxel_game
 
 			ProcessCommands(worker_entity.parent(), spatial_world.load_command_processors, scale.load_commands, [&spatial_world, &scale](godot::Vector3i pos, auto& run_processors)
 			{
-				auto it = scale.nodes.find(pos);
+				SpatialNodeMap::iterator it = scale.nodes.find(pos);
 				DEBUG_ASSERT(it != scale.nodes.end(), "The node should have been initialized");
 				DEBUG_ASSERT(it->second, "The node should have been initialized with data");
 
@@ -288,7 +292,7 @@ namespace voxel_game
 			PARALLEL_ACCESS(spatial_world);
 
 			size_t scale_index = scale_worker.scale;
-			SpatialScale3D& scale = spatial_world.scales[scale_index];
+			SpatialScale3D& scale = *spatial_world.scales[scale_index];
 
 			if (spatial_world.unload_command_processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
 			{
@@ -298,7 +302,7 @@ namespace voxel_game
 
 			ProcessCommands(worker_entity.parent(), spatial_world.unload_command_processors, scale.unload_commands, [&spatial_world, &scale](godot::Vector3i pos, auto& run_processors)
 			{
-				auto it = scale.nodes.find(pos);
+				SpatialNodeMap::iterator it = scale.nodes.find(pos);
 				DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
 
 				SpatialNode3D& node = *it->second;
@@ -317,7 +321,7 @@ namespace voxel_game
 			PARALLEL_ACCESS(spatial_world);
 
 			size_t scale_index = scale_worker.scale;
-			SpatialScale3D& scale = spatial_world.scales[scale_index];
+			SpatialScale3D& scale = *spatial_world.scales[scale_index];
 
 			if (spatial_world.tick_command_processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
 			{
@@ -327,7 +331,7 @@ namespace voxel_game
 
 			ProcessCommands(worker_entity.parent(), spatial_world.tick_command_processors, scale.tick_commands, [&spatial_world, &scale](godot::Vector3i pos, auto& run_processors)
 			{
-				auto it = scale.nodes.find(pos);
+				SpatialNodeMap::iterator it = scale.nodes.find(pos);
 				DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
 
 				SpatialNode3D& node = *it->second;
@@ -373,9 +377,9 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(coord.scale < k_max_world_scale, "The coordinates scale is out of range");
 
-		auto& nodes = world.scales[coord.scale].nodes;
+		SpatialNodeMap& nodes = world.scales[coord.scale]->nodes;
 
-		auto it = nodes.find(coord.pos);
+		SpatialNodeMap::iterator it = nodes.find(coord.pos);
 
 		if (it == nodes.end())
 		{

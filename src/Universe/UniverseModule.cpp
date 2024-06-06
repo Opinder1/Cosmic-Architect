@@ -25,17 +25,15 @@ namespace voxel_game
 			world_entity = entity;
 		}
 
-		void Process(SpatialWorld3DComponent& spatial_world, SpatialScale3D& spatial_scale, SpatialNode3D& spatial_node)
+		void Process(SpatialWorld3DComponent& spatial_world, UniverseScale& universe_scale, UniverseNode& universe_node)
 		{
 			flecs::scoped_world world = world_entity.scope();
 
-			UniverseNode& universe_node = static_cast<UniverseNode&>(spatial_node);
-
-			uint32_t s = 16 << spatial_node.coord.scale;
+			uint32_t s = 16 << universe_node.coord.scale;
 
 			for (size_t i = 0; i < 16; i++)
 			{
-				godot::Vector3 position = spatial_node.coord.pos * s;
+				godot::Vector3 position = universe_node.coord.pos * s;
 				position += godot::Vector3(godot::UtilityFunctions::randf_range(0, s), godot::UtilityFunctions::randf_range(0, s), godot::UtilityFunctions::randf_range(0, s));
 
 				universe_node.galaxies_to_load.push_back(position);
@@ -55,13 +53,20 @@ namespace voxel_game
 			.event(flecs::OnAdd)
 			.yield_existing()
 			.term_at(2).filter()
-			.each([](const UniverseComponent, SpatialWorld3DComponent& spatial_world)
+			.each([](const UniverseComponent universe, SpatialWorld3DComponent& spatial_world)
 		{
-			DEBUG_ASSERT(spatial_world.node_builder.node_create == nullptr, "The node builder was already initialized");
+			DEBUG_ASSERT(spatial_world.max_scale == 0, "The spatial world was already initialized with a type");
+
+			spatial_world.max_scale = 16;
+
+			for (size_t i = 0; i < spatial_world.max_scale; i++)
+			{
+				spatial_world.scales[i] = std::make_unique<UniverseScale>();
+			}
 
 			spatial_world.node_builder = SpatialNodeBuilder<UniverseNode>();
 
-			spatial_world.load_command_processors.push_back(SpatialNodeCommandProcessor<UniverseLoadNodeCommandProcessor>());
+			spatial_world.load_command_processors.push_back(SpatialNodeCommandProcessor<UniverseLoadNodeCommandProcessor, UniverseScale, UniverseNode>());
 		});
 	}
 }

@@ -110,7 +110,7 @@ namespace voxel_game
 		}
 	};
 
-	template<class StateT>
+	template<class StateT, class ScaleT, class NodeT>
 	struct SpatialNodeCommandProcessor : SpatialNodeCommandProcessorBase
 	{
 		SpatialNodeCommandProcessor()
@@ -134,7 +134,7 @@ namespace voxel_game
 
 		static void ProcessProc(void* state_ptr, SpatialWorld3DComponent& spatial_world, SpatialScale3D& spatial_scale, SpatialNode3D& spatial_node)
 		{
-			static_cast<StateT*>(state_ptr)->Process(spatial_world, spatial_scale, spatial_node);
+			static_cast<StateT*>(state_ptr)->Process(spatial_world, static_cast<ScaleT&>(spatial_scale), static_cast<NodeT&>(spatial_node));
 		}
 	};
 
@@ -166,7 +166,7 @@ namespace voxel_game
 		}
 	};
 
-	template<class StateT>
+	template<class StateT, class ScaleT>
 	struct SpatialScaleCommandProcessor : SpatialScaleCommandProcessorBase
 	{
 		SpatialScaleCommandProcessor()
@@ -190,7 +190,7 @@ namespace voxel_game
 
 		static void ProcessProc(void* state_ptr, SpatialWorld3DComponent& spatial_world, size_t scale_index, SpatialScale3D& scale)
 		{
-			static_cast<StateT*>(state_ptr)->Process(spatial_world, scale_index, scale);
+			static_cast<StateT*>(state_ptr)->Process(spatial_world, scale_index, static_cast<ScaleT&>(spatial_scale));
 		}
 	};
 }

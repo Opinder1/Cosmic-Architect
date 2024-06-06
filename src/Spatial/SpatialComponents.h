@@ -92,11 +92,12 @@ namespace voxel_game
 	};
 
 	using SpatialScaleNodeCommands = std::vector<godot::Vector3i>;
+	using SpatialNodeMap = robin_hood::unordered_flat_map<godot::Vector3i, std::unique_ptr<SpatialNode3D>>;
 
 	// A level of detail map for a world. The world will have multiple of these
 	struct SpatialScale3D : Nocopy
 	{
-		robin_hood::unordered_flat_map<godot::Vector3i, std::unique_ptr<SpatialNode3D>> nodes;
+		SpatialNodeMap nodes;
 
 		SpatialScaleNodeCommands load_commands;
 		SpatialScaleNodeCommands unload_commands;
@@ -107,13 +108,13 @@ namespace voxel_game
 	struct SpatialWorld3DComponent : Nocopy
 	{
 		SpatialAABB bounds;
+		size_t max_scale = 0;
+		std::array<std::unique_ptr<SpatialScale3D>, k_max_world_scale> scales;
 
-		// Random access map for each scale
-		size_t max_scale = k_max_world_scale;
-		std::array<SpatialScale3D, k_max_world_scale> scales;
-
+		// Queries
 		flecs::query_t* loaders_query = nullptr;
 
+		// Specialization callbacks
 		SpatialNodeBuilderBase node_builder;
 
 		std::vector<SpatialNodeCommandProcessorBase> load_command_processors;
