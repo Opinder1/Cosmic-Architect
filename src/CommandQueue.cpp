@@ -1,5 +1,7 @@
 #include "CommandQueue.h"
 
+#include "Util/VariableLengthArray.h"
+
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 
@@ -9,8 +11,6 @@ namespace voxel_game
 {
 	void CommandBuffer::AddCommandArgArray(CommandBuffer& command_buffer, const godot::StringName& command, const godot::Variant** args, size_t argcount)
 	{
-		DEBUG_ASSERT(argcount <= Command::k_max_args, godot::vformat("The max args that is supported for commands is %d", Command::k_max_args));
-
 		uint32_t command_offset = command_buffer.size();
 		uint32_t command_size = sizeof(Command) + (sizeof(godot::Variant) * argcount);
 
@@ -31,73 +31,82 @@ namespace voxel_game
 		}
 	}
 
-	void CommandBuffer::ProcessCommands(uint64_t object_id, CommandBuffer&& caller_command_buffer)
+	CommandBuffer::iterator ProcessCommand(godot::Variant& object, CommandBuffer::iterator buffer_pos, CommandBuffer::iterator buffer_end)
 	{
-		CommandBuffer command_buffer = std::move(caller_command_buffer); // Move the command buffer data to us so the orignal owners buffer is empty
+		if (buffer_pos + sizeof(Command) <= buffer_end)
+		{
+			DEBUG_PRINT_ERROR("Command buffer doesn't fit the command and its arguments");
+			return buffer_end;
+		}
 
-		godot::Object* object_ptr = godot::ObjectDB::get_instance(object_id);
+		const Command& command = reinterpret_cast<const Command&>(*buffer_pos);
+		buffer_pos += sizeof(Command);
 
-		if (object_ptr == nullptr)
+		VariableLengthArray<const godot::Variant*> argptrs = MakeVariableLengthArray(const godot::Variant*, command.argcount);
+
+		for (size_t i = 0; i < argptrs.size(); i++)
+		{
+			if (buffer_pos + sizeof(godot::Variant) <= buffer_end)
+			{
+				DEBUG_PRINT_ERROR("Command buffer doesn't fit the command and its arguments");
+				return buffer_end;
+			}
+
+			argptrs[i] = &reinterpret_cast<const godot::Variant&>(*buffer_pos);
+			buffer_pos += sizeof(godot::Variant);
+		}
+
+		godot::Variant ret;
+		GDExtensionCallError error;
+		object.callp(command.command, argptrs.data(), argptrs.size(), ret, error);
+
+		if (error.error != GDExtensionCallErrorType::GDEXTENSION_CALL_OK)
+		{
+			const char* error_type_str;
+
+			switch (error.error)
+			{
+			case GDEXTENSION_CALL_OK: error_type_str = "GDEXTENSION_CALL_OK"; break;
+			case GDEXTENSION_CALL_ERROR_INVALID_METHOD: error_type_str = "GDEXTENSION_CALL_ERROR_INVALID_METHOD"; break;
+			case GDEXTENSION_CALL_ERROR_INVALID_ARGUMENT: error_type_str = "GDEXTENSION_CALL_ERROR_INVALID_ARGUMENT"; break;
+			case GDEXTENSION_CALL_ERROR_TOO_MANY_ARGUMENTS: error_type_str = "GDEXTENSION_CALL_ERROR_TOO_MANY_ARGUMENTS"; break;
+			case GDEXTENSION_CALL_ERROR_TOO_FEW_ARGUMENTS: error_type_str = "GDEXTENSION_CALL_ERROR_TOO_FEW_ARGUMENTS"; break;
+			case GDEXTENSION_CALL_ERROR_INSTANCE_IS_NULL: error_type_str = "GDEXTENSION_CALL_ERROR_INSTANCE_IS_NULL"; break;
+			case GDEXTENSION_CALL_ERROR_METHOD_NOT_CONST: error_type_str = "GDEXTENSION_CALL_ERROR_METHOD_NOT_CONST"; break;
+			default: error_type_str = "GDEXTENSION_UNKNOWN_ERROR"; break;
+			}
+
+			godot::UtilityFunctions::print(godot::vformat("%s: Error at argument %d. Expected %d arguments", error_type_str, error.argument, error.expected));
+		}
+
+		// We can call destructors on const objects for some reason but the memory is indeed owned by us
+		for (size_t i = 0; i < argptrs.size(); i++)
+		{
+			argptrs[i]->~Variant();
+		}
+
+		command.~Command();
+
+		return buffer_pos;
+	}
+
+	void CommandBuffer::ProcessCommands(uint64_t object_id, CommandBuffer&& command_buffer)
+	{
+		godot::Variant object = godot::ObjectDB::get_instance(object_id);
+
+		if (!object)
 		{
 			DEBUG_PRINT_ERROR("The object that the command queue was queueing for was deleted");
 			return;
 		}
 
-		godot::Variant object = object_ptr;
-
 		auto buffer_pos = command_buffer.begin();
 		while (buffer_pos != command_buffer.end())
 		{
-			DEBUG_ASSERT(buffer_pos + sizeof(Command) <= command_buffer.end(), "Command buffer doesn't fit the command and its arguments");
-
-			const Command& command_ptr = reinterpret_cast<const Command&>(*buffer_pos);
-			buffer_pos += sizeof(Command);
-
-			DEBUG_ASSERT(command_ptr.argcount < Command::k_max_args, "The command has more than the maximum allowed arguments");
-
-			const godot::Variant* argptrs[Command::k_max_args];
-
-			for (size_t i = 0; i < command_ptr.argcount; i++)
-			{
-				DEBUG_ASSERT(buffer_pos + sizeof(godot::Variant) <= command_buffer.end(), "Command buffer doesn't fit the command and its arguments");
-
-				const godot::Variant& arg = reinterpret_cast<const godot::Variant&>(*buffer_pos);
-				buffer_pos += sizeof(godot::Variant);
-
-				argptrs[i] = &arg;
-			}
-
-			godot::Variant ret;
-			GDExtensionCallError error;
-			object.callp(command_ptr.command, argptrs, command_ptr.argcount, ret, error);
-
-			if (error.error != GDExtensionCallErrorType::GDEXTENSION_CALL_OK)
-			{
-				const char* error_type_str;
-
-				switch (error.error)
-				{
-				case GDEXTENSION_CALL_OK: error_type_str = "GDEXTENSION_CALL_OK"; break;
-				case GDEXTENSION_CALL_ERROR_INVALID_METHOD: error_type_str = "GDEXTENSION_CALL_ERROR_INVALID_METHOD"; break;
-				case GDEXTENSION_CALL_ERROR_INVALID_ARGUMENT: error_type_str = "GDEXTENSION_CALL_ERROR_INVALID_ARGUMENT"; break;
-				case GDEXTENSION_CALL_ERROR_TOO_MANY_ARGUMENTS: error_type_str = "GDEXTENSION_CALL_ERROR_TOO_MANY_ARGUMENTS"; break;
-				case GDEXTENSION_CALL_ERROR_TOO_FEW_ARGUMENTS: error_type_str = "GDEXTENSION_CALL_ERROR_TOO_FEW_ARGUMENTS"; break;
-				case GDEXTENSION_CALL_ERROR_INSTANCE_IS_NULL: error_type_str = "GDEXTENSION_CALL_ERROR_INSTANCE_IS_NULL"; break;
-				case GDEXTENSION_CALL_ERROR_METHOD_NOT_CONST: error_type_str = "GDEXTENSION_CALL_ERROR_METHOD_NOT_CONST"; break;
-				default: error_type_str = "GDEXTENSION_UNKNOWN_ERROR"; break;
-				}
-
-				godot::UtilityFunctions::print(godot::vformat("%s: Error at argument %d. Expected %d arguments", error_type_str, error.argument, error.expected));
-			}
-
-			// We can call destructors on const objects for some reason but the memory is indeed owned by us
-			for (size_t i = 0; i < command_ptr.argcount; i++)
-			{
-				argptrs[i]->~Variant();
-			}
-
-			command_ptr.~Command();
+			buffer_pos = ProcessCommand(object, buffer_pos, command_buffer.end());
 		}
+
+		command_buffer.clear();
 	}
 
 	godot::Ref<CommandQueue> CommandQueue::MakeQueue(const godot::Variant& object)

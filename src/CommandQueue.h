@@ -17,8 +17,6 @@ namespace voxel_game
 {
 	struct Command
 	{
-		constexpr static size_t k_max_args = 16;
-
 		godot::StringName command;
 		size_t argcount = 0;
 	};
