@@ -309,6 +309,8 @@ namespace voxel_game
 
 				run_processors(spatial_world, scale, node);
 			});
+
+			scale.unload_commands.clear();
 		});
 
 		// System to unload spatial nodes that have been marked to unload
@@ -338,6 +340,8 @@ namespace voxel_game
 
 				run_processors(spatial_world, scale, node);
 			});
+
+			scale.tick_commands.clear();
 		});
 	}
 

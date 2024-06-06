@@ -27,6 +27,8 @@ namespace voxel_game
 
 		void Process(SpatialWorld3DComponent& spatial_world, UniverseScale& universe_scale, UniverseNode& universe_node)
 		{
+			PARALLEL_ACCESS(spatial_world);
+
 			flecs::scoped_world world = world_entity.scope();
 
 			uint32_t s = 16 << universe_node.coord.scale;
