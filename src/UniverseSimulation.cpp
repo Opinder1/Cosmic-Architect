@@ -277,16 +277,6 @@ namespace voxel_game
 
 	void UniverseSimulation::StartRenderer(UniverseRenderInfo* render_info)
 	{
-		/*
-		m_world.import<GalaxyRenderModule>();
-
-		m_world.set([render_info](GalaxyRenderContext& context)
-		{
-			context.scenario = render_info->GetGalaxyScenario();
-			context.mesh = godot::RenderingServer::get_singleton()->get_test_cube();
-		});
-		*/
-
 		m_world.import<RenderModule>();
 	}
 
