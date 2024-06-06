@@ -208,7 +208,7 @@ namespace voxel_game
 				{
 					DEBUG_ASSERT(scale.nodes.find(pos) == scale.nodes.end(), "The load command is trying to load a node that already has been loaded");
 
-					auto&& [it, success] = scale.nodes.emplace(pos, spatial_world.node_builder.node_create());
+					auto&& [it, success] = scale.nodes.emplace(pos, spatial_world.builder.node_create());
 					DEBUG_ASSERT(success, "The node should have been emplaced");
 
 					SpatialNode3D& node = *it->second;
@@ -241,7 +241,7 @@ namespace voxel_game
 
 					UninitializeSpatialNode(node, scale, parent_scale);
 
-					spatial_world.node_builder.node_destroy(it->second);
+					spatial_world.builder.node_destroy(it->second);
 
 					scale.nodes.erase(it);
 				}

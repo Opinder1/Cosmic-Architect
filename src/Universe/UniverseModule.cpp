@@ -49,24 +49,36 @@ namespace voxel_game
 		world.import<SpatialComponents>();
 		world.import<UniverseComponents>();
 
-		world.observer<const UniverseComponent, SpatialWorld3DComponent>(DEBUG_ONLY("UniverseInitializeSpatialProcessors"))
+		world.observer<const UniverseComponent, SpatialWorld3DComponent>(DEBUG_ONLY("UniverseInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
 			.yield_existing()
 			.term_at(2).filter()
-			.each([](const UniverseComponent universe, SpatialWorld3DComponent& spatial_world)
+			.each([](const UniverseComponent& universe, SpatialWorld3DComponent& spatial_world)
 		{
 			DEBUG_ASSERT(spatial_world.max_scale == 0, "The spatial world was already initialized with a type");
 
 			spatial_world.max_scale = 16;
 
+			spatial_world.builder = SpatialBuilder<UniverseScale, UniverseNode>();
+
 			for (size_t i = 0; i < spatial_world.max_scale; i++)
 			{
-				spatial_world.scales[i] = std::make_unique<UniverseScale>();
+				spatial_world.scales[i] = spatial_world.builder.scale_create();
 			}
 
-			spatial_world.node_builder = SpatialNodeBuilder<UniverseNode>();
-
 			spatial_world.load_command_processors.push_back(SpatialNodeCommandProcessor<UniverseLoadNodeCommandProcessor, UniverseScale, UniverseNode>());
+		});
+
+		world.observer<const UniverseComponent, SpatialWorld3DComponent>(DEBUG_ONLY("UniverseUninitializeSpatialWorld"))
+			.event(flecs::OnRemove)
+			.yield_existing()
+			.term_at(2).filter()
+			.each([](const UniverseComponent& universe, SpatialWorld3DComponent& spatial_world)
+		{
+			for (size_t i = 0; i < spatial_world.max_scale; i++)
+			{
+				spatial_world.builder.scale_destroy(spatial_world.scales[i]);
+			}
 		});
 	}
 }

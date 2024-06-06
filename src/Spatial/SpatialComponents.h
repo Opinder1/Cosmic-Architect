@@ -115,7 +115,7 @@ namespace voxel_game
 		flecs::query_t* loaders_query = nullptr;
 
 		// Specialization callbacks
-		SpatialNodeBuilderBase node_builder;
+		SpatialBuilderBase builder;
 
 		std::vector<SpatialNodeCommandProcessorBase> load_command_processors;
 		std::vector<SpatialNodeCommandProcessorBase> unload_command_processors;

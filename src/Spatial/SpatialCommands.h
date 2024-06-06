@@ -20,8 +20,10 @@ namespace voxel_game
 	struct SpatialScale3D;
 	struct SpatialNode3D;
 
-	struct SpatialNodeBuilderBase
+	struct SpatialBuilderBase
 	{
+		std::unique_ptr<SpatialScale3D>(*scale_create)();
+		void(*scale_destroy)(std::unique_ptr<SpatialScale3D>&);
 		std::unique_ptr<SpatialNode3D>(*node_create)();
 		void(*node_destroy)(std::unique_ptr<SpatialNode3D>&);
 	};
@@ -90,15 +92,28 @@ namespace voxel_game
 		}
 	}
 
-	template<class NodeT>
-	struct SpatialNodeBuilder : SpatialNodeBuilderBase
+	template<class ScaleT, class NodeT>
+	struct SpatialBuilder : SpatialBuilderBase
 	{
+		static_assert(std::is_base_of_v<SpatialScale3D, ScaleT>);
 		static_assert(std::is_base_of_v<SpatialNode3D, NodeT>);
 
-		SpatialNodeBuilder()
+		SpatialBuilder()
 		{
+			scale_create = &ScaleCreate;
+			scale_destroy = &ScaleDestroy;
 			node_create = &NodeCreate;
 			node_destroy = &NodeDestroy;
+		}
+
+		static std::unique_ptr<SpatialScale3D> ScaleCreate()
+		{
+			return std::make_unique<ScaleT>();
+		}
+
+		static void ScaleDestroy(std::unique_ptr<SpatialScale3D>& scale)
+		{
+			reinterpret_cast<std::unique_ptr<ScaleT>&>(scale).reset();
 		}
 
 		static std::unique_ptr<SpatialNode3D> NodeCreate()
