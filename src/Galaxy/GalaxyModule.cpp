@@ -19,7 +19,7 @@ namespace voxel_game
 		world.import<SpatialComponents>();
 		world.import<GalaxyComponents>();
 
-		world.observer<const GalaxyComponent, SpatialWorld3DComponent>(DEBUG_ONLY("GalaxyUninitializeSpatialWorld"))
+		world.observer<const GalaxyComponent, SpatialWorld3DComponent>(DEBUG_ONLY("GalaxyInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
 			.each([](const GalaxyComponent& galaxy, SpatialWorld3DComponent& spatial_world)
 		{
