@@ -9,7 +9,6 @@
 
 #include "Physics/PhysicsComponents.h"
 
-#include "Util/VectorHelpers.h"
 #include "Util/Debug.h"
 
 #include <flecs/flecs.h>
