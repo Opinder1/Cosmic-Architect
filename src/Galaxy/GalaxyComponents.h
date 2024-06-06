@@ -17,14 +17,19 @@ namespace flecs
 
 namespace voxel_game
 {
-	struct GalaxyComponent
-	{
-		uint32_t galaxy_texture_index = 0;
-	};
-
 	struct GalaxyNode : SpatialNode3D
 	{
 		std::vector<flecs::entity_t> entities;
+	};
+
+	struct GalaxyScale : SpatialScale3D
+	{
+
+	};
+
+	struct GalaxyComponent
+	{
+		uint32_t galaxy_texture_index = 0;
 	};
 
 	struct GalaxyObjectComponent {};

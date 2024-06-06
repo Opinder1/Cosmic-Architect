@@ -21,6 +21,13 @@ namespace voxel_game
 			.event(flecs::OnAdd)
 			.each([](GalaxyComponent& universe, SpatialWorld3DComponent& spatial_world)
 		{
+			spatial_world.max_scale = 16;
+
+			for (size_t i = 0; i < spatial_world.max_scale; i++)
+			{
+				spatial_world.scales[i] = std::make_unique<GalaxyScale>();
+			}
+
 			spatial_world.node_builder = SpatialNodeBuilder<GalaxyNode>();
 		});
 	}
