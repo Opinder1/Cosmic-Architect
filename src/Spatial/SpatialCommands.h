@@ -93,6 +93,8 @@ namespace voxel_game
 	template<class NodeT>
 	struct SpatialNodeBuilder : SpatialNodeBuilderBase
 	{
+		static_assert(std::is_base_of_v<SpatialNode3D, NodeT>);
+
 		SpatialNodeBuilder()
 		{
 			node_create = &NodeCreate;
@@ -113,6 +115,9 @@ namespace voxel_game
 	template<class StateT, class ScaleT, class NodeT>
 	struct SpatialNodeCommandProcessor : SpatialNodeCommandProcessorBase
 	{
+		static_assert(std::is_base_of_v<SpatialScale3D, ScaleT>);
+		static_assert(std::is_base_of_v<SpatialNode3D, NodeT>);
+
 		SpatialNodeCommandProcessor()
 		{
 			state_size = sizeof(StateT);
@@ -169,6 +174,8 @@ namespace voxel_game
 	template<class StateT, class ScaleT>
 	struct SpatialScaleCommandProcessor : SpatialScaleCommandProcessorBase
 	{
+		static_assert(std::is_base_of_v<SpatialScale3D, ScaleT>);
+
 		SpatialScaleCommandProcessor()
 		{
 			state_size = sizeof(StateT);
