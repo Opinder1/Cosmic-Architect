@@ -268,7 +268,7 @@ namespace voxel_game
 				return;
 			}
 
-			ProcessCommands(worker_entity.parent(), spatial_world.load_command_processors, scale.load_commands, [&spatial_world, &scale](godot::Vector3i pos, auto& run_processors)
+			auto node_processor = [&spatial_world, &scale](godot::Vector3i pos, auto& run_processors)
 			{
 				SpatialNodeMap::iterator it = scale.nodes.find(pos);
 				DEBUG_ASSERT(it != scale.nodes.end(), "The node should have been initialized");
@@ -277,7 +277,9 @@ namespace voxel_game
 				SpatialNode3D& node = *it->second;
 
 				run_processors(spatial_world, scale, node);
-			});
+			};
+
+			RunEntityCommandsWithProcessors(worker_entity.parent(), spatial_world.load_command_processors, scale.load_commands, node_processor);
 
 			scale.load_commands.clear();
 		});
@@ -300,7 +302,7 @@ namespace voxel_game
 				return;
 			}
 
-			ProcessCommands(worker_entity.parent(), spatial_world.unload_command_processors, scale.unload_commands, [&spatial_world, &scale](godot::Vector3i pos, auto& run_processors)
+			auto node_processor = [&spatial_world, &scale](godot::Vector3i pos, auto& run_processors)
 			{
 				SpatialNodeMap::iterator it = scale.nodes.find(pos);
 				DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
@@ -308,7 +310,9 @@ namespace voxel_game
 				SpatialNode3D& node = *it->second;
 
 				run_processors(spatial_world, scale, node);
-			});
+			};
+
+			RunEntityCommandsWithProcessors(worker_entity.parent(), spatial_world.unload_command_processors, scale.unload_commands, node_processor);
 
 			scale.unload_commands.clear();
 		});
@@ -331,7 +335,7 @@ namespace voxel_game
 				return;
 			}
 
-			ProcessCommands(worker_entity.parent(), spatial_world.tick_command_processors, scale.tick_commands, [&spatial_world, &scale](godot::Vector3i pos, auto& run_processors)
+			auto node_processor = [&spatial_world, &scale](godot::Vector3i pos, auto& run_processors)
 			{
 				SpatialNodeMap::iterator it = scale.nodes.find(pos);
 				DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
@@ -339,7 +343,9 @@ namespace voxel_game
 				SpatialNode3D& node = *it->second;
 
 				run_processors(spatial_world, scale, node);
-			});
+			};
+
+			RunEntityCommandsWithProcessors(worker_entity.parent(), spatial_world.tick_command_processors, scale.tick_commands, node_processor);
 
 			scale.tick_commands.clear();
 		});
