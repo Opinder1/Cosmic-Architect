@@ -182,7 +182,7 @@ public:
 
 	// Iterate over all the items in the octree
 	template<class Callable>
-	void Iterate(Callable callable) const
+	void Iterate(Callable&& callable) const
 	{
 		godot::Vector3i pos(m_x_mask, m_y_mask, m_z_mask);
 
@@ -308,7 +308,7 @@ private:
 	}
 
 	template<class Callable>
-	void IterateBranch(const uint8_t* data_ptr, uint32_t depth, godot::Vector3i pos, Callable callable) const
+	void IterateBranch(const uint8_t* data_ptr, uint32_t depth, godot::Vector3i pos, Callable&& callable) const
 	{
 		const OffsetNode* node = reinterpret_cast<const OffsetNode*>(data_ptr);
 
@@ -339,7 +339,7 @@ private:
 	}
 
 	template<class Callable>
-	void IterateLeaf(const uint8_t* data_ptr, godot::Vector3i pos, Callable callable) const
+	void IterateLeaf(const uint8_t* data_ptr, godot::Vector3i pos, Callable&& callable) const
 	{
 		const ItemNode* node = reinterpret_cast<const ItemNode*>(data_ptr);
 
