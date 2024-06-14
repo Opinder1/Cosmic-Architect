@@ -1,6 +1,5 @@
 #include "DirtyRangeTracker.h"
 
-
 DirtyRangeTracker::DirtyRangeTracker(uint16_t node_size) :
 	m_node_size(node_size)
 {}
@@ -77,4 +76,9 @@ void DirtyRangeTracker::AddItems(uint32_t first, uint32_t last)
 			node.last = end_in_last_node;
 		}
 	}
+}
+
+void DirtyRangeTracker::Clear()
+{
+	m_nodes.clear();
 }
