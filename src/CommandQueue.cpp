@@ -181,12 +181,12 @@ namespace voxel_game
 		godot::ClassDB::bind_method(godot::D_METHOD("get_object"), &CommandQueue::GetObject);
 	}
 
-	std::unique_ptr<CommandQueueServer> CommandQueueServer::k_singleton;
+	godot::OptObj<CommandQueueServer> CommandQueueServer::k_singleton;
 
 	CommandQueueServer* CommandQueueServer::get_singleton()
 	{
-		DEBUG_ASSERT(k_singleton != nullptr, "The singleton doesn't exist");
-		return k_singleton.get();
+		DEBUG_ASSERT(k_singleton, "The singleton doesn't exist");
+		return k_singleton.ptr();
 	}
 
 	CommandQueueServer::CommandQueueServer()
@@ -295,7 +295,7 @@ namespace voxel_game
 	{
 		godot::ClassDB::bind_method(godot::D_METHOD("flush"), &CommandQueueServer::Flush);
 
-		k_singleton = std::make_unique<CommandQueueServer>();
+		k_singleton.instantiate();
 	}
 
 	void CommandQueueServer::_cleanup_methods()

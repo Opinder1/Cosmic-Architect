@@ -229,11 +229,6 @@ namespace voxel_game
 		});
 
 		SpatialModule::AddSpatialScaleWorkers(flecs::entity(m_world, m_galaxy_entity));
-
-#if DEBUG
-		UniverseRenderInfo info;
-		StartRenderer(&info);
-#endif
 	}
 
 	void UniverseSimulation::Uninitialize()

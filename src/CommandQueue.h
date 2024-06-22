@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Util/Debug.h"
+#include "Util/GodotMemory.h"
 
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/classes/ref.hpp>
@@ -116,7 +117,7 @@ namespace voxel_game
 		void FlushRenderingCommands();
 
 	private:
-		static std::unique_ptr<CommandQueueServer> k_singleton;
+		static godot::OptObj<CommandQueueServer> k_singleton;
 
 		tkrzw::SpinSharedMutex m_mutex;
 		std::vector<Commands> m_command_buffers;
