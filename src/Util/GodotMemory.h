@@ -11,92 +11,7 @@
 
 namespace godot
 {
-	template<class T>
-	class ObjPtr : Nocopy
-	{
-	public:
-		ObjPtr() : m_ptr(nullptr) {}
-
-		ObjPtr(T* ptr) : m_ptr(ptr) {}
-
-		~ObjPtr()
-		{
-			reset();
-		}
-
-		ObjPtr(ObjPtr&& other)
-		{
-			m_ptr = other.m_ptr;
-			other.m_ptr = nullptr;
-		}
-
-		ObjPtr& operator=(ObjPtr&& other)
-		{
-			reset(other.m_ptr);
-			other.m_ptr = nullptr;
-		}
-
-		bool is_valid() const
-		{
-			return !is_null();
-		}
-
-		bool is_null() const
-		{
-			return m_ptr == nullptr;
-		}
-
-		T* ptr() const
-		{
-			return m_ptr;
-		}
-
-		T* operator->() const
-		{
-			return ptr();
-		}
-
-		T& operator*() const
-		{
-			return *ptr();
-		}
-
-		operator bool() const
-		{
-			return is_valid();
-		}
-
-		operator Variant() const
-		{
-			return Variant(ptr());
-		}
-
-		void instantiate()
-		{
-			reset(memnew(T));
-		}
-
-		void reset(T* ptr = nullptr)
-		{
-			if (m_ptr != nullptr)
-			{
-				memdelete<T>(m_ptr);
-			}
-
-			m_ptr = ptr;
-		}
-
-		T* release()
-		{
-			T* ptr = m_ptr;
-			m_ptr = nullptr;
-			return ptr;
-		}
-
-	private:
-		T* m_ptr;
-	};
-
+	// Object container that stores the object in place
 	template<class T>
 	class Obj
 	{
@@ -146,6 +61,95 @@ namespace godot
 		alignas(alignof(T)) std::byte m_memory[sizeof(T)];
 	};
 
+	// unique_ptr for godot objects that allocates the object on the heap
+	template<class T>
+	class ObjPtr : Nocopy
+	{
+	public:
+		ObjPtr() : m_ptr(nullptr) {}
+
+		ObjPtr(T* ptr) : m_ptr(ptr) {}
+
+		~ObjPtr()
+		{
+			reset();
+		}
+
+		ObjPtr(ObjPtr&& other)
+		{
+			m_ptr = other.m_ptr;
+			other.m_ptr = nullptr;
+		}
+
+		ObjPtr& operator=(ObjPtr&& other)
+		{
+			reset(other.m_ptr);
+			other.m_ptr = nullptr;
+		}
+
+		bool is_valid() const
+		{
+			return !is_null();
+		}
+
+		bool is_null() const
+		{
+			return m_ptr == nullptr;
+		}
+
+		T* ptr() const
+		{
+			return m_ptr;
+		}
+
+		T* operator->() const
+		{
+			return ptr();
+		}
+
+		T& operator*() const
+		{
+			DEBUG_ASSERT(is_valid(), "Trying to get an invalid object");
+			return *ptr();
+		}
+
+		operator bool() const
+		{
+			return is_valid();
+		}
+
+		operator Variant() const
+		{
+			return Variant(ptr());
+		}
+
+		void instantiate()
+		{
+			reset(memnew(T));
+		}
+
+		void reset(T* ptr = nullptr)
+		{
+			if (m_ptr != nullptr)
+			{
+				memdelete<T>(m_ptr);
+			}
+
+			m_ptr = ptr;
+		}
+
+		T* release()
+		{
+			T* ptr = m_ptr;
+			m_ptr = nullptr;
+			return ptr;
+		}
+
+	private:
+		T* m_ptr;
+	};
+
+	// Optional object stored in place but optionally has a value
 	template<class T>
 	class OptObj
 	{
@@ -195,7 +199,14 @@ namespace godot
 
 		operator Variant() const
 		{
-			return Variant(ptr());
+			if (is_valid())
+			{
+				return Variant(ptr());
+			}
+			else
+			{
+				return Variant(nullptr);
+			}
 		}
 
 		void instantiate()
