@@ -1,7 +1,6 @@
 [submodule "godot-cpp"]
 	path = godot-cpp
 	url = https://github.com/godotengine/godot-cpp
-	branch = 4.2
 [submodule "VoxelGameDemo"]
 	path = VoxelGameDemo
 	url = https://github.com/Opinder1/VoxelGameDemo.git
