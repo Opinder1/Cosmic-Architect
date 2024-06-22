@@ -15,28 +15,6 @@ namespace voxel_game
 
 		world.import<RenderComponents>();
 
-        world.observer<const RenderInstance, const RenderMesh, RenderingServerContext>()
-            .event(flecs::OnSet)
-            .term_at(2).up<RenderBase>()
-            .term_at(3).src<RenderingServerContext>().filter()
-            .each([](flecs::iter it, size_t, const RenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
-        {
-            CommandBuffer& render_commands = context.thread_buffers[it.world().get_stage_id()];
-
-            CommandBuffer::AddCommand(render_commands, "instance_set_base", instance.id, mesh.id);
-        });
-
-        world.observer<const RenderInstance, const RenderMesh, RenderingServerContext>()
-            .event(flecs::OnRemove)
-            .term_at(2).up<RenderBase>()
-            .term_at(3).src<RenderingServerContext>().filter()
-            .each([](flecs::iter it, size_t, const RenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
-        {
-            CommandBuffer& render_commands = context.thread_buffers[it.world().get_stage_id()];
-
-            CommandBuffer::AddCommand(render_commands, "instance_set_base", instance.id, context.server->get_test_cube());
-        });
-
         world.observer<const RenderInstance, const RenderScenario, RenderingServerContext>()
             .event(flecs::OnSet)
             .term_at(2).parent()
@@ -57,6 +35,28 @@ namespace voxel_game
             CommandBuffer& render_commands = context.thread_buffers[it.world().get_stage_id()];
 
             CommandBuffer::AddCommand(render_commands, "instance_set_scenario", instance.id, godot::RID());
+        });
+
+        world.observer<const RenderInstance, const RenderMesh, RenderingServerContext>()
+            .event(flecs::OnSet)
+            .term_at(2).up<RenderBase>()
+            .term_at(3).src<RenderingServerContext>().filter()
+            .each([](flecs::iter it, size_t, const RenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
+        {
+            CommandBuffer& render_commands = context.thread_buffers[it.world().get_stage_id()];
+
+            CommandBuffer::AddCommand(render_commands, "instance_set_base", instance.id, mesh.id);
+        });
+
+        world.observer<const RenderInstance, const RenderMesh, RenderingServerContext>()
+            .event(flecs::OnRemove)
+            .term_at(2).up<RenderBase>()
+            .term_at(3).src<RenderingServerContext>().filter()
+            .each([](flecs::iter it, size_t, const RenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
+        {
+            CommandBuffer& render_commands = context.thread_buffers[it.world().get_stage_id()];
+
+            CommandBuffer::AddCommand(render_commands, "instance_set_base", instance.id, godot::RID());
         });
 
         world.observer<RenderInstance, const Position3DComponent>()

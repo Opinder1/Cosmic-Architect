@@ -19,9 +19,28 @@ namespace voxel_game
         world.entity<RenderBase>().add(flecs::Relationship).add(flecs::Traversable);
         world.entity<RenderMultiInstance>().add(flecs::Relationship).add(flecs::Traversable);
 
-        world.set([](RenderingServerContext& context)
+        world.set([&world](RenderingServerContext& context)
         {
             context.server = godot::RenderingServer::get_singleton();
+            context.thread_buffers.resize(world.get_threads());
+        });
+
+        world.observer<RenderScenario, OwnedScenario, RenderingServerContext>()
+            .event(flecs::OnAdd)
+            .term_at(3).src<RenderingServerContext>().filter()
+            .each([](RenderScenario& scenario, RenderingServerContext& context)
+        {
+            scenario.id = context.server->scenario_create();
+        });
+
+        world.observer<const RenderScenario, const OwnedScenario, RenderingServerContext>()
+            .event(flecs::OnRemove)
+            .term_at(3).src<RenderingServerContext>().filter()
+            .each([](flecs::entity entity, const RenderScenario& scenario, RenderingServerContext& context)
+        {
+            CommandBuffer& commands = context.thread_buffers[entity.world().get_stage_id()];
+
+            CommandBuffer::AddCommand(commands, "free_rid", scenario.id);
         });
 
         world.observer<RenderInstance, RenderingServerContext>()
@@ -32,8 +51,6 @@ namespace voxel_game
             CommandBuffer& commands = context.thread_buffers[entity.world().get_stage_id()];
 
             instance.id = context.server->instance_create();
-
-            CommandBuffer::AddCommand(commands, "instance_set_base", instance.id, context.server->get_test_cube());
         });
 
         world.observer<const RenderInstance, RenderingServerContext>()
@@ -44,24 +61,6 @@ namespace voxel_game
             CommandBuffer& commands = context.thread_buffers[entity.world().get_stage_id()];
 
             CommandBuffer::AddCommand(commands, "free_rid", instance.id);
-        });
-
-        world.observer<RenderScenario, RenderingServerContext>()
-            .event(flecs::OnAdd)
-            .term_at(2).src<RenderingServerContext>().filter()
-            .each([](RenderScenario& scenario, RenderingServerContext& context)
-        {
-            scenario.id = context.server->scenario_create();
-        });
-
-        world.observer<const RenderScenario, RenderingServerContext>()
-            .event(flecs::OnRemove)
-            .term_at(2).src<RenderingServerContext>().filter()
-            .each([](flecs::entity entity, const RenderScenario& scenario, RenderingServerContext& context)
-        {
-            CommandBuffer& commands = context.thread_buffers[entity.world().get_stage_id()];
-
-            CommandBuffer::AddCommand(commands, "free_rid", scenario.id);
         });
 
         world.observer<RenderMesh, RenderingServerContext>()

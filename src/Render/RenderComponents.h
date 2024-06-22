@@ -29,6 +29,8 @@ namespace voxel_game
 		godot::RID id;
 	};
 
+	struct OwnedScenario {};
+
 	struct RenderInstance
 	{
 		godot::RID id;
