@@ -11,47 +11,21 @@ namespace voxel_game
 
 	}
 
-	void UniverseRenderInfo::SetGalaxyScenario(godot::RID scenario)
+	void UniverseRenderInfo::SetScenario(godot::RID scenario)
 	{
-		m_galaxy_scenario = scenario;
+		m_scenario = scenario;
 	}
 
-	void UniverseRenderInfo::SetStarScenario(godot::RID scenario)
+	godot::RID UniverseRenderInfo::GetScenario() const
 	{
-		m_star_scenario = scenario;
-	}
-
-	void UniverseRenderInfo::SetMainScenario(godot::RID scenario)
-	{
-		m_main_scenario = scenario;
-	}
-
-	godot::RID UniverseRenderInfo::GetGalaxyScenario() const
-	{
-		return m_galaxy_scenario;
-	}
-
-	godot::RID UniverseRenderInfo::GetStarScenario() const
-	{
-		return m_star_scenario;
-	}
-
-	godot::RID UniverseRenderInfo::GetMainScenario() const
-	{
-		return m_main_scenario;
+		return m_scenario;
 	}
 
 	void UniverseRenderInfo::_bind_methods()
 	{
-		godot::ClassDB::bind_method(godot::D_METHOD("set_galaxy_scenario", "scenario"), &UniverseRenderInfo::SetGalaxyScenario);
-		godot::ClassDB::bind_method(godot::D_METHOD("set_star_scenario", "scenario"), &UniverseRenderInfo::SetStarScenario);
-		godot::ClassDB::bind_method(godot::D_METHOD("set_main_scenario", "scenario"), &UniverseRenderInfo::SetMainScenario);
-		godot::ClassDB::bind_method(godot::D_METHOD("get_galaxy_scenario"), &UniverseRenderInfo::GetGalaxyScenario);
-		godot::ClassDB::bind_method(godot::D_METHOD("get_star_scenario"), &UniverseRenderInfo::GetStarScenario);
-		godot::ClassDB::bind_method(godot::D_METHOD("get_main_scenario"), &UniverseRenderInfo::GetMainScenario);
+		godot::ClassDB::bind_method(godot::D_METHOD("set_scenario", "scenario"), &UniverseRenderInfo::SetScenario);
+		godot::ClassDB::bind_method(godot::D_METHOD("get_scenario"), &UniverseRenderInfo::GetScenario);
 
-		ADD_PROPERTY(RID_PROPERTY("galaxy_scenario"), "set_galaxy_scenario", "get_galaxy_scenario");
-		ADD_PROPERTY(RID_PROPERTY("star_scenario"), "set_star_scenario", "get_star_scenario");
-		ADD_PROPERTY(RID_PROPERTY("main_scenario"), "set_main_scenario", "get_main_scenario");
+		ADD_PROPERTY(RID_PROPERTY("scenario"), "set_scenario", "get_scenario");
 	}
 }
