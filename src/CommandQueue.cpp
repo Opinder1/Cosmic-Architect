@@ -186,7 +186,7 @@ namespace voxel_game
 	CommandQueueServer* CommandQueueServer::get_singleton()
 	{
 		DEBUG_ASSERT(k_singleton, "The singleton doesn't exist");
-		return k_singleton.ptr();
+		return &k_singleton.value();
 	}
 
 	CommandQueueServer::CommandQueueServer()
