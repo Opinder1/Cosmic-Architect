@@ -163,13 +163,20 @@ namespace godot
 
 		T* ptr()
 		{
-			DEBUG_ASSERT(is_valid(), "Trying to get an invalid optional");
-			return (T*)&m_memory;
+			if (is_valid())
+			{
+				return (T*)&m_memory;
+			}
+			else
+			{
+				return nullptr;
+			}
 		}
 
 		T& value()
 		{
-			return *ptr();
+			DEBUG_ASSERT(is_valid(), "Trying to get an invalid optional");
+			return (T&)m_memory;
 		}
 
 		bool is_valid() const
@@ -184,11 +191,13 @@ namespace godot
 
 		T* operator->() const
 		{
+			DEBUG_ASSERT(is_valid(), "Trying to get an invalid optional");
 			return ptr();
 		}
 
 		T& operator*() const
 		{
+			DEBUG_ASSERT(is_valid(), "Trying to get an invalid optional");
 			return *ptr();
 		}
 
