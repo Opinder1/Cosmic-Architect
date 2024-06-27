@@ -19,9 +19,9 @@ namespace voxel_game
             .event(flecs::OnSet)
             .term_at(2).parent()
             .term_at(3).src<RenderingServerContext>().filter()
-            .each([](flecs::iter it, size_t, const RenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
+            .each([](const RenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
         {
-            CommandBuffer& render_commands = context.thread_buffers[it.world().get_stage_id()];
+            CommandBuffer& render_commands = context.thread_buffers[0];
 
             CommandBuffer::AddCommand(render_commands, "instance_set_scenario", instance.id, scenario.id);
         });
@@ -30,9 +30,9 @@ namespace voxel_game
             .event(flecs::OnRemove)
             .term_at(2).parent()
             .term_at(3).src<RenderingServerContext>().filter()
-            .each([](flecs::iter it, size_t, const RenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
+            .each([](const RenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
         {
-            CommandBuffer& render_commands = context.thread_buffers[it.world().get_stage_id()];
+            CommandBuffer& render_commands = context.thread_buffers[0];
 
             CommandBuffer::AddCommand(render_commands, "instance_set_scenario", instance.id, godot::RID());
         });
@@ -41,9 +41,9 @@ namespace voxel_game
             .event(flecs::OnSet)
             .term_at(2).up<RenderBase>()
             .term_at(3).src<RenderingServerContext>().filter()
-            .each([](flecs::iter it, size_t, const RenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
+            .each([](const RenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
         {
-            CommandBuffer& render_commands = context.thread_buffers[it.world().get_stage_id()];
+            CommandBuffer& render_commands = context.thread_buffers[0];
 
             CommandBuffer::AddCommand(render_commands, "instance_set_base", instance.id, mesh.id);
         });
@@ -52,33 +52,19 @@ namespace voxel_game
             .event(flecs::OnRemove)
             .term_at(2).up<RenderBase>()
             .term_at(3).src<RenderingServerContext>().filter()
-            .each([](flecs::iter it, size_t, const RenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
+            .each([](const RenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
         {
-            CommandBuffer& render_commands = context.thread_buffers[it.world().get_stage_id()];
+            CommandBuffer& render_commands = context.thread_buffers[0];
 
             CommandBuffer::AddCommand(render_commands, "instance_set_base", instance.id, godot::RID());
         });
 
-        world.observer<RenderInstance, const Position3DComponent>()
-            .event(flecs::OnSet)
-            .each([](RenderInstance& instance, const Position3DComponent& position)
-        {
-            instance.dirty = true;
-        });
-
-        world.observer<RenderInstance, const Rotation3DComponent>()
-            .event(flecs::OnSet)
-            .each([](RenderInstance& instance, const Rotation3DComponent& rotation)
-        {
-            instance.dirty = true;
-        });
-
-        world.system<const RenderInstance>()
+        world.system<const RenderInstance>(DEBUG_ONLY("UpdateRenderInstanceTransforms"))
             .multi_threaded()
             .term<const Position3DComponent>().optional()
             .term<const Rotation3DComponent>().optional()
             .term<RenderingServerContext>().src<RenderingServerContext>()
-            .iter([](flecs::iter it, const RenderInstance* instances)
+            .iter([](flecs::iter& it, const RenderInstance* instances)
         {
             auto& positions = it.field<const Position3DComponent>(2);
             auto& rotations = it.field<const Rotation3DComponent>(3);
