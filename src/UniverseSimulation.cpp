@@ -215,15 +215,13 @@ namespace voxel_game
 			.add<SimulatedGalaxyComponent>()
 			.add<UniverseObjectComponent>()
 			.add<SpatialLoader3DComponent>()
-			.set([&path, &fragment_type, &server_type](SimulatedGalaxyComponent& simulated_galaxy)
+			.set([&path, &fragment_type, &server_type](SimulatedGalaxyComponent& simulated_galaxy, SpatialLoader3DComponent& spatial_loader)
 		{
 			simulated_galaxy.name = "Test";
 			simulated_galaxy.path = path;
 			simulated_galaxy.fragment_type = fragment_type;
 			simulated_galaxy.is_remote = (server_type == SERVER_TYPE_REMOTE);
-		})
-			.set([](SpatialLoader3DComponent& spatial_loader)
-		{
+
 			spatial_loader.dist_per_lod = 8;
 			spatial_loader.min_lod = 0;
 			spatial_loader.max_lod = k_max_world_scale;
@@ -276,7 +274,7 @@ namespace voxel_game
 		m_world.import<RenderModule>();
 		m_world.import<GalaxyRenderModule>();
 
-		m_world.singleton<RenderingServerContext>().set([render_info](RenderScenario& scenario)
+		flecs::entity(m_world, m_universe_entity).set([render_info](RenderScenario& scenario)
 		{
 			scenario.id = render_info->GetScenario();
 		});
