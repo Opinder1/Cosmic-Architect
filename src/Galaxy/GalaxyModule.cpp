@@ -35,7 +35,6 @@ namespace voxel_game
 
 		world.observer<const GalaxyComponent, SpatialWorld3DComponent>(DEBUG_ONLY("GalaxyUninitializeSpatialWorld"))
 			.event(flecs::OnRemove)
-			.yield_existing()
 			.term_at(2).filter()
 			.each([](const GalaxyComponent& galaxy, SpatialWorld3DComponent& spatial_world)
 		{
