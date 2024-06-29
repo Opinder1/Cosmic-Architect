@@ -137,8 +137,8 @@ public:
         }
 
         size_t old_last = m_last;
-        m_last = new_last;
 
+        m_last = new_last;
         new(get_derived().ptr() + old_last) DataT(std::forward<Args>(args)...);
 
         return iterator{ get_derived(), old_last };
