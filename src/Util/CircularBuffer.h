@@ -73,6 +73,14 @@ public:
 public:
     CircularBufferBase() {}
 
+    ~CircularBufferBase()
+    {
+        for (DataT& item : *this)
+        {
+            std::destroy_at(&item);
+        }
+    }
+
     iterator begin()
     {
         return iterator{ get_derived(), m_first };
@@ -306,14 +314,6 @@ public:
 
         other.m_first = 0;
         other.m_last = 0;
-    }
-
-    ~CircularBuffer()
-    {
-        for (DataT& item : *this)
-        {
-            std::destroy_at(&item);
-        }
     }
 
     size_t capacity() const
