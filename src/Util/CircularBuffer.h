@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <cstdint>
 
+constexpr const size_t GrowingBuffer = SIZE_MAX;
+
 template<class DataT, class DerivedT>
 class CircularBufferBase
 {
@@ -71,14 +73,6 @@ public:
 public:
     CircularBufferBase() {}
 
-    ~CircularBufferBase()
-    {
-        for (DataT& item : get_derived())
-        {
-            std::destroy_at(&item);
-        }
-    }
-
     iterator begin()
     {
         return iterator{ get_derived(), m_first };
@@ -112,11 +106,22 @@ public:
     template<class... Args>
     iterator emplace_back(Args&&... args)
     {
-        size_t new_last = (m_last + 1) % get_derived().capacity();
+        size_t new_last;
 
-        if (new_last == m_first)
+        if constexpr (DerivedT::k_reallocate)
         {
-            if (!get_derived().reallocate())
+            if (size() + 1 >= get_derived().capacity())
+            {
+                get_derived().grow();
+            }
+
+            new_last = (m_last + 1) % get_derived().capacity();
+        }
+        else
+        {
+            new_last = (m_last + 1) % get_derived().capacity();
+
+            if (new_last == m_first)
             {
                 DEBUG_PRINT_WARN("Tried to emplace too many items in a constant capacity circular buffer");
                 return end();
@@ -124,8 +129,8 @@ public:
         }
 
         size_t old_last = m_last;
-
         m_last = new_last;
+
         new(get_derived().ptr() + old_last) DataT(std::forward<Args>(args)...);
 
         return iterator{ get_derived(), old_last };
@@ -134,11 +139,22 @@ public:
     template<class... Args>
     iterator emplace_front(Args&&... args)
     {
-        size_t new_first = (m_first + get_derived().capacity() - 1) % get_derived().capacity();
+        size_t new_first;
 
-        if (new_first == m_last)
+        if constexpr (DerivedT::k_reallocate)
         {
-            if (!get_derived().reallocate())
+            if (size() + 1 >= get_derived().capacity())
+            {
+                get_derived().grow();
+            }
+
+            new_first = (m_first + get_derived().capacity() - 1) % get_derived().capacity();
+        }
+        else
+        {
+            new_first = (m_first + get_derived().capacity() - 1) % get_derived().capacity();
+
+            if (new_first == m_first)
             {
                 DEBUG_PRINT_WARN("Tried to emplace too many items in a constant capacity circular buffer");
                 return end();
@@ -264,8 +280,6 @@ private:
     size_t m_last = 0;
 };
 
-constexpr const size_t GrowingBuffer = SIZE_MAX;
-
 template<class DataT, size_t k_capacity>
 class CircularBuffer : public CircularBufferBase<DataT, CircularBuffer<DataT, k_capacity>>
 {
@@ -273,21 +287,32 @@ class CircularBuffer : public CircularBufferBase<DataT, CircularBuffer<DataT, k_
 
     using Base = CircularBufferBase<DataT, CircularBuffer<DataT, k_capacity>>;
 
+    static const bool k_reallocate = false;
+
 public:
     CircularBuffer() {}
 
     CircularBuffer(CircularBuffer&& other)
     {
-        size_t items = other.length();
+        Base::m_first = other.m_first;
+        Base::m_last = other.m_last;
 
-        Base::m_first = 0;
-        Base::m_last = items;
+        for (size_t index = Base::m_first; index != Base::m_last;)
+        {
+            *(ptr() + index) = std::move(*(other.ptr() + index));
+
+            index = (index + 1) % capacity();
+        }
+
         other.m_first = 0;
         other.m_last = 0;
+    }
 
-        for (size_t i = 0; i < items; i++)
+    ~CircularBuffer()
+    {
+        for (DataT& item : *this)
         {
-            *(ptr() + i) = std::move(*(other.ptr() + i));
+            std::destroy_at(&item);
         }
     }
 
@@ -297,11 +322,6 @@ public:
     }
 
 private:
-    bool reallocate()
-    {
-        return false;
-    }
-
     DataT* ptr()
     {
         return (DataT*)&m_storage;
@@ -317,14 +337,96 @@ private:
 };
 
 template<class DataT>
-class CircularBuffer<DataT, GrowingBuffer>
+class CircularBuffer<DataT, GrowingBuffer> : public CircularBufferBase<DataT, CircularBuffer<DataT, GrowingBuffer>>
 {
+    friend class CircularBufferBase<DataT, CircularBuffer<DataT, GrowingBuffer>>;
+
+    using Base = CircularBufferBase<DataT, CircularBuffer<DataT, GrowingBuffer>>;
+
+    static const bool k_reallocate = true;
+
 public:
     CircularBuffer() {}
 
+    explicit CircularBuffer(size_t capacity)
+    {
+        reserve(capacity);
+    }
+
+    CircularBuffer(CircularBuffer&& other)
+    {
+        Base::m_first = other.m_first;
+        Base::m_last = other.m_last;
+        Base::m_buffer = other.m_buffer;
+        Base::m_capacity = other.m_capacity;
+
+        other.m_first = 0;
+        other.m_last = 0;
+        other.m_buffer = nullptr;
+        other.m_capacity = 0;
+    }
+
+    size_t capacity() const
+    {
+        return m_capacity;
+    }
+
+    void clear()
+    {
+        Base::clear();
+
+        if (m_buffer != nullptr)
+        {
+            delete[] m_buffer;
+        }
+
+        m_capacity = 0;
+    }
+
+    void reserve(size_t new_capacity)
+    {
+        if (new_capacity < 4)
+        {
+            new_capacity = 4;
+        }
+
+        size_t old_size = Base::size();
+        std::byte* new_buffer = new std::byte[sizeof(DataT) * new_capacity];
+        DataT* new_ptr = (DataT*)new_buffer;
+
+        if (m_buffer != nullptr)
+        {
+            for (DataT& item : *this)
+            {
+                *new_ptr++ = std::move(item);
+            }
+
+            delete[] m_buffer;
+        }
+
+        Base::m_first = 0;
+        Bae::m_last = old_size;
+        m_buffer = new_buffer;
+        m_capacity = new_capacity;
+    }
+
 private:
-    size_t m_first = 0;
-    size_t m_last = 0;
-    DataT* m_buffer = nullptr;
+    void grow()
+    {
+        reserve(capacity() * 2);
+    }
+
+    DataT* ptr()
+    {
+        return (DataT*)m_buffer;
+    }
+
+    const DataT* ptr() const
+    {
+        return (const DataT*)m_buffer;
+    }
+
+private:
+    std::byte* m_buffer = nullptr;
     size_t m_capacity = 0;
 };
