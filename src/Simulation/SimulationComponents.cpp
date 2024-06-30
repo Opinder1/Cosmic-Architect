@@ -8,6 +8,7 @@ namespace voxel_game
 	{
 		world.module<SimulationComponents>();
 		
-		world.component<SimulationGlobal>();
+		world.component<SimulationTime>();
+		world.component<LocalTime>();
 	}
 }

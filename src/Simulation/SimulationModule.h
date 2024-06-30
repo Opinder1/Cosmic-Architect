@@ -2,7 +2,6 @@
 
 namespace flecs
 {
-	struct iter;
 	struct world;
 }
 
