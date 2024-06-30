@@ -19,6 +19,7 @@ namespace voxel_game
 		world.import<SpatialComponents>();
 		world.import<GalaxyComponents>();
 
+		// Initialise the spatial world of a galaxy
 		world.observer<const GalaxyComponent, SpatialWorld3DComponent>(DEBUG_ONLY("GalaxyInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
 			.each([](const GalaxyComponent& galaxy, SpatialWorld3DComponent& spatial_world)
@@ -33,6 +34,7 @@ namespace voxel_game
 			}
 		});
 
+		// Uninitialize spatial world of a galaxy
 		world.observer<const GalaxyComponent, SpatialWorld3DComponent>(DEBUG_ONLY("GalaxyUninitializeSpatialWorld"))
 			.event(flecs::OnRemove)
 			.term_at(2).filter()

@@ -8,6 +8,7 @@
 
 namespace voxel_game
 {
+	// This is a specialised node for a universe
 	struct UniverseNode : SpatialNode3D
 	{
 		std::vector<flecs::entity_t> entities;
@@ -15,13 +16,16 @@ namespace voxel_game
 		std::vector<godot::Vector3i> galaxies_to_load;
 	};
 
+	// This is a specialised scale for a universe
 	struct UniverseScale : SpatialScale3D
 	{
 
 	};
 
+	// This entitiy is a universe which has a specialised spatial world
 	struct UniverseComponent {};
 
+	// This entity is within a universe
 	struct UniverseObjectComponent {};
 
 	struct UniverseComponents

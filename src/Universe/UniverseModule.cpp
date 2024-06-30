@@ -46,6 +46,7 @@ namespace voxel_game
 		world.import<SpatialComponents>();
 		world.import<UniverseComponents>();
 
+		// Initialise the spatial world of a universe
 		world.observer<const UniverseComponent, SpatialWorld3DComponent>(DEBUG_ONLY("UniverseInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
 			.term_at(2).filter()
@@ -65,6 +66,7 @@ namespace voxel_game
 			spatial_world.load_command_processors.push_back(SpatialNodeCommandProcessor<UniverseLoadNodeCommandProcessor, UniverseScale, UniverseNode>());
 		});
 
+		// Uninitialize spatial world of a universe
 		world.observer<const UniverseComponent, SpatialWorld3DComponent>(DEBUG_ONLY("UniverseUninitializeSpatialWorld"))
 			.event(flecs::OnRemove)
 			.yield_existing()
