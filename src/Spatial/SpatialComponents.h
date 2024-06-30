@@ -8,6 +8,7 @@
 #include "Util/Hash.h"
 #include "Util/Nocopy.h"
 #include "Util/Callback.h"
+#include "Util/Debug.h"
 
 #include <godot_cpp/variant/vector3i.hpp>
 
@@ -33,7 +34,6 @@ namespace voxel_game
 	// Phases which are used to synchronise the ecs between running each thread type in parallel
 	struct SpatialWorldMultithreadPhase {};
 
-	struct WorldLoaderWorkerPhase {}; // In this phase we process all loaders of all worlds in parallel
 	struct WorldRegionWorkerPhase {}; // In this phase we process select regions from different worlds in parallel
 	struct WorldScaleWorkerPhase {}; // In this phase we process all scales of all worlds in parallel
 	struct WorldWorkerPhase {}; // In this phase we process all worlds in parallel
@@ -72,6 +72,10 @@ namespace voxel_game
 	// A single node in a spatial world. This is meant to be inherited from for custom data
 	struct SpatialNode3D : Nocopy
 	{
+#if DEBUG
+		DebugWriteChecker checker;
+#endif
+
 		SpatialCoord3D coord;
 
 		uint8_t parent_index = 0; // The index we are in our parent

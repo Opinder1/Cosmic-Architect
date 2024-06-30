@@ -63,8 +63,7 @@ namespace voxel_game
 			.add(flecs::Phase)
 			.depends_on(flecs::OnUpdate);
 
-		CreateSyncedPhase<WorldLoaderWorkerPhase, SpatialWorldMultithreadPhase>(world);
-		CreateSyncedPhase<WorldRegionWorkerPhase, WorldLoaderWorkerPhase>(world);
+		CreateSyncedPhase<WorldRegionWorkerPhase, SpatialWorldMultithreadPhase>(world);
 		CreateSyncedPhase<WorldScaleWorkerPhase, WorldRegionWorkerPhase>(world);
 		CreateSyncedPhase<WorldWorkerPhase, WorldScaleWorkerPhase>(world);
 		CreateSyncedPhase<WorldCreatePhase, WorldWorkerPhase>(world);
