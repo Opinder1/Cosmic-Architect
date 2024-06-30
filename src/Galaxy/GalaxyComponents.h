@@ -39,7 +39,7 @@ namespace voxel_game
 		godot::Color color;
 	};
 
-	struct SimulatedGalaxyComponent
+	struct SimulatedGalaxyComponent : Nocopy
 	{
 		godot::StringName name;
 		godot::StringName path;
