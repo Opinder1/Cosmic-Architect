@@ -3,6 +3,8 @@
 #include <godot_cpp/core/error_macros.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
+#include <thread>
+
 #if defined(DEBUG_ENABLED) || defined(TOOLS_ENABLED)
 
 #define DEBUG 1
@@ -18,6 +20,32 @@
 #define RUNTIME_PRINT_INFO(m_msg) DEBUG_PRINT_INFO(m_msg)
 #define RUNTIME_PRINT_WARN(m_msg) DEBUG_PRINT_WARN(m_msg)
 #define RUNTIME_PRINT_ERROR(m_msg) DEBUG_PRINT_ERROR(m_msg)
+
+class DebugWriteChecker
+{
+public:
+	DebugWriteChecker() {}
+
+	void Write()
+	{
+		if (m_writer == std::thread::id{})
+		{
+			m_writer = std::this_thread::get_id();
+		}
+		else
+		{
+			DEBUG_ASSERT(m_writer == std::this_thread::get_id(), "Only one thread should write to this between each sync");
+		}
+	}
+
+	void Sync()
+	{
+		m_writer = std::thread::id{};
+	}
+
+private:
+	std::thread::id m_writer;
+};
 
 #else // Runtime
 
