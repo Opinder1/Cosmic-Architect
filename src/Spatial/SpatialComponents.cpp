@@ -11,14 +11,21 @@ namespace voxel_game
 	template<typename PhaseT, typename DependT>
 	void CreateSyncedPhase(flecs::world& world)
 	{
-		world.entity<PhaseT>()
+		flecs::entity phase = world.entity<PhaseT>()
+			.add(flecs::Phase);
+
+		flecs::scoped_world scope = phase.scope();
+
+		flecs::entity sync_phase = scope.entity(DEBUG_ONLY("ThreadSyncPhase"))
 			.add(flecs::Phase)
 			.depends_on<DependT>();
 
-		world.system()
+		scope.system(DEBUG_ONLY("ThreadSyncSystem"))
 			.no_readonly()
-			.kind<PhaseT>()
+			.kind(sync_phase)
 			.iter([](flecs::iter&) {});
+
+		phase.depends_on(sync_phase);
 	}
 
 	SpatialComponents::SpatialComponents(flecs::world& world)
@@ -64,20 +71,31 @@ namespace voxel_game
 		CreateSyncedPhase<WorldLoadPhase, WorldCreatePhase>(world);
 		CreateSyncedPhase<WorldUnloadPhase, WorldLoadPhase>(world);
 		CreateSyncedPhase<WorldDestroyPhase, WorldUnloadPhase>(world);
-		CreateSyncedPhase<WorldMultiworldPhase, WorldDestroyPhase>(world);
+		CreateSyncedPhase<WorldEndPhase, WorldDestroyPhase>(world);
 
 		// Observers
 
 		// Add a cached query for all of a spatial worlds child nodes for fast access
 		world.observer<SpatialWorld3DComponent>(DEBUG_ONLY("AddSpatialWorldQueries"))
 			.event(flecs::OnAdd)
-			.each([](flecs::entity entity, SpatialWorld3DComponent& spatial_world)
+			.each([](flecs::entity world_entity, SpatialWorld3DComponent& spatial_world)
 		{
-			flecs::scoped_world scope = entity.world().scope(entity); // Add the queries as children of the entity so they are automatically destructed
+			flecs::scoped_world scope = world_entity.scope(); // Add the queries as children of the entity so they are automatically destructed
 
-			// Use read() as its required for queries run inside systems
-			spatial_world.loaders_query = scope.query_builder<const SpatialLoader3DComponent>(DEBUG_ONLY("SpatialWorldLoaderQuery"))
-				.term(flecs::ChildOf, entity).read()
+			spatial_world.entities_query = scope.query_builder<const SpatialEntity3DComponent>(DEBUG_ONLY("SpatialWorldEntitiesQuery"))
+				.term(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
+				.build();
+
+			spatial_world.scale_workers_query = scope.query_builder<const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialWorldScaleWorkersQuery"))
+				.term(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
+				.build();
+
+			spatial_world.region_workers_query = scope.query_builder<const SpatialRegion3DWorkerComponent>(DEBUG_ONLY("SpatialWorldRegionWorkersQuery"))
+				.term(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
+				.build();
+
+			spatial_world.loaders_query = scope.query_builder<const SpatialLoader3DComponent>(DEBUG_ONLY("SpatialWorldLoadersQuery"))
+				.term(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
 				.build();
 		});
 	}

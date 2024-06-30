@@ -97,98 +97,6 @@ namespace voxel_game
 
 		// Systems
 
-		// System to keep alive all nodes around a loader and request the loading of any missing
-		world.system<SpatialWorld3DComponent, const SpatialLoader3DComponent, const SimulationGlobal>(DEBUG_ONLY("SpatialLoaderKeepAliveNodes"))
-			.multi_threaded()
-			.kind<WorldLoaderWorkerPhase>()
-			.term_at(1).parent()
-			.term_at(3).src<SimulationGlobal>()
-			.each([](SpatialWorld3DComponent& spatial_world, const SpatialLoader3DComponent& spatial_loader, const SimulationGlobal& world_time)
-		{
-			PARALLEL_ACCESS(spatial_world, world_time);
-
-			DEBUG_ASSERT(spatial_loader.max_lod <= spatial_world.max_scale, "The max lod is out of range for the world");
-
-			for (uint8_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
-			{
-				SpatialScale3D& spatial_scale = *spatial_world.scales[scale_index];
-
-				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&spatial_scale, &world_time](godot::Vector3i pos)
-				{
-					SpatialNodeMap::iterator it = spatial_scale.nodes.find(pos);
-
-					if (it == spatial_scale.nodes.end())
-					{
-						return;
-					}
-
-					SpatialNode3D& node = *it->second;
-
-					node.last_update_time = world_time.frame_start;
-				});
-			}
-		});
-
-		// System to run all loaders in each scale in parallel
-		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialLoaderLoadScaleNodes"))
-			.multi_threaded()
-			.kind<WorldScaleWorkerPhase>()
-			.term_at(1).parent()
-			.interval(0.05)
-			.each([](flecs::entity entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
-		{
-			PARALLEL_ACCESS(spatial_world);
-
-			size_t scale_index = scale_worker.scale;
-			SpatialScale3D& scale = *spatial_world.scales[scale_index];
-
-			flecs::query<const SpatialLoader3DComponent> staged_loaders_query(entity.world(), spatial_world.loaders_query);
-
-			// For each command list that is a child of the world
-			staged_loaders_query.each([scale_index, &scale](const SpatialLoader3DComponent& spatial_loader)
-			{
-				PARALLEL_ACCESS(spatial_loader);
-
-				if (scale_index < spatial_loader.min_lod || scale_index > spatial_loader.max_lod)
-				{
-					return;
-				}
-
-				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&scale](godot::Vector3i pos)
-				{
-					SpatialNodeMap::iterator it = scale.nodes.find(pos);
-
-					if (it == scale.nodes.end())
-					{
-						DEBUG_ASSERT(std::find(scale.load_commands.begin(), scale.load_commands.end(), pos) == scale.load_commands.end(), "Already exists");
-						scale.load_commands.push_back(pos);
-					}
-				});
-			});
-		});
-
-		// System to mark any nodes that are no longer being observed by any loader to be unloaded
-		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent, const SimulationGlobal>(DEBUG_ONLY("SpatialScaleUnloadUnusedNodes"))
-			.multi_threaded()
-			.kind<WorldScaleWorkerPhase>()
-			.term_at(1).parent()
-			.term_at(3).src<SimulationGlobal>()
-			.each([](SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker, const SimulationGlobal& world_time)
-		{
-			PARALLEL_ACCESS(spatial_world, world_time);
-
-			size_t scale_index = scale_worker.scale;
-			SpatialScale3D& scale = *spatial_world.scales[scale_index];
-
-			for (auto&& [pos, node] : scale.nodes)
-			{
-				if (world_time.frame_start - node->last_update_time > 20s)
-				{
-					scale.unload_commands.push_back(node->coord.pos);
-				}
-			}
-		});
-
 		// System to initialize spatial nodes that have been added
 		world.system<SpatialWorld3DComponent>(DEBUG_ONLY("SpatialWorldInitializeNodes"))
 			.multi_threaded()
@@ -204,7 +112,7 @@ namespace voxel_game
 				uint8_t parent_scale_index = std::min(scale_index + 1, spatial_world.max_scale - 1);
 				SpatialScale3D& parent_scale = *spatial_world.scales[parent_scale_index];
 
-				for (godot::Vector3i pos : scale.load_commands)
+				for (const godot::Vector3i& pos : scale.load_commands)
 				{
 					DEBUG_ASSERT(scale.nodes.find(pos) == scale.nodes.end(), "The load command is trying to load a node that already has been loaded");
 
@@ -232,7 +140,7 @@ namespace voxel_game
 				uint8_t parent_scale_index = std::min(scale_index + 1, spatial_world.max_scale - 1);
 				SpatialScale3D& parent_scale = *spatial_world.scales[parent_scale_index];
 
-				for (godot::Vector3i pos : scale.unload_commands)
+				for (const godot::Vector3i& pos : scale.unload_commands)
 				{
 					SpatialNodeMap::iterator it = scale.nodes.find(pos);
 					DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
@@ -247,6 +155,28 @@ namespace voxel_game
 				}
 
 				scale.unload_commands.clear();
+			}
+		});
+
+		// System to mark any nodes that are no longer being observed to be unloaded
+		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent, const SimulationTime>(DEBUG_ONLY("SpatialScaleUnloadUnusedNodes"))
+			.multi_threaded()
+			.kind<WorldScaleWorkerPhase>()
+			.term_at(1).parent()
+			.term_at(3).src<SimulationTime>()
+			.each([](SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker, const SimulationTime& world_time)
+		{
+			PARALLEL_ACCESS(spatial_world, world_time);
+
+			size_t scale_index = scale_worker.scale;
+			SpatialScale3D& scale = *spatial_world.scales[scale_index];
+
+			for (auto&& [pos, node] : scale.nodes)
+			{
+				if (world_time.frame_start - node->last_update_time > 20s)
+				{
+					scale.unload_commands.push_back(node->coord.pos);
+				}
 			}
 		});
 
@@ -317,10 +247,10 @@ namespace voxel_game
 			scale.unload_commands.clear();
 		});
 
-		// System to unload spatial nodes that have been marked to unload
+		// System to tick spatial nodes that have been marked to tick
 		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialWorldProcessTickCommands"))
 			.multi_threaded()
-			.kind<WorldUnloadPhase>()
+			.kind<WorldScaleWorkerPhase>()
 			.term_at(1).parent()
 			.each([](flecs::entity worker_entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
 		{
@@ -348,6 +278,76 @@ namespace voxel_game
 			RunEntityCommandsWithProcessors(worker_entity.parent(), spatial_world.tick_command_processors, scale.tick_commands, node_processor);
 
 			scale.tick_commands.clear();
+		});
+
+		// Systen to create load commands for all unloaded nodes in loaders range
+		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialLoaderLoadScaleNodes"))
+			.multi_threaded()
+			.kind<WorldScaleWorkerPhase>()
+			.term_at(1).parent()
+			.interval(0.05)
+			.each([](flecs::entity entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
+		{
+			PARALLEL_ACCESS(spatial_world);
+
+			size_t scale_index = scale_worker.scale;
+			SpatialScale3D& scale = *spatial_world.scales[scale_index];
+
+			flecs::query<const SpatialLoader3DComponent> staged_loaders_query(entity.world(), spatial_world.loaders_query);
+
+			// For each command list that is a child of the world
+			staged_loaders_query.each([scale_index, &scale](const SpatialLoader3DComponent& spatial_loader)
+			{
+				PARALLEL_ACCESS(spatial_loader);
+
+				if (scale_index < spatial_loader.min_lod || scale_index > spatial_loader.max_lod)
+				{
+					return;
+				}
+
+				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&scale](godot::Vector3i pos)
+				{
+					SpatialNodeMap::iterator it = scale.nodes.find(pos);
+
+					if (it == scale.nodes.end())
+					{
+						DEBUG_ASSERT(std::find(scale.load_commands.begin(), scale.load_commands.end(), pos) == scale.load_commands.end(), "Already exists");
+						scale.load_commands.push_back(pos);
+					}
+				});
+			});
+		});
+
+		// System to keep alive all nodes around a loader and request the loading of any missing nodes
+		world.system<SpatialWorld3DComponent, const SpatialLoader3DComponent, const SimulationTime>(DEBUG_ONLY("SpatialLoaderKeepAliveNodes"))
+			.multi_threaded()
+			.kind<WorldLoaderWorkerPhase>()
+			.term_at(1).parent()
+			.term_at(3).src<SimulationTime>()
+			.each([](SpatialWorld3DComponent& spatial_world, const SpatialLoader3DComponent& spatial_loader, const SimulationTime& world_time)
+		{
+			PARALLEL_ACCESS(spatial_world, world_time);
+
+			DEBUG_ASSERT(spatial_loader.max_lod <= spatial_world.max_scale, "The max lod is out of range for the world");
+
+			for (uint8_t scale_index = spatial_loader.min_lod; scale_index < spatial_loader.max_lod; scale_index++)
+			{
+				SpatialScale3D& spatial_scale = *spatial_world.scales[scale_index];
+
+				ForEachCoordInSphere(spatial_loader.coord.pos, spatial_loader.dist_per_lod, [&spatial_scale, &world_time](godot::Vector3i pos)
+				{
+					SpatialNodeMap::iterator it = spatial_scale.nodes.find(pos);
+
+					if (it == spatial_scale.nodes.end())
+					{
+						return;
+					}
+
+					SpatialNode3D& node = *it->second;
+
+					node.last_update_time = world_time.frame_start;
+				});
+			}
 		});
 	}
 

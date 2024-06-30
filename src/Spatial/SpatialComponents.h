@@ -27,19 +27,21 @@ namespace voxel_game
 {
 	struct SpatialNodeCommandProcessorBase;
 
+	// The max scale that a world can have
 	constexpr const uint8_t k_max_world_scale = 16;
 
 	// Phases which are used to synchronise the ecs between running each thread type in parallel
 	struct SpatialWorldMultithreadPhase {};
+
 	struct WorldLoaderWorkerPhase {}; // In this phase we process all loaders of all worlds in parallel
 	struct WorldRegionWorkerPhase {}; // In this phase we process select regions from different worlds in parallel
 	struct WorldScaleWorkerPhase {}; // In this phase we process all scales of all worlds in parallel
 	struct WorldWorkerPhase {}; // In this phase we process all worlds in parallel
-	struct WorldCreatePhase {};
-	struct WorldDestroyPhase {};
-	struct WorldLoadPhase {};
-	struct WorldUnloadPhase {};
-	struct WorldMultiworldPhase {};
+	struct WorldCreatePhase {}; // In this phase we create any new nodes
+	struct WorldLoadPhase {}; // In this phase we load any new nodes
+	struct WorldUnloadPhase {}; // In this phase we unload any marked nodes
+	struct WorldDestroyPhase {}; // In this phase we destroy and unloaded nodes
+	struct WorldEndPhase {}; // In this phase we can do any singlethreaded post processing
 
 	// Specify that this entity is within a spatial world (the world is the entities parent)
 	struct SpatialEntity3DComponent {};
@@ -112,6 +114,9 @@ namespace voxel_game
 		std::array<std::unique_ptr<SpatialScale3D>, k_max_world_scale> scales;
 
 		// Queries
+		flecs::query_t* entities_query = nullptr;
+		flecs::query_t* scale_workers_query = nullptr;
+		flecs::query_t* region_workers_query = nullptr;
 		flecs::query_t* loaders_query = nullptr;
 
 		// Specialization callbacks
@@ -119,7 +124,6 @@ namespace voxel_game
 
 		std::vector<SpatialNodeCommandProcessorBase> load_command_processors;
 		std::vector<SpatialNodeCommandProcessorBase> unload_command_processors;
-
 		std::vector<SpatialNodeCommandProcessorBase> tick_command_processors;
 	};
 
