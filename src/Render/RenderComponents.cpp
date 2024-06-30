@@ -17,8 +17,15 @@ namespace voxel_game
         world.component<RenderMesh>();
         world.component<RenderMultiMesh>();
 
-        world.entity<RenderBase>().add(flecs::Relationship).add(flecs::Traversable);
-        world.entity<RenderMultiInstance>().add(flecs::Relationship).add(flecs::Traversable);
+        world.entity<RenderBase>()
+            .add(flecs::Relationship)
+            .add(flecs::Traversable)
+            .add(flecs::Exclusive);
+
+        world.entity<RenderMultiInstance>()
+            .add(flecs::Relationship)
+            .add(flecs::Traversable)
+            .add(flecs::Exclusive);
 
         world.set([&world](RenderingServerContext& context)
         {
