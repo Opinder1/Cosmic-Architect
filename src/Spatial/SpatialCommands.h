@@ -11,9 +11,6 @@
 #include <memory>
 #include <vector>
 
-// Macro to declare what variables are being accessed in parallel
-#define PARALLEL_ACCESS(...)
-
 namespace voxel_game
 {
 	struct SpatialWorld3DComponent;

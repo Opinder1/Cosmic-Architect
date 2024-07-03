@@ -21,31 +21,12 @@
 #define RUNTIME_PRINT_WARN(m_msg) DEBUG_PRINT_WARN(m_msg)
 #define RUNTIME_PRINT_ERROR(m_msg) DEBUG_PRINT_ERROR(m_msg)
 
-class DebugWriteChecker
-{
-public:
-	DebugWriteChecker() {}
+void DebugWriteCheckerWrite(void* object);
+void DebugWriteCheckerSync();
 
-	void Write()
-	{
-		if (m_writer == std::thread::id{})
-		{
-			m_writer = std::this_thread::get_id();
-		}
-		else
-		{
-			DEBUG_ASSERT(m_writer == std::this_thread::get_id(), "Only one thread should write to this between each sync");
-		}
-	}
-
-	void Sync()
-	{
-		m_writer = std::thread::id{};
-	}
-
-private:
-	std::thread::id m_writer;
-};
+#define PARALLEL_ACCESS(...)
+#define DEBUG_THREAD_WRITE(object) DebugWriteCheckerWrite(object)
+#define DEBUG_THREAD_SYNC() DebugWriteCheckerSync()
 
 #else // Runtime
 
@@ -63,5 +44,9 @@ private:
 #define RUNTIME_PRINT_INFO(m_msg) godot::UtilityFunctions::print(m_msg)
 #define RUNTIME_PRINT_WARN(m_msg) WARN_PRINT(m_msg)
 #define RUNTIME_PRINT_ERROR(m_msg) ERR_PRINT(m_msg)
+
+#define PARALLEL_ACCESS(...)
+#define DEBUG_THREAD_WRITE(object)
+#define DEBUG_THREAD_SYNC()
 
 #endif

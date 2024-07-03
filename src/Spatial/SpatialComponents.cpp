@@ -23,7 +23,10 @@ namespace voxel_game
 		scope.system(DEBUG_ONLY("ThreadSyncSystem"))
 			.no_readonly()
 			.kind(sync_phase)
-			.iter([](flecs::iter&) {});
+			.iter([](flecs::iter& it)
+		{
+			DEBUG_THREAD_SYNC();
+		});
 
 		phase.depends_on(sync_phase);
 	}

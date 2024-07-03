@@ -72,10 +72,6 @@ namespace voxel_game
 	// A single node in a spatial world. This is meant to be inherited from for custom data
 	struct SpatialNode3D : Nocopy
 	{
-#if DEBUG
-		DebugWriteChecker checker;
-#endif
-
 		SpatialCoord3D coord;
 
 		uint8_t parent_index = 0; // The index we are in our parent
