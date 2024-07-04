@@ -10,5 +10,6 @@ namespace voxel_game
 		
 		world.component<SimulationTime>();
 		world.component<LocalTime>();
+		world.component<EntityLoaderContext>();
 	}
 }

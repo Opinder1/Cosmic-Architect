@@ -1,6 +1,12 @@
 #pragma once
 
 #include "Util/Time.h"
+#include "Util/Nocopy.h"
+
+#include <flecs/flecs.h>
+
+#include <vector>
+#include <array>
 
 namespace flecs
 {
@@ -23,5 +29,21 @@ namespace voxel_game
 	struct LocalTime
 	{
 		Clock::time_point epoch;
+	};
+
+	struct EntityLoadCommand
+	{
+		flecs::entity_t prefab;
+		const char* name;
+	};
+
+	struct EntityLoadCommands
+	{
+		std::vector<EntityLoadCommand> load_commands;
+	};
+
+	struct EntityLoaderContext : Nocopy
+	{
+		std::array<EntityLoadCommands, 16> thread_buffers;
 	};
 }
