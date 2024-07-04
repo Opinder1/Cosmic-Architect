@@ -24,8 +24,6 @@ namespace voxel_game
 
 		void Process(SpatialWorld3DComponent& spatial_world, UniverseScale& universe_scale, UniverseNode& universe_node)
 		{
-			PARALLEL_ACCESS(spatial_world);
-
 			uint32_t s = 16 << universe_node.coord.scale;
 
 			for (size_t i = 0; i < 16; i++)

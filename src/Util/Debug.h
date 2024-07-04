@@ -21,14 +21,9 @@
 #define RUNTIME_PRINT_WARN(m_msg) DEBUG_PRINT_WARN(m_msg)
 #define RUNTIME_PRINT_ERROR(m_msg) DEBUG_PRINT_ERROR(m_msg)
 
-void DebugWriteCheckerWrite(void* object);
-void DebugWriteCheckerSync();
+#define DEBUG_THREAD_CHECK
 
-#define PARALLEL_ACCESS(...)
-#define DEBUG_THREAD_WRITE(object) DebugWriteCheckerWrite(object)
-#define DEBUG_THREAD_SYNC() DebugWriteCheckerSync()
-
-#else // Runtime
+#else // DEBUG
 
 #define DEBUG 0
 
@@ -45,8 +40,18 @@ void DebugWriteCheckerSync();
 #define RUNTIME_PRINT_WARN(m_msg) WARN_PRINT(m_msg)
 #define RUNTIME_PRINT_ERROR(m_msg) ERR_PRINT(m_msg)
 
-#define PARALLEL_ACCESS(...)
-#define DEBUG_THREAD_WRITE(object)
-#define DEBUG_THREAD_SYNC()
+#endif // DEBUG
 
-#endif
+#if defined(DEBUG_THREAD_CHECK)
+void DebugThreadCheckRead(const void* group, const void* object);
+void DebugThreadCheckWrite(const void* group, const void* object);
+void DebugThreadCheckSync(const void* group);
+
+#define DEBUG_THREAD_CHECK_READ(group, object) DebugThreadCheckRead(static_cast<const void*>(group), static_cast<const void*>(object))
+#define DEBUG_THREAD_CHECK_WRITE(group, object) DebugThreadCheckWrite(static_cast<const void*>(group), static_cast<const void*>(object))
+#define DEBUG_THREAD_CHECK_SYNC(group) DebugThreadCheckSync(static_cast<const void*>(group))
+#else
+#define DEBUG_THREAD_CHECK_READ(group, object)
+#define DEBUG_THREAD_CHECK_WRITE(group, object)
+#define DEBUG_THREAD_CHECK_SYNC(group)
+#endif // DEBUG_THREAD_CHECK
