@@ -2,6 +2,7 @@
 
 #include "CommandQueue.h"
 
+#include "Util/PerThread.h"
 #include "Util/Nocopy.h"
 
 #include <godot_cpp/classes/rendering_server.hpp>
@@ -9,7 +10,7 @@
 #include <godot_cpp/variant/rid.hpp>
 #include <godot_cpp/variant/packed_byte_array.hpp>
 
-#include <vector>
+#include <array>
 
 namespace flecs
 {
@@ -21,7 +22,7 @@ namespace voxel_game
 	struct RenderingServerContext : Nocopy
 	{
 		godot::RenderingServer* server;
-		std::vector<CommandBuffer> thread_buffers;
+		PerThread<CommandBuffer> thread_buffers;
 	};
 
 	struct RenderScenario

@@ -30,7 +30,6 @@ namespace voxel_game
         world.set([&world](RenderingServerContext& context)
         {
             context.server = godot::RenderingServer::get_singleton();
-            context.thread_buffers.resize(world.get_threads());
         });
 
         world.system<RenderingServerContext>(DEBUG_ONLY("FlushRenderingServerCommands"))
