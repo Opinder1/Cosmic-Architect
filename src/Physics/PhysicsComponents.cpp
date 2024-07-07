@@ -9,13 +9,20 @@ namespace voxel_game
 		world.module<PhysicsComponents>();
 
 		world.component<Position3DComponent>();
-		world.component<Rotation3DComponent>();
 		world.component<Velocity3DComponent>();
+		world.component<Rotation3DComponent>();
+		world.component<Scale3DComponent>();
 		world.component<MassComponent>();
 		world.component<BouncinessComponent>();
 		world.component<RoughnessComponent>();
 		world.component<AABBComponent>();
 		world.component<Box3DComponent>();
 		world.component<SphereComponent>();
+
+		world.component<Velocity3DComponent>()
+			.add_second<Position3DComponent>(flecs::With);
+
+		world.component<Scale3DComponent>()
+			.add_second<Position3DComponent>(flecs::With);
 	}
 }

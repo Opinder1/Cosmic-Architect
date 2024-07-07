@@ -16,6 +16,16 @@ namespace voxel_game
 		PhysicsComponents(flecs::world& world);
 	};
 
+	struct RotationComponent
+	{
+		real_t rotation;
+	};
+
+	struct ScaleComponent
+	{
+		real_t scale;
+	};
+
 	// Entities that are children of a world entity should have this component
 	// so that the system knows how to place them in the spatial world
 	struct Position3DComponent
@@ -23,29 +33,34 @@ namespace voxel_game
 		godot::Vector3 position;
 	};
 
-	struct Rotation3DComponent
-	{
-		godot::Quaternion rotation;
-	};
-
 	struct Velocity3DComponent
 	{
 		godot::Vector3 velocity;
 	};
 
+	struct Rotation3DComponent
+	{
+		godot::Quaternion rotation;
+	};
+
+	struct Scale3DComponent
+	{
+		godot::Vector3 scale;
+	};
+
 	struct MassComponent
 	{
-		double mass = 0.0;
+		real_t mass = 0.0;
 	};
 
 	struct BouncinessComponent
 	{
-		double bounciness = 0.0;
+		real_t bounciness = 0.0;
 	};
 
 	struct RoughnessComponent
 	{
-		double roughness = 0.0;
+		real_t roughness = 0.0;
 	};
 
 	struct AABBComponent
@@ -60,6 +75,6 @@ namespace voxel_game
 
 	struct SphereComponent
 	{
-		double radius = 0.0;
+		real_t radius = 0.0;
 	};
 }
