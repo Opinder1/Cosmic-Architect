@@ -11,7 +11,7 @@
 
 namespace godot
 {
-	// Object container that stores the object in place
+	// Object container that stores a godot object in place
 	template<class T>
 	class Obj
 	{
@@ -149,7 +149,7 @@ namespace godot
 		T* m_ptr;
 	};
 
-	// Optional object stored in place but optionally has a value
+	// In place godot object that optionally has a value
 	template<class T>
 	class OptObj
 	{
