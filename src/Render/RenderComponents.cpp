@@ -37,9 +37,9 @@ namespace voxel_game
             .no_readonly()
             .each([](RenderingServerContext& context)
         {
-            for (CommandBuffer& thread_buffer : context.thread_buffers)
+            for (RenderingThreadData& thread_data : context.threads)
             {
-                CommandQueueServer::get_singleton()->AddCommands(context.server->get_instance_id(), std::move(thread_buffer));
+                CommandQueueServer::get_singleton()->AddCommands(context.server->get_instance_id(), std::move(thread_data.commands));
             }
         });
 
@@ -58,9 +58,9 @@ namespace voxel_game
             .term<const OwnedScenario>()
             .each([](const RenderScenario& scenario, RenderingServerContext& context)
         {
-            CommandBuffer& commands = context.thread_buffers[0];
+            RenderingThreadData& thread_data = context.threads[0];
 
-            CommandBuffer::AddCommand(commands, "free_rid", scenario.id);
+            CommandBuffer::AddCommand(thread_data.commands, "free_rid", scenario.id);
         });
 
         world.observer<RenderInstance, RenderingServerContext>()
@@ -76,9 +76,9 @@ namespace voxel_game
             .term_at(2).src<RenderingServerContext>().filter()
             .each([](flecs::entity entity, const RenderInstance& instance, RenderingServerContext& context)
         {
-            CommandBuffer& commands = context.thread_buffers[0];
+            RenderingThreadData& thread_data = context.threads[0];
 
-            CommandBuffer::AddCommand(commands, "free_rid", instance.id);
+            CommandBuffer::AddCommand(thread_data.commands, "free_rid", instance.id);
         });
 
         world.observer<RenderMesh, RenderingServerContext>()
@@ -94,9 +94,9 @@ namespace voxel_game
             .term_at(2).src<RenderingServerContext>().filter()
             .each([](const RenderMesh& mesh, RenderingServerContext& context)
         {
-            CommandBuffer& commands = context.thread_buffers[0];
+            RenderingThreadData& thread_data = context.threads[0];
 
-            CommandBuffer::AddCommand(commands, "free_rid", mesh.id);
+            CommandBuffer::AddCommand(thread_data.commands, "free_rid", mesh.id);
         });
 	}
 }

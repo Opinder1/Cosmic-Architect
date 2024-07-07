@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 constexpr static const size_t k_worker_thread_max = 16;
 
 template<class DataT>

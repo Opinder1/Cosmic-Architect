@@ -1,12 +1,12 @@
 #pragma once
 
+#include "Util/PerThread.h"
 #include "Util/Time.h"
 #include "Util/Nocopy.h"
 
 #include <flecs/flecs.h>
 
 #include <vector>
-#include <array>
 
 namespace flecs
 {
@@ -37,13 +37,14 @@ namespace voxel_game
 		const char* name;
 	};
 
-	struct EntityLoadCommands
+	struct LoaderThreadData
 	{
 		std::vector<EntityLoadCommand> load_commands;
+		std::vector<flecs::entity_t> unload_commands;
 	};
 
 	struct EntityLoaderContext : Nocopy
 	{
-		std::array<EntityLoadCommands, 16> thread_buffers;
+		PerThread<LoaderThreadData> threads;
 	};
 }
