@@ -59,49 +59,47 @@ namespace voxel_game
             CommandBuffer::AddCommand(thread_data.commands, "instance_set_base", instance.id, godot::RID());
         });
 
-        world.system<const RenderInstance>(DEBUG_ONLY("UpdateRenderInstanceTransforms"))
+        world.system<const RenderInstance, RenderingServerContext>(DEBUG_ONLY("UpdateRenderInstanceTransforms"))
             .multi_threaded()
+            .term_at(2).src<RenderingServerContext>()
             .term<const Position3DComponent>().optional()
             .term<const Rotation3DComponent>().optional()
-            .term<RenderingServerContext>().src<RenderingServerContext>()
-            .iter([](flecs::iter& it, const RenderInstance* instances)
+            .term<const Scale3DComponent>().optional()
+            .each([](flecs::iter& it, size_t, const RenderInstance& instance, RenderingServerContext& context)
         {
-            auto& positions = it.field<const Position3DComponent>(2);
-            auto& rotations = it.field<const Rotation3DComponent>(3);
-
-            bool has_positions = it.is_set(2);
-            bool has_rotations = it.is_set(3);
-
-            if (!has_positions || !has_rotations)
+            if (!instance.dirty)
             {
                 return;
             }
 
-            RenderingServerContext& context = *it.field<RenderingServerContext>(4);
+            godot::Transform3D transform;
+
+            if (it.is_set(3))
+            {
+                auto& position = *it.field<Position3DComponent>(3);
+
+                if (it.is_set(5))
+                {
+                    auto& scale = *it.field<Scale3DComponent>(4);
+
+                    transform.origin = position.position * scale.scale;
+                }
+                else
+                {
+                    transform.origin = position.position;
+                }
+            }
+
+            if (it.is_set(4))
+            {
+                auto& rotation = *it.field<Rotation3DComponent>(4);
+
+                transform.rotate(rotation.rotation.get_axis(), rotation.rotation.get_angle());
+            }
 
             RenderingThreadData& thread_data = context.threads[it.world().get_stage_id()];
 
-            for (size_t index : it)
-            {
-                if (!instances[index].dirty)
-                {
-                    return;
-                }
-
-                godot::Transform3D transform;
-
-                if (has_positions)
-                {
-                    transform.origin = positions[index].position;
-                }
-
-                if (has_rotations)
-                {
-                    transform.rotate(rotations[index].rotation.get_axis(), rotations[index].rotation.get_angle());
-                }
-
-                CommandBuffer::AddCommand(thread_data.commands, "instance_set_transform", instances[index].id, transform);
-            }
+            CommandBuffer::AddCommand(thread_data.commands, "instance_set_transform", instance.id, transform);
         });
 	}
 }
