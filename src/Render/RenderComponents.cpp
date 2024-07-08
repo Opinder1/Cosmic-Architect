@@ -32,14 +32,15 @@ namespace voxel_game
             context.server = godot::RenderingServer::get_singleton();
         });
 
+        // Flush each threads render commands to the command queue server which will run them on the rendering server thread
         world.system<RenderingServerContext>(DEBUG_ONLY("FlushRenderingServerCommands"))
             .term_at(1).src<RenderingServerContext>()
             .no_readonly()
             .each([](RenderingServerContext& context)
         {
-            for (RenderingThreadData& thread_data : context.threads)
+            for (RenderingServerThreadContext& thread_context : context.threads)
             {
-                CommandQueueServer::get_singleton()->AddCommands(context.server->get_instance_id(), std::move(thread_data.commands));
+                CommandQueueServer::get_singleton()->AddCommands(context.server->get_instance_id(), std::move(thread_context.commands));
             }
         });
 
@@ -58,9 +59,9 @@ namespace voxel_game
             .term<const OwnedScenario>()
             .each([](const RenderScenario& scenario, RenderingServerContext& context)
         {
-            RenderingThreadData& thread_data = context.threads[0];
+            RenderingServerThreadContext& thread_context = context.threads[0];
 
-            CommandBuffer::AddCommand(thread_data.commands, "free_rid", scenario.id);
+            CommandBuffer::AddCommand(thread_context.commands, "free_rid", scenario.id);
         });
 
         world.observer<RenderInstance, RenderingServerContext>()
@@ -76,9 +77,9 @@ namespace voxel_game
             .term_at(2).src<RenderingServerContext>().filter()
             .each([](flecs::entity entity, const RenderInstance& instance, RenderingServerContext& context)
         {
-            RenderingThreadData& thread_data = context.threads[0];
+            RenderingServerThreadContext& thread_context = context.threads[0];
 
-            CommandBuffer::AddCommand(thread_data.commands, "free_rid", instance.id);
+            CommandBuffer::AddCommand(thread_context.commands, "free_rid", instance.id);
         });
 
         world.observer<RenderMesh, RenderingServerContext>()
@@ -94,9 +95,9 @@ namespace voxel_game
             .term_at(2).src<RenderingServerContext>().filter()
             .each([](const RenderMesh& mesh, RenderingServerContext& context)
         {
-            RenderingThreadData& thread_data = context.threads[0];
+            RenderingServerThreadContext& thread_context = context.threads[0];
 
-            CommandBuffer::AddCommand(thread_data.commands, "free_rid", mesh.id);
+            CommandBuffer::AddCommand(thread_context.commands, "free_rid", mesh.id);
         });
 	}
 }

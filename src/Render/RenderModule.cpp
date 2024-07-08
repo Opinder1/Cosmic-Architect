@@ -21,9 +21,9 @@ namespace voxel_game
             .term_at(3).src<RenderingServerContext>().filter()
             .each([](const RenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
         {
-            RenderingThreadData& thread_data = context.threads[0];
+            RenderingServerThreadContext& thread_context = context.threads[0];
 
-            CommandBuffer::AddCommand(thread_data.commands, "instance_set_scenario", instance.id, scenario.id);
+            CommandBuffer::AddCommand(thread_context.commands, "instance_set_scenario", instance.id, scenario.id);
         });
 
         world.observer<const RenderInstance, const RenderScenario, RenderingServerContext>()
@@ -32,9 +32,9 @@ namespace voxel_game
             .term_at(3).src<RenderingServerContext>().filter()
             .each([](const RenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
         {
-            RenderingThreadData& thread_data = context.threads[0];
+            RenderingServerThreadContext& thread_context = context.threads[0];
 
-            CommandBuffer::AddCommand(thread_data.commands, "instance_set_scenario", instance.id, godot::RID());
+            CommandBuffer::AddCommand(thread_context.commands, "instance_set_scenario", instance.id, godot::RID());
         });
 
         world.observer<const RenderInstance, const RenderMesh, RenderingServerContext>()
@@ -43,9 +43,9 @@ namespace voxel_game
             .term_at(3).src<RenderingServerContext>().filter()
             .each([](const RenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
         {
-            RenderingThreadData& thread_data = context.threads[0];
+            RenderingServerThreadContext& thread_context = context.threads[0];
 
-            CommandBuffer::AddCommand(thread_data.commands, "instance_set_base", instance.id, mesh.id);
+            CommandBuffer::AddCommand(thread_context.commands, "instance_set_base", instance.id, mesh.id);
         });
 
         world.observer<const RenderInstance, const RenderMesh, RenderingServerContext>()
@@ -54,9 +54,9 @@ namespace voxel_game
             .term_at(3).src<RenderingServerContext>().filter()
             .each([](const RenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
         {
-            RenderingThreadData& thread_data = context.threads[0];
+            RenderingServerThreadContext& thread_context = context.threads[0];
 
-            CommandBuffer::AddCommand(thread_data.commands, "instance_set_base", instance.id, godot::RID());
+            CommandBuffer::AddCommand(thread_context.commands, "instance_set_base", instance.id, godot::RID());
         });
 
         world.system<RenderInstance, RenderingServerContext>(DEBUG_ONLY("UpdateRenderInstanceTransforms"))
@@ -99,9 +99,9 @@ namespace voxel_game
                 transform.rotate(rotation.rotation.get_axis(), rotation.rotation.get_angle());
             }
 
-            RenderingThreadData& thread_data = context.threads[it.world().get_stage_id()];
+            RenderingServerThreadContext& thread_context = context.threads[it.world().get_stage_id()];
 
-            CommandBuffer::AddCommand(thread_data.commands, "instance_set_transform", instance.id, transform);
+            CommandBuffer::AddCommand(thread_context.commands, "instance_set_transform", instance.id, transform);
         });
 	}
 }

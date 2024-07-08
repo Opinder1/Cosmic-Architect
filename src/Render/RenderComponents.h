@@ -20,7 +20,7 @@ namespace flecs
 
 namespace voxel_game
 {
-	struct RenderingThreadData
+	struct RenderingServerThreadContext
 	{
 		CommandBuffer commands;
 	};
@@ -28,7 +28,7 @@ namespace voxel_game
 	struct RenderingServerContext : Nocopy
 	{
 		godot::RenderingServer* server;
-		PerThread<RenderingThreadData> threads;
+		PerThread<CommandBuffer> threads;
 	};
 
 	struct RenderScenario
