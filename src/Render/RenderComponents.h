@@ -3,6 +3,7 @@
 #include "CommandQueue.h"
 
 #include "Util/PerThread.h"
+#include "Util/Time.h"
 #include "Util/Nocopy.h"
 
 #include <godot_cpp/classes/rendering_server.hpp>
@@ -37,10 +38,30 @@ namespace voxel_game
 
 	struct OwnedScenario {};
 
+	struct InstanceDirtyFlags
+	{
+		bool base : 1;
+		bool blend_shape_weight : 1;
+		bool custom_aabb : 1;
+		bool extra_visibility_margin : 1;
+		bool ignore_culling : 1;
+		bool layer_mask : 1;
+		bool pivot_data : 1;
+		bool scenario : 1;
+		bool surface_override_material : 1;
+		bool transform : 1;
+		bool visibility_parent : 1;
+		bool visible : 1;
+	};
+
 	struct RenderInstance
 	{
 		godot::RID id;
-		bool dirty = false;
+		union
+		{
+			uint16_t dirty_data = 0;
+			InstanceDirtyFlags dirty;
+		};
 	};
 
 	struct RenderBase {};

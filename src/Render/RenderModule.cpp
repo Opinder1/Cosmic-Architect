@@ -59,18 +59,20 @@ namespace voxel_game
             CommandBuffer::AddCommand(thread_data.commands, "instance_set_base", instance.id, godot::RID());
         });
 
-        world.system<const RenderInstance, RenderingServerContext>(DEBUG_ONLY("UpdateRenderInstanceTransforms"))
+        world.system<RenderInstance, RenderingServerContext>(DEBUG_ONLY("UpdateRenderInstanceTransforms"))
             .multi_threaded()
             .term_at(2).src<RenderingServerContext>()
             .term<const Position3DComponent>().optional()
             .term<const Rotation3DComponent>().optional()
             .term<const Scale3DComponent>().optional()
-            .each([](flecs::iter& it, size_t, const RenderInstance& instance, RenderingServerContext& context)
+            .each([](flecs::iter& it, size_t, RenderInstance& instance, RenderingServerContext& context)
         {
-            if (!instance.dirty)
+            if (!instance.dirty.transform)
             {
                 return;
             }
+
+            instance.dirty.transform = false;
 
             godot::Transform3D transform;
 
@@ -80,7 +82,7 @@ namespace voxel_game
 
                 if (it.is_set(5))
                 {
-                    auto& scale = *it.field<Scale3DComponent>(4);
+                    auto& scale = *it.field<Scale3DComponent>(5);
 
                     transform.origin = position.position * scale.scale;
                 }
