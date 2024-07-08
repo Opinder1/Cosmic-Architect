@@ -31,20 +31,25 @@ namespace voxel_game
 		Clock::time_point epoch;
 	};
 
-	struct EntityLoadCommand
+	struct EntityCreateCommand
 	{
 		flecs::entity_t prefab;
-		const char* name;
+		flecs::entity_t parent;
 	};
 
-	struct LoaderThreadData
+	struct EntityDestroyCommand
 	{
-		std::vector<EntityLoadCommand> load_commands;
-		std::vector<flecs::entity_t> unload_commands;
+		flecs::entity_t entity;
 	};
 
-	struct EntityLoaderContext : Nocopy
+	struct EntityThreadCommands : Nocopy
 	{
-		PerThread<LoaderThreadData> threads;
+		struct ThreadData
+		{
+			std::vector<EntityCreateCommand> create_commands;
+			std::vector<EntityDestroyCommand> destroy_commands;
+		};
+
+		PerThread<ThreadData> threads;
 	};
 }

@@ -19,5 +19,29 @@ namespace voxel_game
 			world_time.frame_index++;
 			world_time.frame_start = Clock::now();
 		});
+
+		world.system<EntityThreadCommands>("ProcessEntityThreadCommands")
+			.kind(flecs::OnUpdate)
+			.term_at(1).src<EntityThreadCommands>()
+			.each([&world](EntityThreadCommands& loader_context)
+		{
+			for (EntityThreadCommands::ThreadData& thread : loader_context.threads)
+			{
+				for (EntityCreateCommand command : thread.create_commands)
+				{
+					world.entity().add(command.prefab, flecs::Prefab);
+					world.entity().add(command.parent, flecs::Parent);
+				}
+
+				thread.create_commands.clear();
+
+				for (EntityDestroyCommand command : thread.destroy_commands)
+				{
+					world.entity(command.entity).destruct();
+				}
+
+				thread.destroy_commands.clear();
+			}
+		});
 	}
 }
