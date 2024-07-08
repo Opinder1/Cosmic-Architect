@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <new>
 
 constexpr static const size_t k_worker_thread_max = 16;
 
