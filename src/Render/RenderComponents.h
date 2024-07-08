@@ -28,7 +28,7 @@ namespace voxel_game
 	struct RenderingServerContext : Nocopy
 	{
 		godot::RenderingServer* server;
-		PerThread<CommandBuffer> threads;
+		PerThread<RenderingServerThreadContext> threads;
 	};
 
 	struct RenderScenario
