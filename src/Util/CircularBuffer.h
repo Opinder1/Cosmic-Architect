@@ -267,10 +267,10 @@ public:
 
     CircularBuffer(CircularBuffer&& other)
     {
-        m_first = other.m_first;
-        m_last = other.m_last;
+        Base::m_first = other.m_first;
+        Base::m_last = other.m_last;
 
-        for (size_t index = m_first; index != m_last;)
+        for (size_t index = Base::m_first; index != Base::m_last;)
         {
             *(ptr() + index) = std::move(*(other.ptr() + index));
 
@@ -289,9 +289,9 @@ public:
 private:
     bool get_new_last(size_t& new_last)
     {
-        new_last = (m_last + 1) % capacity();
+        new_last = (Base::m_last + 1) % capacity();
 
-        if (new_last == m_first)
+        if (new_last == Base::m_first)
         {
             DEBUG_PRINT_WARN("Tried to emplace too many items in a constant capacity circular buffer");
             return false;
@@ -302,9 +302,9 @@ private:
 
     bool get_new_first(size_t& new_first)
     {
-        new_first = (m_first + capacity() - 1) % capacity();
+        new_first = (Base::m_first + capacity() - 1) % capacity();
 
-        if (new_first == m_first)
+        if (new_first == Base::m_first)
         {
             DEBUG_PRINT_WARN("Tried to emplace too many items in a constant capacity circular buffer");
             return false;
@@ -344,8 +344,8 @@ public:
 
     GrowingCircularBuffer(GrowingCircularBuffer&& other)
     {
-        m_first = other.m_first;
-        m_last = other.m_last;
+        Base::m_first = other.m_first;
+        Base::m_last = other.m_last;
         m_buffer = other.m_buffer;
         m_capacity = other.m_capacity;
 
@@ -393,8 +393,8 @@ public:
             delete[] m_buffer;
         }
 
-        m_first = 0;
-        m_last = old_size;
+        Base::m_first = 0;
+        Base::m_last = old_size;
         m_buffer = new_buffer;
         m_capacity = new_capacity;
     }
@@ -407,7 +407,7 @@ private:
             grow();
         }
 
-        new_last = (m_last + 1) % capacity();
+        new_last = (Base::m_last + 1) % capacity();
 
         return true;
     }
@@ -419,7 +419,7 @@ private:
             grow();
         }
 
-        new_first = (m_first + capacity() - 1) % capacity();
+        new_first = (Base::m_first + capacity() - 1) % capacity();
 
         return true;
     }

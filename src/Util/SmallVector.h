@@ -13,8 +13,8 @@ public:
     using const_iterator = const DataT*;
 
 public:
-	SmallVectorBase() {}
-    
+    SmallVectorBase() {}
+
     iterator begin()
     {
         return get_derived().ptr();
@@ -67,7 +67,7 @@ public:
     template<class... Args>
     iterator emplace_back(Args&&... args)
     {
-        emplace(end(), std::forward<Args>(args)...)
+        emplace(end(), std::forward<Args>(args)...);
     }
 
     template<class... Args>
@@ -200,7 +200,7 @@ public:
 
     void resize(size_t new_size)
     {
-        grow(new_size);
+        get_derived().grow(new_size);
 
         if (new_size > m_size)
         {
@@ -265,7 +265,7 @@ protected:
             std::swap(at(i), other.at(i));
         }
 
-        if (m_size > otherm_size)
+        if (m_size > other.m_size)
         {
             for (; i < m_size; i++)
             {
@@ -282,18 +282,18 @@ protected:
     }
 
 private:
-	DerivedT& get_derived()
-	{
-		return static_cast<DerivedT&>(*this);
-	}
+    DerivedT& get_derived()
+    {
+        return static_cast<DerivedT&>(*this);
+    }
 
-	const DerivedT& get_derived() const
-	{
-		return static_cast<const DerivedT&>(*this);
-	}
+    const DerivedT& get_derived() const
+    {
+        return static_cast<const DerivedT&>(*this);
+    }
 
 protected:
-	size_t m_size = 0;
+    size_t m_size = 0;
 };
 
 template<class DataT, size_t k_capacity>
@@ -304,7 +304,7 @@ class SmallVector : public SmallVectorBase<DataT, SmallVector<DataT, k_capacity>
     using Base = SmallVectorBase<DataT, SmallVector<DataT, k_capacity>>;
 
 public:
-	SmallVector() {}
+    SmallVector() {}
 
     size_t max_size()
     {
@@ -313,10 +313,10 @@ public:
 
     void reserve(size_t size) {}
 
-	size_t capacity()
-	{
-		return k_capacity;
-	}
+    size_t capacity()
+    {
+        return k_capacity;
+    }
 
     void shrink_to_fit() {}
 
@@ -328,19 +328,19 @@ public:
     }
 
 private:
-	DataT* ptr()
-	{
-		return (DataT*)&m_storage;
-	}
+    DataT* ptr()
+    {
+        return (DataT*)&m_storage;
+    }
 
-	const DataT* ptr() const
-	{
-		return (const DataT*)&m_storage;
-	}
+    const DataT* ptr() const
+    {
+        return (const DataT*)&m_storage;
+    }
 
     bool grow()
     {
-        if (m_size == m_capacity)
+        if (Base::m_size == k_capacity)
         {
             DEBUG_PRINT_WARN("Tried to emplace too many items in a constant capacity vector");
             return false;
@@ -352,7 +352,7 @@ private:
     }
 
 private:
-	std::byte m_storage[k_capacity * sizeof(DataT)];
+    std::byte m_storage[k_capacity * sizeof(DataT)];
 };
 
 template<class DataT, size_t k_capacity>
@@ -363,7 +363,7 @@ class GrowingSmallVector : public SmallVectorBase<DataT, GrowingSmallVector<Data
     using Base = SmallVectorBase<DataT, GrowingSmallVector<DataT, k_capacity>>;
 
 public:
-	GrowingSmallVector() : m_buffer(storage_ptr()), m_capacity(k_capacity) {}
+    GrowingSmallVector() : m_buffer(storage_ptr()), m_capacity(k_capacity) {}
 
     size_t max_size()
     {
@@ -394,10 +394,10 @@ public:
         m_capacity = new_capacity;
     }
 
-	size_t capacity()
-	{
-		return m_capacity;
-	}
+    size_t capacity()
+    {
+        return m_capacity;
+    }
 
     void shrink_to_fit()
     {
@@ -407,14 +407,14 @@ public:
         }
 
         std::byte* new_buffer;
-        
-        if (m_size <= m_storage)
+
+        if (Base::m_size <= m_storage)
         {
             new_buffer = storage_ptr(); // Go back to the array buffer if it fits all our items
         }
         else
         {
-            new_buffer = new std::byte[sizeof(DataT) * new_capacity];
+            new_buffer = new std::byte[sizeof(DataT) * Base::m_size];
         }
 
         DataT* new_ptr = (DataT*)new_buffer;
@@ -427,7 +427,7 @@ public:
         delete[] m_buffer;
 
         m_buffer = new_buffer;
-        m_capacity = new_capacity;
+        m_capacity = Base::m_size;
     }
 
     void swap(GrowingSmallVector& other) noexcept
@@ -456,20 +456,20 @@ public:
     }
 
 private:
-    Data* storage_ptr()
+    DataT* storage_ptr()
     {
         return (DataT*)&m_storage;
     }
 
-	DataT* ptr()
-	{
-		return m_buffer;
-	}
+    DataT* ptr()
+    {
+        return m_buffer;
+    }
 
-	const DataT* ptr() const
-	{
-		return m_buffer;
-	}
+    const DataT* ptr() const
+    {
+        return m_buffer;
+    }
 
     bool grow(size_t new_size)
     {
@@ -482,7 +482,7 @@ private:
     }
 
 private:
-	DataT* m_buffer;
-	size_t m_capacity;
-	std::byte m_storage[k_capacity * sizeof(DataT)];
+    DataT* m_buffer;
+    size_t m_capacity;
+    std::byte m_storage[k_capacity * sizeof(DataT)];
 };
