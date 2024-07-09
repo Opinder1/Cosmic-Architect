@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Debug.h"
+
 #include <cstddef>
 #include <cstdint>
 
@@ -65,41 +67,83 @@ public:
     template<class... Args>
     iterator emplace_back(Args&&... args)
     {
-
+        emplace(end(), std::forward<Args>(args)...)
     }
 
     template<class... Args>
     iterator emplace_front(Args&&... args)
     {
-
+        emplace(begin(), std::forward<Args>(args)...);
     }
 
     template<class... Args>
     iterator emplace(const_iterator pos, Args&&... args)
     {
+        if (!get_derived().grow(m_size + 1))
+        {
+            return end();
+        }
 
+        std::move_backward(pos, end(), pos + 1);
+
+        DataT* item = get_derived().ptr() + m_size;
+
+        new (item) DataT(std::forward<Args>(args)...);
+        m_size++;
+
+        return item;
     }
 
     iterator insert(iterator pos, const DataT& value)
     {
-
+        return emplace(pos, value);
     }
 
     iterator insert(iterator pos, DataT&& value)
     {
-
+        return emplace(pos, std::move(value));
     }
 
     template<class InputIt>
     iterator insert(iterator pos, size_t count, const DataT& value)
     {
+        if (!get_derived().grow(m_size + count))
+        {
+            return end();
+        }
 
+        std::move_backward(pos, end(), pos + count);
+
+        for (size_t i = 0; i < count; i++)
+        {
+            new (pos + i) DataT(value);
+        }
+
+        m_size += count;
+
+        return pos;
     }
 
     template<class InputIt>
     iterator insert(iterator pos, InputIt first, InputIt last)
     {
+        ptrdiff_t count = std::distance(last, first);
 
+        if (!get_derived().grow(m_size + count))
+        {
+            return end();
+        }
+
+        std::move_backward(pos, end(), pos + count);
+
+        for (size_t i = 0; i < count; i++)
+        {
+            new (pos + i) DataT(first + i);
+        }
+
+        m_size += count;
+
+        return pos;
     }
 
     DataT& at(size_t index)
@@ -124,12 +168,24 @@ public:
 
     iterator erase(const_iterator pos)
     {
-
+        return erase(pos, pos + 1);
     }
 
     iterator erase(const_iterator first, const_iterator last)
     {
+        if (first < begin() || last > end())
+        {
+            return end();
+        }
 
+        std::destroy(first, last);
+
+        if (last < end())
+        {
+            std::move(last, end(), first);
+        }
+
+        m_size -= std::distance(first, last);
     }
 
     void clear()
@@ -144,10 +200,7 @@ public:
 
     void resize(size_t new_size)
     {
-        if (new_size > get_derived().capacity())
-        {
-            get_derived().reserve(get_derived().capacity() * 2);
-        }
+        grow(new_size);
 
         if (new_size > m_size)
         {
@@ -204,7 +257,7 @@ protected:
 
     void swap_array_items(SmallVectorBase& other)
     {
-        size_t common_size = std::min(size(), other.size());
+        size_t common_size = std::min(m_size, other.m_size);
 
         size_t i = 0;
         for (; i < common_size; i++)
@@ -212,16 +265,16 @@ protected:
             std::swap(at(i), other.at(i));
         }
 
-        if (size() > other.size())
+        if (m_size > otherm_size)
         {
-            for (; i < size(); i++)
+            for (; i < m_size; i++)
             {
                 other.at(i) = std::move(at(i));
             }
         }
         else
         {
-            for (; i < other.size(); i++)
+            for (; i < other.m_size; i++)
             {
                 at(i) = std::move(other.at(i));
             }
@@ -239,7 +292,7 @@ private:
 		return static_cast<const DerivedT&>(*this);
 	}
 
-private:
+protected:
 	size_t m_size = 0;
 };
 
@@ -284,6 +337,19 @@ private:
 	{
 		return (const DataT*)&m_storage;
 	}
+
+    bool grow()
+    {
+        if (m_size == m_capacity)
+        {
+            DEBUG_PRINT_WARN("Tried to emplace too many items in a constant capacity vector");
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
 
 private:
 	std::byte m_storage[k_capacity * sizeof(DataT)];
@@ -342,7 +408,7 @@ public:
 
         std::byte* new_buffer;
         
-        if (Base::size() <= m_storage)
+        if (m_size <= m_storage)
         {
             new_buffer = storage_ptr(); // Go back to the array buffer if it fits all our items
         }
@@ -372,13 +438,18 @@ public:
         if (using_storage || other_using_storage)
         {
             Base::swap_array_items(other);
+
+            DataT* new_buffer = other_using_storage ? storage_ptr() : other.m_buffer;
+            DataT* other_new_buffer = using_storage ? other.storage_ptr() : m_buffer;
+
+            m_buffer = new_buffer;
+            other.m_buffer = other_new_buffer;
         }
-
-        DataT* new_buffer = other_using_storage ? storage_ptr() : other.m_buffer;
-        DataT* other_new_buffer = using_storage ? other.storage_ptr() : m_buffer;
-
-        m_buffer = new_buffer;
-        other.m_buffer = other_new_buffer;
+        else
+        {
+            // Fast pointer swap since both are using heap allocated memory
+            std::swap(m_buffer, other.m_buffer);
+        }
 
         std::swap(m_capacity, other.m_capacity);
         Base::swap(other);
@@ -399,6 +470,16 @@ private:
 	{
 		return m_buffer;
 	}
+
+    bool grow(size_t new_size)
+    {
+        if (new_size > m_capacity)
+        {
+            reserve(m_capacity * 2);
+        }
+
+        return true;
+    }
 
 private:
 	DataT* m_buffer;
