@@ -5,8 +5,6 @@
 #include <cstddef>
 #include <cstdint>
 
-constexpr const size_t GrowingBuffer = SIZE_MAX;
-
 template<class DataT, class DerivedT>
 class CircularBufferBase
 {
@@ -252,7 +250,7 @@ private:
         return static_cast<const DerivedT&>(*this);
     }
 
-private:
+protected:
     size_t m_first = 0;
     size_t m_last = 0;
 };
@@ -269,10 +267,10 @@ public:
 
     CircularBuffer(CircularBuffer&& other)
     {
-        Base::m_first = other.m_first;
-        Base::m_last = other.m_last;
+        m_first = other.m_first;
+        m_last = other.m_last;
 
-        for (size_t index = Base::m_first; index != Base::m_last;)
+        for (size_t index = m_first; index != m_last;)
         {
             *(ptr() + index) = std::move(*(other.ptr() + index));
 
@@ -291,9 +289,9 @@ public:
 private:
     bool get_new_last(size_t& new_last)
     {
-        new_last = (Base::m_last + 1) % capacity();
+        new_last = (m_last + 1) % capacity();
 
-        if (new_last == Base::m_first)
+        if (new_last == m_first)
         {
             DEBUG_PRINT_WARN("Tried to emplace too many items in a constant capacity circular buffer");
             return false;
@@ -304,9 +302,9 @@ private:
 
     bool get_new_first(size_t& new_first)
     {
-        new_first = (Base::m_first + capacity() - 1) % capacity();
+        new_first = (m_first + capacity() - 1) % capacity();
 
-        if (new_first == Base::m_first)
+        if (new_first == m_first)
         {
             DEBUG_PRINT_WARN("Tried to emplace too many items in a constant capacity circular buffer");
             return false;
@@ -330,26 +328,26 @@ private:
 };
 
 template<class DataT>
-class CircularBuffer<DataT, GrowingBuffer> : public CircularBufferBase<DataT, CircularBuffer<DataT, GrowingBuffer>>
+class GrowingCircularBuffer : public CircularBufferBase<DataT, GrowingCircularBuffer<DataT>>
 {
-    friend class CircularBufferBase<DataT, CircularBuffer<DataT, GrowingBuffer>>;
+    friend class CircularBufferBase<DataT, GrowingCircularBuffer<DataT>>;
 
-    using Base = CircularBufferBase<DataT, CircularBuffer<DataT, GrowingBuffer>>;
+    using Base = CircularBufferBase<DataT, GrowingCircularBuffer<DataT>>;
 
 public:
-    CircularBuffer() {}
+    GrowingCircularBuffer() {}
 
-    explicit CircularBuffer(size_t capacity)
+    explicit GrowingCircularBuffer(size_t capacity)
     {
         reserve(capacity);
     }
 
-    CircularBuffer(CircularBuffer&& other)
+    GrowingCircularBuffer(GrowingCircularBuffer&& other)
     {
-        Base::m_first = other.m_first;
-        Base::m_last = other.m_last;
-        Base::m_buffer = other.m_buffer;
-        Base::m_capacity = other.m_capacity;
+        m_first = other.m_first;
+        m_last = other.m_last;
+        m_buffer = other.m_buffer;
+        m_capacity = other.m_capacity;
 
         other.m_first = 0;
         other.m_last = 0;
@@ -395,8 +393,8 @@ public:
             delete[] m_buffer;
         }
 
-        Base::m_first = 0;
-        Bae::m_last = old_size;
+        m_first = 0;
+        m_last = old_size;
         m_buffer = new_buffer;
         m_capacity = new_capacity;
     }
@@ -409,7 +407,7 @@ private:
             grow();
         }
 
-        new_last = (Base::m_last + 1) % capacity();
+        new_last = (m_last + 1) % capacity();
 
         return true;
     }
@@ -421,7 +419,7 @@ private:
             grow();
         }
 
-        new_first = (Base::m_first + capacity() - 1) % capacity();
+        new_first = (m_first + capacity() - 1) % capacity();
 
         return true;
     }
