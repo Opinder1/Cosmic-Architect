@@ -360,17 +360,17 @@ namespace voxel_game
 		});
 	}
 
-	void SpatialModule::AddSpatialScaleWorkers(flecs::entity spatial_world_entity)
+	void SpatialModule::AddSpatialScaleWorkers(flecs::world_t* world, flecs::entity_t spatial_world_entity)
 	{
-		flecs::scoped_world world = spatial_world_entity.scope();
+		flecs::scoped_world scope(world, spatial_world_entity);
 
-		const SpatialWorld3DComponent* spatial_world = spatial_world_entity.get<SpatialWorld3DComponent>();
+		const SpatialWorld3DComponent* spatial_world = flecs::entity(world, spatial_world_entity).get<SpatialWorld3DComponent>();
 
 		DEBUG_ASSERT(spatial_world != nullptr, "The entity should have a spatial world to add spatial workers");
 
 		for (size_t scale_index = 0; scale_index < spatial_world->max_scale; scale_index++)
 		{
-			flecs::entity scale_worker_entity = world.entity()
+			flecs::entity scale_worker_entity = scope.entity()
 				.add<SpatialScale3DWorkerComponent>()
 				.set([scale_index](SpatialScale3DWorkerComponent& scale_worker)
 			{
@@ -379,11 +379,11 @@ namespace voxel_game
 		}
 	}
 
-	void SpatialModule::RemoveSpatialScaleWorkers(flecs::entity spatial_world_entity)
+	void SpatialModule::RemoveSpatialScaleWorkers(flecs::world_t* world, flecs::entity_t spatial_world_entity)
 	{
-		flecs::world world(spatial_world_entity.world());
+		flecs::scoped_world scope(world, spatial_world_entity);
 
-		world.filter_builder()
+		scope.filter_builder()
 			.read(flecs::ChildOf, spatial_world_entity)
 			.read<SpatialScale3DWorkerComponent>()
 			.each([](flecs::entity entity)

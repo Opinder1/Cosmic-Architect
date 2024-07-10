@@ -207,7 +207,7 @@ namespace voxel_game
 		m_universe_entity = m_world.entity(DEBUG_ONLY("Universe"))
 			.add<UniverseComponent>();
 
-		SpatialModule::AddSpatialScaleWorkers(flecs::entity(m_world, m_universe_entity));
+		SpatialModule::AddSpatialScaleWorkers(m_world, m_universe_entity);
 
 		m_galaxy_entity = m_world.entity(DEBUG_ONLY("SimulatedGalaxy"))
 			.child_of(m_universe_entity)
@@ -226,7 +226,7 @@ namespace voxel_game
 			spatial_loader.max_lod = k_max_world_scale;
 		});
 
-		SpatialModule::AddSpatialScaleWorkers(flecs::entity(m_world, m_galaxy_entity));
+		SpatialModule::AddSpatialScaleWorkers(m_world, m_galaxy_entity);
 	}
 
 	void UniverseSimulation::Uninitialize()
