@@ -2,7 +2,6 @@
 #include "UniverseComponents.h"
 
 #include "Galaxy/GalaxyComponents.h"
-#include "Galaxy/GalaxyRenderModule.h"
 
 #include "Spatial/SpatialComponents.h"
 #include "Spatial/SpatialCommands.h"

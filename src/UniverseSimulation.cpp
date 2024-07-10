@@ -8,7 +8,6 @@
 
 #include "Galaxy/GalaxyComponents.h"
 #include "Galaxy/GalaxyModule.h"
-#include "Galaxy/GalaxyRenderModule.h"
 
 #include "Spatial/SpatialComponents.h"
 #include "Spatial/SpatialModule.h"
@@ -272,7 +271,6 @@ namespace voxel_game
 	void UniverseSimulation::StartRenderer(UniverseRenderInfo* render_info)
 	{
 		m_world.import<RenderModule>();
-		m_world.import<GalaxyRenderModule>();
 
 		flecs::entity(m_world, m_universe_entity).set([render_info](RenderScenario& scenario)
 		{
