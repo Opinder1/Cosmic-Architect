@@ -78,6 +78,10 @@ namespace voxel_game
 
 	struct RenderMultiInstance {};
 
+	struct FlatTextureComponent
+	{
+		uint32_t texture_index = 0;
+	};
 	struct RenderComponents
 	{
 		RenderComponents(flecs::world& world);
