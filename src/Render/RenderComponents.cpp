@@ -14,8 +14,11 @@ namespace voxel_game
         world.component<RenderScenario>();
         world.component<OwnedScenario>();
         world.component<RenderInstance>();
+        world.component<RenderBase>();
         world.component<RenderMesh>();
+        world.component<RenderMultiInstance>();
         world.component<RenderMultiMesh>();
+        world.component<FlatTextureComponent>();
 
         world.entity<RenderBase>()
             .add(flecs::Relationship)
