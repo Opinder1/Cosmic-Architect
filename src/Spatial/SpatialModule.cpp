@@ -98,13 +98,13 @@ namespace voxel_game
 		// Systems
 
 		// System to mark any nodes that are no longer being observed to be unloaded
-		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent, const SimulationTime>(DEBUG_ONLY("SpatialScaleUnloadUnusedNodes"))
+		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent, const SimulationTime>(DEBUG_ONLY("SpatialScaleUnloadUnusedNodes"))
 			.multi_threaded()
 			.interval(0.05)
 			.kind<WorldScaleWorkerPhase>()
-			.term_at(1).parent()
+			.term_at(2).parent()
 			.term_at(3).src<SimulationTime>()
-			.each([&world](SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker, const SimulationTime& world_time)
+			.each([&world](const SpatialScale3DWorkerComponent& scale_worker, SpatialWorld3DComponent& spatial_world, const SimulationTime& world_time)
 		{
 			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
 			DEBUG_THREAD_CHECK_READ(&world, &world_time);
@@ -126,11 +126,11 @@ namespace voxel_game
 		});
 
 		// System to tick spatial nodes that have been marked to tick
-		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialWorldProcessTickCommands"))
+		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent>(DEBUG_ONLY("SpatialWorldProcessTickCommands"))
 			.multi_threaded()
 			.kind<WorldScaleWorkerPhase>()
-			.term_at(1).parent()
-			.each([&world](flecs::entity worker_entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
+			.term_at(2).parent()
+			.each([&world](flecs::entity worker_entity, const SpatialScale3DWorkerComponent& scale_worker, SpatialWorld3DComponent& spatial_world)
 		{
 			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
 
@@ -162,13 +162,13 @@ namespace voxel_game
 		});
 
 		// Systen to create or update all nodes in the range of loaders
-		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent, const SimulationTime>(DEBUG_ONLY("SpatialLoaderLoadScaleNodes"))
+		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent, const SimulationTime>(DEBUG_ONLY("SpatialLoaderLoadScaleNodes"))
 			.multi_threaded()
 			.interval(0.05)
 			.kind<WorldScaleWorkerPhase>()
-			.term_at(1).parent()
+			.term_at(2).parent()
 			.term_at(3).src<SimulationTime>()
-			.each([&world](flecs::entity worker_entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker, const SimulationTime& world_time)
+			.each([&world](flecs::entity worker_entity, const SpatialScale3DWorkerComponent& scale_worker, SpatialWorld3DComponent& spatial_world, const SimulationTime& world_time)
 		{
 			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
 			DEBUG_THREAD_CHECK_READ(&world, &world_time);
@@ -250,11 +250,11 @@ namespace voxel_game
 		});
 
 		// System to load spatial nodes that have been added
-		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialWorldProcessLoadNodeCommands"))
+		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent>(DEBUG_ONLY("SpatialWorldProcessLoadNodeCommands"))
 			.multi_threaded()
 			.kind<WorldLoadPhase>()
-			.term_at(1).parent()
-			.each([&world](flecs::entity worker_entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
+			.term_at(2).parent()
+			.each([&world](flecs::entity worker_entity, const SpatialScale3DWorkerComponent& scale_worker, SpatialWorld3DComponent& spatial_world)
 		{
 			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
 
@@ -287,11 +287,11 @@ namespace voxel_game
 		});
 
 		// System to unload spatial nodes that have been marked to unload
-		world.system<SpatialWorld3DComponent, const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialWorldProcessUnloadNodeCommands"))
+		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent>(DEBUG_ONLY("SpatialWorldProcessUnloadNodeCommands"))
 			.multi_threaded()
 			.kind<WorldUnloadPhase>()
-			.term_at(1).parent()
-			.each([&world](flecs::entity worker_entity, SpatialWorld3DComponent& spatial_world, const SpatialScale3DWorkerComponent& scale_worker)
+			.term_at(2).parent()
+			.each([&world](flecs::entity worker_entity, const SpatialScale3DWorkerComponent& scale_worker, SpatialWorld3DComponent& spatial_world)
 		{
 			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
 
