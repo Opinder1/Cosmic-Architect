@@ -37,9 +37,9 @@ namespace voxel_game
 {
 	size_t UUIDHash::operator()(const UUID& uuid) const
 	{
-		static_assert(sizeof(size_t[2]) == sizeof(UUID));
+		static_assert(sizeof(UUID) == 16);
 
-		size_t* arr = (size_t*)&uuid;
+		uint64_t* arr = (uint64_t*)&uuid;
 
 		return arr[0] ^ arr[1];
 	}
