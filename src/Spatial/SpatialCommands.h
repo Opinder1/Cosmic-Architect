@@ -96,9 +96,9 @@ namespace voxel_game
 		}
 
 	private:
-		static void StateInitializeProc(void* state_ptr, flecs::entity entity)
+		static void StateInitializeProc(void* state_ptr, flecs::world_t* stage, flecs::entity_t world_entity)
 		{
-			new (state_ptr) StateT(entity);
+			new (state_ptr) StateT(stage, world_entity);
 		}
 
 		static void StateDestroyProc(void* state_ptr)
@@ -124,9 +124,9 @@ namespace voxel_game
 		}
 
 	private:
-		static void StateInitializeProc(void* state_ptr, flecs::entity entity)
+		static void StateInitializeProc(void* state_ptr, flecs::world_t* stage, flecs::entity_t world_entity)
 		{
-			new (state_ptr) StateT(entity);
+			new (state_ptr) StateT(stage, world_entity);
 		}
 
 		static void StateDestroyProc(void* state_ptr)
@@ -154,9 +154,9 @@ namespace voxel_game
 		}
 
 	private:
-		static void StateInitializeProc(void* state_ptr, flecs::entity entity)
+		static void StateInitializeProc(void* state_ptr, flecs::world_t* stage, flecs::entity_t world_entity)
 		{
-			new (state_ptr) StateT(entity);
+			new (state_ptr) StateT(stage, world_entity);
 		}
 
 		static void StateDestroyProc(void* state_ptr)

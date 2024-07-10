@@ -16,7 +16,7 @@ namespace voxel_game
 {
 	struct UniverseLoadNodeCommandProcessor
 	{
-		UniverseLoadNodeCommandProcessor(flecs::entity entity)
+		UniverseLoadNodeCommandProcessor(flecs::world_t* stage, flecs::entity_t universe_entity)
 		{
 
 		}
