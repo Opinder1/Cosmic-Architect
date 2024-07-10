@@ -21,6 +21,9 @@
 #include "Physics/PhysicsComponents.h"
 #include "Physics/PhysicsModule.h"
 
+#include "Simulation/SimulationComponents.h"
+#include "Simulation/SimulationModule.h"
+
 #include "Util/Debug.h"
 #include "Util/PropertyMacros.h"
 
@@ -196,6 +199,7 @@ namespace voxel_game
 		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
 
 		m_world.import<flecs::monitor>();
+		m_world.import<SimulationModule>();
 		m_world.import<PhysicsModule>();
 		m_world.import<SpatialModule>();
 		m_world.import<VoxelModule>();
