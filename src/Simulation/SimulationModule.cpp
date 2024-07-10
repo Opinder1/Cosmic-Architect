@@ -20,27 +20,24 @@ namespace voxel_game
 			world_time.frame_start = Clock::now();
 		});
 
-		world.system<EntityThreadCommands>("ProcessEntityThreadCommands")
+		world.system<ThreadEntityPools>("ProcessEntityThreadCommands")
 			.kind(flecs::OnUpdate)
-			.term_at(1).src<EntityThreadCommands>()
-			.each([&world](EntityThreadCommands& loader_context)
+			.term_at(1).src<ThreadEntityPools>()
+			.each([&world](ThreadEntityPools& thread_pools)
 		{
-			for (EntityThreadCommands::ThreadData& thread : loader_context.threads)
+			for (ThreadEntityPool& thread : thread_pools.threads)
 			{
-				for (EntityCreateCommand command : thread.create_commands)
+				size_t new_required = 1024 - thread.new_entities.size();
+
+				if (new_required == 1024)
 				{
-					world.entity().add(command.prefab, flecs::Prefab);
-					world.entity().add(command.parent, flecs::Parent);
+					thread.new_entities.reserve(1024);
 				}
 
-				thread.create_commands.clear();
-
-				for (EntityDestroyCommand command : thread.destroy_commands)
+				for (size_t i = 0; i < new_required; i++)
 				{
-					world.entity(command.entity).destruct();
+					thread.new_entities.push_back(world.entity());
 				}
-
-				thread.destroy_commands.clear();
 			}
 		});
 	}
