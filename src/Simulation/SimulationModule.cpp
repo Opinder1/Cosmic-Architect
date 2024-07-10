@@ -11,6 +11,10 @@ namespace voxel_game
 
 		world.import<SimulationComponents>();
 
+		world.add<SimulationTime>();
+
+		world.add<ThreadEntityPools>();
+
 		world.system<SimulationTime>("WorldUpdateTime")
 			.kind(flecs::OnUpdate)
 			.term_at(1).src<SimulationTime>()
