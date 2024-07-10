@@ -11,7 +11,7 @@ namespace voxel_game
 	struct EntityCommandProcessorBase
 	{
 		size_t state_size;
-		void(*state_initialize)(void*, flecs::world_t* world, flecs::entity_t entity);
+		void(*state_initialize)(void*, flecs::world_t*, flecs::entity_t);
 		void(*state_destroy)(void*);
 	};
 
