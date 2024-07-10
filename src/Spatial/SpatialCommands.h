@@ -67,7 +67,7 @@ namespace voxel_game
 
 		static void ScaleDestroy(std::unique_ptr<SpatialScale3D>& scale)
 		{
-			reinterpret_cast<std::unique_ptr<ScaleT>&>(scale).reset();
+			delete static_cast<ScaleT*>(scale.release());
 		}
 
 		static std::unique_ptr<SpatialNode3D> NodeCreate()
@@ -77,7 +77,7 @@ namespace voxel_game
 
 		static void NodeDestroy(std::unique_ptr<SpatialNode3D>& node)
 		{
-			reinterpret_cast<std::unique_ptr<NodeT>&>(node).reset();
+			delete static_cast<NodeT*>(node.release());
 		}
 	};
 
