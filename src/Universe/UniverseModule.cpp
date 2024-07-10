@@ -8,6 +8,10 @@
 
 #include "Physics/PhysicsComponents.h"
 
+#include "Simulation/SimulationComponents.h"
+
+#include "Render/RenderComponents.h"
+
 #include "Util/Debug.h"
 
 #include <flecs/flecs.h>
@@ -16,21 +20,45 @@ namespace voxel_game
 {
 	struct UniverseLoadNodeCommandProcessor
 	{
-		UniverseLoadNodeCommandProcessor(flecs::world_t* world, flecs::entity_t universe_entity) :
-		{
+		flecs::world_t* world;
+		flecs::entity_t universe_entity;
+		ThreadEntityPool* entity_pool;
 
+		UniverseLoadNodeCommandProcessor(flecs::world_t* world, flecs::entity_t universe_entity) :
+			world(world),
+			universe_entity(universe_entity),
+			entity_pool(GetThreadEntityPool(world))
+		{
+			DEBUG_ASSERT(entity_pool != nullptr, "We could not get an entity pool for our multithread stage");
 		}
 
 		void Process(SpatialWorld3DComponent& spatial_world, UniverseScale& universe_scale, UniverseNode& universe_node)
 		{
-			uint32_t s = 16 << universe_node.coord.scale;
+			uint32_t scale_step = 16 << universe_node.coord.scale;
 
-			for (size_t i = 0; i < 16; i++)
+			size_t add_count = 16 - universe_node.entities.size();
+
+			for (size_t i = 0; i < add_count; i++)
 			{
-				godot::Vector3 position = universe_node.coord.pos * s;
-				position += godot::Vector3(godot::UtilityFunctions::randf_range(0, s), godot::UtilityFunctions::randf_range(0, s), godot::UtilityFunctions::randf_range(0, s));
+				if (entity_pool->new_entities.size() == 0)
+				{
+					return;
+				}
 
-				universe_node.galaxies_to_load.push_back(position);
+				flecs::entity galaxy(world, entity_pool->new_entities.back());
+
+				universe_node.entities.push_back(galaxy);
+				entity_pool->new_entities.pop_back();
+
+				galaxy.child_of(universe_entity);
+				galaxy.add<GalaxyComponent>();
+
+				float position_x = (float(universe_node.coord.pos.x) * scale_step) + godot::UtilityFunctions::randf_range(0, scale_step);
+				float position_y = (float(universe_node.coord.pos.y) * scale_step) + godot::UtilityFunctions::randf_range(0, scale_step);
+				float position_z = (float(universe_node.coord.pos.z) * scale_step) + godot::UtilityFunctions::randf_range(0, scale_step);
+
+				galaxy.set(Position3DComponent{ godot::Vector3(position_x, position_y, position_z) });
+				galaxy.add<FlatTextureComponent>();
 			}
 		}
 	};
