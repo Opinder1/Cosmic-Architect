@@ -16,6 +16,9 @@ namespace voxel_game
 
 		world.import<VoxelComponents>();
 		world.import<SpatialModule>();
+
+		world.singleton<VoxelWorldComponent>()
+			.add_second<SpatialWorld3DComponent>(flecs::With);
 	}
 
 	Block VoxelModule::GetBlockAtScale(const SpatialWorld3DComponent& spatial_world, godot::Vector3i pos, uint32_t scale)

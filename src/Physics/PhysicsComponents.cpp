@@ -18,11 +18,5 @@ namespace voxel_game
 		world.component<AABBComponent>();
 		world.component<Box3DComponent>();
 		world.component<SphereComponent>();
-
-		world.singleton<Velocity3DComponent>()
-			.add_second<Position3DComponent>(flecs::With);
-
-		world.singleton<Scale3DComponent>()
-			.add_second<Position3DComponent>(flecs::With);
 	}
 }

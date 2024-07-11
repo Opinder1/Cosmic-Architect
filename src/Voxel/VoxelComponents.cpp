@@ -9,8 +9,5 @@ namespace voxel_game
 		world.module<VoxelComponents>();
 
 		world.component<VoxelWorldComponent>();
-
-		world.component<VoxelWorldComponent>()
-			.add_second<SpatialWorld3DComponent>(flecs::With);
 	}
 }

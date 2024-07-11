@@ -71,6 +71,13 @@ namespace voxel_game
 		world.import<SpatialComponents>();
 		world.import<UniverseComponents>();
 
+		world.singleton<UniverseComponent>()
+			.add_second<SpatialWorld3DComponent>(flecs::With);
+
+		world.singleton<UniverseObjectComponent>()
+			.add_second<UniverseComponent>(flecs::OneOf)
+			.add_second<SpatialEntity3DComponent>(flecs::With);
+
 		// Initialise the spatial world of a universe
 		world.observer<const UniverseComponent, SpatialWorld3DComponent>(DEBUG_ONLY("UniverseInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
