@@ -20,12 +20,12 @@ namespace voxel_game
         world.component<RenderMultiMesh>();
         world.component<FlatTextureComponent>();
 
-        world.entity<RenderBase>()
+        world.singleton<RenderBase>()
             .add(flecs::Relationship)
             .add(flecs::Traversable)
             .add(flecs::Exclusive);
 
-        world.entity<RenderMultiInstance>()
+        world.singleton<RenderMultiInstance>()
             .add(flecs::Relationship)
             .add(flecs::Traversable)
             .add(flecs::Exclusive);

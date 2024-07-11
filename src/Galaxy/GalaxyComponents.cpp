@@ -23,19 +23,19 @@ namespace voxel_game
 		world.component<StarComponent>();
 		world.component<SimulatedGalaxyComponent>();
 
-		world.component<GalaxyComponent>()
+		world.singleton<GalaxyComponent>()
 			.add_second<UniverseComponent>(flecs::OneOf)
 			.add_second<Position3DComponent>(flecs::With)
 			.add_second<Rotation3DComponent>(flecs::With);
 
-		world.component<GalaxyObjectComponent>()
+		world.singleton<GalaxyObjectComponent>()
 			.add_second<GalaxyComponent>(flecs::OneOf)
 			.add_second<SpatialEntity3DComponent>(flecs::With);
 
-		world.component<StarComponent>()
+		world.singleton<StarComponent>()
 			.add_second<GalaxyObjectComponent>(flecs::With);
 
-		world.component<SimulatedGalaxyComponent>()
+		world.singleton<SimulatedGalaxyComponent>()
 			.add_second<GalaxyComponent>(flecs::With)
 			.add_second<SpatialWorld3DComponent>(flecs::With);
 	}
