@@ -76,7 +76,7 @@ namespace voxel_game
 			default: error_type_str = "GDEXTENSION_UNKNOWN_ERROR"; break;
 			}
 
-			godot::UtilityFunctions::print(godot::vformat("%s: Error at argument %d. Expected %d arguments", error_type_str, error.argument, error.expected));
+			DEBUG_PRINT_ERROR(godot::vformat("%s: Error at argument %d. Expected %d arguments", error_type_str, error.argument, error.expected));
 		}
 
 		// We can call destructors on const objects for some reason but the memory is indeed owned by us
@@ -199,8 +199,6 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(m_command_buffers.size() == 0, "Commands left over when exiting the application");
 		DEBUG_ASSERT(m_rendering_command_buffers.size() == 0, "Render commands left over when exiting the application");
-
-		Flush();
 	}
 
 	void CommandQueueServer::AddCommands(uint64_t object_id, CommandBuffer&& command_buffer)
