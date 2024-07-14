@@ -42,7 +42,7 @@ namespace voxel_game
             }
         });
 
-        world.observer<RenderScenario, RenderingServerContext>()
+        world.observer<RenderScenario, RenderingServerContext>(DEBUG_ONLY("AddRenderScenario"))
             .event(flecs::OnAdd)
             .term_at(2).src<RenderingServerContext>().filter()
             .term<const OwnedScenario>()
@@ -51,7 +51,7 @@ namespace voxel_game
             scenario.id = context.server->scenario_create();
         });
 
-        world.observer<const RenderScenario, RenderingServerContext>()
+        world.observer<const RenderScenario, RenderingServerContext>(DEBUG_ONLY("RemoveRenderScenario"))
             .event(flecs::OnRemove)
             .term_at(2).src<RenderingServerContext>().filter()
             .term<const OwnedScenario>()
@@ -62,7 +62,7 @@ namespace voxel_game
             CommandBuffer::AddCommand(thread_context.commands, "free_rid", scenario.id);
         });
 
-        world.observer<RenderInstance, RenderingServerContext>()
+        world.observer<RenderInstance, RenderingServerContext>(DEBUG_ONLY("AddRenderInstance"))
             .event(flecs::OnAdd)
             .term_at(2).src<RenderingServerContext>().filter()
             .each([](RenderInstance& instance, RenderingServerContext& context)
@@ -70,7 +70,7 @@ namespace voxel_game
             instance.id = context.server->instance_create();
         });
 
-        world.observer<const RenderInstance, RenderingServerContext>()
+        world.observer<const RenderInstance, RenderingServerContext>(DEBUG_ONLY("RemoveRenderInstance"))
             .event(flecs::OnRemove)
             .term_at(2).src<RenderingServerContext>().filter()
             .each([](flecs::entity entity, const RenderInstance& instance, RenderingServerContext& context)
@@ -80,7 +80,7 @@ namespace voxel_game
             CommandBuffer::AddCommand(thread_context.commands, "free_rid", instance.id);
         });
 
-        world.observer<RenderMesh, RenderingServerContext>()
+        world.observer<RenderMesh, RenderingServerContext>(DEBUG_ONLY("AddRenderMesh"))
             .event(flecs::OnAdd)
             .term_at(2).src<RenderingServerContext>().filter()
             .each([](flecs::entity entity, RenderMesh& mesh, RenderingServerContext& context)
@@ -88,7 +88,7 @@ namespace voxel_game
             mesh.id = context.server->mesh_create();
         });
 
-        world.observer<const RenderMesh, RenderingServerContext>()
+        world.observer<const RenderMesh, RenderingServerContext>(DEBUG_ONLY("RemoveRenderMesh"))
             .event(flecs::OnRemove)
             .term_at(2).src<RenderingServerContext>().filter()
             .each([](const RenderMesh& mesh, RenderingServerContext& context)
@@ -98,7 +98,7 @@ namespace voxel_game
             CommandBuffer::AddCommand(thread_context.commands, "free_rid", mesh.id);
         });
 
-        world.observer<const RenderInstance, const RenderScenario, RenderingServerContext>()
+        world.observer<const RenderInstance, const RenderScenario, RenderingServerContext>(DEBUG_ONLY("RenderInstanceSetScenario"))
             .event(flecs::OnSet)
             .term_at(2).parent()
             .term_at(3).src<RenderingServerContext>().filter()
@@ -109,7 +109,7 @@ namespace voxel_game
             CommandBuffer::AddCommand(thread_context.commands, "instance_set_scenario", instance.id, scenario.id);
         });
 
-        world.observer<const RenderInstance, const RenderScenario, RenderingServerContext>()
+        world.observer<const RenderInstance, const RenderScenario, RenderingServerContext>(DEBUG_ONLY("RenderInstanceRemoveScenario"))
             .event(flecs::OnRemove)
             .term_at(2).parent()
             .term_at(3).src<RenderingServerContext>().filter()
@@ -120,7 +120,7 @@ namespace voxel_game
             CommandBuffer::AddCommand(thread_context.commands, "instance_set_scenario", instance.id, godot::RID());
         });
 
-        world.observer<const RenderInstance, const RenderMesh, RenderingServerContext>()
+        world.observer<const RenderInstance, const RenderMesh, RenderingServerContext>(DEBUG_ONLY("RenderInstanceSetMesh"))
             .event(flecs::OnSet)
             .term_at(2).up<RenderBase>()
             .term_at(3).src<RenderingServerContext>().filter()
@@ -131,7 +131,7 @@ namespace voxel_game
             CommandBuffer::AddCommand(thread_context.commands, "instance_set_base", instance.id, mesh.id);
         });
 
-        world.observer<const RenderInstance, const RenderMesh, RenderingServerContext>()
+        world.observer<const RenderInstance, const RenderMesh, RenderingServerContext>(DEBUG_ONLY("RenderInstanceRemoveMesh"))
             .event(flecs::OnRemove)
             .term_at(2).up<RenderBase>()
             .term_at(3).src<RenderingServerContext>().filter()
@@ -148,7 +148,7 @@ namespace voxel_game
             .term<const Position3DComponent>().optional()
             .term<const Rotation3DComponent>().optional()
             .term<const Scale3DComponent>().optional()
-            .each([](flecs::iter& it, size_t, RenderInstance& instance, RenderingServerContext& context)
+            .each([](flecs::iter& it, size_t i, RenderInstance& instance, RenderingServerContext& context)
         {
             if (!instance.dirty.transform)
             {
@@ -161,25 +161,23 @@ namespace voxel_game
 
             if (it.is_set(3))
             {
-                auto& position = *it.field<Position3DComponent>(3);
+                auto& position = it.field_at<const Position3DComponent>(3, i);
 
-                if (it.is_set(5))
-                {
-                    auto& scale = *it.field<Scale3DComponent>(5);
-
-                    transform.origin = position.position * scale.scale;
-                }
-                else
-                {
-                    transform.origin = position.position;
-                }
+                transform.set_origin(position.position);
             }
 
             if (it.is_set(4))
             {
-                auto& rotation = *it.field<Rotation3DComponent>(4);
+                auto& rotation = it.field_at<const Rotation3DComponent>(4, i);
 
                 transform.rotate(rotation.rotation.get_axis(), rotation.rotation.get_angle());
+            }
+
+            if (it.is_set(5))
+            {
+                auto& scale = it.field_at<const Scale3DComponent>(5, i);
+
+                transform.scale(scale.scale);
             }
 
             RenderingServerThreadContext& thread_context = context.threads[it.world().get_stage_id()];
