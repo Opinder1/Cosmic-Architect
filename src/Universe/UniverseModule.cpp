@@ -23,6 +23,7 @@ namespace voxel_game
 		flecs::world_t* world;
 		flecs::entity_t universe_entity;
 		ThreadEntityPool* entity_pool;
+		flecs::entity_t galaxy_scehmatic;
 
 		UniverseLoadNodeCommandProcessor(flecs::world_t* world, flecs::entity_t universe_entity) :
 			world(world),
@@ -38,6 +39,21 @@ namespace voxel_game
 
 			size_t add_count = 16 - universe_node.entities.size();
 
+			flecs::entity galaxy_schematic;
+
+			if (add_count > 0)
+			{
+				if (entity_pool->new_entities.size() == 0)
+				{
+					return;
+				}
+
+				galaxy_schematic = flecs::entity(world, entity_pool->new_entities.back());
+				entity_pool->new_entities.pop_back();
+
+				galaxy_schematic.add<RenderMesh>();
+			}
+
 			for (size_t i = 0; i < add_count; i++)
 			{
 				if (entity_pool->new_entities.size() == 0)
@@ -46,8 +62,6 @@ namespace voxel_game
 				}
 
 				flecs::entity galaxy(world, entity_pool->new_entities.back());
-
-				universe_node.entities.push_back(galaxy);
 				entity_pool->new_entities.pop_back();
 
 				galaxy.child_of(universe_entity);
@@ -58,7 +72,15 @@ namespace voxel_game
 				float position_z = (float(universe_node.coord.pos.z) * scale_step) + godot::UtilityFunctions::randf_range(0, scale_step);
 
 				galaxy.set(Position3DComponent{ godot::Vector3(position_x, position_y, position_z) });
+				galaxy.add<RenderBase>(galaxy_schematic);
 				galaxy.add<FlatTextureComponent>();
+
+				galaxy.set([](RenderInstance& instance)
+				{
+					instance.dirty.transform = true;
+				});
+
+				universe_node.entities.push_back(galaxy);
 			}
 		}
 	};
