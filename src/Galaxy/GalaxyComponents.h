@@ -29,7 +29,7 @@ namespace voxel_game
 
 	};
 
-	// This entity is a galaxy which is a 2d square with a galaxy texture
+	// This entity is a galaxy
 	struct GalaxyComponent {};
 
 	// This is an entity that is a child of a galaxy

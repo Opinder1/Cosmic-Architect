@@ -242,6 +242,7 @@ namespace voxel_game
 			DEBUG_PRINT_ERROR("This galaxy should not be loaded when we uninitialize");
 		}
 
+		// First stop our thread
 		if (IsThreaded())
 		{
 			m_thread.join();
@@ -253,6 +254,7 @@ namespace voxel_game
 
 		emit_signal(k_signals->simulation_uninitialized);
 
+		// Finally disconnect from our universe
 		m_universe.unref();
 	}
 
