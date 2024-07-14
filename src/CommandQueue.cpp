@@ -212,18 +212,18 @@ namespace voxel_game
 
 		if (object_id == godot::RenderingServer::get_singleton()->get_instance_id())
 		{
-			std::lock_guard lock(m_mutex);
+			std::lock_guard lock(m_rendering_mutex);
 
-			Commands& commands = m_command_buffers.emplace_back();
+			Commands& commands = m_rendering_command_buffers.emplace_back();
 
 			commands.object_id = object_id;
 			commands.command_buffer = std::move(command_buffer);
 		}
 		else
 		{
-			std::lock_guard lock(m_rendering_mutex);
+			std::lock_guard lock(m_mutex);
 
-			Commands& commands = m_rendering_command_buffers.emplace_back();
+			Commands& commands = m_command_buffers.emplace_back();
 
 			commands.object_id = object_id;
 			commands.command_buffer = std::move(command_buffer);
