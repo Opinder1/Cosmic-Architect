@@ -33,9 +33,9 @@ namespace voxel_game
 
 	CommandBuffer::iterator ProcessCommand(godot::Variant& object, CommandBuffer::iterator buffer_pos, CommandBuffer::iterator buffer_end)
 	{
-		if (buffer_pos + sizeof(Command) <= buffer_end)
+		if (buffer_pos + sizeof(Command) >= buffer_end)
 		{
-			DEBUG_PRINT_ERROR("Command buffer doesn't fit the command and its arguments");
+			DEBUG_PRINT_ERROR("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command));
 			return buffer_end;
 		}
 
@@ -46,9 +46,9 @@ namespace voxel_game
 
 		for (size_t i = 0; i < argptrs.size(); i++)
 		{
-			if (buffer_pos + sizeof(godot::Variant) <= buffer_end)
+			if (buffer_pos + sizeof(godot::Variant) >= buffer_end)
 			{
-				DEBUG_PRINT_ERROR("Command buffer doesn't fit the command and its arguments");
+				DEBUG_PRINT_ERROR("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command));
 				return buffer_end;
 			}
 
@@ -100,10 +100,11 @@ namespace voxel_game
 			return;
 		}
 
-		auto buffer_pos = command_buffer.begin();
-		while (buffer_pos != command_buffer.end())
+		iterator buffer_pos = command_buffer.begin();
+		iterator end = command_buffer.end();
+		while (buffer_pos != end)
 		{
-			buffer_pos = ProcessCommand(object, buffer_pos, command_buffer.end());
+			buffer_pos = ProcessCommand(object, buffer_pos, end);
 		}
 
 		command_buffer.clear();
