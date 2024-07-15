@@ -12,6 +12,7 @@ namespace voxel_game
         world.component<RenderScenario>();
         world.component<OwnedScenario>();
         world.component<RenderInstance>();
+        world.component<RenderInstanceFlags>();
         world.component<RenderBase>();
         world.component<RenderMesh>();
         world.component<RenderMultiInstance>();

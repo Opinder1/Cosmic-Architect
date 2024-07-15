@@ -23,7 +23,6 @@ namespace voxel_game
 		flecs::world_t* world;
 		flecs::entity_t universe_entity;
 		ThreadEntityPool* entity_pool;
-		flecs::entity_t galaxy_scehmatic;
 
 		UniverseLoadNodeCommandProcessor(flecs::world_t* world, flecs::entity_t universe_entity) :
 			world(world),
@@ -74,11 +73,10 @@ namespace voxel_game
 				galaxy.set(Position3DComponent{ godot::Vector3(position_x, position_y, position_z) });
 				galaxy.add<RenderBase>(galaxy_schematic);
 				galaxy.add<FlatTextureComponent>();
+				galaxy.add<RenderInstance>();
 
-				galaxy.set([](RenderInstance& instance)
-				{
-					instance.dirty.transform = true;
-				});
+				galaxy.ensure<RenderInstanceFlags>().transform = true;
+				galaxy.modified<RenderInstanceFlags>();
 
 				universe_node.entities.push_back(galaxy);
 			}

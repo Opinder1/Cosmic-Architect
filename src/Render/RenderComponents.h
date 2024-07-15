@@ -40,9 +40,20 @@ namespace voxel_game
 	// This scenarios lifetime is managed by this entity
 	struct OwnedScenario {};
 
-	// Flags for instance data that has been modified
-	struct InstanceDirtyFlags
+	// This is an instance in the render server which should have a render base set
+	struct RenderInstance
 	{
+		godot::RID id;
+	};
+
+	// Flags for instance data that has been modified
+	struct RenderInstanceFlags
+	{
+		RenderInstanceFlags()
+		{
+			std::memset(this, 0, sizeof(*this));
+		}
+
 		bool base : 1;
 		bool blend_shape_weight : 1;
 		bool custom_aabb : 1;
@@ -55,17 +66,6 @@ namespace voxel_game
 		bool transform : 1;
 		bool visibility_parent : 1;
 		bool visible : 1;
-	};
-
-	// This is an instance in the render server which should have a render base set
-	struct RenderInstance
-	{
-		godot::RID id;
-		union
-		{
-			uint16_t dirty_data = 0;
-			InstanceDirtyFlags dirty;
-		};
 	};
 
 	// This is a relationship which is used to set the render base this render instamnace will draw will draw
