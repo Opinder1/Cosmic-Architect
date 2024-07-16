@@ -23,9 +23,6 @@ namespace voxel_game
 	// This entitiy is a universe which has a specialised spatial world
 	struct UniverseComponent {};
 
-	// This entity is within a universe
-	struct UniverseObjectComponent {};
-
 	struct UniverseComponents
 	{
 		UniverseComponents(flecs::world& world);

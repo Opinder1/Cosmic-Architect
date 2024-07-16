@@ -9,8 +9,6 @@ namespace voxel_game
 		world.module<GalaxyComponents>();
 
 		world.component<GalaxyComponent>();
-		world.component<GalaxyObjectComponent>();
 		world.component<StarComponent>();
-		world.component<SimulatedGalaxyComponent>();
 	}
 }

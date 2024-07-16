@@ -209,7 +209,8 @@ namespace voxel_game
 		m_world.set<flecs::Rest>({});
 
 		m_universe_entity = m_world.entity(DEBUG_ONLY("Universe"))
-			.add<UniverseComponent>();
+			.add<UniverseComponent>()
+			.add<SpatialWorld3DComponent>();
 
 		SpatialModule::AddSpatialScaleWorkers(m_world, m_universe_entity);
 
@@ -222,7 +223,10 @@ namespace voxel_game
 
 			m_galaxy_entity = m_world.entity(DEBUG_ONLY("SimulatedGalaxy"))
 				.child_of(m_universe_entity)
-				.add<UniverseObjectComponent>()
+				.add<GalaxyComponent>()
+				.add<SpatialWorld3DComponent>()
+				.add<Position3DComponent>()
+				.add<Rotation3DComponent>()
 				.emplace<SpatialLoader3DComponent>(std::move(spatial_loader));
 		}
 
