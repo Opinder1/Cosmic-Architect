@@ -34,15 +34,17 @@ namespace voxel_game
 			processors[i].state_initialize(states[i], entity.world(), entity);
 		}
 
+		auto run_processors_delegate = [&processors, &states](auto&&... args)
+		{
+			for (size_t i = 0; i < states.size(); i++)
+			{
+				processors[i].process(states[i], args...);
+			}
+		};
+
 		for (const CommandT& command : commands)
 		{
-			command_callback(command, [&processors, &states](auto&&... args)
-			{
-				for (size_t i = 0; i < states.size(); i++)
-				{
-					processors[i].process(states[i], args...);
-				}
-			});
+			command_callback(command, run_processors_delegate);
 		}
 
 		for (size_t i = 0; i < states.size(); i++)
