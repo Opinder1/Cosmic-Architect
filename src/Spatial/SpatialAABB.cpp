@@ -6,7 +6,7 @@ namespace voxel_game
 	SpatialAABB::SpatialAABB()
 	{}
 
-	SpatialAABB::SpatialAABB(godot::Vector3i first, godot::Vector3i second, uint32_t scale) :
+	SpatialAABB::SpatialAABB(godot::Vector3i first, godot::Vector3i second, uint8_t scale) :
 		first(first),
 		second(second),
 		scale(scale)

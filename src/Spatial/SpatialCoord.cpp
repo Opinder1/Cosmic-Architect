@@ -33,14 +33,14 @@ namespace voxel_game
     SpatialCoord3D::SpatialCoord3D()
     {}
 
-    SpatialCoord3D::SpatialCoord3D(int32_t x, int32_t y, int32_t z, uint32_t s) :
+    SpatialCoord3D::SpatialCoord3D(int32_t x, int32_t y, int32_t z, uint8_t s) :
         x(x),
         y(y),
         z(z),
         scale(s)
     {}
 
-    SpatialCoord3D::SpatialCoord3D(godot::Vector3i pos, uint32_t scale) :
+    SpatialCoord3D::SpatialCoord3D(godot::Vector3i pos, uint8_t scale) :
         x(pos.x),
         y(pos.y),
         z(pos.z),

@@ -8,8 +8,8 @@ namespace voxel_game
     struct SpatialCoord3D
     {
         SpatialCoord3D();
-        SpatialCoord3D(int32_t x, int32_t y, int32_t z, uint32_t scale);
-        SpatialCoord3D(godot::Vector3i pos, uint32_t scale);
+        SpatialCoord3D(int32_t x, int32_t y, int32_t z, uint8_t scale);
+        SpatialCoord3D(godot::Vector3i pos, uint8_t scale);
 
         SpatialCoord3D GetParent() const;
 
@@ -37,7 +37,7 @@ namespace voxel_game
                 int32_t z;
             };
         };
-        uint32_t scale = 0;
+        uint8_t scale = 0;
     };
 
     template<class Callable>
