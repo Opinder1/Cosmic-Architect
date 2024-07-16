@@ -214,13 +214,6 @@ namespace voxel_game
 		SpatialModule::AddSpatialScaleWorkers(m_world, m_universe_entity);
 
 		{
-			SimulatedGalaxyComponent simulated_galaxy;
-
-			simulated_galaxy.name = "Test";
-			simulated_galaxy.path = path;
-			simulated_galaxy.fragment_type = fragment_type;
-			simulated_galaxy.is_remote = (server_type == SERVER_TYPE_REMOTE);
-
 			SpatialLoader3DComponent spatial_loader;
 
 			spatial_loader.dist_per_lod = 8;
@@ -229,7 +222,6 @@ namespace voxel_game
 
 			m_galaxy_entity = m_world.entity(DEBUG_ONLY("SimulatedGalaxy"))
 				.child_of(m_universe_entity)
-				.emplace<SimulatedGalaxyComponent>(std::move(simulated_galaxy))
 				.add<UniverseObjectComponent>()
 				.emplace<SpatialLoader3DComponent>(std::move(spatial_loader));
 		}

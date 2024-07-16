@@ -2,12 +2,6 @@
 
 #include "Spatial/SpatialComponents.h"
 
-#include <godot_cpp/classes/ref.hpp>
-#include <godot_cpp/classes/dir_access.hpp>
-
-#include <godot_cpp/variant/vector3.hpp>
-#include <godot_cpp/variant/string_name.hpp>
-
 #include <flecs/flecs.h>
 
 namespace flecs
@@ -32,29 +26,10 @@ namespace voxel_game
 	// This entity is a galaxy
 	struct GalaxyComponent {};
 
-	// This is an entity that is a child of a galaxy
-	struct GalaxyObjectComponent {};
-
 	// This entity is a star
 	struct StarComponent
 	{
 		godot::Color color;
-	};
-
-	// This entity is galaxy that has a specialised spatial world
-	struct SimulatedGalaxyComponent : Nocopy
-	{
-		godot::StringName name;
-		godot::StringName path;
-		godot::StringName fragment_type;
-
-		bool networked = false;
-		bool is_remote = false;
-		godot::StringName remote_ip;
-
-		size_t main_seed = 0;
-
-		godot::Ref<godot::DirAccess> m_directory;
 	};
 
 	struct GalaxyComponents
