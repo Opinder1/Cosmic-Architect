@@ -22,6 +22,18 @@ namespace voxel_game
 		{1, 0, 0},
 	};
 
+	const godot::Vector3i node_child_offsets[8] =
+	{
+		{0, 0, 0},
+		{0, 0, 1},
+		{0, 1, 0},
+		{0, 1, 1},
+		{1, 0, 0},
+		{1, 0, 1},
+		{1, 1, 0},
+		{1, 1, 1},
+	};
+
 	uint8_t GetNodeParentIndex(godot::Vector3i pos)
 	{
 		return (pos.x) + (pos.y * 2) + (pos.z * 4);
@@ -50,9 +62,11 @@ namespace voxel_game
 		phase.depends_on(sync_phase);
 	}
 
-	void InitializeSpatialNode(SpatialNode3D& node, SpatialScale3D& scale, SpatialScale3D& parent_scale)
+	void InitializeSpatialNode(SpatialNode3D& node, SpatialWorld3DComponent& spatial_world, uint8_t scale_index)
 	{
-		for (size_t neighbour_index = 0; neighbour_index < 6; neighbour_index++)
+		SpatialScale3D& scale = *spatial_world.scales[scale_index];
+
+		for (uint8_t neighbour_index = 0; neighbour_index < 6; neighbour_index++)
 		{
 			godot::Vector3i neighbour_pos = node.coord.pos + node_neighbour_offsets[neighbour_index];
 
@@ -72,27 +86,54 @@ namespace voxel_game
 			neighbour_node->neighbour_mask |= 1 << (5 - neighbour_index);
 		}
 
-		if (&scale != &parent_scale)
+		if (scale_index < spatial_world.max_scale - 1)
 		{
+			SpatialScale3D& parent_scale = *spatial_world.scales[scale_index + 1];
+
 			SpatialCoord3D parent_pos = node.coord.GetParent();
 
 			SpatialNodeMap::iterator it = parent_scale.nodes.find(parent_pos.pos);
 
-			DEBUG_ASSERT(it != parent_scale.nodes.end(), "The parent node should already exist if we try to load this node");
+			if (it != parent_scale.nodes.end())
+			{
+				SpatialNode3D& parent_node = *it->second;
 
-			SpatialNode3D* parent_node = it->second.get();
+				node.parent = &parent_node;
+				node.parent_index = GetNodeParentIndex(node.coord.GetParentRelPos());
 
-			node.parent = parent_node;
-			node.parent_index = GetNodeParentIndex(node.coord.GetParentRelPos());
+				DEBUG_ASSERT(node.parent_index < 8, "The parent index is out of range");
 
-			DEBUG_ASSERT(node.parent_index < 8, "The parent index is out of range");
+				parent_node.children_array[node.parent_index] = &node;
+				parent_node.children_mask |= 1 << node.parent_index;
+			}
+		}
 
-			parent_node->children_array[node.parent_index] = &node;
-			parent_node->children_mask |= 1 << node.parent_index;
+		if (scale_index > 0)
+		{
+			SpatialScale3D& child_scale = *spatial_world.scales[scale_index - 1];
+
+			for (uint8_t child_index = 0; child_index < 8; child_index++)
+			{
+				SpatialCoord3D child_pos = node.coord.GetBottomLeftChild();
+				child_pos.pos += node_child_offsets[child_index];
+
+				SpatialNodeMap::iterator it = child_scale.nodes.find(child_pos.pos);
+
+				if (it != child_scale.nodes.end())
+				{
+					SpatialNode3D& child_node = *it->second;
+
+					child_node.parent = &node;
+					child_node.parent_index = child_index;
+
+					node.children_array[child_index] = &child_node;
+					node.children_mask |= 1 << child_index;
+				}
+			}
 		}
 	}
 
-	void UninitializeSpatialNode(SpatialNode3D& node, SpatialScale3D& scale, SpatialScale3D& parent_scale)
+	void UninitializeSpatialNode(SpatialNode3D& node, SpatialWorld3DComponent& spatial_world, uint8_t scale_index)
 	{
 		for (uint8_t neighbour_index = 0; neighbour_index < 6; neighbour_index++)
 		{
@@ -103,12 +144,24 @@ namespace voxel_game
 			}
 		}
 
-		if (&scale != &parent_scale)
+		if (scale_index < spatial_world.max_scale - 1)
 		{
 			if (SpatialNode3D* parent_node = node.parent)
 			{
 				parent_node->children_array[node.parent_index] = nullptr;
 				parent_node->children_mask &= ~(1 << node.parent_index);
+			}
+		}
+
+		if (scale_index > 0)
+		{
+			for (uint8_t child_index = 0; child_index < 8; child_index++)
+			{
+				if (SpatialNode3D* child_node = node.children_array[child_index])
+				{
+					child_node->parent = nullptr;
+					child_node->parent_index = UINT8_MAX;
+				}
 			}
 		}
 	}
@@ -289,7 +342,7 @@ namespace voxel_game
 
 						node.last_update_time = world_time.frame_start;
 					}
-					else
+					else if (scale.load_commands.size() < k_max_frame_commands)
 					{
 						DEBUG_ASSERT(std::find(scale.load_commands.begin(), scale.load_commands.end(), pos) == scale.load_commands.end(), "Already exists");
 						scale.load_commands.push_back(pos);
@@ -312,11 +365,8 @@ namespace voxel_game
 			for (size_t scale_index = spatial_world.max_scale; scale_index --> 0;)
 			{
 				SpatialScale3D& scale = *spatial_world.scales[scale_index];
-				uint8_t parent_scale_index = std::min(scale_index + 1, spatial_world.max_scale - 1);
-				SpatialScale3D& parent_scale = *spatial_world.scales[parent_scale_index];
 
 				DEBUG_THREAD_CHECK_WRITE(&world, &scale);
-				DEBUG_THREAD_CHECK_WRITE(&world, &parent_scale);
 
 				for (const godot::Vector3i& pos : scale.load_commands)
 				{
@@ -331,7 +381,7 @@ namespace voxel_game
 
 					node.coord = SpatialCoord3D(pos, scale_index);
 
-					InitializeSpatialNode(node, scale, parent_scale);
+					InitializeSpatialNode(node, spatial_world, scale_index);
 				}
 			}
 		});
@@ -420,11 +470,8 @@ namespace voxel_game
 			for (size_t scale_index = 0; scale_index < spatial_world.max_scale - 1; scale_index++)
 			{
 				SpatialScale3D& scale = *spatial_world.scales[scale_index];
-				uint8_t parent_scale_index = std::min(scale_index + 1, spatial_world.max_scale - 1);
-				SpatialScale3D& parent_scale = *spatial_world.scales[parent_scale_index];
 
 				DEBUG_THREAD_CHECK_WRITE(&world, &scale);
-				DEBUG_THREAD_CHECK_WRITE(&world, &parent_scale);
 
 				for (const godot::Vector3i& pos : scale.unload_commands)
 				{
@@ -435,7 +482,7 @@ namespace voxel_game
 
 					DEBUG_THREAD_CHECK_WRITE(&world, &node);
 
-					UninitializeSpatialNode(node, scale, parent_scale);
+					UninitializeSpatialNode(node, spatial_world, scale_index);
 
 					spatial_world.builder.node_destroy(it->second);
 

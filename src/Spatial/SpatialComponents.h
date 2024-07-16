@@ -30,6 +30,7 @@ namespace voxel_game
 
 	// The max scale that a world can have
 	constexpr const uint8_t k_max_world_scale = 16;
+	constexpr const uint8_t k_max_frame_commands = 64;
 
 	// Phases which are used to synchronise the ecs between running each thread type in parallel
 	struct SpatialWorldMultithreadPhase {};
@@ -74,7 +75,7 @@ namespace voxel_game
 	{
 		SpatialCoord3D coord;
 
-		uint8_t parent_index = 0; // The index we are in our parent
+		uint8_t parent_index = UINT8_MAX; // The index we are in our parent
 		uint8_t children_mask = 0; // Each bit determines a child [0-7]
 		uint8_t neighbour_mask = 0; // Each bit determines a neighbour [0-5]
 
@@ -110,8 +111,7 @@ namespace voxel_game
 	struct SpatialWorld3DComponent : Nocopy
 	{
 		SpatialAABB bounds;
-		size_t max_scale = 0;
-		std::array<std::unique_ptr<SpatialScale3D>, k_max_world_scale> scales;
+		uint8_t max_scale = 0;
 
 		// Queries
 		const flecs::query_t* entities_query = nullptr;
@@ -119,9 +119,13 @@ namespace voxel_game
 		const flecs::query_t* region_workers_query = nullptr;
 		const flecs::query_t* loaders_query = nullptr;
 
-		// Specialization callbacks
+		// World data
+		std::array<std::unique_ptr<SpatialScale3D>, k_max_world_scale> scales;
+
+		// Scale and Node builder
 		SpatialBuilderBase builder;
 
+		// Command processors
 		std::vector<SpatialNodeCommandProcessorBase> load_command_processors;
 		std::vector<SpatialNodeCommandProcessorBase> unload_command_processors;
 		std::vector<SpatialNodeCommandProcessorBase> tick_command_processors;

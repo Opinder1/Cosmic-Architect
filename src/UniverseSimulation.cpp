@@ -217,7 +217,7 @@ namespace voxel_game
 		{
 			SpatialLoader3DComponent spatial_loader;
 
-			spatial_loader.dist_per_lod = 8;
+			spatial_loader.dist_per_lod = 3;
 			spatial_loader.min_lod = 0;
 			spatial_loader.max_lod = k_max_world_scale;
 
