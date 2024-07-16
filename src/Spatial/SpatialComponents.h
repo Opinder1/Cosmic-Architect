@@ -114,10 +114,10 @@ namespace voxel_game
 		std::array<std::unique_ptr<SpatialScale3D>, k_max_world_scale> scales;
 
 		// Queries
-		flecs::query_t* entities_query = nullptr;
-		flecs::query_t* scale_workers_query = nullptr;
-		flecs::query_t* region_workers_query = nullptr;
-		flecs::query_t* loaders_query = nullptr;
+		const flecs::query_t* entities_query = nullptr;
+		const flecs::query_t* scale_workers_query = nullptr;
+		const flecs::query_t* region_workers_query = nullptr;
+		const flecs::query_t* loaders_query = nullptr;
 
 		// Specialization callbacks
 		SpatialBuilderBase builder;

@@ -40,12 +40,12 @@ namespace voxel_game
 			.depends_on<DependT>();
 
 		scope.system(DEBUG_ONLY("ThreadSyncSystem"))
-			.no_readonly()
+			.immediate()
 			.kind(sync_phase)
-			.iter([&world](flecs::iter& it)
-				{
-					DEBUG_THREAD_CHECK_SYNC(&world);
-				});
+			.run([&world](flecs::iter& it)
+		{
+			DEBUG_THREAD_CHECK_SYNC(&world);
+		});
 
 		phase.depends_on(sync_phase);
 	}
@@ -162,20 +162,24 @@ namespace voxel_game
 			flecs::scoped_world scope = world_entity.scope(); // Add the queries as children of the entity so they are automatically destructed
 
 			spatial_world.entities_query = scope.query_builder<const SpatialEntity3DComponent>(DEBUG_ONLY("SpatialWorldEntitiesQuery"))
-				.term(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
-				.build();
+				.with(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
+				.cached()
+				.build().c_ptr();
 
 			spatial_world.scale_workers_query = scope.query_builder<const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialWorldScaleWorkersQuery"))
-				.term(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
-				.build();
+				.with(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
+				.cached()
+				.build().c_ptr();
 
 			spatial_world.region_workers_query = scope.query_builder<const SpatialRegion3DWorkerComponent>(DEBUG_ONLY("SpatialWorldRegionWorkersQuery"))
-				.term(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
-				.build();
+				.with(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
+				.cached()
+				.build().c_ptr();
 
 			spatial_world.loaders_query = scope.query_builder<const SpatialLoader3DComponent>(DEBUG_ONLY("SpatialWorldLoadersQuery"))
-				.term(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
-				.build();
+				.with(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
+				.cached()
+				.build().c_ptr();
 		});
 
 		// Systems
@@ -185,8 +189,8 @@ namespace voxel_game
 			.multi_threaded()
 			.interval(0.05)
 			.kind<WorldScaleWorkerPhase>()
-			.term_at(2).parent()
-			.term_at(3).src<SimulationTime>()
+			.term_at(1).parent()
+			.term_at(2).src<SimulationTime>()
 			.each([&world](const SpatialScale3DWorkerComponent& scale_worker, SpatialWorld3DComponent& spatial_world, const SimulationTime& world_time)
 		{
 			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
@@ -212,7 +216,7 @@ namespace voxel_game
 		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent>(DEBUG_ONLY("SpatialWorldProcessTickCommands"))
 			.multi_threaded()
 			.kind<WorldScaleWorkerPhase>()
-			.term_at(2).parent()
+			.term_at(1).parent()
 			.each([&world](flecs::entity worker_entity, const SpatialScale3DWorkerComponent& scale_worker, SpatialWorld3DComponent& spatial_world)
 		{
 			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
@@ -249,8 +253,8 @@ namespace voxel_game
 			.multi_threaded()
 			.interval(0.05)
 			.kind<WorldScaleWorkerPhase>()
-			.term_at(2).parent()
-			.term_at(3).src<SimulationTime>()
+			.term_at(1).parent()
+			.term_at(2).src<SimulationTime>()
 			.each([&world](flecs::entity worker_entity, const SpatialScale3DWorkerComponent& scale_worker, SpatialWorld3DComponent& spatial_world, const SimulationTime& world_time)
 		{
 			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
@@ -261,10 +265,10 @@ namespace voxel_game
 
 			DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
-			flecs::query<const SpatialLoader3DComponent> staged_loaders_query(worker_entity.world(), spatial_world.loaders_query);
+			flecs::query<const SpatialLoader3DComponent> staged_loaders_query(spatial_world.loaders_query);
 
 			// For each command list that is a child of the world
-			staged_loaders_query.each([&world, scale_index, &scale, &world_time](const SpatialLoader3DComponent& spatial_loader)
+			staged_loaders_query.iter(worker_entity.world()).each([&world, scale_index, &scale, &world_time](const SpatialLoader3DComponent& spatial_loader)
 			{
 				DEBUG_THREAD_CHECK_READ(&world, &spatial_loader);
 
@@ -336,7 +340,7 @@ namespace voxel_game
 		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent>(DEBUG_ONLY("SpatialWorldProcessLoadNodeCommands"))
 			.multi_threaded()
 			.kind<WorldLoadPhase>()
-			.term_at(2).parent()
+			.term_at(1).parent()
 			.each([&world](flecs::entity worker_entity, const SpatialScale3DWorkerComponent& scale_worker, SpatialWorld3DComponent& spatial_world)
 		{
 			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
@@ -373,7 +377,7 @@ namespace voxel_game
 		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent>(DEBUG_ONLY("SpatialWorldProcessUnloadNodeCommands"))
 			.multi_threaded()
 			.kind<WorldUnloadPhase>()
-			.term_at(2).parent()
+			.term_at(1).parent()
 			.each([&world](flecs::entity worker_entity, const SpatialScale3DWorkerComponent& scale_worker, SpatialWorld3DComponent& spatial_world)
 		{
 			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
@@ -451,14 +455,10 @@ namespace voxel_game
 
 		DEBUG_ASSERT(spatial_world != nullptr, "The entity should have a spatial world to add spatial workers");
 
-		for (size_t scale_index = 0; scale_index < spatial_world->max_scale; scale_index++)
+		for (uint8_t scale_index = 0; scale_index < spatial_world->max_scale; scale_index++)
 		{
-			flecs::entity scale_worker_entity = scope.entity()
-				.add<SpatialScale3DWorkerComponent>()
-				.set([scale_index](SpatialScale3DWorkerComponent& scale_worker)
-			{
-				scale_worker.scale = scale_index;
-			});
+			scope.entity(DEBUG_ONLY(godot::vformat("WorkerEntity_%d", scale_index).utf8()))
+				.set(SpatialScale3DWorkerComponent{ scale_index });
 		}
 	}
 
@@ -466,10 +466,9 @@ namespace voxel_game
 	{
 		flecs::scoped_world scope(world, spatial_world_entity);
 
-		scope.filter_builder()
+		scope.query_builder<const SpatialScale3DWorkerComponent>()
 			.read(flecs::ChildOf, spatial_world_entity)
-			.read<SpatialScale3DWorkerComponent>()
-			.each([](flecs::entity entity)
+			.each([](flecs::entity entity, const SpatialScale3DWorkerComponent& scale_worker)
 		{
 			entity.destruct();
 		});

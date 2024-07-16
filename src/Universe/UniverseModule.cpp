@@ -101,16 +101,16 @@ namespace voxel_game
 		// Initialise the spatial world of a universe
 		world.observer<const UniverseComponent, SpatialWorld3DComponent>(DEBUG_ONLY("UniverseInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
-			.term_at(2).filter()
+			.term_at(0).filter() // Only do the event when the spatial world is added
 			.each([](const UniverseComponent& universe, SpatialWorld3DComponent& spatial_world)
 		{
 			DEBUG_ASSERT(spatial_world.max_scale == 0, "The spatial world was already initialized with a type");
 
-			spatial_world.max_scale = 16;
+			spatial_world.max_scale = k_max_world_scale;
 
 			spatial_world.builder = SpatialBuilder<UniverseScale, UniverseNode>();
 
-			for (size_t i = 0; i < spatial_world.max_scale; i++)
+			for (uint8_t i = 0; i < spatial_world.max_scale; i++)
 			{
 				spatial_world.scales[i] = spatial_world.builder.scale_create();
 			}
@@ -122,10 +122,10 @@ namespace voxel_game
 		world.observer<const UniverseComponent, SpatialWorld3DComponent>(DEBUG_ONLY("UniverseUninitializeSpatialWorld"))
 			.event(flecs::OnRemove)
 			.yield_existing()
-			.term_at(2).filter()
+			.term_at(0).filter() // Only do the event when the spatial world is removed
 			.each([](const UniverseComponent& universe, SpatialWorld3DComponent& spatial_world)
 		{
-			for (size_t i = 0; i < spatial_world.max_scale; i++)
+			for (uint8_t i = 0; i < spatial_world.max_scale; i++)
 			{
 				spatial_world.builder.scale_destroy(spatial_world.scales[i]);
 			}

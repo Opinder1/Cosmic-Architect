@@ -198,7 +198,7 @@ namespace voxel_game
 
 		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
 
-		m_world.import<flecs::monitor>();
+		m_world.import<flecs::stats>();
 		m_world.import<SimulationModule>();
 		m_world.import<PhysicsModule>();
 		m_world.import<SpatialModule>();
@@ -213,22 +213,26 @@ namespace voxel_game
 
 		SpatialModule::AddSpatialScaleWorkers(m_world, m_universe_entity);
 
-		m_galaxy_entity = m_world.entity(DEBUG_ONLY("SimulatedGalaxy"))
-			.child_of(m_universe_entity)
-			.add<SimulatedGalaxyComponent>()
-			.add<UniverseObjectComponent>()
-			.add<SpatialLoader3DComponent>()
-			.set([&path, &fragment_type, &server_type](SimulatedGalaxyComponent& simulated_galaxy, SpatialLoader3DComponent& spatial_loader)
 		{
+			SimulatedGalaxyComponent simulated_galaxy;
+
 			simulated_galaxy.name = "Test";
 			simulated_galaxy.path = path;
 			simulated_galaxy.fragment_type = fragment_type;
 			simulated_galaxy.is_remote = (server_type == SERVER_TYPE_REMOTE);
 
+			SpatialLoader3DComponent spatial_loader;
+
 			spatial_loader.dist_per_lod = 8;
 			spatial_loader.min_lod = 0;
 			spatial_loader.max_lod = k_max_world_scale;
-		});
+
+			m_galaxy_entity = m_world.entity(DEBUG_ONLY("SimulatedGalaxy"))
+				.child_of(m_universe_entity)
+				.emplace<SimulatedGalaxyComponent>(std::move(simulated_galaxy))
+				.add<UniverseObjectComponent>()
+				.emplace<SpatialLoader3DComponent>(std::move(spatial_loader));
+		}
 
 		SpatialModule::AddSpatialScaleWorkers(m_world, m_galaxy_entity);
 	}
@@ -278,10 +282,9 @@ namespace voxel_game
 	{
 		m_world.import<RenderModule>();
 
-		flecs::entity(m_world, m_universe_entity).set([render_info](RenderScenario& scenario)
-		{
-			scenario.id = render_info->GetScenario();
-		});
+		flecs::entity universe_entity(m_world.c_ptr(), m_universe_entity);
+			
+		universe_entity.ensure<RenderScenario>().id = render_info->GetScenario();
 	}
 
 	void UniverseSimulation::StartSimulation(ThreadMode thread_mode)
