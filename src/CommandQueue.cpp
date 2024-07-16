@@ -258,36 +258,30 @@ namespace voxel_game
 
 	void CommandQueueServer::FlushCommands()
 	{
-		std::vector<Commands> command_buffers;
+		Commands commands;
 
 		{
 			std::lock_guard lock(m_mutex);
 
-			command_buffers = std::move(m_command_buffers); // m_command_buffers guaranteed to be empty()
-			m_command_buffers.reserve(16);
+			commands = std::move(m_command_buffers.back()); // m_command_buffers guaranteed to be empty()
+			m_command_buffers.pop_back();
 		}
 
-		for (Commands& commands : command_buffers)
-		{
-			CommandBuffer::ProcessCommands(commands.object_id, std::move(commands.command_buffer));
-		}
+		CommandBuffer::ProcessCommands(commands.object_id, std::move(commands.command_buffer));
 	}
 
 	void CommandQueueServer::FlushRenderingCommands()
 	{
-		std::vector<Commands> command_buffers;
+		Commands commands;
 
 		{
 			std::lock_guard lock(m_rendering_mutex);
 
-			command_buffers = std::move(m_rendering_command_buffers); // m_rendering_command_buffers guaranteed to be empty()
-			m_rendering_command_buffers.reserve(16);
+			commands = std::move(m_rendering_command_buffers.back()); // m_rendering_command_buffers guaranteed to be empty()
+			m_rendering_command_buffers.pop_back();
 		}
 
-		for (Commands& commands : command_buffers)
-		{
-			CommandBuffer::ProcessCommands(commands.object_id, std::move(commands.command_buffer));
-		}
+		CommandBuffer::ProcessCommands(commands.object_id, std::move(commands.command_buffer));
 	}
 
 	void CommandQueueServer::_bind_methods()
