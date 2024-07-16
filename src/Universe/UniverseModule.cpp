@@ -91,17 +91,9 @@ namespace voxel_game
 		world.import<SpatialComponents>();
 		world.import<UniverseComponents>();
 
-		world.singleton<UniverseComponent>()
-			.add_second<SpatialWorld3DComponent>(flecs::With);
-
-		world.singleton<UniverseObjectComponent>()
-			.add_second<UniverseComponent>(flecs::OneOf)
-			.add_second<SpatialEntity3DComponent>(flecs::With);
-
 		// Initialise the spatial world of a universe
 		world.observer<const UniverseComponent, SpatialWorld3DComponent>(DEBUG_ONLY("UniverseInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
-			.term_at(0).filter() // Only do the event when the spatial world is added
 			.each([](const UniverseComponent& universe, SpatialWorld3DComponent& spatial_world)
 		{
 			DEBUG_ASSERT(spatial_world.max_scale == 0, "The spatial world was already initialized with a type");
@@ -121,8 +113,6 @@ namespace voxel_game
 		// Uninitialize spatial world of a universe
 		world.observer<const UniverseComponent, SpatialWorld3DComponent>(DEBUG_ONLY("UniverseUninitializeSpatialWorld"))
 			.event(flecs::OnRemove)
-			.yield_existing()
-			.term_at(0).filter() // Only do the event when the spatial world is removed
 			.each([](const UniverseComponent& universe, SpatialWorld3DComponent& spatial_world)
 		{
 			for (uint8_t i = 0; i < spatial_world.max_scale; i++)

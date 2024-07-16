@@ -25,26 +25,10 @@ namespace voxel_game
 		world.import<SpatialComponents>();
 		world.import<PhysicsComponents>();
 
-		world.singleton<GalaxyComponent>()
-			.add_second<UniverseComponent>(flecs::OneOf)
-			.add_second<Position3DComponent>(flecs::With)
-			.add_second<Rotation3DComponent>(flecs::With);
-
-		world.singleton<GalaxyObjectComponent>()
-			.add_second<GalaxyComponent>(flecs::OneOf)
-			.add_second<SpatialEntity3DComponent>(flecs::With);
-
-		world.singleton<StarComponent>()
-			.add_second<GalaxyObjectComponent>(flecs::With);
-
-		world.singleton<SimulatedGalaxyComponent>()
-			.add_second<GalaxyComponent>(flecs::With)
-			.add_second<SpatialWorld3DComponent>(flecs::With);
 
 		// Initialise the spatial world of a galaxy
 		world.observer<const GalaxyComponent, SpatialWorld3DComponent>(DEBUG_ONLY("GalaxyInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
-			.term_at(0).filter() // Only do the event when the spatial world is added
 			.each([](const GalaxyComponent& galaxy, SpatialWorld3DComponent& spatial_world)
 		{
 			spatial_world.max_scale = k_max_world_scale;
@@ -60,7 +44,6 @@ namespace voxel_game
 		// Uninitialize spatial world of a galaxy
 		world.observer<const GalaxyComponent, SpatialWorld3DComponent>(DEBUG_ONLY("GalaxyUninitializeSpatialWorld"))
 			.event(flecs::OnRemove)
-			.term_at(0).filter() // Only do the event when the spatial world is added
 			.each([](const GalaxyComponent& galaxy, SpatialWorld3DComponent& spatial_world)
 		{
 			for (uint8_t i = 0; i < spatial_world.max_scale; i++)
