@@ -123,7 +123,7 @@ namespace voxel_game
 		std::array<std::unique_ptr<SpatialScale3D>, k_max_world_scale> scales;
 
 		// Scale and Node builder
-		SpatialBuilderBase builder;
+		SpatialBuilderBase builder = SpatialBuilder<SpatialScale3D, SpatialNode3D>();
 
 		// Command processors
 		std::vector<SpatialNodeCommandProcessorBase> load_command_processors;

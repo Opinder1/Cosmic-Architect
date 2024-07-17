@@ -19,29 +19,29 @@ namespace voxel_game
 
 	struct SpatialBuilderBase
 	{
-		std::unique_ptr<SpatialScale3D>(*scale_create)();
-		void(*scale_destroy)(std::unique_ptr<SpatialScale3D>&);
-		std::unique_ptr<SpatialNode3D>(*node_create)();
-		void(*node_destroy)(std::unique_ptr<SpatialNode3D>&);
+		std::unique_ptr<SpatialScale3D>(*scale_create)() = nullptr;
+		void(*scale_destroy)(std::unique_ptr<SpatialScale3D>&) = nullptr;
+		std::unique_ptr<SpatialNode3D>(*node_create)() = nullptr;
+		void(*node_destroy)(std::unique_ptr<SpatialNode3D>&) = nullptr;
 	};
 
 	struct SpatialNodeCommandProcessorBase : EntityCommandProcessorBase
 	{
-		void(*process)(void*, SpatialWorld3DComponent&, SpatialScale3D&, SpatialNode3D&);
+		void(*process)(void*, SpatialWorld3DComponent&, SpatialScale3D&, SpatialNode3D&) = nullptr;
 
 		bool operator==(const SpatialNodeCommandProcessorBase& other) { return process == other.process; }
 	};
 
 	struct SpatialRegionCommandProcessorBase : EntityCommandProcessorBase
 	{
-		void(*process)(void*, SpatialWorld3DComponent&, SpatialAABB);
+		void(*process)(void*, SpatialWorld3DComponent&, SpatialAABB) = nullptr;
 
 		bool operator==(const SpatialRegionCommandProcessorBase& other) { return process == other.process; }
 	};
 
 	struct SpatialScaleCommandProcessorBase : EntityCommandProcessorBase
 	{
-		void(*process)(void*, SpatialWorld3DComponent&, size_t, SpatialScale3D&);
+		void(*process)(void*, SpatialWorld3DComponent&, size_t, SpatialScale3D&) = nullptr;
 
 		bool operator==(const SpatialScaleCommandProcessorBase& other) { return process == other.process; }
 	};
