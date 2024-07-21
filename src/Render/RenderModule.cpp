@@ -61,7 +61,7 @@ namespace voxel_game
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
 
-            CommandBuffer::AddCommand(thread_context.commands, "free_rid", scenario.id);
+            thread_context.commands.AddCommand("free_rid", scenario.id);
         });
 
         world.observer<RenderInstance, const RenderingServerContext>(DEBUG_ONLY("AddRenderInstance"))
@@ -81,7 +81,7 @@ namespace voxel_game
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
 
-            CommandBuffer::AddCommand(thread_context.commands, "free_rid", instance.id);
+            thread_context.commands.AddCommand("free_rid", instance.id);
         });
 
         world.observer<RenderMesh, const RenderingServerContext>(DEBUG_ONLY("AddRenderMesh"))
@@ -113,7 +113,7 @@ namespace voxel_game
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
 
-            CommandBuffer::AddCommand(thread_context.commands, "instance_set_scenario", instance.id, scenario.id);
+            thread_context.commands.AddCommand("instance_set_scenario", instance.id, scenario.id);
         });
 
         world.observer<const RenderInstance, const RenderScenario, RenderingServerContext>(DEBUG_ONLY("RenderInstanceRemoveScenario"))
@@ -124,7 +124,7 @@ namespace voxel_game
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
 
-            CommandBuffer::AddCommand(thread_context.commands, "instance_set_scenario", instance.id, godot::RID());
+            thread_context.commands.AddCommand("instance_set_scenario", instance.id, godot::RID());
         });
 
         world.observer<const RenderInstance, const RenderMesh, RenderingServerContext>(DEBUG_ONLY("RenderInstanceSetMesh"))
@@ -135,7 +135,7 @@ namespace voxel_game
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
 
-            CommandBuffer::AddCommand(thread_context.commands, "instance_set_base", instance.id, mesh.id);
+            thread_context.commands.AddCommand("instance_set_base", instance.id, mesh.id);
         });
 
         world.observer<const RenderInstance, const RenderMesh, RenderingServerContext>(DEBUG_ONLY("RenderInstanceRemoveMesh"))
@@ -146,7 +146,7 @@ namespace voxel_game
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
 
-            CommandBuffer::AddCommand(thread_context.commands, "instance_set_base", instance.id, godot::RID());
+            thread_context.commands.AddCommand("instance_set_base", instance.id, godot::RID());
         });
 
         world.system<const RenderInstance, RenderInstanceFlags, const Position3DComponent*, const Rotation3DComponent*, const Scale3DComponent*, RenderingServerContext>(DEBUG_ONLY("UpdateRenderInstanceTransforms"))
@@ -180,7 +180,7 @@ namespace voxel_game
 
             RenderingServerThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
 
-            CommandBuffer::AddCommand(thread_context.commands, "instance_set_transform", instance.id, transform);
+            thread_context.commands.AddCommand("instance_set_transform", instance.id, transform);
         });
 	}
 }

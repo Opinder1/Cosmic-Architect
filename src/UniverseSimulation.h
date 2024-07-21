@@ -484,14 +484,14 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(!IsThreaded() || std::this_thread::get_id() == m_thread.get_id(), "When in threaded mode this should only be called by the worker");
 
-		CommandBuffer::AddCommand(m_deferred_signals, *k_emit_signal, signal, p_args...);
+		m_deferred_signals.AddCommand(*k_emit_signal, signal, p_args...);
 	}
 
 #define SIM_DEFER_COMMAND(command, ...) \
 	if (IsThreaded() && std::this_thread::get_id() != m_thread.get_id()) \
 	{ \
 		std::lock_guard lock(m_commands_mutex); \
-		CommandBuffer::AddCommand(m_deferred_commands, command, __VA_ARGS__); \
+		m_deferred_commands.AddCommand(command, __VA_ARGS__); \
 		return; \
 	}
 }

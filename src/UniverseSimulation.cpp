@@ -347,7 +347,7 @@ namespace voxel_game
 			bool keep_running = m_world.progress(static_cast<ecs_ftime_t>(delta));
 
 			// Process signals
-			CommandBuffer::ProcessCommands(get_instance_id(), std::move(m_deferred_signals));
+			CommandBuffer::ProcessCommands(get_instance_id(), m_deferred_signals);
 			m_deferred_signals.reserve(64);
 
 			return keep_running;
@@ -370,7 +370,7 @@ namespace voxel_game
 			}
 
 			// Process the deferred commands sent by other threads
-			CommandBuffer::ProcessCommands(get_instance_id(), std::move(command_buffer));
+			CommandBuffer::ProcessCommands(get_instance_id(), command_buffer);
 
 			m_world.progress();
 
