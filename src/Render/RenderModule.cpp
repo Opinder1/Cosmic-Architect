@@ -102,7 +102,7 @@ namespace voxel_game
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
 
-            //CommandBuffer::AddCommand(thread_context.commands, "free_rid", mesh.id);
+            thread_context.commands.AddCommand("free_rid", mesh.id);
         });
 
         world.observer<const RenderInstance, const RenderScenario, RenderingServerContext>(DEBUG_ONLY("RenderInstanceSetScenario"))
@@ -154,7 +154,9 @@ namespace voxel_game
             .term_at(5).src<RenderingServerContext>()
             .each([](flecs::entity entity, const RenderInstance& instance, RenderInstanceFlags& flags, const Position3DComponent* position, const Rotation3DComponent* rotation, const Scale3DComponent* scale, RenderingServerContext& context)
         {
-            if (!flags.transform)
+            RenderingServerThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
+
+            if (!flags.transform || thread_context.commands.size() > 1000)
             {
                 return;
             }
@@ -177,8 +179,6 @@ namespace voxel_game
             {
                 transform.scale(scale->scale);
             }
-
-            RenderingServerThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
 
             thread_context.commands.AddCommand("instance_set_transform", instance.id, transform);
         });
