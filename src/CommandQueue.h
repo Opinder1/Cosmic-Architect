@@ -12,6 +12,7 @@
 #include <TKRZW/tkrzw_thread_util.h>
 
 #include <vector>
+#include <deque>
 #include <memory>
 
 namespace voxel_game
@@ -84,7 +85,7 @@ namespace voxel_game
 
 	private:
 		uint64_t m_thread_id = 0;
-		uint64_t m_object_id = 0;
+		godot::ObjectID m_object_id;
 		CommandBuffer m_command_buffer;
 	};
 
@@ -94,8 +95,18 @@ namespace voxel_game
 
 		struct Commands
 		{
-			uint64_t object_id;
+			godot::ObjectID object_id;
 			CommandBuffer command_buffer;
+		};
+
+		struct State
+		{
+			tkrzw::SpinSharedMutex buffers_mutex; // Protect command buffers
+			std::deque<Commands> command_buffers;
+
+			// These should always be accessed by same thread
+			bool processing_current = false;
+			Commands current_buffer;
 		};
 
 	public:
@@ -115,19 +126,14 @@ namespace voxel_game
 		static void _cleanup_methods();
 
 	private:
-		bool HasCommands();
-		bool HasRenderingCommands();
+		void RenderingFlush();
 
-		void FlushCommands();
-		void FlushRenderingCommands();
+		static void FlushState(State& state);
 
 	private:
 		static godot::OptObj<CommandQueueServer> k_singleton;
 
-		tkrzw::SpinSharedMutex m_mutex;
-		std::vector<Commands> m_command_buffers;
-
-		tkrzw::SpinSharedMutex m_rendering_mutex;
-		std::vector<Commands> m_rendering_command_buffers;
+		State m_state;
+		State m_rendering_state;
 	};
 }

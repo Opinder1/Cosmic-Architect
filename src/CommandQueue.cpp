@@ -33,9 +33,9 @@ namespace voxel_game
 
 	CommandBuffer::iterator ProcessCommand(godot::Variant& object, CommandBuffer::iterator buffer_pos, CommandBuffer::iterator buffer_end)
 	{
-		if (buffer_pos + sizeof(Command) >= buffer_end)
+		if (buffer_pos + sizeof(Command) > buffer_end)
 		{
-			DEBUG_PRINT_ERROR("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command));
+			DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command)));
 			return buffer_end;
 		}
 
@@ -46,9 +46,9 @@ namespace voxel_game
 
 		for (size_t i = 0; i < argptrs.size(); i++)
 		{
-			if (buffer_pos + sizeof(godot::Variant) >= buffer_end)
+			if (buffer_pos + sizeof(godot::Variant) > buffer_end)
 			{
-				DEBUG_PRINT_ERROR("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command));
+				DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command)));
 				return buffer_end;
 			}
 
@@ -127,18 +127,18 @@ namespace voxel_game
 		const_iterator buffer_end = end();
 		while (buffer_pos != buffer_end)
 		{
-			if (buffer_pos + sizeof(Command) >= buffer_end)
+			if (buffer_pos + sizeof(Command) > buffer_end)
 			{
-				DEBUG_PRINT_ERROR("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command));
+				DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command)));
 				break;
 			}
 
 			const Command& command = reinterpret_cast<const Command&>(*buffer_pos);
 			buffer_pos += sizeof(Command);
 
-			if (buffer_pos + (command.argcount * sizeof(godot::Variant)) >= buffer_end)
+			if (buffer_pos + (command.argcount * sizeof(godot::Variant)) > buffer_end)
 			{
-				DEBUG_PRINT_ERROR("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command));
+				DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command)));
 				break;
 			}
 
@@ -164,7 +164,7 @@ namespace voxel_game
 		command_queue.instantiate();
 
 		command_queue->m_thread_id = godot::OS::get_singleton()->get_thread_caller_id();
-		command_queue->m_object_id = object;
+		command_queue->m_object_id = object.operator godot::ObjectID();
 
 		return command_queue;
 	}
@@ -207,7 +207,7 @@ namespace voxel_game
 
 	void CommandQueue::Flush()
 	{
-		DEBUG_ASSERT(m_object_id != 0, "Command queue should have an assigned object");
+		DEBUG_ASSERT(m_object_id.is_valid(), "Command queue should have an assigned object");
 		DEBUG_ASSERT(godot::OS::get_singleton()->get_thread_caller_id() == m_thread_id, "Should be run by the owning thread");
 
 		CommandQueueServer::get_singleton()->AddCommands(m_object_id, std::move(m_command_buffer)); // m_command_buffers guaranteed to be empty()
@@ -231,19 +231,18 @@ namespace voxel_game
 	}
 
 	CommandQueueServer::CommandQueueServer()
-	{
-		m_command_buffers.reserve(16);
-		m_rendering_command_buffers.reserve(16);
-	}
+	{}
 
 	CommandQueueServer::~CommandQueueServer()
 	{
-		DEBUG_ASSERT(m_command_buffers.size() == 0, "Commands left over when exiting the application");
+		DEBUG_ASSERT(m_state.command_buffers.size() == 0, "Commands left over when exiting the application");
 		// We don't care about left over rendering commands
 	}
 
 	void CommandQueueServer::AddCommands(uint64_t object_id, CommandBuffer&& command_buffer)
 	{
+		DEBUG_ASSERT(object_id != 0, "Should be adding commands for an object");
+
 		if (command_buffer.empty())
 		{
 			return;
@@ -251,74 +250,64 @@ namespace voxel_game
 
 		if (object_id == godot::RenderingServer::get_singleton()->get_instance_id())
 		{
-			std::lock_guard lock(m_rendering_mutex);
+			std::lock_guard lock(m_rendering_state.buffers_mutex);
 
-			Commands& commands = m_rendering_command_buffers.emplace_back();
+			Commands& commands = m_rendering_state.command_buffers.emplace_back();
 
 			commands.object_id = object_id;
 			commands.command_buffer = std::move(command_buffer);
 		}
 		else
 		{
-			std::lock_guard lock(m_mutex);
+			std::lock_guard lock(m_state.buffers_mutex);
 
-			Commands& commands = m_command_buffers.emplace_back();
+			Commands& commands = m_state.command_buffers.emplace_back();
 
 			commands.object_id = object_id;
 			commands.command_buffer = std::move(command_buffer);
 		}
 	}
 
-	bool CommandQueueServer::HasCommands()
-	{
-		std::shared_lock lock(m_mutex);
-		return m_command_buffers.size() > 0;
-	}
-
-	bool CommandQueueServer::HasRenderingCommands()
-	{
-		std::shared_lock lock(m_rendering_mutex);
-		return m_rendering_command_buffers.size() > 0;
-	}
-
 	void CommandQueueServer::Flush()
 	{
 		DEBUG_ASSERT(godot::OS::get_singleton()->get_thread_caller_id() == godot::OS::get_singleton()->get_main_thread_id(), "The processor should only be flushed on the main thread");
 
-		if (HasRenderingCommands())
-		{
-			godot::RenderingServer::get_singleton()->call_on_render_thread(godot::create_custom_callable_function_pointer(this, &CommandQueueServer::FlushRenderingCommands));
-		}
+		FlushState(m_state);
 
-		if (HasCommands())
-		{
-			FlushCommands();
-		}
+		godot::RenderingServer::get_singleton()->call_on_render_thread(godot::create_custom_callable_function_pointer(this, &CommandQueueServer::RenderingFlush));
 	}
 
-	void CommandQueueServer::FlushCommands()
+	void CommandQueueServer::RenderingFlush()
 	{
-		Commands commands;
+		DEBUG_ASSERT(godot::RenderingServer::get_singleton()->is_on_render_thread(), "The rendering flush should only be done on the rendering thread");
 
-		{
-			std::lock_guard lock(m_mutex);
-
-			commands = std::move(m_command_buffers.back()); // m_command_buffers guaranteed to be empty() after
-			m_command_buffers.pop_back();
-		}
-
-		CommandBuffer::ProcessCommands(commands.object_id, commands.command_buffer);
+		FlushState(m_rendering_state);
 	}
 
-	void CommandQueueServer::FlushRenderingCommands()
+	void CommandQueueServer::FlushState(State& state)
 	{
-		std::lock_guard lock(m_rendering_mutex);
-
-		Commands& commands = m_rendering_command_buffers.back();
-
-		if (CommandBuffer::ProcessCommands(commands.object_id, commands.command_buffer, 64) == 0)
+		if (!state.processing_current)
 		{
-			m_rendering_command_buffers.pop_back();
+			std::lock_guard lock(state.buffers_mutex);
+
+			if (state.command_buffers.size() > 0)
+			{
+				state.current_buffer = std::move(state.command_buffers.front()); // command_buffers guaranteed to be empty() after
+				state.command_buffers.pop_front();
+			}
+		}
+
+		if (state.current_buffer.object_id.is_valid())
+		{
+			if (CommandBuffer::ProcessCommands(state.current_buffer.object_id, state.current_buffer.command_buffer, 64))
+			{
+				state.processing_current = true;
+			}
+			else
+			{
+				// We finish the buffer so get a new one
+				state.processing_current = false;
+			}
 		}
 	}
 
