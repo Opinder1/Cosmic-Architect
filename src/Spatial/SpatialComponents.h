@@ -30,7 +30,7 @@ namespace voxel_game
 
 	// The max scale that a world can have
 	constexpr const uint8_t k_max_world_scale = 16;
-	constexpr const size_t k_max_frame_commands = 64;
+	constexpr const size_t k_max_frame_commands = 16;
 
 	// Phases which are used to synchronise the ecs between running each thread type in parallel
 	struct SpatialWorldMultithreadPhase {};
