@@ -36,30 +36,18 @@ namespace voxel_game
 		{
 			uint32_t scale_step = 16 << universe_node.coord.scale;
 
-			size_t add_count = 16 - universe_node.entities.size();
-
-			flecs::entity galaxy_schematic;
-
-			if (add_count > 0)
+			if (entity_pool->new_entities.size() < 16 + 1)
 			{
-				if (entity_pool->new_entities.size() == 0)
-				{
-					return;
-				}
-
-				galaxy_schematic = flecs::entity(world, entity_pool->new_entities.back());
-				entity_pool->new_entities.pop_back();
-
-				galaxy_schematic.add<RenderMesh>();
+				return;
 			}
 
-			for (size_t i = 0; i < add_count; i++)
-			{
-				if (entity_pool->new_entities.size() == 0)
-				{
-					return;
-				}
+			flecs::entity galaxy_schematic(world, entity_pool->new_entities.back());
+			entity_pool->new_entities.pop_back();
 
+			galaxy_schematic.add<RenderMesh>();
+
+			for (size_t i = 0; i < 16; i++)
+			{
 				flecs::entity galaxy(world, entity_pool->new_entities.back());
 				entity_pool->new_entities.pop_back();
 
