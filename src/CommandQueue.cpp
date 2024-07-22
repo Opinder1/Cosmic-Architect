@@ -345,28 +345,43 @@ namespace voxel_game
 
 	void CommandQueueServer::FlushState(State& state)
 	{
-		if (!state.processing_current)
-		{
-			std::lock_guard lock(state.buffers_mutex);
+		size_t command_budget = k_max_commands_per_flush;
 
-			if (state.command_buffers.size() > 0)
+		while (command_budget > 0)
+		{
+			if (!state.processing_current) // Try to get a new buffer to process
 			{
+				std::lock_guard lock(state.buffers_mutex);
+
+				if (state.command_buffers.size() == 0)
+				{
+					break; // No new buffers
+				}
+
 				state.current_buffer = std::move(state.command_buffers.front()); // command_buffers guaranteed to be empty() after
 				state.command_buffers.pop_front();
-			}
-		}
-
-		if (state.current_buffer.object_id.is_valid())
-		{
-			if (state.current_buffer.command_buffer.ProcessCommands(state.current_buffer.object_id, k_max_commands_per_flush))
-			{
 				state.processing_current = true;
 			}
-			else
+
+			if (!state.current_buffer.object_id.is_valid()) // Object not valid?
 			{
-				// We finish the buffer so get a new one
+				DEBUG_PRINT_ERROR("The command server was given commands for an invalid object");
+				state.current_buffer.command_buffer.Clear();
 				state.processing_current = false;
+				continue;
 			}
+
+			size_t commands_processed = state.current_buffer.command_buffer.ProcessCommands(state.current_buffer.object_id, command_budget);
+
+			if (commands_processed == 0)
+			{
+				state.processing_current = false;
+				continue; // We need a new buffer since we still have command budget
+			}
+
+			DEBUG_ASSERT(commands_processed <= command_budget, "We processed more commands than we allowed for?");
+
+			command_budget -= commands_processed;
 		}
 	}
 
