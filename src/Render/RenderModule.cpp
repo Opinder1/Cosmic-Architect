@@ -165,9 +165,9 @@ namespace voxel_game
 
             godot::Transform3D transform;
 
-            if (position != nullptr)
+            if (scale != nullptr)
             {
-                transform.set_origin(position->position);
+                transform.scale(scale->scale);
             }
 
             if (rotation != nullptr)
@@ -175,9 +175,9 @@ namespace voxel_game
                 transform.rotate(rotation->rotation.get_axis(), rotation->rotation.get_angle());
             }
 
-            if (scale != nullptr)
+            if (position != nullptr)
             {
-                transform.scale(scale->scale);
+                transform.set_origin(position->position);
             }
 
             thread_context.commands.AddCommand("instance_set_transform", instance.id, transform);
