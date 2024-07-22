@@ -73,6 +73,13 @@ namespace voxel_game
 		const Command& command = reinterpret_cast<const Command&>(*buffer_pos);
 		buffer_pos += sizeof(Command);
 
+		DEBUG_ASSERT(!command.command.is_empty(), "The command should not be an empty string");
+
+		if (command.argcount > 16)
+		{
+			DEBUG_PRINT_WARN("We are running a command with more than 32 arguments. Is this sane?");
+		}
+
 		VariableLengthArray<const godot::Variant*> argptrs = MakeVariableLengthArray(const godot::Variant*, command.argcount);
 
 		for (size_t i = 0; i < argptrs.size(); i++)
