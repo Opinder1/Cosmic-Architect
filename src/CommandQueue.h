@@ -17,6 +17,8 @@
 
 namespace voxel_game
 {
+	constexpr const size_t k_max_commands_per_flush = 64;
+
 	struct Command
 	{
 		godot::StringName command;

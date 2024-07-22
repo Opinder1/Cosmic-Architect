@@ -34,7 +34,9 @@ namespace voxel_game
 
 	void CommandBuffer::AddCommandInternal(const godot::StringName& command, const godot::Variant** args, size_t argcount)
 	{
+		DEBUG_ASSERT(!command.is_empty(), "The command should not be an empty string");
 		DEBUG_ASSERT(m_start == 0, "We shouldn't be adding commands when we are already processing the buffer");
+		DEBUG_ASSERT(argcount == 0 || args != nullptr, "The arguments array should be valid if there are more than 0 arguments");
 
 		uint32_t command_offset = m_data.size();
 		uint32_t command_size = sizeof(Command) + (sizeof(godot::Variant) * argcount);
@@ -60,6 +62,8 @@ namespace voxel_game
 
 	CommandBuffer::iterator ProcessCommand(godot::Variant& object, CommandBuffer::iterator buffer_pos, CommandBuffer::iterator buffer_end)
 	{
+		DEBUG_ASSERT(buffer_end >= buffer_pos, "The buffer position should not be beyond the end");
+
 		if (buffer_pos + sizeof(Command) > buffer_end)
 		{
 			DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command)));
@@ -103,7 +107,7 @@ namespace voxel_game
 			default: error_type_str = "GDEXTENSION_UNKNOWN_ERROR"; break;
 			}
 
-			DEBUG_PRINT_ERROR(godot::vformat("%s: Error at argument %d. Expected %d arguments", error_type_str, error.argument, error.expected));
+			DEBUG_PRINT_ERROR(godot::vformat("Failed to call %s: %s. Error at argument %d. Expected %d arguments. Actual %d arguments", command.command, error_type_str, error.argument, error.expected, command.argcount));
 		}
 
 		// We can call destructors on const objects for some reason but the memory is indeed owned by us
@@ -119,6 +123,13 @@ namespace voxel_game
 
 	size_t CommandBuffer::ProcessCommands(uint64_t object_id, size_t max)
 	{
+		if (m_num_commands == 0)
+		{
+			return 0;
+		}
+
+		DEBUG_ASSERT(godot::ObjectID(object_id).is_valid(), "The command should be run on a valid object");
+
 		godot::Variant object = godot::ObjectDB::get_instance(object_id);
 
 		if (!object)
@@ -143,7 +154,8 @@ namespace voxel_game
 			}
 		}
 
-		m_start = m_data.end() - buffer_pos;
+		m_start = buffer_pos - buffer_start;
+		DEBUG_ASSERT(m_num_commands >= num_processed, "We processed more commands than we have");
 		m_num_commands -= num_processed;
 
 		return num_processed;
@@ -280,7 +292,7 @@ namespace voxel_game
 
 	void CommandQueueServer::AddCommands(uint64_t object_id, CommandBuffer&& command_buffer)
 	{
-		DEBUG_ASSERT(object_id != 0, "Should be adding commands for an object");
+		DEBUG_ASSERT(godot::ObjectID(object_id).is_valid(), "Should be adding commands for an object");
 
 		if (command_buffer.NumCommands() == 0)
 		{
@@ -338,7 +350,7 @@ namespace voxel_game
 
 		if (state.current_buffer.object_id.is_valid())
 		{
-			if (state.current_buffer.command_buffer.ProcessCommands(state.current_buffer.object_id, 64))
+			if (state.current_buffer.command_buffer.ProcessCommands(state.current_buffer.object_id, k_max_commands_per_flush))
 			{
 				state.processing_current = true;
 			}
