@@ -31,12 +31,7 @@ namespace voxel_game
 		{
 			for (ThreadEntityPool& thread : thread_pools.threads)
 			{
-				size_t new_required = 1024 - thread.new_entities.size();
-
-				if (new_required == 1024)
-				{
-					thread.new_entities.reserve(1024);
-				}
+				size_t new_required = thread.new_entities.capacity() - thread.new_entities.size();
 
 				for (size_t i = 0; i < new_required; i++)
 				{

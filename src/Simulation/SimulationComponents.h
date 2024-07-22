@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Util/PerThread.h"
+#include "Util/SmallVector.h"
 #include "Util/Time.h"
 #include "Util/Nocopy.h"
 
@@ -21,6 +22,8 @@ namespace flecs
 
 namespace voxel_game
 {
+	constexpr const size_t k_max_pool_entities = 1024;
+
 	struct SimulationComponents
 	{
 		SimulationComponents(flecs::world& world);
@@ -39,7 +42,7 @@ namespace voxel_game
 
 	struct ThreadEntityPool
 	{
-		std::vector<flecs::entity_t> new_entities;
+		SmallVector<flecs::entity_t, k_max_pool_entities> new_entities;
 	};
 
 	struct ThreadEntityPools : Nocopy
