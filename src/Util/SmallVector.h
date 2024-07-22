@@ -67,17 +67,17 @@ public:
     template<class... Args>
     iterator emplace_back(Args&&... args)
     {
-        emplace(end(), std::forward<Args>(args)...);
+        return emplace(end(), std::forward<Args>(args)...);
     }
 
     template<class... Args>
     iterator emplace_front(Args&&... args)
     {
-        emplace(begin(), std::forward<Args>(args)...);
+        return emplace(begin(), std::forward<Args>(args)...);
     }
 
     template<class... Args>
-    iterator emplace(const_iterator pos, Args&&... args)
+    iterator emplace(iterator pos, Args&&... args)
     {
         if (!get_derived().grow(m_size + 1))
         {
@@ -226,12 +226,12 @@ public:
 
     DataT& back()
     {
-        return *(get_derived().ptr() + m_size);
+        return *(get_derived().ptr() + m_size - 1);
     }
 
     const DataT& back() const
     {
-        return *(get_derived().ptr() + m_size);
+        return *(get_derived().ptr() + m_size - 1);
     }
 
     size_t size() const
@@ -338,17 +338,15 @@ private:
         return (const DataT*)&m_storage;
     }
 
-    bool grow()
+    bool grow(size_t new_size)
     {
-        if (Base::m_size == k_capacity)
+        if (new_size > k_capacity)
         {
             DEBUG_PRINT_WARN("Tried to emplace too many items in a constant capacity vector");
             return false;
         }
-        else
-        {
-            return true;
-        }
+        
+        return true;
     }
 
 private:
