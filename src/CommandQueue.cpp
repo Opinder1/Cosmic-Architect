@@ -150,6 +150,7 @@ namespace voxel_game
 		iterator buffer_start = m_data.begin() + m_start;
 		iterator buffer_pos = buffer_start;
 		iterator buffer_end = m_data.end();
+
 		while (buffer_pos != buffer_end)
 		{
 			buffer_pos = ProcessCommand(object, buffer_pos, buffer_end);
@@ -161,7 +162,7 @@ namespace voxel_game
 			}
 		}
 
-		m_start = buffer_pos - buffer_start;
+		m_start += buffer_pos - buffer_start;
 		DEBUG_ASSERT(m_num_commands >= num_processed, "We processed more commands than we have");
 		m_num_commands -= num_processed;
 
