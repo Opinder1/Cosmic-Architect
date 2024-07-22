@@ -34,9 +34,13 @@ namespace voxel_game
 
 		void Process(SpatialWorld3DComponent& spatial_world, UniverseScale& universe_scale, UniverseNode& universe_node)
 		{
-			uint32_t scale_step = 16 << universe_node.coord.scale;
+			const uint32_t entities_per_node = 4;
+			const uint32_t node_size = 16;
+			const uint32_t position_multi = 2;
+			const uint32_t scale_step = 1 << universe_node.coord.scale;
+			const uint32_t scale_node_step = (node_size << universe_node.coord.scale) * position_multi;
 
-			if (entity_pool->new_entities.size() < 16 + 1)
+			if (entity_pool->new_entities.size() < entities_per_node + 1)
 			{
 				return;
 			}
@@ -46,7 +50,7 @@ namespace voxel_game
 
 			galaxy_schematic.add<RenderMesh>();
 
-			for (size_t i = 0; i < 16; i++)
+			for (size_t i = 0; i < entities_per_node; i++)
 			{
 				flecs::entity galaxy(world, entity_pool->new_entities.back());
 				entity_pool->new_entities.pop_back();
@@ -54,11 +58,16 @@ namespace voxel_game
 				galaxy.child_of(universe_entity);
 				galaxy.add<GalaxyComponent>();
 
-				float position_x = (float(universe_node.coord.pos.x) * scale_step) + godot::UtilityFunctions::randf_range(0, scale_step);
-				float position_y = (float(universe_node.coord.pos.y) * scale_step) + godot::UtilityFunctions::randf_range(0, scale_step);
-				float position_z = (float(universe_node.coord.pos.z) * scale_step) + godot::UtilityFunctions::randf_range(0, scale_step);
+				float position_x = (float(universe_node.coord.pos.x) * scale_node_step); 
+				float position_y = (float(universe_node.coord.pos.y) * scale_node_step);
+				float position_z = (float(universe_node.coord.pos.z) * scale_node_step);
+
+				position_x += godot::UtilityFunctions::randf_range(0, scale_node_step);
+				position_y += godot::UtilityFunctions::randf_range(0, scale_node_step);
+				position_z += godot::UtilityFunctions::randf_range(0, scale_node_step);
 
 				galaxy.set(Position3DComponent{ godot::Vector3(position_x, position_y, position_z) });
+				galaxy.set(Scale3DComponent{ godot::Vector3(scale_step, scale_step, scale_step) });
 				galaxy.add<RenderBase>(galaxy_schematic);
 				galaxy.add<FlatTextureComponent>();
 				galaxy.add<RenderInstance>();
