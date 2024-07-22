@@ -23,11 +23,19 @@ namespace voxel_game
 		size_t argcount = 0;
 	};
 
-	class CommandBuffer : public std::vector<uint8_t>
+	class CommandBuffer : Nocopy
 	{
-	public:
-		using std::vector<uint8_t>::vector;
+		using Storage = std::vector<uint8_t>;
 
+	public:
+		using iterator = Storage::iterator;
+
+	public:
+		CommandBuffer();
+		~CommandBuffer();
+
+		CommandBuffer& operator=(CommandBuffer&& other) noexcept;
+		
 		// Register a new command for the queue
 		template<class... Args>
 		void AddCommand(const godot::StringName& command, const Args&... p_args)
@@ -43,9 +51,16 @@ namespace voxel_game
 		void AddCommandInternal(const godot::StringName& command, const godot::Variant** args, size_t argcount);
 
 		// Process only up to a certain number of commands and return how many were processed (0 for max to process all)
-		static size_t ProcessCommands(uint64_t object_id, CommandBuffer& command_buffer, size_t max = 0);
+		size_t ProcessCommands(uint64_t object_id, size_t max = 0);
 
-		size_t CalcNumCommands() const;
+		size_t NumCommands() const;
+
+		void Clear();
+
+	private:
+		Storage m_data;
+		size_t m_start = 0;
+		size_t m_num_commands = 0;
 	};
 
 	class CommandQueue : public godot::RefCounted

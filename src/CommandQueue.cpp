@@ -9,14 +9,39 @@
 
 namespace voxel_game
 {
+	CommandBuffer::CommandBuffer()
+	{
+		m_data.reserve(4096);
+	}
+
+	CommandBuffer::~CommandBuffer()
+	{
+		Clear();
+	}
+
+	CommandBuffer& CommandBuffer::operator=(CommandBuffer&& other) noexcept
+	{
+		m_data = std::move(other.m_data);
+		m_num_commands = other.m_num_commands;
+		m_start = other.m_start;
+
+		other.m_data.reserve(4096);
+		other.m_num_commands = 0;
+		other.m_start = 0;
+
+		return *this;
+	}
+
 	void CommandBuffer::AddCommandInternal(const godot::StringName& command, const godot::Variant** args, size_t argcount)
 	{
-		uint32_t command_offset = size();
+		DEBUG_ASSERT(m_start == 0, "We shouldn't be adding commands when we are already processing the buffer");
+
+		uint32_t command_offset = m_data.size();
 		uint32_t command_size = sizeof(Command) + (sizeof(godot::Variant) * argcount);
 
-		resize(command_offset + command_size);
+		m_data.resize(command_offset + command_size);
 
-		uint8_t* buffer_pos = data() + command_offset;
+		uint8_t* buffer_pos = m_data.data() + command_offset;
 
 		Command* command_ptr = memnew_placement(buffer_pos, Command);
 		command_ptr->command = command;
@@ -29,6 +54,8 @@ namespace voxel_game
 			*arg_ptr = *args[arg];
 			buffer_pos += sizeof(godot::Variant);
 		}
+
+		m_num_commands++;
 	}
 
 	CommandBuffer::iterator ProcessCommand(godot::Variant& object, CommandBuffer::iterator buffer_pos, CommandBuffer::iterator buffer_end)
@@ -90,7 +117,7 @@ namespace voxel_game
 		return buffer_pos;
 	}
 
-	size_t CommandBuffer::ProcessCommands(uint64_t object_id, CommandBuffer& command_buffer, size_t max)
+	size_t CommandBuffer::ProcessCommands(uint64_t object_id, size_t max)
 	{
 		godot::Variant object = godot::ObjectDB::get_instance(object_id);
 
@@ -102,8 +129,9 @@ namespace voxel_game
 
 		size_t num_processed = 0;
 
-		iterator buffer_pos = command_buffer.begin();
-		iterator buffer_end = command_buffer.end();
+		iterator buffer_start = m_data.begin() + m_start;
+		iterator buffer_pos = buffer_start;
+		iterator buffer_end = m_data.end();
 		while (buffer_pos != buffer_end)
 		{
 			buffer_pos = ProcessCommand(object, buffer_pos, buffer_end);
@@ -115,16 +143,22 @@ namespace voxel_game
 			}
 		}
 
-		command_buffer.erase(command_buffer.begin(), buffer_pos);
+		m_start = m_data.end() - buffer_pos;
+		m_num_commands -= num_processed;
+
 		return num_processed;
 	}
 
-	size_t CommandBuffer::CalcNumCommands() const
+	size_t CommandBuffer::NumCommands() const
 	{
-		size_t num_commands = 0;
+		return m_num_commands;
+	}
 
-		const_iterator buffer_pos = begin();
-		const_iterator buffer_end = end();
+	void CommandBuffer::Clear()
+	{
+		// Destroy all remaining commands and arguments
+		iterator buffer_pos = m_data.begin() + m_start;
+		iterator buffer_end = m_data.end();
 		while (buffer_pos != buffer_end)
 		{
 			if (buffer_pos + sizeof(Command) > buffer_end)
@@ -136,18 +170,26 @@ namespace voxel_game
 			const Command& command = reinterpret_cast<const Command&>(*buffer_pos);
 			buffer_pos += sizeof(Command);
 
-			if (buffer_pos + (command.argcount * sizeof(godot::Variant)) > buffer_end)
+			for (size_t i = 0; i < command.argcount; i++)
 			{
-				DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command)));
-				break;
+				if (buffer_pos + sizeof(godot::Variant) > buffer_end)
+				{
+					DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command)));
+					break;
+				}
+
+				const godot::Variant& arg = reinterpret_cast<const godot::Variant&>(*buffer_pos);
+				buffer_pos += sizeof(godot::Variant);
+				
+				arg.~Variant();
 			}
 
-			buffer_pos += command.argcount * sizeof(godot::Variant);
-
-			num_commands++;
+			command.~Command();
 		}
 
-		return num_commands;
+		m_data.clear();
+		m_start = 0;
+		m_num_commands = 0;
 	}
 
 	godot::Ref<CommandQueue> CommandQueue::MakeQueue(const godot::Variant& object)
@@ -170,9 +212,7 @@ namespace voxel_game
 	}
 
 	CommandQueue::CommandQueue()
-	{
-		m_command_buffer.reserve(64);
-	}
+	{}
 
 	CommandQueue::~CommandQueue()
 	{
@@ -211,7 +251,6 @@ namespace voxel_game
 		DEBUG_ASSERT(godot::OS::get_singleton()->get_thread_caller_id() == m_thread_id, "Should be run by the owning thread");
 
 		CommandQueueServer::get_singleton()->AddCommands(m_object_id, std::move(m_command_buffer)); // m_command_buffers guaranteed to be empty()
-		m_command_buffer.reserve(64);
 	}
 
 	void CommandQueue::_bind_methods()
@@ -243,7 +282,7 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(object_id != 0, "Should be adding commands for an object");
 
-		if (command_buffer.empty())
+		if (command_buffer.NumCommands() == 0)
 		{
 			return;
 		}
@@ -299,7 +338,7 @@ namespace voxel_game
 
 		if (state.current_buffer.object_id.is_valid())
 		{
-			if (CommandBuffer::ProcessCommands(state.current_buffer.object_id, state.current_buffer.command_buffer, 64))
+			if (state.current_buffer.command_buffer.ProcessCommands(state.current_buffer.object_id, 64))
 			{
 				state.processing_current = true;
 			}

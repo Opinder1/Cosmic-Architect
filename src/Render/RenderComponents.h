@@ -20,6 +20,8 @@ namespace flecs
 
 namespace voxel_game
 {
+	constexpr const size_t k_max_thread_render_commands = 1024;
+
 	struct RenderingServerThreadContext
 	{
 		CommandBuffer commands;

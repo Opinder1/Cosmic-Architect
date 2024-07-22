@@ -156,7 +156,7 @@ namespace voxel_game
         {
             RenderingServerThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
 
-            if (!flags.transform || thread_context.commands.size() > 1000)
+            if (!flags.transform || thread_context.commands.NumCommands() > k_max_thread_render_commands)
             {
                 return;
             }

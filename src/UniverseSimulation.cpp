@@ -191,9 +191,6 @@ namespace voxel_game
 
 		m_universe = godot::UtilityFunctions::weakref(universe);
 
-		m_deferred_commands.reserve(64);
-		m_deferred_signals.reserve(64);
-
 		m_world.reset();
 
 		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
@@ -347,8 +344,7 @@ namespace voxel_game
 			bool keep_running = m_world.progress(static_cast<ecs_ftime_t>(delta));
 
 			// Process signals
-			CommandBuffer::ProcessCommands(get_instance_id(), m_deferred_signals);
-			m_deferred_signals.reserve(64);
+			m_deferred_signals.ProcessCommands(get_instance_id());
 
 			return keep_running;
 		}
@@ -366,11 +362,10 @@ namespace voxel_game
 			{
 				std::lock_guard lock(m_commands_mutex);
 				command_buffer = std::move(m_deferred_commands);
-				m_deferred_commands.reserve(64);
 			}
 
 			// Process the deferred commands sent by other threads
-			CommandBuffer::ProcessCommands(get_instance_id(), command_buffer);
+			command_buffer.ProcessCommands(get_instance_id());
 
 			m_world.progress();
 
@@ -379,7 +374,6 @@ namespace voxel_game
 
 			// Flush signals to be executed on main thread
 			CommandQueueServer::get_singleton()->AddCommands(get_instance_id(), std::move(m_deferred_signals));
-			m_deferred_signals.reserve(64);
 		}
 	}
 
