@@ -11,7 +11,7 @@ namespace voxel_game
 {
 	CommandBuffer::CommandBuffer()
 	{
-		m_data.reserve(4096);
+		m_data.reserve(k_starting_buffer_size);
 	}
 
 	CommandBuffer::~CommandBuffer()
@@ -25,7 +25,7 @@ namespace voxel_game
 		m_num_commands = other.m_num_commands;
 		m_start = other.m_start;
 
-		other.m_data.reserve(4096);
+		other.m_data.reserve(k_starting_buffer_size);
 		other.m_num_commands = 0;
 		other.m_start = 0;
 
@@ -183,7 +183,7 @@ namespace voxel_game
 		return m_num_commands;
 	}
 
-	void CommandBuffer::Clear()
+	void CommandBuffer::Clear(bool reallocate)
 	{
 		// Destroy all remaining commands and arguments
 		iterator buffer_pos = m_data.begin() + m_start;
@@ -216,9 +216,16 @@ namespace voxel_game
 			command.~Command();
 		}
 
-		m_data.clear();
-		m_start = 0;
-		m_num_commands = 0;
+		if (reallocate)
+		{
+			*this = CommandBuffer{}; // Do this to get a new allocation and deallocate current buffer
+		}
+		else
+		{
+			m_data.clear();
+			m_start = 0;
+			m_num_commands = 0;
+		}
 	}
 
 	godot::Ref<CommandQueue> CommandQueue::MakeQueue(const godot::Variant& object)
@@ -228,7 +235,6 @@ namespace voxel_game
 			DEBUG_PRINT_WARN("Tried to create a command queue for a variant that is not an object");
 			return nullptr;
 		}
-
 
 		godot::Ref<CommandQueue> command_queue;
 
@@ -341,7 +347,7 @@ namespace voxel_game
 
 		FlushState(m_state, nullptr);
 
-		godot::RenderingServer::get_singleton()->call_on_render_thread(godot::create_custom_callable_function_pointer(this, &CommandQueueServer::RenderingFlush));
+		godot::RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &CommandQueueServer::RenderingFlush));
 	}
 
 	void CommandQueueServer::RenderingFlush()
@@ -375,6 +381,7 @@ namespace voxel_game
 
 			size_t commands_processed;
 
+			// Use the provided object if given else use the buffers object
 			if (object != nullptr)
 			{
 				commands_processed = state.current_buffer.command_buffer.ProcessCommands(object, command_budget);
@@ -384,6 +391,7 @@ namespace voxel_game
 				commands_processed = state.current_buffer.command_buffer.ProcessCommands(state.current_buffer.object_id, command_budget);
 			}
 
+			// No commands were processed for the buffer so it failed or is empty
 			if (commands_processed == 0)
 			{
 				state.current_buffer.command_buffer.Clear();

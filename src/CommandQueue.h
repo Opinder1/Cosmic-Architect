@@ -18,6 +18,7 @@
 namespace voxel_game
 {
 	constexpr const size_t k_max_commands_per_flush = 64;
+	constexpr const size_t k_starting_buffer_size = 4096;
 
 	struct Command
 	{
@@ -25,6 +26,7 @@ namespace voxel_game
 		size_t argcount = 0;
 	};
 
+	// Buffer which commands can be added to and processed in the order they are added
 	class CommandBuffer : Nocopy
 	{
 		using Storage = std::vector<uint8_t>;
@@ -58,7 +60,7 @@ namespace voxel_game
 
 		size_t NumCommands() const;
 
-		void Clear();
+		void Clear(bool reallocate = true);
 
 	private:
 		Storage m_data;
@@ -66,12 +68,14 @@ namespace voxel_game
 		size_t m_num_commands = 0;
 	};
 
+	// Container for a command buffer to write commands for an object in script
 	class CommandQueue : public godot::RefCounted
 	{
 		GDCLASS(CommandQueue, godot::RefCounted);
 
 	public:
-		// Make a new queue with an associated object. We can then call Flush() to run the commands on the main thread/render thread
+		// Make a new queue with an associated object which we write to on this thread only.
+		// We can then call Flush() to run the commands on the main thread/render thread through the command server
 		static godot::Ref<CommandQueue> MakeQueue(const godot::Variant& object);
 
 		CommandQueue();
@@ -92,7 +96,7 @@ namespace voxel_game
 			return CommandBuffer::AddCommand(m_command_buffer, command, p_args);
 		}
 
-		// Flush the commands to the main thread or the render thread if the object is the rendering server
+		// Flush the commands to the command server to be run on the specified thread
 		void Flush();
 
 	public:
@@ -107,6 +111,7 @@ namespace voxel_game
 		CommandBuffer m_command_buffer;
 	};
 
+	// Server which command buffers can be flushed to and processed frame by frame on the main thread or render thread
 	class CommandQueueServer : public godot::Object
 	{
 		GDCLASS(CommandQueueServer, godot::Object);
