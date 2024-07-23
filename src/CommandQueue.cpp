@@ -218,14 +218,14 @@ namespace voxel_game
 
 		if (reallocate)
 		{
-			*this = CommandBuffer{}; // Do this to get a new allocation and deallocate current buffer
+			m_data = Storage{};
 		}
 		else
 		{
 			m_data.clear();
-			m_start = 0;
-			m_num_commands = 0;
 		}
+		m_start = 0;
+		m_num_commands = 0;
 	}
 
 	godot::Ref<CommandQueue> CommandQueue::MakeQueue(const godot::Variant& object)
