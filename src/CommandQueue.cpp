@@ -137,13 +137,22 @@ namespace voxel_game
 
 		DEBUG_ASSERT(godot::ObjectID(object_id).is_valid(), "The command should be run on a valid object");
 
-		godot::Variant object = godot::ObjectDB::get_instance(object_id);
+		godot::Object* object = godot::ObjectDB::get_instance(object_id);
 
-		if (!object)
+		if (object == nullptr)
 		{
 			DEBUG_PRINT_ERROR("The object that the command queue was queueing for was deleted");
 			return 0;
 		}
+
+		return ProcessCommands(object, max);
+	}
+
+	size_t CommandBuffer::ProcessCommands(godot::Object* object, size_t max)
+	{
+		DEBUG_ASSERT(object != nullptr, "The object we are trying to process on should be valid");
+
+		godot::Variant object_var = object;
 
 		size_t num_processed = 0;
 
@@ -153,7 +162,7 @@ namespace voxel_game
 
 		while (buffer_pos != buffer_end)
 		{
-			buffer_pos = ProcessCommand(object, buffer_pos, buffer_end);
+			buffer_pos = ProcessCommand(object_var, buffer_pos, buffer_end);
 			num_processed++;
 
 			if (num_processed == max)
@@ -313,7 +322,6 @@ namespace voxel_game
 
 			Commands& commands = m_rendering_state.command_buffers.emplace_back();
 
-			commands.object_id = object_id;
 			commands.command_buffer = std::move(command_buffer);
 		}
 		else
@@ -331,19 +339,21 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(godot::OS::get_singleton()->get_thread_caller_id() == godot::OS::get_singleton()->get_main_thread_id(), "The processor should only be flushed on the main thread");
 
-		FlushState(m_state);
+		FlushState(m_state, nullptr);
 
 		godot::RenderingServer::get_singleton()->call_on_render_thread(godot::create_custom_callable_function_pointer(this, &CommandQueueServer::RenderingFlush));
 	}
 
 	void CommandQueueServer::RenderingFlush()
 	{
-		DEBUG_ASSERT(godot::RenderingServer::get_singleton()->is_on_render_thread(), "The rendering flush should only be done on the rendering thread");
+		godot::RenderingServer* server = godot::RenderingServer::get_singleton();
 
-		FlushState(m_rendering_state);
+		DEBUG_ASSERT(server->is_on_render_thread(), "The rendering flush should only be done on the rendering thread");
+
+		FlushState(m_rendering_state, server);
 	}
 
-	void CommandQueueServer::FlushState(State& state)
+	void CommandQueueServer::FlushState(State& state, godot::Object* object)
 	{
 		size_t command_budget = k_max_commands_per_flush;
 
@@ -363,18 +373,20 @@ namespace voxel_game
 				state.processing_current = true;
 			}
 
-			if (!state.current_buffer.object_id.is_valid()) // Object not valid?
-			{
-				DEBUG_PRINT_ERROR("The command server was given commands for an invalid object");
-				state.current_buffer.command_buffer.Clear();
-				state.processing_current = false;
-				continue;
-			}
+			size_t commands_processed;
 
-			size_t commands_processed = state.current_buffer.command_buffer.ProcessCommands(state.current_buffer.object_id, command_budget);
+			if (object != nullptr)
+			{
+				commands_processed = state.current_buffer.command_buffer.ProcessCommands(object, command_budget);
+			}
+			else
+			{
+				commands_processed = state.current_buffer.command_buffer.ProcessCommands(state.current_buffer.object_id, command_budget);
+			}
 
 			if (commands_processed == 0)
 			{
+				state.current_buffer.command_buffer.Clear();
 				state.processing_current = false;
 				continue; // We need a new buffer since we still have command budget
 			}

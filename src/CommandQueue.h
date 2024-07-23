@@ -54,6 +54,7 @@ namespace voxel_game
 
 		// Process only up to a certain number of commands and return how many were processed (0 for max to process all)
 		size_t ProcessCommands(uint64_t object_id, size_t max = 0);
+		size_t ProcessCommands(godot::Object* object, size_t max = 0);
 
 		size_t NumCommands() const;
 
@@ -145,7 +146,7 @@ namespace voxel_game
 	private:
 		void RenderingFlush();
 
-		static void FlushState(State& state);
+		static void FlushState(State& state, godot::Object* object);
 
 	private:
 		static godot::OptObj<CommandQueueServer> k_singleton;
