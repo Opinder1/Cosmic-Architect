@@ -455,26 +455,29 @@ namespace voxel_game
 	private:
 		godot::Ref<godot::WeakRef> m_universe;
 
+		// The load state to control the initial loading and final unloading of the simulation
 		std::atomic<LoadState> m_galaxy_load_state = LOAD_STATE_UNLOADED;
-
+		
+		// World and some quick access entities
 		flecs::world m_world;
 		flecs::entity_t m_universe_entity = 0;
 		flecs::entity_t m_galaxy_entity = 0;
 		flecs::entity_t m_player_entity = 0;
 
+		// Internal thread used by the simulation to run in parallel with the main thread and other threads
 		std::thread m_thread;
 
-		// Commands deferred to be processed when the internal thread is ready
+		// Commands to be deferred and processed by the internal thread
 		tkrzw::SpinMutex m_commands_mutex;
 		CommandBuffer m_deferred_commands;
 
-		// Signals deferred to be emitted when finished progressing
+		// Signals sent by the internal thread and deferred to be run by the main thread
 		CommandBuffer m_deferred_signals;
 
-		// Cache buffer to be written to by the internal thread
+		// Cache buffer to be written to by the internal thread and its contents retrieved by the main thread
 		UniverseCacheUpdater m_info_updater;
 
-		// Cache buffer to be read from by commands
+		// Cache buffer to be read from by other threads
 		tkrzw::SpinSharedMutex m_cache_mutex;
 		UniverseCache m_info_cache;
 	};
