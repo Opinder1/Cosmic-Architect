@@ -624,7 +624,8 @@ namespace voxel_game
 
 			for (size_t i = 0; i < command.argcount; i++)
 			{
-				buffer_pos = ReadVariant(godot::Variant(), buffer_pos, buffer_end);
+				godot::Variant var;
+				buffer_pos = ReadVariant(var, buffer_pos, buffer_end);
 
 				if (buffer_pos == buffer_end)
 				{
