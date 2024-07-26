@@ -344,7 +344,7 @@ namespace voxel_game
 			bool keep_running = m_world.progress(static_cast<ecs_ftime_t>(delta));
 
 			// Process signals
-			m_deferred_signals.ProcessCommands(get_instance_id());
+			m_deferred_signals.ProcessCommands(this);
 
 			return keep_running;
 		}
@@ -365,7 +365,7 @@ namespace voxel_game
 			}
 
 			// Process the deferred commands sent by other threads
-			command_buffer.ProcessCommands(get_instance_id());
+			command_buffer.ProcessCommands(this);
 
 			m_world.progress();
 

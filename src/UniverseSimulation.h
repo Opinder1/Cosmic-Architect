@@ -444,7 +444,7 @@ namespace voxel_game
 
 	private:
 		template<class... Args>
-		void QueueSignal(const godot::StringName& signal, const Args&... p_args);
+		void QueueSignal(const godot::StringName& signal, Args&&... p_args);
 
 		void ThreadLoop();
 
@@ -483,11 +483,11 @@ namespace voxel_game
 	};
 
 	template<class... Args>
-	void UniverseSimulation::QueueSignal(const godot::StringName& signal, const Args&... p_args)
+	void UniverseSimulation::QueueSignal(const godot::StringName& signal, Args&&... p_args)
 	{
 		DEBUG_ASSERT(!IsThreaded() || std::this_thread::get_id() == m_thread.get_id(), "When in threaded mode this should only be called by the worker");
 
-		m_deferred_signals.AddCommand(*k_emit_signal, signal, p_args...);
+		m_deferred_signals.AddCommand(*k_emit_signal, signal, std::forward<Args>(p_args)...);
 	}
 
 #define SIM_DEFER_COMMAND(command, ...) \

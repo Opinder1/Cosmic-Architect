@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CommandBuffer.h"
+
 #include "Util/Debug.h"
 #include "Util/GodotMemory.h"
 
@@ -18,55 +20,6 @@
 namespace voxel_game
 {
 	constexpr const size_t k_max_commands_per_flush = 64;
-	constexpr const size_t k_starting_buffer_size = 4096;
-
-	struct Command
-	{
-		godot::StringName command;
-		size_t argcount = 0;
-	};
-
-	// Buffer which commands can be added to and processed in the order they are added
-	class CommandBuffer : Nocopy
-	{
-		using Storage = std::vector<uint8_t>;
-
-	public:
-		using iterator = Storage::iterator;
-
-	public:
-		CommandBuffer();
-		~CommandBuffer();
-
-		CommandBuffer& operator=(CommandBuffer&& other) noexcept;
-		
-		// Register a new command for the queue
-		template<class... Args>
-		void AddCommand(const godot::StringName& command, const Args&... p_args)
-		{
-			godot::Variant args[sizeof...(p_args) + 1] = { p_args..., godot::Variant() }; // +1 makes sure zero sized arrays are also supported.
-			const godot::Variant* argptrs[sizeof...(p_args) + 1];
-			for (uint32_t i = 0; i < sizeof...(p_args); i++) {
-				argptrs[i] = &args[i];
-			}
-			return AddCommandInternal(command, sizeof...(p_args) == 0 ? nullptr : (const godot::Variant**)argptrs, sizeof...(p_args));
-		}
-
-		void AddCommandInternal(const godot::StringName& command, const godot::Variant** args, size_t argcount);
-
-		// Process only up to a certain number of commands and return how many were processed (0 for max to process all)
-		size_t ProcessCommands(uint64_t object_id, size_t max = 0);
-		size_t ProcessCommands(godot::Object* object, size_t max = 0);
-
-		size_t NumCommands() const;
-
-		void Clear(bool reallocate = true);
-
-	private:
-		Storage m_data;
-		size_t m_start = 0;
-		size_t m_num_commands = 0;
-	};
 
 	// Container for a command buffer to write commands for an object in script
 	class CommandQueue : public godot::RefCounted
@@ -89,11 +42,11 @@ namespace voxel_game
 
 		// Register a new command for the queue
 		template<class... Args>
-		void AddCommand(const godot::StringName& command, const Args&... p_args)
+		void AddCommand(const godot::StringName& command, Args&&... p_args)
 		{
 			DEBUG_ASSERT(godot::OS::get_singleton()->get_thread_caller_id() == m_thread_id, "Should be run by the owning thread");
 
-			return CommandBuffer::AddCommand(m_command_buffer, command, p_args);
+			return CommandBuffer::AddCommand(m_command_buffer, command, std::forward<Args>(p_args)...);
 		}
 
 		// Flush the commands to the command server to be run on the specified thread
@@ -107,7 +60,7 @@ namespace voxel_game
 
 	private:
 		uint64_t m_thread_id = 0;
-		godot::ObjectID m_object_id;
+		uint64_t m_object_id = 0;
 		CommandBuffer m_command_buffer;
 	};
 
