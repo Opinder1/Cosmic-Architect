@@ -123,6 +123,7 @@ namespace voxel_game
 	template<class T>
 	void WriteType(T&& data, std::vector<std::byte>& buffer)
 	{
+		// Get the plain type while allowing pointers
 		using PlainT = std::remove_cv_t<std::remove_reference_t<T>>;
 
 		size_t pos = buffer.size();
@@ -134,14 +135,16 @@ namespace voxel_game
 	template<class T>
 	void WriteVariant(T&& argument, std::vector<std::byte>& buffer)
 	{
+		// Get the plain type while allowing pointers
 		using PlainT = std::remove_cv_t<std::remove_reference_t<T>>;
 
 		if constexpr (std::is_base_of_v<godot::Object, PlainT>)
 		{
-			if (argument->cast_to<godot::RefCounted>())
+			// Check if it is a refcounted class
+			if (dynamic_cast<godot::RefCounted*>(argument))
 			{
 				WriteType<VariantType>(VariantType::REFCOUNTED, buffer);
-				WriteType<godot::Ref<T>>(argument, buffer);
+				WriteType<godot::Ref<PlainT>>(argument, buffer);
 			}
 			else
 			{

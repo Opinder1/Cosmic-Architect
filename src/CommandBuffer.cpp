@@ -39,7 +39,6 @@ namespace voxel_game
 	template<> VariantType GetVariantType<godot::StringName>() { return VariantType::STRING_NAME; }
 	template<> VariantType GetVariantType<godot::NodePath>() { return VariantType::NODE_PATH; }
 	template<> VariantType GetVariantType<godot::RID>() { return VariantType::RID; }
-	template<> VariantType GetVariantType<godot::Object*>() { return VariantType::OBJECT; }
 	template<> VariantType GetVariantType<godot::ObjectID>() { return VariantType::UINT64; }
 	template<> VariantType GetVariantType<godot::Callable>() { return VariantType::CALLABLE; }
 	template<> VariantType GetVariantType<godot::Signal>() { return VariantType::SIGNAL; }
