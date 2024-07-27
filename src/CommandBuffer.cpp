@@ -9,7 +9,8 @@
 
 namespace voxel_game
 {
-	template<> VariantType GetVariantType<uint8_t>() { return VariantType::UINT8; }	template<> VariantType GetVariantType<uint16_t>() { return VariantType::UINT16; }
+	template<> VariantType GetVariantType<uint8_t>() { return VariantType::UINT8; }
+	template<> VariantType GetVariantType<uint16_t>() { return VariantType::UINT16; }
 	template<> VariantType GetVariantType<uint32_t>() { return VariantType::UINT32; }
 	template<> VariantType GetVariantType<uint64_t>() { return VariantType::UINT64; }
 	template<> VariantType GetVariantType<int8_t>() { return VariantType::INT8; }
@@ -38,7 +39,8 @@ namespace voxel_game
 	template<> VariantType GetVariantType<godot::StringName>() { return VariantType::STRING_NAME; }
 	template<> VariantType GetVariantType<godot::NodePath>() { return VariantType::NODE_PATH; }
 	template<> VariantType GetVariantType<godot::RID>() { return VariantType::RID; }
-	template<> VariantType GetVariantType<godot::ObjectID>() { return VariantType::OBJECT; }
+	template<> VariantType GetVariantType<godot::Object*>() { return VariantType::OBJECT; }
+	template<> VariantType GetVariantType<godot::ObjectID>() { return VariantType::UINT64; }
 	template<> VariantType GetVariantType<godot::Callable>() { return VariantType::CALLABLE; }
 	template<> VariantType GetVariantType<godot::Signal>() { return VariantType::SIGNAL; }
 	template<> VariantType GetVariantType<godot::Dictionary>() { return VariantType::DICTIONARY; }
@@ -190,6 +192,9 @@ namespace voxel_game
 
 		case VariantType::OBJECT:
 			return ReadVariantInternal<godot::Object*>(argument, buffer_pos, buffer_end);
+
+		case VariantType::REFCOUNTED:
+			return ReadVariantInternal<godot::Ref<godot::RefCounted>>(argument, buffer_pos, buffer_end);
 
 		case VariantType::CALLABLE:
 			return ReadVariantInternal<godot::Callable>(argument, buffer_pos, buffer_end);
@@ -381,7 +386,7 @@ namespace voxel_game
 			break;
 
 		case godot::Variant::OBJECT:
-			WriteVariant<godot::ObjectID>(argument, buffer);
+			WriteVariant<godot::Object*>(argument, buffer);
 			break;
 
 		case godot::Variant::CALLABLE:

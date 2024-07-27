@@ -42,12 +42,7 @@ namespace voxel_game
 
 		// Register a new command for the queue
 		template<class... Args>
-		void AddCommand(const godot::StringName& command, Args&&... p_args)
-		{
-			DEBUG_ASSERT(godot::OS::get_singleton()->get_thread_caller_id() == m_thread_id, "Should be run by the owning thread");
-
-			return CommandBuffer::AddCommand(m_command_buffer, command, std::forward<Args>(p_args)...);
-		}
+		void AddCommand(const godot::StringName& command, Args&&... p_args);
 
 		// Flush the commands to the command server to be run on the specified thread
 		void Flush();
@@ -112,4 +107,12 @@ namespace voxel_game
 		State m_state;
 		State m_rendering_state;
 	};
+
+	template<class... Args>
+	void CommandQueue::AddCommand(const godot::StringName& command, Args&&... p_args)
+	{
+		DEBUG_ASSERT(godot::OS::get_singleton()->get_thread_caller_id() == m_thread_id, "Should be run by the owning thread");
+
+		return CommandBuffer::AddCommand(m_command_buffer, command, std::forward<Args>(p_args)...);
+	}
 }
