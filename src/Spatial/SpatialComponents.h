@@ -16,8 +16,8 @@
 
 #include <flecs/flecs.h>
 
-#include <vector>
 #include <array>
+#include <vector>
 
 namespace flecs
 {
@@ -30,7 +30,9 @@ namespace voxel_game
 
 	// The max scale that a world can have
 	constexpr const uint8_t k_max_world_scale = 16;
-	constexpr const size_t k_max_frame_commands = 16;
+	constexpr const size_t k_max_frame_load_commands = 16;
+	constexpr const size_t k_max_frame_unload_commands = 16;
+	constexpr const uint8_t k_node_no_parent = UINT8_MAX;
 
 	// Phases which are used to synchronise the ecs between running each thread type in parallel
 	struct SpatialWorldMultithreadPhase {};
@@ -75,9 +77,11 @@ namespace voxel_game
 	{
 		SpatialCoord3D coord;
 
-		uint8_t parent_index = UINT8_MAX; // The index we are in our parent
+		uint8_t parent_index = k_node_no_parent; // The index we are in our parent
 		uint8_t children_mask = 0; // Each bit determines a child [0-7]
 		uint8_t neighbour_mask = 0; // Each bit determines a neighbour [0-5]
+
+		uint8_t initialized : 1;
 
 		uint32_t num_observers = 0; // Number of observers looking at me (1 for write, more than 1 means shared read)
 		uint32_t network_version = 0; // The version of this node. We use this to check if we should update to a newer version if there is one
@@ -102,6 +106,7 @@ namespace voxel_game
 	{
 		SpatialNodeMap nodes;
 
+		SpatialScaleNodeCommands create_commands;
 		SpatialScaleNodeCommands load_commands;
 		SpatialScaleNodeCommands unload_commands;
 		SpatialScaleNodeCommands tick_commands;

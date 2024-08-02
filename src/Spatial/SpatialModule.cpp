@@ -131,6 +131,8 @@ namespace voxel_game
 				}
 			}
 		}
+
+		node.initialized = true;
 	}
 
 	void UninitializeSpatialNode(SpatialNode3D& node, SpatialWorld3DComponent& spatial_world, uint8_t scale_index)
@@ -160,10 +162,12 @@ namespace voxel_game
 				if (SpatialNode3D* child_node = node.children_array[child_index])
 				{
 					child_node->parent = nullptr;
-					child_node->parent_index = UINT8_MAX;
+					child_node->parent_index = k_node_no_parent;
 				}
 			}
 		}
+
+		node.initialized = false;
 	}
 
 	SpatialModule::SpatialModule(flecs::world& world)
@@ -260,7 +264,10 @@ namespace voxel_game
 
 				if (world_time.frame_start - node->last_update_time > 20s)
 				{
-					scale.unload_commands.push_back(node->coord.pos);
+					if (scale.unload_commands.size() < k_max_frame_unload_commands)
+					{
+						scale.unload_commands.push_back(node->coord.pos);
+					}
 				}
 			}
 		});
@@ -342,20 +349,21 @@ namespace voxel_game
 
 						node.last_update_time = world_time.frame_start;
 					}
-					else if (scale.load_commands.size() < k_max_frame_commands)
+					else
 					{
-						DEBUG_ASSERT(std::find(scale.load_commands.begin(), scale.load_commands.end(), pos) == scale.load_commands.end(), "Already exists");
-						scale.load_commands.push_back(pos);
+						DEBUG_ASSERT(std::find(scale.create_commands.begin(), scale.create_commands.end(), pos) == scale.create_commands.end(), "Already exists");
+						scale.create_commands.push_back(pos);
 					}
 				});
 			});
 		});
 
 		// System to initialize spatial nodes that have been added
-		world.system<SpatialWorld3DComponent>(DEBUG_ONLY("SpatialWorldInitializeNodes"))
+		world.system<SpatialWorld3DComponent, const SimulationTime>(DEBUG_ONLY("SpatialWorldCreateNodes"))
 			.multi_threaded()
 			.kind<WorldCreatePhase>()
-			.each([&world](SpatialWorld3DComponent& spatial_world)
+			.term_at(1).src<SimulationTime>()
+			.each([&world](SpatialWorld3DComponent& spatial_world, const SimulationTime& world_time)
 		{
 			DEBUG_ASSERT(spatial_world.max_scale > 0, "The spatial world should have at least one scale");
 
@@ -368,21 +376,42 @@ namespace voxel_game
 
 				DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
-				for (const godot::Vector3i& pos : scale.load_commands)
-				{
-					DEBUG_ASSERT(scale.nodes.find(pos) == scale.nodes.end(), "The load command is trying to load a node that already has been loaded");
+				size_t load_commands_added = 0;
 
-					auto&& [it, success] = scale.nodes.emplace(pos, spatial_world.builder.node_create());
-					DEBUG_ASSERT(success, "The node should have been emplaced");
+				for (const godot::Vector3i& pos : scale.create_commands)
+				{
+					// Try and create the node
+					auto&& [it, emplaced] = scale.nodes.try_emplace(pos, nullptr);
+
+					if (emplaced)
+					{
+						it->second = spatial_world.builder.node_create();
+					}
 
 					SpatialNode3D& node = *it->second;
 
 					DEBUG_THREAD_CHECK_WRITE(&world, &node);
 
-					node.coord = SpatialCoord3D(pos, scale_index);
+					// Initialize the node
+					if (emplaced)
+					{
+						node.coord = SpatialCoord3D(pos, scale_index);
+						node.last_update_time = world_time.frame_start;
+						node.initialized = false;
+					}
 
-					InitializeSpatialNode(node, spatial_world, scale_index);
+					// Initialize the node and add a load command if there is space
+					if (scale.load_commands.size() < k_max_frame_load_commands)
+					{
+						InitializeSpatialNode(node, spatial_world, scale_index);
+
+						// Convert the command to a load command
+						scale.load_commands.push_back(pos);
+						load_commands_added++;
+					}
 				}
+
+				scale.create_commands.erase(scale.create_commands.begin(), scale.create_commands.begin() + load_commands_added);
 			}
 		});
 
@@ -439,7 +468,6 @@ namespace voxel_game
 
 			if (spatial_world.unload_command_processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
 			{
-				scale.unload_commands.clear();
 				return;
 			}
 
@@ -455,8 +483,6 @@ namespace voxel_game
 
 				run_processors_delegate(spatial_world, scale, node);
 			});
-
-			scale.unload_commands.clear();
 		});
 
 		// System to delete spatial nodes that have been marked to unload
