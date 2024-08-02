@@ -212,28 +212,28 @@ namespace voxel_game
 		// Observers
 
 		// Add a cached query for all of a spatial worlds child nodes for fast access
-		world.observer<SpatialWorld3DComponent>(DEBUG_ONLY("AddSpatialWorldQueries"))
+		world.observer<SpatialWorld3DComponent>(DEBUG_ONLY("AddWorldQueries"))
 			.event(flecs::OnAdd)
 			.each([](flecs::entity world_entity, SpatialWorld3DComponent& spatial_world)
 		{
 			flecs::scoped_world scope = world_entity.scope(); // Add the queries as children of the entity so they are automatically destructed
 
-			spatial_world.entities_query = scope.query_builder<const SpatialEntity3DComponent>(DEBUG_ONLY("SpatialWorldEntitiesQuery"))
+			spatial_world.entities_query = scope.query_builder<const SpatialEntity3DComponent>(DEBUG_ONLY("WorldEntitiesQuery"))
 				.with(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
 				.cached()
 				.build().c_ptr();
 
-			spatial_world.scale_workers_query = scope.query_builder<const SpatialScale3DWorkerComponent>(DEBUG_ONLY("SpatialWorldScaleWorkersQuery"))
+			spatial_world.scale_workers_query = scope.query_builder<const SpatialScale3DWorkerComponent>(DEBUG_ONLY("WorldScaleWorkersQuery"))
 				.with(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
 				.cached()
 				.build().c_ptr();
 
-			spatial_world.region_workers_query = scope.query_builder<const SpatialRegion3DWorkerComponent>(DEBUG_ONLY("SpatialWorldRegionWorkersQuery"))
+			spatial_world.region_workers_query = scope.query_builder<const SpatialRegion3DWorkerComponent>(DEBUG_ONLY("WorldRegionWorkersQuery"))
 				.with(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
 				.cached()
 				.build().c_ptr();
 
-			spatial_world.loaders_query = scope.query_builder<const SpatialLoader3DComponent>(DEBUG_ONLY("SpatialWorldLoadersQuery"))
+			spatial_world.loaders_query = scope.query_builder<const SpatialLoader3DComponent>(DEBUG_ONLY("WorldLoadersQuery"))
 				.with(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
 				.cached()
 				.build().c_ptr();
@@ -242,7 +242,7 @@ namespace voxel_game
 		// Systems
 
 		// System to mark any nodes that are no longer being observed to be unloaded
-		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent, const SimulationTime>(DEBUG_ONLY("SpatialScaleUnloadUnusedNodes"))
+		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent, const SimulationTime>(DEBUG_ONLY("ScaleUnloadUnusedNodes"))
 			.multi_threaded()
 			.interval(0.05)
 			.kind<WorldScaleWorkerPhase>()
@@ -262,54 +262,16 @@ namespace voxel_game
 			{
 				DEBUG_THREAD_CHECK_WRITE(&world, &node);
 
-				if (world_time.frame_start - node->last_update_time > 20s)
+				if (world_time.frame_start - node->last_update_time > 20s &&
+					scale.unload_commands.size() < k_max_frame_unload_commands)
 				{
-					if (scale.unload_commands.size() < k_max_frame_unload_commands)
-					{
-						scale.unload_commands.push_back(node->coord.pos);
-					}
+					scale.unload_commands.push_back(node->coord.pos);
 				}
 			}
 		});
 
-		// System to tick spatial nodes that have been marked to tick
-		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent>(DEBUG_ONLY("SpatialWorldProcessTickCommands"))
-			.multi_threaded()
-			.kind<WorldScaleWorkerPhase>()
-			.term_at(1).parent()
-			.each([&world](flecs::entity worker_entity, const SpatialScale3DWorkerComponent& scale_worker, SpatialWorld3DComponent& spatial_world)
-		{
-			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
-
-			size_t scale_index = scale_worker.scale;
-			SpatialScale3D& scale = *spatial_world.scales[scale_index];
-
-			DEBUG_THREAD_CHECK_WRITE(&world, &scale);
-
-			if (spatial_world.tick_command_processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
-			{
-				scale.tick_commands.clear();
-				return;
-			}
-
-			RunEntityCommandsWithProcessors(worker_entity.parent(), spatial_world.tick_command_processors, scale.tick_commands,
-				[&world, &spatial_world, &scale](godot::Vector3i pos, auto& run_processors_delegate)
-			{
-				SpatialNodeMap::iterator it = scale.nodes.find(pos);
-				DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
-
-				SpatialNode3D& node = *it->second;
-
-				DEBUG_THREAD_CHECK_WRITE(&world, &node);
-
-				run_processors_delegate(spatial_world, scale, node);
-			});
-
-			scale.tick_commands.clear();
-		});
-
 		// Systen to create or update all nodes in the range of loaders
-		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent, const SimulationTime>(DEBUG_ONLY("SpatialLoaderLoadScaleNodes"))
+		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent, const SimulationTime>(DEBUG_ONLY("LoaderLoadScaleNodes"))
 			.multi_threaded()
 			.interval(0.05)
 			.kind<WorldScaleWorkerPhase>()
@@ -359,7 +321,7 @@ namespace voxel_game
 		});
 
 		// System to initialize spatial nodes that have been added
-		world.system<SpatialWorld3DComponent, const SimulationTime>(DEBUG_ONLY("SpatialWorldCreateNodes"))
+		world.system<SpatialWorld3DComponent, const SimulationTime>(DEBUG_ONLY("WorldCreateNodes"))
 			.multi_threaded()
 			.kind<WorldCreatePhase>()
 			.term_at(1).src<SimulationTime>()
@@ -370,53 +332,65 @@ namespace voxel_game
 			DEBUG_THREAD_CHECK_WRITE(&world, &spatial_world);
 
 			// Initialize the largest scales first
-			for (size_t scale_index = spatial_world.max_scale; scale_index --> 0;)
+			for (size_t scale_index = spatial_world.max_scale; scale_index-- > 0;)
 			{
 				SpatialScale3D& scale = *spatial_world.scales[scale_index];
 
 				DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
-				size_t load_commands_added = 0;
-
 				for (const godot::Vector3i& pos : scale.create_commands)
 				{
 					// Try and create the node
-					auto&& [it, emplaced] = scale.nodes.try_emplace(pos, nullptr);
-
-					if (emplaced)
-					{
-						it->second = spatial_world.builder.node_create();
-					}
+					auto&& [it, emplaced] = scale.nodes.try_emplace(pos, spatial_world.builder.node_create());
 
 					SpatialNode3D& node = *it->second;
 
 					DEBUG_THREAD_CHECK_WRITE(&world, &node);
 
 					// Initialize the node
-					if (emplaced)
-					{
-						node.coord = SpatialCoord3D(pos, scale_index);
-						node.last_update_time = world_time.frame_start;
-						node.initialized = false;
-					}
+					node.coord = SpatialCoord3D(pos, scale_index);
+					node.last_update_time = world_time.frame_start;
+					node.initialized = false;
 
-					// Initialize the node and add a load command if there is space
-					if (scale.load_commands.size() < k_max_frame_load_commands)
-					{
-						InitializeSpatialNode(node, spatial_world, scale_index);
-
-						// Convert the command to a load command
-						scale.load_commands.push_back(pos);
-						load_commands_added++;
-					}
+					InitializeSpatialNode(node, spatial_world, scale_index);
 				}
 
-				scale.create_commands.erase(scale.create_commands.begin(), scale.create_commands.begin() + load_commands_added);
+				scale.waiting_load_commands.insert(scale.waiting_load_commands.end(), scale.create_commands.begin(), scale.create_commands.end());
+				scale.create_commands.clear();
+			}
+		});
+
+		// System to move waiting load commands to be load commands
+		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent>(DEBUG_ONLY("WorldPrimeLoadCommands"))
+			.multi_threaded()
+			.kind<WorldLoadPhase>()
+			.term_at(1).parent()
+			.each([&world](const SpatialScale3DWorkerComponent& scale_worker, SpatialWorld3DComponent& spatial_world)
+		{
+			DEBUG_ASSERT(spatial_world.max_scale > 0, "The spatial world should have at least one scale");
+
+			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
+
+			size_t scale_index = scale_worker.scale;
+			SpatialScale3D& scale = *spatial_world.scales[scale_index];
+
+			DEBUG_THREAD_CHECK_WRITE(&world, &scale);
+
+			// Clear any previous load commands since they should have been completed
+			scale.load_commands.clear();
+
+			size_t command_count = std::min(scale.waiting_load_commands.size(), k_max_frame_load_commands);
+
+			if (command_count > 0)
+			{
+				scale.load_commands.assign(scale.waiting_load_commands.begin(), scale.waiting_load_commands.begin() + command_count);
+
+				scale.waiting_load_commands.erase(scale.waiting_load_commands.begin(), scale.waiting_load_commands.begin() + command_count);
 			}
 		});
 
 		// System to load spatial nodes that have been added
-		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent>(DEBUG_ONLY("SpatialWorldProcessLoadNodeCommands"))
+		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent>(DEBUG_ONLY("WorldProcessLoadCommands"))
 			.multi_threaded()
 			.kind<WorldLoadPhase>()
 			.term_at(1).parent()
@@ -431,7 +405,6 @@ namespace voxel_game
 
 			if (spatial_world.load_command_processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
 			{
-				scale.load_commands.clear();
 				return;
 			}
 
@@ -448,12 +421,39 @@ namespace voxel_game
 
 				run_processors_delegate(spatial_world, scale, node);
 			});
+		});
 
-			scale.load_commands.clear();
+		// System to move waiting load commands to be load commands
+		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent>(DEBUG_ONLY("WorldPrimeUnloadCommands"))
+			.multi_threaded()
+			.kind<WorldUnloadPhase>()
+			.term_at(1).parent()
+			.each([&world](const SpatialScale3DWorkerComponent& scale_worker, SpatialWorld3DComponent& spatial_world)
+		{
+			DEBUG_ASSERT(spatial_world.max_scale > 0, "The spatial world should have at least one scale");
+
+			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
+
+			size_t scale_index = scale_worker.scale;
+			SpatialScale3D& scale = *spatial_world.scales[scale_index];
+
+			DEBUG_THREAD_CHECK_WRITE(&world, &scale);
+
+			// Clear any previous load commands since they should have been completed
+			scale.unload_commands.clear();
+
+			size_t command_count = std::min(scale.waiting_unload_commands.size(), k_max_frame_load_commands);
+
+			if (command_count > 0)
+			{
+				scale.unload_commands.assign(scale.waiting_unload_commands.begin(), scale.waiting_unload_commands.begin() + command_count);
+
+				scale.waiting_unload_commands.erase(scale.waiting_unload_commands.begin(), scale.waiting_unload_commands.begin() + command_count);
+			}
 		});
 
 		// System to unload spatial nodes that have been marked to unload
-		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent>(DEBUG_ONLY("SpatialWorldProcessUnloadNodeCommands"))
+		world.system<const SpatialScale3DWorkerComponent, SpatialWorld3DComponent>(DEBUG_ONLY("WorldProcessUnloadNodeCommands"))
 			.multi_threaded()
 			.kind<WorldUnloadPhase>()
 			.term_at(1).parent()
@@ -466,8 +466,11 @@ namespace voxel_game
 
 			DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
+			DEBUG_ASSERT(scale.destroy_commands.empty(), "We shouldn't have any destroy commands left over");
+
 			if (spatial_world.unload_command_processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
 			{
+				scale.destroy_commands = std::move(scale.unload_commands);
 				return;
 			}
 
@@ -483,10 +486,12 @@ namespace voxel_game
 
 				run_processors_delegate(spatial_world, scale, node);
 			});
+
+			scale.destroy_commands = std::move(scale.unload_commands);
 		});
 
 		// System to delete spatial nodes that have been marked to unload
-		world.system<SpatialWorld3DComponent>(DEBUG_ONLY("SpatialWorldDestroyNodes"))
+		world.system<SpatialWorld3DComponent>(DEBUG_ONLY("WorldDestroyNodes"))
 			.multi_threaded()
 			.kind<WorldDestroyPhase>()
 			.each([&world](SpatialWorld3DComponent& spatial_world)
@@ -499,7 +504,7 @@ namespace voxel_game
 
 				DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
-				for (const godot::Vector3i& pos : scale.unload_commands)
+				for (const godot::Vector3i& pos : scale.destroy_commands)
 				{
 					SpatialNodeMap::iterator it = scale.nodes.find(pos);
 					DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
@@ -515,7 +520,7 @@ namespace voxel_game
 					scale.nodes.erase(it);
 				}
 
-				scale.unload_commands.clear();
+				scale.destroy_commands.clear();
 			}
 		});
 	}

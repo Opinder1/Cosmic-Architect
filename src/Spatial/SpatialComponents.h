@@ -107,9 +107,12 @@ namespace voxel_game
 		SpatialNodeMap nodes;
 
 		SpatialScaleNodeCommands create_commands;
+		SpatialScaleNodeCommands waiting_load_commands;
 		SpatialScaleNodeCommands load_commands;
+
+		SpatialScaleNodeCommands waiting_unload_commands;
 		SpatialScaleNodeCommands unload_commands;
-		SpatialScaleNodeCommands tick_commands;
+		SpatialScaleNodeCommands destroy_commands;
 	};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
