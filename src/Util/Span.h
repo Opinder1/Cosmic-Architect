@@ -131,6 +131,11 @@ public:
 		m_size(S)
 	{}
 
+	Span(std::vector<T>& vector) :
+		m_data(vector.data()),
+		m_size(vector.size())
+	{}
+
 	Span(const std::vector<T>& vector) :
 		m_data(vector.data()),
 		m_size(vector.size())
