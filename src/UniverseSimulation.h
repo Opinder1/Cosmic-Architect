@@ -193,6 +193,8 @@ namespace voxel_game
 		void StopSimulation();
 		bool Progress(real_t delta);
 
+		void SetGalaxyPosition(const godot::Vector3i& pos);
+
 		// ####### Fragments (admin only) #######
 
 		godot::Dictionary GetFragmentInfo(UUID fragment_id);

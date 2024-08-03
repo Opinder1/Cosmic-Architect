@@ -35,10 +35,9 @@ namespace voxel_game
 		void Process(SpatialWorld3DComponent& spatial_world, UniverseScale& universe_scale, UniverseNode& universe_node)
 		{
 			const uint32_t entities_per_node = 4;
-			const uint32_t node_size = 16;
-			const uint32_t position_multi = 2;
 			const uint32_t scale_step = 1 << universe_node.coord.scale;
-			const uint32_t scale_node_step = (node_size << universe_node.coord.scale) * position_multi;
+			const uint32_t scale_node_step = scale_step * spatial_world.node_size;
+			const double box_size = double(scale_step) / 2.0;
 
 			if (entity_pool->new_entities.size() < entities_per_node + 1)
 			{
@@ -67,7 +66,7 @@ namespace voxel_game
 				position_z += godot::UtilityFunctions::randf_range(0, scale_node_step);
 
 				galaxy.set(Position3DComponent{ godot::Vector3(position_x, position_y, position_z) });
-				galaxy.set(Scale3DComponent{ godot::Vector3(scale_step, scale_step, scale_step) });
+				galaxy.set(Scale3DComponent{ godot::Vector3(box_size, box_size, box_size) });
 				galaxy.add<RenderBase>(galaxy_schematic);
 				galaxy.add<FlatTextureComponent>();
 				galaxy.add<RenderInstance>();
@@ -76,6 +75,29 @@ namespace voxel_game
 				galaxy.modified<RenderInstanceFlags>();
 
 				universe_node.entities.push_back(galaxy);
+			}
+		}
+	};
+
+	struct UniverseUnloadNodeCommandProcessor
+	{
+		flecs::world_t* world;
+		flecs::entity_t universe_entity;
+
+		UniverseUnloadNodeCommandProcessor(flecs::world_t* world, flecs::entity_t universe_entity) :
+			world(world),
+			universe_entity(universe_entity)
+		{}
+
+		void Process(SpatialWorld3DComponent& spatial_world, UniverseScale& universe_scale, UniverseNode& universe_node)
+		{
+			const uint32_t entities_per_node = 4;
+			const uint32_t scale_step = 1 << universe_node.coord.scale;
+			const uint32_t scale_node_step = scale_step * spatial_world.node_size;
+
+			for (flecs::entity_t galaxy : universe_node.entities)
+			{
+				flecs::entity(world, galaxy).destruct();
 			}
 		}
 	};
@@ -93,9 +115,11 @@ namespace voxel_game
 			.event(flecs::OnAdd)
 			.each([](const UniverseComponent& universe, SpatialWorld3DComponent& spatial_world)
 		{
-			DEBUG_ASSERT(spatial_world.max_scale == 0, "The spatial world was already initialized with a type");
+			DEBUG_ASSERT(!spatial_world.initialized, "The spatial world was already initialized with a type");
 
 			spatial_world.max_scale = k_max_world_scale;
+
+			spatial_world.node_size = 16;
 
 			spatial_world.builder = SpatialBuilder<UniverseScale, UniverseNode>();
 
@@ -105,6 +129,10 @@ namespace voxel_game
 			}
 
 			spatial_world.load_command_processors.push_back(SpatialNodeCommandProcessor<UniverseLoadNodeCommandProcessor, UniverseScale, UniverseNode>());
+
+			spatial_world.unload_command_processors.push_back(SpatialNodeCommandProcessor<UniverseUnloadNodeCommandProcessor, UniverseScale, UniverseNode>());
+
+			spatial_world.initialized = true;
 		});
 
 		// Uninitialize spatial world of a universe

@@ -34,6 +34,16 @@ namespace voxel_game
 	constexpr const size_t k_max_frame_unload_commands = 16;
 	constexpr const uint8_t k_node_no_parent = UINT8_MAX;
 
+	enum class NodeState : uint8_t
+	{
+		Unloaded, // Created but not loaded
+		Loaded, // Fully loaded
+
+		Loading, // Has a load command
+		Unloading, // Has a unload command
+		Deleting, // Has a delete command
+	};
+
 	// Phases which are used to synchronise the ecs between running each thread type in parallel
 	struct SpatialWorldMultithreadPhase {};
 
@@ -77,11 +87,11 @@ namespace voxel_game
 	{
 		SpatialCoord3D coord;
 
+		NodeState state = NodeState::Unloaded;
+
 		uint8_t parent_index = k_node_no_parent; // The index we are in our parent
 		uint8_t children_mask = 0; // Each bit determines a child [0-7]
 		uint8_t neighbour_mask = 0; // Each bit determines a neighbour [0-5]
-
-		uint8_t initialized : 1;
 
 		uint32_t num_observers = 0; // Number of observers looking at me (1 for write, more than 1 means shared read)
 		uint32_t network_version = 0; // The version of this node. We use this to check if we should update to a newer version if there is one
@@ -107,10 +117,8 @@ namespace voxel_game
 		SpatialNodeMap nodes;
 
 		SpatialScaleNodeCommands create_commands;
-		SpatialScaleNodeCommands waiting_load_commands;
 		SpatialScaleNodeCommands load_commands;
 
-		SpatialScaleNodeCommands waiting_unload_commands;
 		SpatialScaleNodeCommands unload_commands;
 		SpatialScaleNodeCommands destroy_commands;
 	};
@@ -119,7 +127,9 @@ namespace voxel_game
 	struct SpatialWorld3DComponent : Nocopy
 	{
 		SpatialAABB bounds;
-		uint8_t max_scale = 0;
+		bool initialized = false;
+		uint8_t max_scale = 1;
+		uint8_t node_size = 1;
 
 		// Queries
 		const flecs::query_t* entities_query = nullptr;
