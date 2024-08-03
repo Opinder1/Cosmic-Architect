@@ -377,13 +377,6 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::SetGalaxyPosition(const godot::Vector3i& pos)
-	{
-		SIM_DEFER_COMMAND("set_galaxy_position", pos);
-
-		flecs::entity(m_world, m_galaxy_entity).set(Position3DComponent{ pos });
-	}
-
 	void UniverseSimulation::BindMethods()
 	{
 		BIND_METHOD(godot::D_METHOD(k_commands->is_threaded), &UniverseSimulation::IsThreaded);
@@ -393,7 +386,6 @@ namespace voxel_game
 		BIND_METHOD(godot::D_METHOD(k_commands->start_simulation, "thread_mode"), &UniverseSimulation::StartSimulation);
 		BIND_METHOD(godot::D_METHOD(k_commands->stop_simulation), &UniverseSimulation::StopSimulation);
 		BIND_METHOD(godot::D_METHOD(k_commands->progress, "delta"), &UniverseSimulation::Progress);
-		BIND_METHOD(godot::D_METHOD("set_galaxy_position", "pos"), &UniverseSimulation::SetGalaxyPosition);
 
 		// ####### Fragments (admin only) #######
 
