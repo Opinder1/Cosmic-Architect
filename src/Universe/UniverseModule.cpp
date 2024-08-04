@@ -41,6 +41,7 @@ namespace voxel_game
 
 			if (entity_pool->new_entities.size() < entities_per_node + 1)
 			{
+				DEBUG_PRINT_ERROR("Ran out of entities to spawn on this thread"); // Increase the new entities pool
 				return;
 			}
 
