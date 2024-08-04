@@ -3,49 +3,29 @@
 
 namespace voxel_game
 {
-	void UniverseSimulation::SetMoveForwards(bool is_moving)
+	void UniverseSimulation::SetVelocity(const godot::Vector3& velocity)
 	{
-		SIM_DEFER_COMMAND(k_commands->set_move_forwards, is_moving);
+		SIM_DEFER_COMMAND(k_commands->set_velocity, velocity);
 	}
 
-	void UniverseSimulation::SetMoveBackwards(bool is_moving)
+	void UniverseSimulation::Accelerate(const godot::Vector3& acceleration)
 	{
-		SIM_DEFER_COMMAND(k_commands->set_move_backwards, is_moving);
-	}
-
-	void UniverseSimulation::SetMoveLeft(bool is_moving)
-	{
-		SIM_DEFER_COMMAND(k_commands->set_move_left, is_moving);
-	}
-
-	void UniverseSimulation::SetMoveRight(bool is_moving)
-	{
-		SIM_DEFER_COMMAND(k_commands->set_move_right, is_moving);
-	}
-
-	void UniverseSimulation::SetMoveUp(bool is_moving)
-	{
-		SIM_DEFER_COMMAND(k_commands->set_move_up, is_moving);
-	}
-
-	void UniverseSimulation::SetMoveDown(bool is_moving)
-	{
-		SIM_DEFER_COMMAND(k_commands->set_move_down, is_moving);
-	}
-
-	void UniverseSimulation::SetRotateLeft(bool is_rotating)
-	{
-		SIM_DEFER_COMMAND(k_commands->set_rotate_left, is_rotating);
-	}
-
-	void UniverseSimulation::SetRotateRight(bool is_rotating)
-	{
-		SIM_DEFER_COMMAND(k_commands->set_rotate_right, is_rotating);
+		SIM_DEFER_COMMAND(k_commands->accelerate, acceleration);
 	}
 
 	void UniverseSimulation::SetLookDirection(const godot::Quaternion& direction)
 	{
 		SIM_DEFER_COMMAND(k_commands->set_look_direction, direction);
+	}
+
+	void UniverseSimulation::SetRotationVelocity(const godot::Quaternion& velocity)
+	{
+		SIM_DEFER_COMMAND(k_commands->set_rotation_velocity, velocity);
+	}
+
+	void UniverseSimulation::AccelerateRotation(const godot::Quaternion& acceleration)
+	{
+		SIM_DEFER_COMMAND(k_commands->accelerate_rotation, acceleration);
 	}
 
 	void UniverseSimulation::SetSprint(bool is_sprinting)

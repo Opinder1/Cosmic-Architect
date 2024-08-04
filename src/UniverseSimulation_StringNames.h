@@ -168,14 +168,11 @@ namespace voxel_game
 
 		// ####### Player Control #######
 
-		godot::StringName set_move_forwards;
-		godot::StringName set_move_backwards;
-		godot::StringName set_move_left;
-		godot::StringName set_move_right;
-		godot::StringName set_move_up;
-		godot::StringName set_move_down;
-		godot::StringName set_rotate_left;
-		godot::StringName set_rotate_right;
+		godot::StringName set_velocity;
+		godot::StringName accelerate;
+		godot::StringName set_rotation;
+		godot::StringName set_rotation_velocity;
+		godot::StringName accelerate_rotation;
 		godot::StringName set_look_direction;
 		godot::StringName set_sprint;
 		godot::StringName set_crouching;
@@ -221,11 +218,9 @@ namespace voxel_game
 
 		// ####### Vehicle Control #######
 
-		godot::StringName accelerate;
-		godot::StringName decelerate;
-		godot::StringName activate_vehicle_control;
+		godot::StringName trigger_vehicle_control;
 		godot::StringName toggle_vehicle_control;
-		godot::StringName set_vehicle_setting;
+		godot::StringName set_vehicle_control;
 
 		// ####### Abilities #######
 

@@ -362,15 +362,11 @@ namespace voxel_game
 
 		// ####### Player Control #######
 
-		void SetMoveForwards(bool is_moving);
-		void SetMoveBackwards(bool is_moving);
-		void SetMoveLeft(bool is_moving);
-		void SetMoveRight(bool is_moving);
-		void SetMoveUp(bool is_moving);
-		void SetMoveDown(bool is_moving);
-		void SetRotateLeft(bool is_rotating);
-		void SetRotateRight(bool is_rotating);
+		void SetVelocity(const godot::Vector3& velocity);
+		void Accelerate(const godot::Vector3& acceleration);
 		void SetLookDirection(const godot::Quaternion& direction);
+		void SetRotationVelocity(const godot::Quaternion& rotation);
+		void AccelerateRotation(const godot::Quaternion& acceleration);
 		void SetSprint(bool is_sprinting);
 		void SetCrouching(bool is_crouching);
 		void SetProne(bool is_prone);
@@ -416,11 +412,9 @@ namespace voxel_game
 
 		// ####### Vehicle Control #######
 
-		void Accelerate(bool is_accelerating);
-		void Deccelerate(bool is_decelerating);
-		void ActivateVehicleControl(UUID system_id);
-		void ToggleVehicleControl(UUID system_id, bool toggled);
-		void SetVehicleSetting(UUID setting_id, const godot::Variant& value);
+		void TriggerVehicleControl(UUID control_id);
+		void ToggleVehicleControl(UUID control_id, bool toggled);
+		void SetVehicleControl(UUID control_id, const godot::Variant& value);
 
 		// ####### Abilities #######
 

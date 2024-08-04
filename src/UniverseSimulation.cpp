@@ -541,15 +541,11 @@ namespace voxel_game
 
 		// ####### Player Control #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->set_move_forwards, "is_moving"), &UniverseSimulation::SetMoveForwards);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_move_backwards, "is_moving"), &UniverseSimulation::SetMoveBackwards);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_move_left, "is_moving"), &UniverseSimulation::SetMoveLeft);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_move_right, "is_moving"), &UniverseSimulation::SetMoveRight);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_move_up, "is_moving"), &UniverseSimulation::SetMoveUp);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_move_down, "is_moving"), &UniverseSimulation::SetMoveDown);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_rotate_left, "is_rotating"), &UniverseSimulation::SetRotateLeft);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_rotate_right, "is_rotating"), &UniverseSimulation::SetRotateRight);
+		BIND_METHOD(godot::D_METHOD(k_commands->set_velocity, "velocity"), &UniverseSimulation::SetVelocity);
+		BIND_METHOD(godot::D_METHOD(k_commands->accelerate, "acceleration"), &UniverseSimulation::Accelerate);
 		BIND_METHOD(godot::D_METHOD(k_commands->set_look_direction, "direction"), &UniverseSimulation::SetLookDirection);
+		BIND_METHOD(godot::D_METHOD(k_commands->set_rotation_velocity, "velocity"), &UniverseSimulation::SetRotationVelocity);
+		BIND_METHOD(godot::D_METHOD(k_commands->accelerate_rotation, "acceleration"), &UniverseSimulation::AccelerateRotation);
 		BIND_METHOD(godot::D_METHOD(k_commands->set_sprint, "is_sprinting"), &UniverseSimulation::SetSprint);
 		BIND_METHOD(godot::D_METHOD(k_commands->set_crouching, "is_crouching"), &UniverseSimulation::SetCrouching);
 		BIND_METHOD(godot::D_METHOD(k_commands->set_prone, "is_prone"), &UniverseSimulation::SetProne);
@@ -594,11 +590,9 @@ namespace voxel_game
 
 		// ####### Vehicle Control #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->accelerate, "is_accelerating"), &UniverseSimulation::Accelerate);
-		BIND_METHOD(godot::D_METHOD(k_commands->decelerate, "is_decelerating"), &UniverseSimulation::Deccelerate);
-		BIND_METHOD(godot::D_METHOD(k_commands->activate_vehicle_control, "system_id"), &UniverseSimulation::ActivateVehicleControl);
-		BIND_METHOD(godot::D_METHOD(k_commands->toggle_vehicle_control, "system_id", "toggled"), &UniverseSimulation::ToggleVehicleControl);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_vehicle_setting, "system_id", "value"), &UniverseSimulation::SetVehicleSetting);
+		BIND_METHOD(godot::D_METHOD(k_commands->trigger_vehicle_control, "control_id"), &UniverseSimulation::TriggerVehicleControl);
+		BIND_METHOD(godot::D_METHOD(k_commands->toggle_vehicle_control, "control_id", "toggled"), &UniverseSimulation::ToggleVehicleControl);
+		BIND_METHOD(godot::D_METHOD(k_commands->set_vehicle_control, "control_id", "value"), &UniverseSimulation::SetVehicleControl);
 
 		// ####### Abilities #######
 

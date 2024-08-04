@@ -169,15 +169,11 @@ namespace voxel_game
 
 		// ####### Player Control #######
 
-		INITIALIZE_STRINGNAME(set_move_forwards);
-		INITIALIZE_STRINGNAME(set_move_backwards);
-		INITIALIZE_STRINGNAME(set_move_left);
-		INITIALIZE_STRINGNAME(set_move_right);
-		INITIALIZE_STRINGNAME(set_move_up);
-		INITIALIZE_STRINGNAME(set_move_down);
-		INITIALIZE_STRINGNAME(set_rotate_left);
-		INITIALIZE_STRINGNAME(set_rotate_right);
+		INITIALIZE_STRINGNAME(set_velocity);
+		INITIALIZE_STRINGNAME(accelerate);
 		INITIALIZE_STRINGNAME(set_look_direction);
+		INITIALIZE_STRINGNAME(set_rotation_velocity);
+		INITIALIZE_STRINGNAME(accelerate_rotation);
 		INITIALIZE_STRINGNAME(set_sprint);
 		INITIALIZE_STRINGNAME(set_crouching);
 		INITIALIZE_STRINGNAME(set_prone);
@@ -222,11 +218,9 @@ namespace voxel_game
 
 		// ####### Vehicle Control #######
 
-		INITIALIZE_STRINGNAME(accelerate);
-		INITIALIZE_STRINGNAME(decelerate);
-		INITIALIZE_STRINGNAME(activate_vehicle_control);
+		INITIALIZE_STRINGNAME(trigger_vehicle_control);
 		INITIALIZE_STRINGNAME(toggle_vehicle_control);
-		INITIALIZE_STRINGNAME(set_vehicle_setting);
+		INITIALIZE_STRINGNAME(set_vehicle_control);
 
 		// ####### Abilities #######
 

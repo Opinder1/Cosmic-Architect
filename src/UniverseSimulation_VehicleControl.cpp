@@ -3,28 +3,18 @@
 
 namespace voxel_game
 {
-	void UniverseSimulation::Accelerate(bool is_accelerating)
+	void UniverseSimulation::TriggerVehicleControl(UUID control_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->accelerate, is_accelerating);
+		SIM_DEFER_COMMAND(k_commands->trigger_vehicle_control, control_id);
 	}
 
-	void UniverseSimulation::Deccelerate(bool is_decelerating)
+	void UniverseSimulation::ToggleVehicleControl(UUID control_id, bool toggled)
 	{
-		SIM_DEFER_COMMAND(k_commands->decelerate, is_decelerating);
+		SIM_DEFER_COMMAND(k_commands->toggle_vehicle_control, control_id, toggled);
 	}
 
-	void UniverseSimulation::ActivateVehicleControl(UUID system_id)
+	void UniverseSimulation::SetVehicleControl(UUID control_id, const godot::Variant& value)
 	{
-		SIM_DEFER_COMMAND(k_commands->activate_vehicle_control, system_id);
-	}
-
-	void UniverseSimulation::ToggleVehicleControl(UUID system_id, bool toggled)
-	{
-		SIM_DEFER_COMMAND(k_commands->toggle_vehicle_control, system_id, toggled);
-	}
-
-	void UniverseSimulation::SetVehicleSetting(UUID setting_id, const godot::Variant& value)
-	{
-		SIM_DEFER_COMMAND(k_commands->set_vehicle_setting, setting_id, value);
+		SIM_DEFER_COMMAND(k_commands->set_vehicle_control, control_id, value);
 	}
 }
