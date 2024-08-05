@@ -447,7 +447,7 @@ namespace voxel_game
 		static void BindSignals();
 
 	private:
-		godot::Ref<godot::WeakRef> m_universe;
+		godot::Variant m_universe;
 
 		// The load state to control the initial loading and final unloading of the simulation
 		std::atomic<LoadState> m_galaxy_load_state = LOAD_STATE_UNLOADED;

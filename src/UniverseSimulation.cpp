@@ -176,7 +176,7 @@ namespace voxel_game
 
 	UniverseSimulation::~UniverseSimulation()
 	{
-		DEBUG_ASSERT(!m_universe.is_valid(), "We should have uninitialized first");
+		DEBUG_ASSERT(!m_universe, "We should have uninitialized first");
 
 		// Join the thread just in case
 		if (IsThreaded())
@@ -187,7 +187,7 @@ namespace voxel_game
 
 	void UniverseSimulation::Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type)
 	{
-		DEBUG_ASSERT(!m_universe.is_valid(), "We can't initialize a simulation twice");
+		DEBUG_ASSERT(!m_universe, "We can't initialize a simulation twice");
 
 		m_universe = godot::UtilityFunctions::weakref(universe);
 
@@ -232,7 +232,7 @@ namespace voxel_game
 
 	void UniverseSimulation::Uninitialize()
 	{
-		DEBUG_ASSERT(m_universe.is_valid(), "The simulation should have been initialized");
+		DEBUG_ASSERT(m_universe, "The simulation should have been initialized");
 
 		if (m_galaxy_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
 		{
@@ -252,7 +252,7 @@ namespace voxel_game
 		emit_signal(k_signals->simulation_uninitialized);
 
 		// Finally disconnect from our universe
-		m_universe.unref();
+		m_universe.clear();
 	}
 
 	bool UniverseSimulation::IsThreaded()
@@ -262,7 +262,7 @@ namespace voxel_game
 
 	godot::Ref<Universe> UniverseSimulation::GetUniverse()
 	{
-		return m_universe->get_ref();
+		return m_universe;
 	}
 
 	godot::Dictionary UniverseSimulation::GetGalaxyInfo()
@@ -282,7 +282,7 @@ namespace voxel_game
 
 	void UniverseSimulation::StartSimulation(ThreadMode thread_mode)
 	{
-		if (!m_universe.is_valid())
+		if (!m_universe)
 		{
 			DEBUG_PRINT_ERROR("This universe simulation should have been instantiated by a universe");
 			return;
