@@ -507,7 +507,7 @@ namespace voxel_game
 
 		for (uint8_t scale_index = 0; scale_index < spatial_world->max_scale; scale_index++)
 		{
-			scope.entity(DEBUG_ONLY(godot::vformat("WorkerEntity_%d", scale_index).utf8()))
+			scope.entity(DEBUG_ONLY(godot::vformat("WorkerEntity%d", scale_index).utf8()))
 				.set(SpatialScale3DWorkerComponent{ scale_index });
 		}
 	}

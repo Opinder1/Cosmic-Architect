@@ -26,6 +26,8 @@ namespace flecs
 
 namespace voxel_game
 {
+	struct SpatialNode3D;
+	struct SpatialScale3D;
 	struct SpatialNodeCommandProcessorBase;
 
 	// The max scale that a world can have
@@ -43,6 +45,11 @@ namespace voxel_game
 		Unloading, // Has a unload command
 		Deleting, // Has a delete command
 	};
+
+	using SpatialScaleNodeCommands = std::vector<godot::Vector3i>;
+	using SpatialNodeMap = robin_hood::unordered_flat_map<godot::Vector3i, std::unique_ptr<SpatialNode3D>>;
+	using SpatialNodeCommandProcessors = std::vector<SpatialNodeCommandProcessorBase>;
+	using WorldScaleArray = std::array<std::unique_ptr<SpatialScale3D>, k_max_world_scale>;
 
 	// Phases which are used to synchronise the ecs between running each thread type in parallel
 	struct SpatialWorldMultithreadPhase {};
@@ -108,17 +115,14 @@ namespace voxel_game
 		SpatialNode3D* neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
 	};
 
-	using SpatialScaleNodeCommands = std::vector<godot::Vector3i>;
-	using SpatialNodeMap = robin_hood::unordered_flat_map<godot::Vector3i, std::unique_ptr<SpatialNode3D>>;
-
 	// A level of detail map for a world. The world will have multiple of these
 	struct SpatialScale3D : Nocopy
 	{
 		SpatialNodeMap nodes;
 
+		// Commands
 		SpatialScaleNodeCommands create_commands;
 		SpatialScaleNodeCommands load_commands;
-
 		SpatialScaleNodeCommands unload_commands;
 		SpatialScaleNodeCommands destroy_commands;
 	};
@@ -138,15 +142,15 @@ namespace voxel_game
 		const flecs::query_t* loaders_query = nullptr;
 
 		// World data
-		std::array<std::unique_ptr<SpatialScale3D>, k_max_world_scale> scales;
+		WorldScaleArray scales;
 
 		// Scale and Node builder
 		SpatialBuilderBase builder = SpatialBuilder<SpatialScale3D, SpatialNode3D>();
 
 		// Command processors
-		std::vector<SpatialNodeCommandProcessorBase> load_command_processors;
-		std::vector<SpatialNodeCommandProcessorBase> unload_command_processors;
-		std::vector<SpatialNodeCommandProcessorBase> tick_command_processors;
+		SpatialNodeCommandProcessors load_command_processors;
+		SpatialNodeCommandProcessors unload_command_processors;
+		SpatialNodeCommandProcessors tick_command_processors;
 	};
 
 	struct SpatialComponents
