@@ -475,7 +475,7 @@ namespace voxel_game
 		{
 			buffer_pos = ReadVariant(args[i], buffer_pos, buffer_end);
 
-			if (buffer_pos == buffer_end)
+			if (buffer_pos > buffer_end)
 			{
 				DEBUG_PRINT_ERROR("Command buffer doesn't fit the command and its arguments");
 				return buffer_end;
