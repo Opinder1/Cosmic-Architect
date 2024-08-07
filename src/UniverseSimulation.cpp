@@ -195,15 +195,17 @@ namespace voxel_game
 
 		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
 
+#if DEBUG
 		m_world.import<flecs::stats>();
+		m_world.set<flecs::Rest>({});
+#endif
+
 		m_world.import<SimulationModule>();
 		m_world.import<PhysicsModule>();
 		m_world.import<SpatialModule>();
 		m_world.import<VoxelModule>();
 		m_world.import<GalaxyModule>();
 		m_world.import<UniverseModule>();
-
-		m_world.set<flecs::Rest>({});
 
 		m_universe_entity = m_world.entity(DEBUG_ONLY("Universe"))
 			.add<UniverseComponent>()
