@@ -22,14 +22,14 @@ namespace voxel_game
 	{
 		flecs::world_t* world;
 		flecs::entity_t universe_entity;
-		ThreadEntityPool* entity_pool;
+		ThreadEntityPool& entity_pool;
 
 		UniverseLoadNodeCommandProcessor(flecs::world_t* world, flecs::entity_t universe_entity) :
 			world(world),
 			universe_entity(universe_entity),
 			entity_pool(GetThreadEntityPool(world))
 		{
-			DEBUG_ASSERT(entity_pool != nullptr, "We could not get an entity pool for our multithread stage");
+
 		}
 
 		void Process(SpatialWorld3DComponent& spatial_world, UniverseScale& universe_scale, UniverseNode& universe_node)
@@ -39,21 +39,13 @@ namespace voxel_game
 			const uint32_t scale_node_step = scale_step * spatial_world.node_size;
 			const double box_size = double(scale_step) / 2.0;
 
-			if (entity_pool->new_entities.size() < entities_per_node + 1)
-			{
-				DEBUG_PRINT_ERROR("Ran out of entities to spawn on this thread"); // Increase the new entities pool
-				return;
-			}
-
-			flecs::entity galaxy_schematic(world, entity_pool->new_entities.back());
-			entity_pool->new_entities.pop_back();
+			flecs::entity galaxy_schematic(world, CreateThreadEntity(entity_pool));
 
 			galaxy_schematic.add<RenderMesh>();
 
 			for (size_t i = 0; i < entities_per_node; i++)
 			{
-				flecs::entity galaxy(world, entity_pool->new_entities.back());
-				entity_pool->new_entities.pop_back();
+				flecs::entity galaxy(world, CreateThreadEntity(entity_pool));
 
 				galaxy.child_of(universe_entity);
 				galaxy.add<GalaxyComponent>();
