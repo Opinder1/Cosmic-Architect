@@ -497,24 +497,27 @@ namespace voxel_game
 		});
 	}
 
-	void SpatialModule::AddSpatialScaleWorkers(flecs::world_t* world, flecs::entity_t spatial_world_entity)
+	void SpatialModule::AddSpatialScaleWorkers(flecs::entity spatial_world_entity)
 	{
-		flecs::scoped_world scope(world, spatial_world_entity);
+		flecs::scoped_world scope = spatial_world_entity.scope();
 
-		const SpatialWorld3DComponent* spatial_world = flecs::entity(world, spatial_world_entity).get<SpatialWorld3DComponent>();
+		const SpatialWorld3DComponent* spatial_world = spatial_world_entity.get<SpatialWorld3DComponent>();
 
 		DEBUG_ASSERT(spatial_world != nullptr, "The entity should have a spatial world to add spatial workers");
 
 		for (uint8_t scale_index = 0; scale_index < spatial_world->max_scale; scale_index++)
 		{
-			scope.entity(DEBUG_ONLY(godot::vformat("WorkerEntity%d", scale_index).utf8()))
-				.set(SpatialScale3DWorkerComponent{ scale_index });
+			godot::String worker_name = godot::vformat("WorkerEntity%d", scale_index);
+
+			flecs::entity worker_entity(scope, DEBUG_ONLY(worker_name.utf8()));
+
+			worker_entity.set(SpatialScale3DWorkerComponent{ scale_index });
 		}
 	}
 
-	void SpatialModule::RemoveSpatialScaleWorkers(flecs::world_t* world, flecs::entity_t spatial_world_entity)
+	void SpatialModule::RemoveSpatialScaleWorkers(flecs::entity spatial_world_entity)
 	{
-		flecs::scoped_world scope(world, spatial_world_entity);
+		flecs::scoped_world scope = spatial_world_entity.scope();
 
 		scope.query_builder<const SpatialScale3DWorkerComponent>()
 			.read(flecs::ChildOf, spatial_world_entity)
