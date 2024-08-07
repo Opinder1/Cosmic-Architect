@@ -38,9 +38,11 @@
 
 namespace voxel_game
 {
+	const size_t k_simulation_ticks_per_second = 20;
+
 	size_t UUIDHash::operator()(const UUID& uuid) const
 	{
-		static_assert(sizeof(UUID) == 16);
+		static_assert(sizeof(UUID) == sizeof(uint64_t) * 2);
 
 		uint64_t* arr = (uint64_t*)&uuid;
 
@@ -207,29 +209,32 @@ namespace voxel_game
 		m_world.import<GalaxyModule>();
 		m_world.import<UniverseModule>();
 
-		m_universe_entity = m_world.entity(DEBUG_ONLY("Universe"))
-			.add<UniverseComponent>()
-			.add<SpatialWorld3DComponent>();
+		flecs::entity universe_entity(m_world, DEBUG_ONLY("Universe"));
 
-		SpatialModule::AddSpatialScaleWorkers(m_world, m_universe_entity);
+		universe_entity.add<UniverseComponent>();
+		universe_entity.add<SpatialWorld3DComponent>();
 
-		{
-			SpatialLoader3DComponent spatial_loader;
+		SpatialModule::AddSpatialScaleWorkers(universe_entity);
 
-			spatial_loader.dist_per_lod = 3;
-			spatial_loader.min_lod = 0;
-			spatial_loader.max_lod = k_max_world_scale;
+		m_universe_entity = universe_entity;
 
-			m_galaxy_entity = m_world.entity(DEBUG_ONLY("SimulatedGalaxy"))
-				.child_of(m_universe_entity)
-				.add<GalaxyComponent>()
-				.add<SpatialWorld3DComponent>()
-				.add<Position3DComponent>()
-				.add<Rotation3DComponent>()
-				.emplace<SpatialLoader3DComponent>(std::move(spatial_loader));
-		}
+		flecs::entity galaxy_entity(m_world, DEBUG_ONLY("SimulatedGalaxy"));
 
-		SpatialModule::AddSpatialScaleWorkers(m_world, m_galaxy_entity);
+		galaxy_entity.child_of(m_universe_entity);
+		galaxy_entity.add<GalaxyComponent>();
+		galaxy_entity.add<SpatialWorld3DComponent>();
+		galaxy_entity.add<Position3DComponent>();
+		galaxy_entity.add<Rotation3DComponent>();
+
+		SpatialLoader3DComponent& spatial_loader = galaxy_entity.ensure<SpatialLoader3DComponent>();
+
+		spatial_loader.dist_per_lod = 3;
+		spatial_loader.min_lod = 0;
+		spatial_loader.max_lod = k_max_world_scale;
+
+		SpatialModule::AddSpatialScaleWorkers(galaxy_entity);
+
+		m_galaxy_entity = galaxy_entity;
 	}
 
 	void UniverseSimulation::Uninitialize()
@@ -277,7 +282,7 @@ namespace voxel_game
 	{
 		m_world.import<RenderModule>();
 
-		flecs::entity universe_entity(m_world.c_ptr(), m_universe_entity);
+		flecs::entity universe_entity(m_world, m_universe_entity);
 			
 		universe_entity.ensure<RenderScenario>().id = render_info->GetScenario();
 	}
@@ -339,13 +344,13 @@ namespace voxel_game
 				m_info_updater.RetrieveUpdates(m_info_cache);
 			}
 
-			return true;
+			return true; // We always keep running when threaded as the thread will stop at its own pace
 		}
 		else
 		{
 			bool keep_running = m_world.progress(static_cast<ecs_ftime_t>(delta));
 
-			// Process signals
+			// Process signals here as we don't need to defer them
 			m_deferred_signals.ProcessCommands(this);
 
 			return keep_running;
@@ -356,7 +361,7 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(IsThreaded(), "We should be threaded when running the thread loop");
 
-		m_world.set_target_fps(20);
+		m_world.set_target_fps(k_simulation_ticks_per_second);
 
 		while (m_galaxy_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
 		{
