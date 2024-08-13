@@ -40,6 +40,42 @@ namespace voxel_game
 {
 	const size_t k_simulation_ticks_per_second = 20;
 
+	flecs::entity CreateNewUniverse(flecs::world& world)
+	{
+		// Create the universe
+		flecs::entity universe_entity(world, DEBUG_ONLY("Universe"));
+
+		universe_entity.add<UniverseComponent>();
+		universe_entity.add<SpatialWorld3DComponent>();
+
+		SpatialModule::AddSpatialScaleWorkers(universe_entity);
+
+		return universe_entity;
+	}
+
+	flecs::entity CreateNewSimulatedGalaxy(flecs::world& world, flecs::entity_t universe_entity)
+	{
+		// Create the simulated galaxy
+		flecs::entity galaxy_entity(world, DEBUG_ONLY("SimulatedGalaxy"));
+
+		galaxy_entity.child_of(universe_entity);
+		galaxy_entity.add<GalaxyComponent>();
+		galaxy_entity.add<SpatialWorld3DComponent>();
+		galaxy_entity.add<Position3DComponent>();
+		galaxy_entity.add<Rotation3DComponent>();
+
+		// We want the simulated galaxy to load all galaxies around it
+		SpatialLoader3DComponent& spatial_loader = galaxy_entity.ensure<SpatialLoader3DComponent>();
+
+		spatial_loader.dist_per_lod = 3;
+		spatial_loader.min_lod = 0;
+		spatial_loader.max_lod = k_max_world_scale;
+
+		SpatialModule::AddSpatialScaleWorkers(galaxy_entity);
+
+		return galaxy_entity;
+	}
+
 	size_t UUIDHash::operator()(const UUID& uuid) const
 	{
 		static_assert(sizeof(UUID) == sizeof(uint64_t) * 2);
@@ -197,6 +233,7 @@ namespace voxel_game
 
 		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
 
+		// Import modules
 #if DEBUG
 		m_world.import<flecs::stats>();
 		m_world.set<flecs::Rest>({});
@@ -209,32 +246,11 @@ namespace voxel_game
 		m_world.import<GalaxyModule>();
 		m_world.import<UniverseModule>();
 
-		flecs::entity universe_entity(m_world, DEBUG_ONLY("Universe"));
+		// Create the universe and simulated galaxy
 
-		universe_entity.add<UniverseComponent>();
-		universe_entity.add<SpatialWorld3DComponent>();
+		m_universe_entity = CreateNewUniverse(m_world);
 
-		SpatialModule::AddSpatialScaleWorkers(universe_entity);
-
-		m_universe_entity = universe_entity;
-
-		flecs::entity galaxy_entity(m_world, DEBUG_ONLY("SimulatedGalaxy"));
-
-		galaxy_entity.child_of(m_universe_entity);
-		galaxy_entity.add<GalaxyComponent>();
-		galaxy_entity.add<SpatialWorld3DComponent>();
-		galaxy_entity.add<Position3DComponent>();
-		galaxy_entity.add<Rotation3DComponent>();
-
-		SpatialLoader3DComponent& spatial_loader = galaxy_entity.ensure<SpatialLoader3DComponent>();
-
-		spatial_loader.dist_per_lod = 3;
-		spatial_loader.min_lod = 0;
-		spatial_loader.max_lod = k_max_world_scale;
-
-		SpatialModule::AddSpatialScaleWorkers(galaxy_entity);
-
-		m_galaxy_entity = galaxy_entity;
+		m_galaxy_entity = CreateNewSimulatedGalaxy(m_world, m_universe_entity);
 	}
 
 	void UniverseSimulation::Uninitialize()
