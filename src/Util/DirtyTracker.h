@@ -4,6 +4,7 @@
 #include <map>
 #include <cstdint>
 
+// A tracker for telling which ranges of data have been modified aligned to chunks
 class DirtyRangeTracker
 {
 	struct Chunk
@@ -29,6 +30,7 @@ private:
 	std::map<uint16_t, Chunk> m_chunks;
 };
 
+// A tracker for telling which chunks of data have been modified
 class DirtyChunkTracker
 {
 public:
@@ -65,7 +67,7 @@ void DirtyRangeTracker::ForEachRange(Callable&& callback)
         {
             multichunk_range_end = chunk_begin + chunk.last;
 
-            if (!touches_next_chunk)
+            if (!touches_next_chunk) // If we don't touch the next chunk then we can finish the current range
             {
                 callback(multichunk_range_begin, multichunk_range_end);
                 multichunk_range_begin = UINT32_MAX;
@@ -73,18 +75,18 @@ void DirtyRangeTracker::ForEachRange(Callable&& callback)
         }
         else
         {
-            if (multichunk_range_begin != UINT32_MAX)
+            if (multichunk_range_begin != UINT32_MAX) // We were currently in a range but didn't touch the last chunk so finish the range
             {
                 callback(multichunk_range_begin, multichunk_range_end);
                 multichunk_range_begin = UINT32_MAX;
             }
 
-            if (touches_next_chunk)
+            if (touches_next_chunk) // We don't touch the previous chunk but touch the next so start a new range
             {
                 multichunk_range_begin = chunk_begin + chunk.first;
                 multichunk_range_end = chunk_begin + chunk.last;
             }
-            else
+            else // If we don't touch the next chunk then we can finish the current range
             {
                 callback(chunk_begin + chunk.first, chunk_begin + chunk.last);
             }
@@ -93,7 +95,7 @@ void DirtyRangeTracker::ForEachRange(Callable&& callback)
         previous_chunk_end = chunk_begin + chunk.last;
     }
 
-    if (multichunk_range_begin != UINT32_MAX)
+    if (multichunk_range_begin != UINT32_MAX) // Finish the range if there is one in progress
     {
         callback(multichunk_range_begin, multichunk_range_end);
     }
@@ -110,26 +112,26 @@ void DirtyChunkTracker::ForEachRange(Callable&& callback)
     {
         uint32_t chunk_begin = chunk_index * m_chunk_size;
 
-        if (last_chunk_index + 1 == chunk_index) // Our chunk is sequentially after the previous
+        if (last_chunk_index + 1 == chunk_index) // Our chunk is sequentially after the previous so continue range
         {
             multichunk_range_end = chunk_index;
         }
         else
         {
-            if (multichunk_range_begin != UINT16_MAX)
+            if (multichunk_range_begin != UINT16_MAX) // We don't touch the previous so finish the current chunk range
             {
                 callback(multichunk_range_begin, multichunk_range_end);
             }
-            else
-            {
-                multichunk_range_begin = chunk_index;
-            }
+
+            // Start a new chunk range
+            multichunk_range_begin = chunk_index;
+            multichunk_range_end = chunk_index;
         }
 
         last_chunk_index = chunk_index;
     }
 
-    if (multichunk_range_begin != UINT16_MAX)
+    if (multichunk_range_begin != UINT16_MAX) // We still have a range so finish it
     {
         callback(multichunk_range_begin, multichunk_range_end);
     }
