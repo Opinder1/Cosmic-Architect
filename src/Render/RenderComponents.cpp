@@ -9,14 +9,16 @@ namespace voxel_game
 		world.module<RenderComponents>();
 
         world.component<RenderingServerContext>();
+
+        world.component<RenderTreeNode>();
+
         world.component<RenderScenario>();
-        world.component<OwnedScenario>();
+        world.component<OwnedRenderScenario>();
+
         world.component<RenderInstance>();
-        world.component<RenderInstanceFlags>();
+        world.component<UniqueRenderInstance>();
+
         world.component<RenderBase>();
         world.component<RenderMesh>();
-        world.component<RenderMultiInstance>();
-        world.component<RenderMultiMesh>();
-        world.component<FlatTextureComponent>();
 	}
 }

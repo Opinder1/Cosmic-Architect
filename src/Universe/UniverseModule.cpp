@@ -60,12 +60,10 @@ namespace voxel_game
 
 				galaxy.set(Position3DComponent{ godot::Vector3(position_x, position_y, position_z) });
 				galaxy.set(Scale3DComponent{ godot::Vector3(box_size, box_size, box_size) });
-				galaxy.add<RenderBase>(galaxy_schematic);
-				galaxy.add<FlatTextureComponent>();
-				galaxy.add<RenderInstance>();
+				galaxy.add<UniqueRenderInstance>(galaxy_schematic);
 
-				galaxy.ensure<RenderInstanceFlags>().transform = true;
-				galaxy.modified<RenderInstanceFlags>();
+				galaxy.ensure<UniqueRenderInstance>(galaxy_schematic).transform = true;
+				galaxy.modified<UniqueRenderInstance>(galaxy_schematic);
 
 				universe_node.entities.push_back(galaxy);
 			}

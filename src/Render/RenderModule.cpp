@@ -15,15 +15,15 @@ namespace voxel_game
 
 		world.import<RenderComponents>();
 
-        world.singleton<RenderBase>()
+        world.singleton<RenderInstance>()
             .add(flecs::Relationship)
-            .add(flecs::Traversable)
-            .add(flecs::Exclusive);
+            .add(flecs::Exclusive)
+            .add(flecs::Traversable);
 
-        world.singleton<RenderMultiInstance>()
+        world.singleton<UniqueRenderInstance>()
             .add(flecs::Relationship)
-            .add(flecs::Traversable)
-            .add(flecs::Exclusive);
+            .add(flecs::Exclusive)
+            .add(flecs::Traversable);
 
         world.set([&world](RenderingServerContext& context)
         {
@@ -44,7 +44,7 @@ namespace voxel_game
 
         world.observer<RenderScenario, const RenderingServerContext>(DEBUG_ONLY("AddRenderScenario"))
             .event(flecs::OnAdd)
-            .with<const OwnedScenario>()
+            .with<const OwnedRenderScenario>()
             .term_at(1).src<RenderingServerContext>().filter()
             .each([](flecs::entity entity, RenderScenario& scenario, const RenderingServerContext& context)
         {
@@ -55,33 +55,13 @@ namespace voxel_game
 
         world.observer<const RenderScenario, RenderingServerContext>(DEBUG_ONLY("RemoveRenderScenario"))
             .event(flecs::OnRemove)
-            .with<const OwnedScenario>()
+            .with<const OwnedRenderScenario>()
             .term_at(1).src<RenderingServerContext>().filter()
             .each([](const RenderScenario& scenario, RenderingServerContext& context)
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
 
             thread_context.commands.AddCommand("free_rid", scenario.id);
-        });
-
-        world.observer<RenderInstance, const RenderingServerContext>(DEBUG_ONLY("AddRenderInstance"))
-            .event(flecs::OnAdd)
-            .term_at(1).src<RenderingServerContext>().filter()
-            .each([](flecs::entity entity, RenderInstance& instance, const RenderingServerContext& context)
-        {
-            instance.id = context.server->instance_create();
-
-            entity.modified<RenderInstance>();
-        });
-
-        world.observer<const RenderInstance, RenderingServerContext>(DEBUG_ONLY("RemoveRenderInstance"))
-            .event(flecs::OnRemove)
-            .term_at(1).src<RenderingServerContext>().filter()
-            .each([](const RenderInstance& instance, RenderingServerContext& context)
-        {
-            RenderingServerThreadContext& thread_context = context.threads[0];
-
-            thread_context.commands.AddCommand("free_rid", instance.id);
         });
 
         world.observer<RenderMesh, const RenderingServerContext>(DEBUG_ONLY("AddRenderMesh"))
@@ -105,63 +85,85 @@ namespace voxel_game
             thread_context.commands.AddCommand("free_rid", mesh.id);
         });
 
-        world.observer<const RenderInstance, const RenderScenario, RenderingServerContext>(DEBUG_ONLY("RenderInstanceSetScenario"))
+        world.observer<UniqueRenderInstance, const RenderingServerContext>(DEBUG_ONLY("AddUniqueRenderInstance"))
+            .event(flecs::OnAdd)
+            .term_at(0).self().second(flecs::Wildcard)
+            .term_at(1).src<RenderingServerContext>().filter()
+            .each([](flecs::entity entity, UniqueRenderInstance& instance, const RenderingServerContext& context)
+        {
+            instance.id = context.server->instance_create();
+
+            entity.modified<UniqueRenderInstance>();
+        });
+
+        world.observer<const UniqueRenderInstance, RenderingServerContext>(DEBUG_ONLY("RemoveUniqueRenderInstance"))
+            .event(flecs::OnRemove)
+            .term_at(1).src<RenderingServerContext>().filter()
+            .each([](const UniqueRenderInstance& instance, RenderingServerContext& context)
+        {
+            RenderingServerThreadContext& thread_context = context.threads[0];
+
+            thread_context.commands.AddCommand("free_rid", instance.id);
+        });
+
+        world.observer<const UniqueRenderInstance, const RenderScenario, RenderingServerContext>(DEBUG_ONLY("RenderInstanceSetScenario"))
             .event(flecs::OnSet)
-            .term_at(1).parent()
+            .term_at(0).self().second(flecs::Wildcard)
+            .term_at(1).up(flecs::ChildOf).filter()
             .term_at(2).src<RenderingServerContext>().filter()
-            .each([](const RenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
+            .each([](const UniqueRenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
 
             thread_context.commands.AddCommand("instance_set_scenario", instance.id, scenario.id);
         });
 
-        world.observer<const RenderInstance, const RenderScenario, RenderingServerContext>(DEBUG_ONLY("RenderInstanceRemoveScenario"))
+        world.observer<const UniqueRenderInstance, const RenderScenario, RenderingServerContext>(DEBUG_ONLY("RenderInstanceRemoveScenario"))
             .event(flecs::OnRemove)
-            .term_at(1).parent()
+            .term_at(0).self().filter()
+            .term_at(1).up(flecs::ChildOf)
             .term_at(2).src<RenderingServerContext>().filter()
-            .each([](const RenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
+            .each([](const UniqueRenderInstance&, const RenderScenario&, RenderingServerContext&)
         {
-            RenderingServerThreadContext& thread_context = context.threads[0];
-
-            thread_context.commands.AddCommand("instance_set_scenario", instance.id, godot::RID());
+            DEBUG_PRINT_ERROR("Removed a render scenario before instances in it were removed");
         });
 
-        world.observer<const RenderInstance, const RenderMesh, RenderingServerContext>(DEBUG_ONLY("RenderInstanceSetMesh"))
+        world.observer<const UniqueRenderInstance, const RenderMesh, RenderingServerContext>(DEBUG_ONLY("RenderInstanceSetMesh"))
             .event(flecs::OnSet)
-            .term_at(1).up<RenderBase>()
+            .term_at(0).self().second("$Base")
+            .term_at(1).src("$Base")
             .term_at(2).src<RenderingServerContext>().filter()
-            .each([](const RenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
+            .each([](const UniqueRenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
 
             thread_context.commands.AddCommand("instance_set_base", instance.id, mesh.id);
         });
 
-        world.observer<const RenderInstance, const RenderMesh, RenderingServerContext>(DEBUG_ONLY("RenderInstanceRemoveMesh"))
+        world.observer<const UniqueRenderInstance, const RenderMesh, RenderingServerContext>(DEBUG_ONLY("RenderInstanceRemoveMesh"))
             .event(flecs::OnRemove)
-            .term_at(1).up<RenderBase>()
+            .term_at(0).self().filter()
+            .term_at(1).up<UniqueRenderInstance>()
             .term_at(2).src<RenderingServerContext>().filter()
-            .each([](const RenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
+            .each([](const UniqueRenderInstance&, const RenderMesh&, RenderingServerContext&)
         {
-            RenderingServerThreadContext& thread_context = context.threads[0];
-
-            thread_context.commands.AddCommand("instance_set_base", instance.id, godot::RID());
+            DEBUG_PRINT_ERROR("Removed a render base before instances in it were removed");
         });
 
-        world.system<const RenderInstance, RenderInstanceFlags, const Position3DComponent*, const Rotation3DComponent*, const Scale3DComponent*, RenderingServerContext>(DEBUG_ONLY("UpdateRenderInstanceTransforms"))
+        world.system<UniqueRenderInstance, const Position3DComponent*, const Rotation3DComponent*, const Scale3DComponent*, RenderingServerContext>(DEBUG_ONLY("UpdateRenderInstanceTransforms"))
             .multi_threaded()
-            .term_at(5).src<RenderingServerContext>()
-            .each([](flecs::entity entity, const RenderInstance& instance, RenderInstanceFlags& flags, const Position3DComponent* position, const Rotation3DComponent* rotation, const Scale3DComponent* scale, RenderingServerContext& context)
+            .term_at(0).self().second(flecs::Wildcard)
+            .term_at(4).src<RenderingServerContext>()
+            .each([](flecs::entity entity, UniqueRenderInstance& instance, const Position3DComponent* position, const Rotation3DComponent* rotation, const Scale3DComponent* scale, RenderingServerContext& context)
         {
             RenderingServerThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
 
-            if (!flags.transform || thread_context.commands.NumCommands() > k_max_thread_render_commands)
+            if (!instance.transform || thread_context.commands.NumCommands() > k_max_thread_render_commands)
             {
                 return;
             }
 
-            flags.transform = false;
+            instance.transform = false;
 
             godot::Transform3D transform;
 
