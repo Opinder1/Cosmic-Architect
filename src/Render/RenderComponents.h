@@ -26,8 +26,6 @@ namespace flecs
 
 namespace voxel_game
 {
-	constexpr const size_t k_max_thread_render_commands = 1024;
-
 	enum class InstanceDataFormat
 	{
 		Position12Bit, // 12 bit position (4 bit int)
@@ -93,19 +91,7 @@ namespace voxel_game
 		GrowingSmallVector<MeshTypeInstancerBlock, 1> blocks;
 	};
 
-	// A node in the main render transform tree.
-	struct RenderTreeNode : Nocopy
-	{
-		godot::Transform3D transform;
-		godot::AABB aabb;
-		bool visible;
-
-		// Mesh type instancers for meshes that can be made into multimeshes
-		robin_hood::unordered_map<flecs::entity_t, MeshTypeInstancer> base_types;
-
-		// Standalone instances for objects that there are only one of or not meshes
-		robin_hood::unordered_map<flecs::entity_t, godot::RID> instances;
-	};
+	using MeshInstancers = robin_hood::unordered_map<flecs::entity_t, MeshTypeInstancer>;
 
 	// This is the scenario that all the children instances of this entity will register to
 	struct RenderScenario
@@ -122,12 +108,15 @@ namespace voxel_game
 	// Relationship tag for setting the base type of the entity with it being a unique instance
 	struct UniqueRenderInstance
 	{
-		UniqueRenderInstance()
+		godot::RID id;
+	};
+
+	struct ModifyFlags
+	{
+		ModifyFlags()
 		{
 			std::memset(this, 0, sizeof(*this));
 		}
-
-		godot::RID id;
 
 		// Flags for instance data that has been modified
 		bool blend_shape_weight : 1;
@@ -141,6 +130,20 @@ namespace voxel_game
 		bool transform : 1;
 		bool visibility_parent : 1;
 		bool visible : 1;
+	};
+
+	// A node in the main render transform tree that follows node draw info from its parent
+	struct RenderTreeNode : Nocopy
+	{
+		godot::Transform3D transform;
+		godot::Vector3 velocity;
+		godot::AABB aabb;
+		bool visible = false;
+
+		ModifyFlags modify_flags;
+
+		// Mesh type instancers for meshes that can be made into multimeshes
+		MeshInstancers mesh_instancers;
 	};
 
 	// A tag that denotes that the entity is a render base type

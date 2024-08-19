@@ -298,9 +298,19 @@ namespace voxel_game
 	{
 		m_world.import<RenderModule>();
 
-		flecs::entity universe_entity(m_world, m_universe_entity);
-			
-		universe_entity.ensure<RenderScenario>().id = render_info->GetScenario();
+		{
+			flecs::entity universe_entity(m_world, m_universe_entity);
+
+			universe_entity.ensure<RenderScenario>().id = render_info->GetScenario();
+
+			universe_entity.add<RenderTreeNode>();
+		}
+
+		{
+			flecs::entity galaxy_entity(m_world, m_galaxy_entity);
+
+			galaxy_entity.add<RenderTreeNode>();
+		}
 	}
 
 	void UniverseSimulation::StartSimulation(ThreadMode thread_mode)

@@ -10,10 +10,10 @@ namespace voxel_game
 
         world.component<RenderingServerContext>();
 
-        world.component<RenderTreeNode>();
-
         world.component<RenderScenario>();
         world.component<OwnedRenderScenario>();
+
+        world.component<RenderTreeNode>();
 
         world.component<RenderInstance>();
         world.component<UniqueRenderInstance>();
