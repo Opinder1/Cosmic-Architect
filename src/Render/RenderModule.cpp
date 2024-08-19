@@ -198,7 +198,7 @@ namespace voxel_game
 
         world.system<UniqueRenderInstance, const RenderTreeNode, RenderingServerContext>(DEBUG_ONLY("UpdateRenderInstanceTransforms"))
             .multi_threaded()
-            .term_at(0).second(flecs::Any).self()
+            .term_at(0).self().second(flecs::Any)
             .term_at(1).self().up(flecs::ChildOf)
             .term_at(2).src<RenderingServerContext>()
             .each([](flecs::entity entity, UniqueRenderInstance& instance, const RenderTreeNode& tree_node, RenderingServerContext& context)
