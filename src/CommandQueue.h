@@ -19,7 +19,8 @@
 
 namespace voxel_game
 {
-	constexpr const size_t k_max_commands_per_flush = 64;
+	constexpr const size_t k_max_commands_per_flush = 256;
+	constexpr const size_t k_max_render_commands_per_flush = 64;
 
 	// Container for a command buffer to write commands for an object in script
 	class CommandQueue : public godot::RefCounted
@@ -99,7 +100,7 @@ namespace voxel_game
 	private:
 		void RenderingFlush();
 
-		static void FlushState(State& state, godot::Object* object);
+		static void FlushState(State& state, godot::Object* object, size_t max_commands);
 
 	private:
 		static godot::OptObj<CommandQueueServer> k_singleton;

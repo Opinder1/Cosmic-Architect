@@ -144,7 +144,7 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(godot::OS::get_singleton()->get_thread_caller_id() == godot::OS::get_singleton()->get_main_thread_id(), "The processor should only be flushed on the main thread");
 
-		FlushState(m_state, nullptr);
+		FlushState(m_state, nullptr, k_max_commands_per_flush);
 
 		godot::RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &CommandQueueServer::RenderingFlush));
 	}
@@ -155,13 +155,14 @@ namespace voxel_game
 
 		DEBUG_ASSERT(server->is_on_render_thread(), "The rendering flush should only be done on the rendering thread");
 
-		FlushState(m_rendering_state, server);
+		FlushState(m_rendering_state, server, k_max_render_commands_per_flush);
 	}
 
-	void CommandQueueServer::FlushState(State& state, godot::Object* object)
+	void CommandQueueServer::FlushState(State& state, godot::Object* object, size_t max_commands_per_flush)
 	{
-		size_t command_budget = k_max_commands_per_flush;
+		size_t command_budget = max_commands_per_flush;
 
+		// Flush commands from buffers. We will flush a maximum number of commands but they can be from multiple different buffers.
 		while (command_budget > 0)
 		{
 			if (!state.processing_current) // Try to get a new buffer to process
