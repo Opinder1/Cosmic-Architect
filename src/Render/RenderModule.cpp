@@ -95,11 +95,11 @@ namespace voxel_game
             .event(flecs::OnAdd)
             .term_at(0).self().second(flecs::Any)
             .term_at(1).src<RenderingServerContext>().filter()
-            .each([](flecs::iter& it, size_t, UniqueRenderInstance& instance, const RenderingServerContext& context)
+            .each([](flecs::iter& it, size_t i, UniqueRenderInstance& instance, const RenderingServerContext& context)
         {
             instance.id = context.server->instance_create();
 
-            it.entity(0).modified<UniqueRenderInstance>(it.pair(0));
+            it.entity(i).modified(it.pair(0));
         });
 
         world.observer<const UniqueRenderInstance, RenderingServerContext>(DEBUG_ONLY("RemoveUniqueRenderInstance"))
