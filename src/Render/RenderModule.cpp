@@ -158,14 +158,15 @@ namespace voxel_game
             DEBUG_PRINT_ERROR("Removed a render base before instances in it were removed");
         });
 
-        world.system<RenderTreeNode, const RenderTreeNode*, const Position3DComponent*, const Rotation3DComponent*, const Scale3DComponent*>(DEBUG_ONLY("UpdateRenderTreeNodeTransforms"))
+        // Update the render tree nodes transform based on the current nodes position, rotation, scale and parents transform
+        world.system<RenderTreeNode, const Position3DComponent*, const Rotation3DComponent*, const Scale3DComponent*, const RenderTreeNode*>(DEBUG_ONLY("UpdateRenderTreeNodeTransforms"))
             .multi_threaded()
             .term_at(0).self()
-            .term_at(1).cascade(flecs::ChildOf)
+            .term_at(1).self()
             .term_at(2).self()
             .term_at(3).self()
-            .term_at(4).self()
-            .each([](RenderTreeNode& tree_node, const RenderTreeNode* parent_tree_node, const Position3DComponent* position, const Rotation3DComponent* rotation, const Scale3DComponent* scale)
+            .term_at(4).cascade(flecs::ChildOf)
+            .each([](RenderTreeNode& tree_node, const Position3DComponent* position, const Rotation3DComponent* rotation, const Scale3DComponent* scale, const RenderTreeNode* parent_tree_node)
         {
             godot::Transform3D transform;
 
@@ -196,10 +197,11 @@ namespace voxel_game
             tree_node.transform = transform;
         });
 
-        world.system<UniqueRenderInstance, const RenderTreeNode, RenderingServerContext>(DEBUG_ONLY("UpdateRenderInstanceTransforms"))
+        // Update the render instances transform based on the tree node transform given the entity is a tree node
+        world.system<UniqueRenderInstance, const RenderTreeNode, RenderingServerContext>(DEBUG_ONLY("UpdateRenderInstanceTransformSelf"))
             .multi_threaded()
             .term_at(0).self().second(flecs::Any)
-            .term_at(1).self().up(flecs::ChildOf)
+            .term_at(1).self()
             .term_at(2).src<RenderingServerContext>()
             .each([](flecs::entity entity, UniqueRenderInstance& instance, const RenderTreeNode& tree_node, RenderingServerContext& context)
         {
@@ -209,6 +211,42 @@ namespace voxel_game
             {
                 thread_context.commands.AddCommand("instance_set_transform", instance.id, tree_node.transform);
             }
+        });
+
+        // Update the render instances transform based on the entities position, rotation, scale and parents transform given the entity is not a tree node
+        world.system<UniqueRenderInstance, const Position3DComponent*, const Rotation3DComponent*, const Scale3DComponent*, const RenderTreeNode, RenderingServerContext>(DEBUG_ONLY("UpdateRenderInstanceTransformUp"))
+            .multi_threaded()
+            .term_at(0).self().second(flecs::Any)
+            .term_at(1).self()
+            .term_at(2).self()
+            .term_at(3).self()
+            .term_at(4).up(flecs::ChildOf)
+            .term_at(5).src<RenderingServerContext>()
+            .without<const RenderTreeNode>().self()
+            .each([](flecs::entity entity, UniqueRenderInstance& instance, const Position3DComponent* position, const Rotation3DComponent* rotation, const Scale3DComponent* scale, const RenderTreeNode& parent_tree_node, RenderingServerContext& context)
+        {
+            godot::Transform3D transform;
+
+            if (scale != nullptr)
+            {
+                transform.scale(scale->scale);
+            }
+
+            if (rotation != nullptr)
+            {
+                transform.rotate(rotation->rotation.get_axis(), rotation->rotation.get_angle());
+            }
+
+            if (position != nullptr)
+            {
+                transform.set_origin(position->position);
+            }
+
+            transform *= parent_tree_node.transform;
+
+            RenderingServerThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
+
+            thread_context.commands.AddCommand("instance_set_transform", instance.id, transform);
         });
 	}
 }
