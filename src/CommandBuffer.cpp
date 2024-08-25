@@ -477,7 +477,7 @@ namespace voxel_game
 
 			if (buffer_pos > buffer_end)
 			{
-				DEBUG_PRINT_ERROR("Command buffer doesn't fit the command and its arguments");
+				DEBUG_PRINT_ERROR("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos);
 				return buffer_end;
 			}
 
@@ -631,9 +631,9 @@ namespace voxel_game
 				godot::Variant var;
 				buffer_pos = ReadVariant(var, buffer_pos, buffer_end);
 
-				if (buffer_pos == buffer_end)
+				if (buffer_pos > buffer_end)
 				{
-					DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command)));
+					DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos));
 					break;
 				}
 			}
