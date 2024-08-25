@@ -8,8 +8,6 @@
 #include "Util/DirtyTracker.h"
 #include "Util/Nocopy.h"
 
-#include <godot_cpp/classes/rendering_server.hpp>
-
 #include <godot_cpp/variant/rid.hpp>
 #include <godot_cpp/variant/packed_byte_array.hpp>
 
@@ -22,6 +20,11 @@
 namespace flecs
 {
 	struct world;
+}
+
+namespace godot
+{
+	class RenderingServer;
 }
 
 namespace voxel_game
@@ -44,6 +47,7 @@ namespace voxel_game
 		Transform3DColor1,
 		Transform3DColor2,
 		Transform3DColor3,
+		Invalid,
 	};
 
 	struct RenderingServerThreadContext
@@ -53,14 +57,17 @@ namespace voxel_game
 
 	struct RenderingServerContext : Nocopy
 	{
-		godot::RenderingServer* server;
+		RenderingServerContext();
+		~RenderingServerContext();
+
+		godot::RenderingServer* server = nullptr;
 		PerThread<RenderingServerThreadContext> threads;
 	};
 
 	struct InstanceDataType
 	{
 		// Format for how data is stored for each instance
-		InstanceDataFormat format;
+		InstanceDataFormat format = InstanceDataFormat::Invalid;
 
 		// The region size for each block. If 0 then use just one region
 		size_t block_region_size = 0;

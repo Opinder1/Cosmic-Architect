@@ -25,15 +25,11 @@ namespace voxel_game
             .add(flecs::Relationship)
             .add(flecs::Exclusive);
 
-        world.set([&world](RenderingServerContext& context)
-        {
-            context.server = godot::RenderingServer::get_singleton();
-        });
+        world.add<RenderingServerContext>();
 
         // Flush each threads render commands to the command queue server which will run them on the rendering server thread
-        world.system<RenderingServerContext>(DEBUG_ONLY("FlushRenderingServerCommands"))
+        world.system<RenderingServerContext>(DEBUG_ONLY("FrameFlushRenderingCommands"))
             .immediate()
-            .term_at(0).src<RenderingServerContext>()
             .each([](RenderingServerContext& context)
         {
             CommandQueueServer* command_queue_server = CommandQueueServer::get_singleton();
@@ -47,7 +43,7 @@ namespace voxel_game
         world.observer<RenderScenario, const RenderingServerContext>(DEBUG_ONLY("AddRenderScenario"))
             .event(flecs::OnAdd)
             .term_at(0).self()
-            .term_at(1).src<RenderingServerContext>().filter()
+            .term_at(1).singleton().filter()
             .with<const OwnedRenderScenario>().self()
             .each([](flecs::entity entity, RenderScenario& scenario, const RenderingServerContext& context)
         {
@@ -59,7 +55,7 @@ namespace voxel_game
         world.observer<const RenderScenario, RenderingServerContext>(DEBUG_ONLY("RemoveRenderScenario"))
             .event(flecs::OnRemove)
             .term_at(0).self()
-            .term_at(1).src<RenderingServerContext>().filter()
+            .term_at(1).singleton().filter()
             .with<const OwnedRenderScenario>().self()
             .each([](const RenderScenario& scenario, RenderingServerContext& context)
         {
@@ -71,7 +67,7 @@ namespace voxel_game
         world.observer<RenderMesh, const RenderingServerContext>(DEBUG_ONLY("AddRenderMesh"))
             .event(flecs::OnAdd)
             .term_at(0).self()
-            .term_at(1).src<RenderingServerContext>().filter()
+            .term_at(1).singleton().filter()
             .each([](flecs::entity entity, RenderMesh& mesh, const RenderingServerContext& context)
         {
             //mesh.id = context.server->mesh_create();
@@ -83,7 +79,7 @@ namespace voxel_game
         world.observer<const RenderMesh, RenderingServerContext>(DEBUG_ONLY("RemoveRenderMesh"))
             .event(flecs::OnRemove)
             .term_at(0).self()
-            .term_at(1).src<RenderingServerContext>().filter()
+            .term_at(1).singleton().filter()
             .each([](const RenderMesh& mesh, RenderingServerContext& context)
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
@@ -94,7 +90,7 @@ namespace voxel_game
         world.observer<UniqueRenderInstance, const RenderingServerContext>(DEBUG_ONLY("AddUniqueRenderInstance"))
             .event(flecs::OnAdd)
             .term_at(0).self().second(flecs::Any)
-            .term_at(1).src<RenderingServerContext>().filter()
+            .term_at(1).singleton().filter()
             .each([](flecs::iter& it, size_t i, UniqueRenderInstance& instance, const RenderingServerContext& context)
         {
             instance.id = context.server->instance_create();
@@ -105,7 +101,7 @@ namespace voxel_game
         world.observer<const UniqueRenderInstance, RenderingServerContext>(DEBUG_ONLY("RemoveUniqueRenderInstance"))
             .event(flecs::OnRemove)
             .term_at(0).self().second(flecs::Any)
-            .term_at(1).src<RenderingServerContext>().filter()
+            .term_at(1).singleton().filter()
             .each([](const UniqueRenderInstance& instance, RenderingServerContext& context)
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
@@ -117,7 +113,7 @@ namespace voxel_game
             .event(flecs::OnSet)
             .term_at(0).self().second(flecs::Any)
             .term_at(1).up(flecs::ChildOf).filter()
-            .term_at(2).src<RenderingServerContext>().filter()
+            .term_at(2).singleton().filter()
             .each([](const UniqueRenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
@@ -130,17 +126,19 @@ namespace voxel_game
             .event(flecs::OnRemove)
             .term_at(0).self().second(flecs::Any).filter()
             .term_at(1).up(flecs::ChildOf)
-            .term_at(2).src<RenderingServerContext>().filter()
-            .each([](const UniqueRenderInstance&, const RenderScenario&, RenderingServerContext&)
+            .term_at(2).singleton().filter()
+            .each([](const UniqueRenderInstance& instance, const RenderScenario&, RenderingServerContext& context)
         {
-            DEBUG_PRINT_ERROR("Removed a render scenario before instances in it were removed");
+            RenderingServerThreadContext& thread_context = context.threads[0];
+
+            thread_context.commands.AddCommand("instance_set_scenario", instance.id, godot::RID());
         });
 
         world.observer<const UniqueRenderInstance, const RenderMesh, RenderingServerContext>(DEBUG_ONLY("RenderInstanceSetMesh"))
             .event(flecs::OnSet)
             .term_at(0).self().second("$Base")
             .term_at(1).src("$Base").filter()
-            .term_at(2).src<RenderingServerContext>().filter()
+            .term_at(2).singleton().filter()
             .each([](const UniqueRenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
@@ -152,10 +150,12 @@ namespace voxel_game
             .event(flecs::OnRemove)
             .term_at(0).self().second("$Base").filter()
             .term_at(1).src("$Base")
-            .term_at(2).src<RenderingServerContext>().filter()
-            .each([](const UniqueRenderInstance&, const RenderMesh&, RenderingServerContext&)
+            .term_at(2).singleton().filter()
+            .each([](const UniqueRenderInstance& instance, const RenderMesh&, RenderingServerContext& context)
         {
-            DEBUG_PRINT_ERROR("Removed a render base before instances in it were removed");
+            RenderingServerThreadContext& thread_context = context.threads[0];
+
+            thread_context.commands.AddCommand("instance_set_base", instance.id, godot::RID());
         });
 
         // Update the render tree nodes transform based on the current nodes position, rotation, scale and parents transform
@@ -202,7 +202,7 @@ namespace voxel_game
             .multi_threaded()
             .term_at(0).self().second(flecs::Any)
             .term_at(1).self()
-            .term_at(2).src<RenderingServerContext>()
+            .term_at(2).singleton()
             .each([](flecs::entity entity, UniqueRenderInstance& instance, const RenderTreeNode& tree_node, RenderingServerContext& context)
         {
             RenderingServerThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
@@ -221,7 +221,7 @@ namespace voxel_game
             .term_at(2).self()
             .term_at(3).self()
             .term_at(4).up(flecs::ChildOf)
-            .term_at(5).src<RenderingServerContext>()
+            .term_at(5).singleton()
             .without<const RenderTreeNode>().self()
             .each([](flecs::entity entity, UniqueRenderInstance& instance, const Position3DComponent* position, const Rotation3DComponent* rotation, const Scale3DComponent* scale, const RenderTreeNode& parent_tree_node, RenderingServerContext& context)
         {
