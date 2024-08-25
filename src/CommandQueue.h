@@ -93,6 +93,9 @@ namespace voxel_game
 		// Run all commands on the main thread and all rendering server commands on the render thread
 		void Flush();
 
+		// Check if there are any commands left to be processed
+		bool HasCommandsLeft();
+
 	public:
 		static void _bind_methods();
 		static void _cleanup_methods();

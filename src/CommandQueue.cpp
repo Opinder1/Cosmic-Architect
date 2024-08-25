@@ -108,8 +108,7 @@ namespace voxel_game
 
 	CommandQueueServer::~CommandQueueServer()
 	{
-		DEBUG_ASSERT(m_state.command_buffers.size() == 0, "Commands left over when exiting the application");
-		// We don't care about left over rendering commands
+		DEBUG_ASSERT(!HasCommandsLeft(), "Commands left over when exiting the application");
 	}
 
 	void CommandQueueServer::AddCommands(uint64_t object_id, CommandBuffer&& command_buffer)
@@ -147,6 +146,27 @@ namespace voxel_game
 		FlushState(m_state, nullptr, k_max_commands_per_flush);
 
 		godot::RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &CommandQueueServer::RenderingFlush));
+	}
+
+	bool CommandQueueServer::HasCommandsLeft()
+	{
+		{
+			std::shared_lock lock(m_rendering_state.buffers_mutex);
+			if (m_rendering_state.command_buffers.size() > 0)
+			{
+				return true;
+			}
+		}
+
+		{
+			std::shared_lock lock(m_state.buffers_mutex);
+			if (m_state.command_buffers.size() > 0)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	void CommandQueueServer::RenderingFlush()
@@ -208,6 +228,7 @@ namespace voxel_game
 	void CommandQueueServer::_bind_methods()
 	{
 		godot::ClassDB::bind_method(godot::D_METHOD("flush"), &CommandQueueServer::Flush);
+		godot::ClassDB::bind_method(godot::D_METHOD("has_commands_left"), &CommandQueueServer::HasCommandsLeft);
 
 		k_singleton.instantiate();
 	}
