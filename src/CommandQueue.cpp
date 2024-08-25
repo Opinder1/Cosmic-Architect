@@ -180,13 +180,21 @@ namespace voxel_game
 
 	void CommandQueueServer::FlushState(State& state, godot::Object* object, size_t max_commands)
 	{
+		if (state.flushing_in_progress)
+		{
+			return;
+		}
+
+		state.flushing_in_progress = true;
+
 		size_t command_budget = max_commands;
 
 		// Flush commands from buffers. We will flush a maximum number of commands but they can be from multiple different buffers.
 		while (command_budget > 0)
 		{
-			if (!state.processing_current) // Try to get a new buffer to process
+			if (!state.buffer_in_progress)
 			{
+				// Try to get a new buffer to process as we don't have one
 				std::lock_guard lock(state.buffers_mutex);
 
 				if (state.command_buffers.size() == 0)
@@ -196,7 +204,7 @@ namespace voxel_game
 
 				state.current_buffer = std::move(state.command_buffers.front()); // command_buffers guaranteed to be empty() after
 				state.command_buffers.pop_front();
-				state.processing_current = true;
+				state.buffer_in_progress = true;
 			}
 
 			size_t commands_processed;
@@ -215,7 +223,7 @@ namespace voxel_game
 			if (commands_processed == 0)
 			{
 				state.current_buffer.command_buffer.Clear();
-				state.processing_current = false;
+				state.buffer_in_progress = false;
 				continue; // We need a new buffer since we still have command budget
 			}
 
@@ -223,6 +231,8 @@ namespace voxel_game
 
 			command_budget -= commands_processed;
 		}
+
+		state.flushing_in_progress = false;
 	}
 
 	void CommandQueueServer::_bind_methods()

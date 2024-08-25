@@ -77,7 +77,8 @@ namespace voxel_game
 			std::deque<Commands> command_buffers;
 
 			// These should always be accessed by same thread
-			bool processing_current = false;
+			bool flushing_in_progress = false;
+			bool buffer_in_progress = false;
 			Commands current_buffer;
 		};
 
