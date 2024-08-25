@@ -158,9 +158,9 @@ namespace voxel_game
 		FlushState(m_rendering_state, server, k_max_render_commands_per_flush);
 	}
 
-	void CommandQueueServer::FlushState(State& state, godot::Object* object, size_t max_commands_per_flush)
+	void CommandQueueServer::FlushState(State& state, godot::Object* object, size_t max_commands)
 	{
-		size_t command_budget = max_commands_per_flush;
+		size_t command_budget = max_commands;
 
 		// Flush commands from buffers. We will flush a maximum number of commands but they can be from multiple different buffers.
 		while (command_budget > 0)
