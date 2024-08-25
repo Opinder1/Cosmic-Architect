@@ -61,6 +61,8 @@ namespace voxel_game
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
 
+            DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
+
             thread_context.commands.AddCommand("free_rid", scenario.id);
         });
 
@@ -84,6 +86,8 @@ namespace voxel_game
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
 
+            DEBUG_ASSERT(mesh.id != godot::RID(), "Mesh should be valid");
+
             thread_context.commands.AddCommand("free_rid", mesh.id);
         });
 
@@ -106,6 +110,8 @@ namespace voxel_game
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
 
+            DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
+
             thread_context.commands.AddCommand("free_rid", instance.id);
         });
 
@@ -118,6 +124,9 @@ namespace voxel_game
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
 
+            DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
+            DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
+
             thread_context.commands.AddCommand("instance_set_transform", instance.id, k_invisible_transform); // Fake invisibility until we set transform
             thread_context.commands.AddCommand("instance_set_scenario", instance.id, scenario.id);
         });
@@ -127,9 +136,12 @@ namespace voxel_game
             .term_at(0).self().second(flecs::Any).filter()
             .term_at(1).up(flecs::ChildOf)
             .term_at(2).singleton().filter()
-            .each([](const UniqueRenderInstance& instance, const RenderScenario&, RenderingServerContext& context)
+            .each([](const UniqueRenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
+
+            DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
+            DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
 
             thread_context.commands.AddCommand("instance_set_scenario", instance.id, godot::RID());
         });
@@ -143,6 +155,9 @@ namespace voxel_game
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
 
+            DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
+            DEBUG_ASSERT(mesh.id != godot::RID(), "Mesh should be valid");
+
             thread_context.commands.AddCommand("instance_set_base", instance.id, mesh.id);
         });
 
@@ -151,9 +166,12 @@ namespace voxel_game
             .term_at(0).self().second("$Base").filter()
             .term_at(1).src("$Base")
             .term_at(2).singleton().filter()
-            .each([](const UniqueRenderInstance& instance, const RenderMesh&, RenderingServerContext& context)
+            .each([](const UniqueRenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
         {
             RenderingServerThreadContext& thread_context = context.threads[0];
+
+            DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
+            DEBUG_ASSERT(mesh.id != godot::RID(), "Mesh should be valid");
 
             thread_context.commands.AddCommand("instance_set_base", instance.id, godot::RID());
         });
@@ -207,6 +225,8 @@ namespace voxel_game
         {
             RenderingServerThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
 
+            DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
+
             if (tree_node.modify_flags.transform)
             {
                 thread_context.commands.AddCommand("instance_set_transform", instance.id, tree_node.transform);
@@ -245,6 +265,8 @@ namespace voxel_game
             transform *= parent_tree_node.transform;
 
             RenderingServerThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
+
+            DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
 
             thread_context.commands.AddCommand("instance_set_transform", instance.id, transform);
         });
