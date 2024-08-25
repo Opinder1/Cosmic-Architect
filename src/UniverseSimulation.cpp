@@ -385,8 +385,6 @@ namespace voxel_game
 
 	void UniverseSimulation::ThreadLoop()
 	{
-		DEBUG_ASSERT(IsThreaded(), "We should be threaded when running the thread loop");
-
 		m_world.set_target_fps(k_simulation_ticks_per_second);
 
 		while (m_galaxy_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
