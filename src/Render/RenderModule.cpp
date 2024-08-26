@@ -136,9 +136,11 @@ namespace voxel_game
             thread_context.commands.AddCommand("instance_set_scenario", instance.id, scenario.id);
         });
 
+#if defined(CLEANUP_INSTANCE_LINKS)
+        // When a render instance or scenario is destroyed unset the scenario. This should happen automatically in the render server
         world.observer<const UniqueRenderInstance, const RenderScenario, RenderingServerContext>(DEBUG_ONLY("RenderInstanceRemoveScenario"))
             .event(flecs::OnRemove)
-            .term_at(0).self().second(flecs::Any).filter()
+            .term_at(0).self().second(flecs::Any)
             .term_at(1).up(flecs::ChildOf)
             .term_at(2).singleton().filter()
             .each([](const UniqueRenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
@@ -148,8 +150,9 @@ namespace voxel_game
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
             DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
 
-            //thread_context.commands.AddCommand("instance_set_scenario", instance.id, godot::RID());
+            thread_context.commands.AddCommand("instance_set_scenario", instance.id, godot::RID());
         });
+#endif
 
         world.observer<const UniqueRenderInstance, const RenderMesh, RenderingServerContext>(DEBUG_ONLY("RenderInstanceSetMesh"))
             .event(flecs::OnSet)
@@ -166,9 +169,11 @@ namespace voxel_game
             thread_context.commands.AddCommand("instance_set_base", instance.id, mesh.id);
         });
 
+#if defined(CLEANUP_INSTANCE_LINKS)
+        // When a render instance or base is destroyed unset the base. This should happen automatically in the render server
         world.observer<const UniqueRenderInstance, const RenderMesh, RenderingServerContext>(DEBUG_ONLY("RenderInstanceRemoveMesh"))
             .event(flecs::OnRemove)
-            .term_at(0).self().second("$Base").filter()
+            .term_at(0).self().second("$Base")
             .term_at(1).src("$Base")
             .term_at(2).singleton().filter()
             .each([](const UniqueRenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
@@ -178,8 +183,9 @@ namespace voxel_game
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
             DEBUG_ASSERT(mesh.id != godot::RID(), "Mesh should be valid");
 
-            //thread_context.commands.AddCommand("instance_set_base", instance.id, godot::RID());
+            thread_context.commands.AddCommand("instance_set_base", instance.id, godot::RID());
         });
+#endif
 
         // Update the render tree nodes transform based on the current nodes position, rotation, scale and parents transform
         world.system<RenderTreeNode, const Position3DComponent*, const Rotation3DComponent*, const Scale3DComponent*, const RenderTreeNode*>(DEBUG_ONLY("UpdateRenderTreeNodeTransforms"))
