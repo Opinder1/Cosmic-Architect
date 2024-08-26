@@ -4,6 +4,7 @@
 
 #include "Util/Debug.h"
 #include "Util/GodotMemory.h"
+#include "Util/Time.h"
 
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/classes/ref.hpp>
@@ -19,9 +20,6 @@
 
 namespace voxel_game
 {
-	constexpr const size_t k_max_commands_per_flush = 256;
-	constexpr const size_t k_max_render_commands_per_flush = 64;
-
 	// Container for a command buffer to write commands for an object in script
 	class CommandQueue : public godot::RefCounted
 	{
@@ -104,7 +102,7 @@ namespace voxel_game
 	private:
 		void RenderingFlush();
 
-		static void FlushState(State& state, godot::Object* object, size_t max_commands);
+		static void FlushState(State& state, godot::Object* object, Clock::duration max_flush_time);
 
 	private:
 		static godot::OptObj<CommandQueueServer> k_singleton;

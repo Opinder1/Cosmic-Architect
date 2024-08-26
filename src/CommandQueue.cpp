@@ -5,6 +5,10 @@
 
 namespace voxel_game
 {
+	constexpr const size_t k_max_commands_per_iter = 64;
+	constexpr const Clock::duration k_max_time_per_flush = 100ms;
+	constexpr const Clock::duration k_max_time_per_render_flush = 10ms;
+
 	godot::Ref<CommandQueue> CommandQueue::MakeQueue(const godot::Variant& object)
 	{
 		if (object.get_type() != godot::Variant::OBJECT)
@@ -143,7 +147,7 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(godot::OS::get_singleton()->get_thread_caller_id() == godot::OS::get_singleton()->get_main_thread_id(), "The processor should only be flushed on the main thread");
 
-		FlushState(m_state, nullptr, k_max_commands_per_flush);
+		FlushState(m_state, nullptr, k_max_time_per_flush);
 
 		godot::RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &CommandQueueServer::RenderingFlush));
 	}
@@ -175,22 +179,22 @@ namespace voxel_game
 
 		DEBUG_ASSERT(server->is_on_render_thread(), "The rendering flush should only be done on the rendering thread");
 
-		FlushState(m_rendering_state, server, k_max_render_commands_per_flush);
+		FlushState(m_rendering_state, server, k_max_time_per_render_flush);
 	}
 
-	void CommandQueueServer::FlushState(State& state, godot::Object* object, size_t max_commands)
+	void CommandQueueServer::FlushState(State& state, godot::Object* object, Clock::duration max_flush_time)
 	{
 		if (state.flushing_in_progress)
 		{
 			return;
 		}
 
+		Clock::time_point end_time = Clock::now() + max_flush_time;
+
 		state.flushing_in_progress = true;
 
-		size_t command_budget = max_commands;
-
-		// Flush commands from buffers. We will flush a maximum number of commands but they can be from multiple different buffers.
-		while (command_budget > 0)
+		// Keep processing buffers until we run out of time
+		while (Clock::now() < end_time)
 		{
 			if (!state.buffer_in_progress)
 			{
@@ -212,24 +216,25 @@ namespace voxel_game
 			// Use the provided object if given else use the buffers object
 			if (object != nullptr)
 			{
-				commands_processed = state.current_buffer.command_buffer.ProcessCommands(object, command_budget);
+				commands_processed = state.current_buffer.command_buffer.ProcessCommands(object, k_max_commands_per_iter);
 			}
 			else
 			{
-				commands_processed = state.current_buffer.command_buffer.ProcessCommands(state.current_buffer.object_id, command_budget);
+				commands_processed = state.current_buffer.command_buffer.ProcessCommands(state.current_buffer.object_id, k_max_commands_per_iter);
 			}
 
-			// No commands were processed for the buffer so it failed or is empty
-			if (commands_processed == 0)
+			// We finished the current buffer
+			if (state.current_buffer.command_buffer.NumCommands() == 0)
+			{
+				state.buffer_in_progress = false;
+			}
+			else if (commands_processed == 0) // We have commands but didn't process any so the buffer is broken
 			{
 				state.current_buffer.command_buffer.Clear();
 				state.buffer_in_progress = false;
-				continue; // We need a new buffer since we still have command budget
 			}
 
-			DEBUG_ASSERT(commands_processed <= command_budget, "We processed more commands than we allowed for?");
-
-			command_budget -= commands_processed;
+			// If we exit the loop we will start on the current buffer in the next iteration
 		}
 
 		state.flushing_in_progress = false;
