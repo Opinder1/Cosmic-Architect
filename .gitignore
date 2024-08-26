@@ -41,6 +41,7 @@
 *.vcxproj.filters
 *.vcxproj.user
 *.pdb
+/msvc_capture.log
 
 # Godot
 /demo
