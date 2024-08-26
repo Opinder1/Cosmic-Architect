@@ -168,16 +168,12 @@ namespace voxel_game
 
 		// ####### Player Control #######
 
-		godot::StringName set_velocity;
-		godot::StringName accelerate;
-		godot::StringName set_rotation;
-		godot::StringName set_rotation_velocity;
-		godot::StringName accelerate_rotation;
-		godot::StringName set_look_direction;
 		godot::StringName set_sprint;
 		godot::StringName set_crouching;
 		godot::StringName set_prone;
-		godot::StringName jump;
+		godot::StringName do_walk;
+		godot::StringName do_look;
+		godot::StringName do_jump;
 
 		// ####### Looking at #######
 

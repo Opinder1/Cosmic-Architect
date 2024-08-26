@@ -169,15 +169,12 @@ namespace voxel_game
 
 		// ####### Player Control #######
 
-		INITIALIZE_STRINGNAME(set_velocity);
-		INITIALIZE_STRINGNAME(accelerate);
-		INITIALIZE_STRINGNAME(set_look_direction);
-		INITIALIZE_STRINGNAME(set_rotation_velocity);
-		INITIALIZE_STRINGNAME(accelerate_rotation);
 		INITIALIZE_STRINGNAME(set_sprint);
 		INITIALIZE_STRINGNAME(set_crouching);
 		INITIALIZE_STRINGNAME(set_prone);
-		INITIALIZE_STRINGNAME(jump);
+		INITIALIZE_STRINGNAME(do_walk);
+		INITIALIZE_STRINGNAME(do_look);
+		INITIALIZE_STRINGNAME(do_jump);
 
 		// ####### Looking at #######
 

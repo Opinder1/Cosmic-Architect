@@ -63,6 +63,11 @@ namespace voxel_game
 		real_t roughness = 0.0;
 	};
 
+	struct Gravity3DComponent
+	{
+		godot::Vector3 force;
+	};
+
 	struct AABBComponent
 	{
 		godot::AABB aabb;

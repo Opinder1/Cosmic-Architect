@@ -362,15 +362,12 @@ namespace voxel_game
 
 		// ####### Player Control #######
 
-		void SetVelocity(const godot::Vector3& velocity);
-		void Accelerate(const godot::Vector3& acceleration);
-		void SetLookDirection(const godot::Quaternion& direction);
-		void SetRotationVelocity(const godot::Quaternion& rotation);
-		void AccelerateRotation(const godot::Quaternion& acceleration);
 		void SetSprint(bool is_sprinting);
 		void SetCrouching(bool is_crouching);
 		void SetProne(bool is_prone);
-		void Jump(double power);
+		void DoWalk(const godot::Vector3& velocity);
+		void DoLook(const godot::Quaternion& direction);
+		void DoJump(double power);
 
 		// ####### Looking at #######
 

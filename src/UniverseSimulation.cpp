@@ -572,15 +572,12 @@ namespace voxel_game
 
 		// ####### Player Control #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->set_velocity, "velocity"), &UniverseSimulation::SetVelocity);
-		BIND_METHOD(godot::D_METHOD(k_commands->accelerate, "acceleration"), &UniverseSimulation::Accelerate);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_look_direction, "direction"), &UniverseSimulation::SetLookDirection);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_rotation_velocity, "velocity"), &UniverseSimulation::SetRotationVelocity);
-		BIND_METHOD(godot::D_METHOD(k_commands->accelerate_rotation, "acceleration"), &UniverseSimulation::AccelerateRotation);
 		BIND_METHOD(godot::D_METHOD(k_commands->set_sprint, "is_sprinting"), &UniverseSimulation::SetSprint);
 		BIND_METHOD(godot::D_METHOD(k_commands->set_crouching, "is_crouching"), &UniverseSimulation::SetCrouching);
 		BIND_METHOD(godot::D_METHOD(k_commands->set_prone, "is_prone"), &UniverseSimulation::SetProne);
-		BIND_METHOD(godot::D_METHOD(k_commands->jump, "power"), &UniverseSimulation::Jump);
+		BIND_METHOD(godot::D_METHOD(k_commands->do_walk, "velocity"), &UniverseSimulation::DoWalk);
+		BIND_METHOD(godot::D_METHOD(k_commands->do_look, "direction"), &UniverseSimulation::DoLook);
+		BIND_METHOD(godot::D_METHOD(k_commands->do_jump, "power"), &UniverseSimulation::DoJump);
 
 		// ####### Looking at #######
 
