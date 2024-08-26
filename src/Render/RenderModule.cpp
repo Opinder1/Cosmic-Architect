@@ -34,10 +34,15 @@ namespace voxel_game
         {
             CommandQueueServer* command_queue_server = CommandQueueServer::get_singleton();
 
+            uint64_t server_instance = context.server->get_instance_id();
+
             for (RenderingServerThreadContext& thread_context : context.threads)
             {
-                command_queue_server->AddCommands(context.server->get_instance_id(), std::move(thread_context.commands));
+                command_queue_server->AddCommands(server_instance, std::move(thread_context.commands));
             }
+
+            // Do main thread commands last as they may include freeing of rids
+            command_queue_server->AddCommands(server_instance, std::move(context.main_thread.commands));
         });
 
         world.observer<RenderScenario, const RenderingServerContext>(DEBUG_ONLY("AddRenderScenario"))
@@ -59,7 +64,7 @@ namespace voxel_game
             .with<const OwnedRenderScenario>().self()
             .each([](const RenderScenario& scenario, RenderingServerContext& context)
         {
-            RenderingServerThreadContext& thread_context = context.threads[0];
+            RenderingServerThreadContext& thread_context = context.main_thread;
 
             DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
 
@@ -84,7 +89,7 @@ namespace voxel_game
             .term_at(1).singleton().filter()
             .each([](const RenderMesh& mesh, RenderingServerContext& context)
         {
-            RenderingServerThreadContext& thread_context = context.threads[0];
+            RenderingServerThreadContext& thread_context = context.main_thread;
 
             DEBUG_ASSERT(mesh.id != godot::RID(), "Mesh should be valid");
 
@@ -108,7 +113,7 @@ namespace voxel_game
             .term_at(1).singleton().filter()
             .each([](const UniqueRenderInstance& instance, RenderingServerContext& context)
         {
-            RenderingServerThreadContext& thread_context = context.threads[0];
+            RenderingServerThreadContext& thread_context = context.main_thread;
 
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
 
@@ -122,7 +127,7 @@ namespace voxel_game
             .term_at(2).singleton().filter()
             .each([](const UniqueRenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
         {
-            RenderingServerThreadContext& thread_context = context.threads[0];
+            RenderingServerThreadContext& thread_context = context.main_thread;
 
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
             DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
@@ -138,12 +143,12 @@ namespace voxel_game
             .term_at(2).singleton().filter()
             .each([](const UniqueRenderInstance& instance, const RenderScenario& scenario, RenderingServerContext& context)
         {
-            RenderingServerThreadContext& thread_context = context.threads[0];
+            RenderingServerThreadContext& thread_context = context.main_thread;
 
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
             DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
 
-            thread_context.commands.AddCommand("instance_set_scenario", instance.id, godot::RID());
+            //thread_context.commands.AddCommand("instance_set_scenario", instance.id, godot::RID());
         });
 
         world.observer<const UniqueRenderInstance, const RenderMesh, RenderingServerContext>(DEBUG_ONLY("RenderInstanceSetMesh"))
@@ -153,7 +158,7 @@ namespace voxel_game
             .term_at(2).singleton().filter()
             .each([](const UniqueRenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
         {
-            RenderingServerThreadContext& thread_context = context.threads[0];
+            RenderingServerThreadContext& thread_context = context.main_thread;
 
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
             DEBUG_ASSERT(mesh.id != godot::RID(), "Mesh should be valid");
@@ -168,12 +173,12 @@ namespace voxel_game
             .term_at(2).singleton().filter()
             .each([](const UniqueRenderInstance& instance, const RenderMesh& mesh, RenderingServerContext& context)
         {
-            RenderingServerThreadContext& thread_context = context.threads[0];
+            RenderingServerThreadContext& thread_context = context.main_thread;
 
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
             DEBUG_ASSERT(mesh.id != godot::RID(), "Mesh should be valid");
 
-            thread_context.commands.AddCommand("instance_set_base", instance.id, godot::RID());
+            //thread_context.commands.AddCommand("instance_set_base", instance.id, godot::RID());
         });
 
         // Update the render tree nodes transform based on the current nodes position, rotation, scale and parents transform

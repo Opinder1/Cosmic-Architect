@@ -62,6 +62,7 @@ namespace voxel_game
 
 		godot::RenderingServer* server = nullptr;
 		PerThread<RenderingServerThreadContext> threads;
+		RenderingServerThreadContext main_thread;
 	};
 
 	struct InstanceDataType
