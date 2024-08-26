@@ -42,6 +42,11 @@ namespace voxel_game
 
 	flecs::entity_t CreateThreadEntity(flecs::world_t* stage)
 	{
+		if (flecs_poly_is(stage, ecs_world_t))
+		{
+			return ecs_new(stage);
+		}
+
 		return CreateThreadEntity(GetThreadEntityPool(stage));
 	}
 }
