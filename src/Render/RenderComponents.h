@@ -154,11 +154,14 @@ namespace voxel_game::rendering
 		godot::RID id;
 	};
 
-	// A tag that denotes that the entity is a render base type
+	// This entity is a render base which instances will use to define what they render
 	struct Base
 	{
 		godot::RID id;
 	};
+
+	// A tag that denotes that the base is a placeholder cube
+	struct PlaceholderCube {};
 
 	struct Mesh {};
 

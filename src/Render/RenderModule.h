@@ -21,6 +21,8 @@ namespace voxel_game::rendering
 
 		void InitBase(flecs::world& world);
 
+		void InitPlaceholderCube(flecs::world& world);
+
 		void InitMesh(flecs::world& world);
 	};
 }

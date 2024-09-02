@@ -21,6 +21,7 @@ namespace voxel_game::rendering
         world.component<UniqueInstance>();
 
         world.component<Base>();
+        world.component<PlaceholderCube>();
         world.component<Mesh>();
 	}
     

@@ -41,7 +41,7 @@ namespace voxel_game
 
 			flecs::entity galaxy_schematic(world, CreateThreadEntity(entity_pool));
 
-			galaxy_schematic.add<rendering::Mesh>();
+			galaxy_schematic.add<rendering::PlaceholderCube>();
 
 			for (size_t i = 0; i < entities_per_node; i++)
 			{
