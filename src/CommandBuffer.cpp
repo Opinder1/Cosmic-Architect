@@ -440,11 +440,9 @@ namespace voxel_game
 			WriteVariant<godot::PackedColorArray>(argument, buffer);
 			break;
 
-		/*
 		case godot::Variant::PACKED_VECTOR4_ARRAY:
 			WriteVariant<godot::PackedVector4Array>(argument, buffer);
 			break;
-		*/
 
 		default:
 			DEBUG_PRINT_ERROR("Invalid variant type");
@@ -477,7 +475,7 @@ namespace voxel_game
 
 			if (buffer_pos > buffer_end)
 			{
-				DEBUG_PRINT_ERROR("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos);
+				DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos));
 				return buffer_end;
 			}
 
