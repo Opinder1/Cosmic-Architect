@@ -25,6 +25,11 @@ namespace voxel_game
 	{
 		SIM_DEFER_COMMAND(k_commands->do_walk, velocity);
 
+		if (!m_player_entity)
+		{
+			return;
+		}
+
 		flecs::entity player_entity(m_world, m_player_entity);
 
 		player_entity.get_mut<Velocity3DComponent>()->velocity = velocity;
@@ -35,6 +40,11 @@ namespace voxel_game
 	{
 		SIM_DEFER_COMMAND(k_commands->do_look, direction);
 
+		if (!m_player_entity)
+		{
+			return;
+		}
+
 		flecs::entity player_entity(m_world, m_player_entity);
 
 		player_entity.get_mut<Rotation3DComponent>()->rotation = direction;
@@ -44,6 +54,11 @@ namespace voxel_game
 	void UniverseSimulation::DoJump(double power)
 	{
 		SIM_DEFER_COMMAND(k_commands->do_jump, power);
+
+		if (!m_player_entity)
+		{
+			return;
+		}
 
 		m_world.query_builder<Velocity3DComponent, const Gravity3DComponent>()
 			.term_at(0).src(m_player_entity)
