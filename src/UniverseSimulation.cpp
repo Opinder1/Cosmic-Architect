@@ -296,20 +296,20 @@ namespace voxel_game
 
 	void UniverseSimulation::StartRenderer(UniverseRenderInfo* render_info)
 	{
-		m_world.import<RenderModule>();
+		m_world.import<rendering::Module>();
 
 		{
 			flecs::entity universe_entity(m_world, m_universe_entity);
 
-			universe_entity.ensure<RenderScenario>().id = render_info->GetScenario();
+			universe_entity.ensure<rendering::Scenario>().id = render_info->GetScenario();
 
-			universe_entity.add<RenderTreeNode>();
+			universe_entity.add<rendering::TreeNode>();
 		}
 
 		{
 			flecs::entity galaxy_entity(m_world, m_galaxy_entity);
 
-			galaxy_entity.add<RenderTreeNode>();
+			galaxy_entity.add<rendering::TreeNode>();
 		}
 	}
 

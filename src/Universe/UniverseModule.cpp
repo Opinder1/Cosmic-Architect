@@ -41,7 +41,7 @@ namespace voxel_game
 
 			flecs::entity galaxy_schematic(world, CreateThreadEntity(entity_pool));
 
-			galaxy_schematic.add<RenderMesh>();
+			galaxy_schematic.add<rendering::Mesh>();
 
 			for (size_t i = 0; i < entities_per_node; i++)
 			{
@@ -60,7 +60,7 @@ namespace voxel_game
 
 				galaxy.set(Position3DComponent{ godot::Vector3(position_x, position_y, position_z) });
 				galaxy.set(Scale3DComponent{ godot::Vector3(box_size, box_size, box_size) });
-				galaxy.add<UniqueRenderInstance>(galaxy_schematic);
+				galaxy.add<rendering::UniqueInstance>(galaxy_schematic);
 
 				universe_node.entities.push_back(galaxy);
 			}

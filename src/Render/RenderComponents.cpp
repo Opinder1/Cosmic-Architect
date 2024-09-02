@@ -4,36 +4,36 @@
 
 #include <flecs/flecs.h>
 
-namespace voxel_game
+namespace voxel_game::rendering
 {
-	RenderComponents::RenderComponents(flecs::world& world)
+    ComponentsModule::ComponentsModule(flecs::world& world)
 	{
-		world.module<RenderComponents>();
+		world.module<ComponentsModule>();
 
-        world.component<RenderingServerContext>();
+        world.component<ServerContext>();
 
-        world.component<RenderScenario>();
-        world.component<OwnedRenderScenario>();
+        world.component<TreeNode>();
 
-        world.component<RenderTreeNode>();
+        world.component<Scenario>();
+        world.component<OwnedScenario>();
 
-        world.component<RenderInstance>();
-        world.component<UniqueRenderInstance>();
+        world.component<Instance>();
+        world.component<UniqueInstance>();
 
-        world.component<RenderBase>();
-        world.component<RenderMesh>();
+        world.component<Base>();
+        world.component<Mesh>();
 	}
     
-    RenderingServerContext::RenderingServerContext()
+    ServerContext::ServerContext()
     {
         server = godot::RenderingServer::get_singleton();
     }
 
-    RenderingServerContext::~RenderingServerContext()
+    ServerContext::~ServerContext()
     {
         CommandQueueServer* command_queue_server = CommandQueueServer::get_singleton();
 
-        for (RenderingServerThreadContext& thread_context : threads)
+        for (ServerThreadContext& thread_context : threads)
         {
             command_queue_server->AddCommands(server->get_instance_id(), std::move(thread_context.commands));
         }

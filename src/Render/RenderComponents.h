@@ -27,7 +27,7 @@ namespace godot
 	class RenderingServer;
 }
 
-namespace voxel_game
+namespace voxel_game::rendering
 {
 	enum class InstanceDataFormat
 	{
@@ -50,19 +50,19 @@ namespace voxel_game
 		Invalid,
 	};
 
-	struct RenderingServerThreadContext
+	struct ServerThreadContext
 	{
 		CommandBuffer commands;
 	};
 
-	struct RenderingServerContext : Nocopy
+	struct ServerContext : Nocopy
 	{
-		RenderingServerContext();
-		~RenderingServerContext();
+		ServerContext();
+		~ServerContext();
 
 		godot::RenderingServer* server = nullptr;
-		PerThread<RenderingServerThreadContext> threads;
-		RenderingServerThreadContext main_thread;
+		PerThread<ServerThreadContext> threads;
+		ServerThreadContext main_thread;
 	};
 
 	struct InstanceDataType
@@ -79,7 +79,7 @@ namespace voxel_game
 	{
 		godot::RID multimesh_id;
 		godot::AABB aabb;
-		
+
 		DirtyRangeTracker change_tracker;
 
 		std::vector<size_t> instances;
@@ -100,24 +100,6 @@ namespace voxel_game
 	};
 
 	using MeshInstancers = robin_hood::unordered_map<flecs::entity_t, MeshTypeInstancer>;
-
-	// This is the scenario that all the children instances of this entity will register to
-	struct RenderScenario
-	{
-		godot::RID id;
-	};
-	
-	// This tag denotes that this entity creates the scenario itself
-	struct OwnedRenderScenario {};
-
-	// Relationship tag for setting the base type of the entity
-	struct RenderInstance {};
-
-	// Relationship tag for setting the base type of the entity with it being a unique instance
-	struct UniqueRenderInstance
-	{
-		godot::RID id;
-	};
 
 	struct ModifyFlags
 	{
@@ -141,7 +123,7 @@ namespace voxel_game
 	};
 
 	// A node in the main render transform tree that follows node draw info from its parent
-	struct RenderTreeNode : Nocopy
+	struct TreeNode : Nocopy
 	{
 		godot::Transform3D transform;
 		godot::Vector3 velocity;
@@ -154,17 +136,66 @@ namespace voxel_game
 		MeshInstancers mesh_instancers;
 	};
 
-	// A tag that denotes that the entity is a render base type
-	struct RenderBase {};
-
-	// Set the mesh id for the mesh entity
-	struct RenderMesh
+	// This is the scenario that all the children instances of this entity will register to
+	struct Scenario
 	{
 		godot::RID id;
 	};
 
-	struct RenderComponents
+	// This tag denotes that this entity creates the scenario itself
+	struct OwnedScenario {};
+
+	// Relationship tag for setting the base type of the entity
+	struct Instance {};
+
+	// Relationship tag for setting the base type of the entity with it being a unique instance
+	struct UniqueInstance
 	{
-		RenderComponents(flecs::world& world);
+		godot::RID id;
+	};
+
+	// A tag that denotes that the entity is a render base type
+	struct Base
+	{
+		godot::RID id;
+	};
+
+	struct Mesh {};
+
+	struct MeshFile
+	{
+		godot::StringName path;
+	};
+
+	struct PointMesh : Nocopy
+	{
+		godot::PackedVector3Array points;
+	};
+
+	struct Multimesh {};
+
+	struct Particles {};
+
+	struct ParticlesCollision {};
+
+	struct Light {};
+
+	struct ReflectionProbe {};
+
+	struct Decal {};
+
+	struct VoxelGI {};
+
+	struct Lightmap {};
+
+	struct Occluder {};
+
+	struct VisibilityNotifier {};
+
+	struct FogVolume {};
+
+	struct ComponentsModule
+	{
+		ComponentsModule(flecs::world& world);
 	};
 }
