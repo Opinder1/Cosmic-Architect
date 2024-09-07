@@ -37,8 +37,6 @@ namespace voxel_game
 
 	UUID UniverseSimulation::GetEntityRole(const UUID& faction_id, const UUID& entity_id)
 	{
-		std::shared_lock lock(m_info_cache.mutex);
-
 		godot::Dictionary entity = GetEntityInfo(entity_id);
 
 		if (entity.is_empty())
@@ -114,8 +112,6 @@ namespace voxel_game
 		{
 			return false;
 		}
-
-		std::shared_lock lock(m_info_cache.mutex);
 
 		godot::Dictionary faction_role = GetRoleInfo(entity_role);
 

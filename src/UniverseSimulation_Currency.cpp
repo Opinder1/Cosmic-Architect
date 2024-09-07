@@ -86,9 +86,12 @@ namespace voxel_game
 
 	double UniverseSimulation::GetBalance(const UUID& currency_id)
 	{
-		std::shared_lock lock(m_info_cache.mutex);
-		
-		godot::Dictionary balances = m_info_cache.player_info.find_key("balances");
+		godot::Dictionary balances;
+
+		{
+			std::shared_lock lock(m_info_cache.mutex);
+			balances = m_info_cache.player_info.find_key("balances");
+		}
 
 		if (balances.is_empty())
 		{

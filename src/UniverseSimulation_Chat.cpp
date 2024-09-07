@@ -42,9 +42,12 @@ namespace voxel_game
 
 	godot::Array UniverseSimulation::GetPrivateChatHistory(const UUID& account_id)
 	{
-		std::shared_lock lock(m_info_cache.mutex);
-
-		godot::Dictionary private_chats = m_info_cache.account_info.find_key("private_chats");
+		godot::Dictionary private_chats;
+		
+		{
+			std::shared_lock lock(m_info_cache.mutex);
+			private_chats = m_info_cache.account_info.find_key("private_chats");
+		}
 
 		if (private_chats.is_empty())
 		{

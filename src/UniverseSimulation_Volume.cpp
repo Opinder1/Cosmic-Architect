@@ -21,8 +21,6 @@ namespace voxel_game
 
 	godot::Dictionary UniverseSimulation::GetBlockInfo(const UUID& volume_id, const godot::Vector4i& position)
 	{
-		std::shared_lock lock(m_info_cache.mutex);
-		
 		godot::Dictionary volume = GetVolumeInfo(volume_id);
 
 		if (volume.is_empty())
@@ -74,8 +72,6 @@ namespace voxel_game
 
 	godot::Vector4i UniverseSimulation::GetEntityPositionInVolume(const UUID& volume_id, const UUID& entity_id)
 	{
-		std::shared_lock lock(m_info_cache.mutex);
-
 		godot::Dictionary volume = GetVolumeInfo(volume_id);
 
 		if (volume.is_empty())
@@ -95,8 +91,6 @@ namespace voxel_game
 
 	godot::Vector4i UniverseSimulation::FragmentPositionToVolumePosition(const UUID& volume_id, const godot::Vector4& fragment_position)
 	{
-		std::shared_lock lock(m_info_cache.mutex);
-
 		godot::Dictionary volume = GetVolumeInfo(volume_id);
 
 		if (volume.is_empty())
@@ -115,8 +109,6 @@ namespace voxel_game
 
 	godot::Vector4 UniverseSimulation::VolumePositionToFragmentPosition(const UUID& volume_id, const godot::Vector4i& volume_position)
 	{
-		std::shared_lock lock(m_info_cache.mutex);
-
 		godot::Dictionary volume = GetVolumeInfo(volume_id);
 
 		if (volume.is_empty())

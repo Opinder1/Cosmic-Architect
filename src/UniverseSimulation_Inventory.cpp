@@ -27,8 +27,6 @@ namespace voxel_game
 
 	UUID UniverseSimulation::GetInventoryItemEntity(const UUID& inventory_id, uint64_t item_index)
 	{
-		std::shared_lock lock(m_info_cache.mutex);
-
 		godot::Dictionary inventory = GetInventoryInfo(inventory_id);
 
 		if (inventory.is_empty())
