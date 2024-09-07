@@ -160,7 +160,7 @@ namespace voxel_game
 	}
 
 	template<class... Args>
-	void CommandBuffer::AddCommand(const godot::StringName& command, Args&&... p_args)
+	void CommandBuffer::AddCommand(const godot::StringName& command, Args&&... args)
 	{
 		DEBUG_ASSERT(!command.is_empty(), "The command should not be an empty string");
 		DEBUG_ASSERT(m_start == 0, "We shouldn't be adding commands when we are already processing the buffer");
@@ -168,9 +168,9 @@ namespace voxel_game
 		size_t command_pos = m_data.size();
 		m_data.resize(command_pos + sizeof(Command));
 
-		new(m_data.data() + command_pos) Command{ command, sizeof...(p_args) };
+		new(m_data.data() + command_pos) Command{ command, sizeof...(args) };
 
-		(WriteVariant<Args>(std::forward<Args>(p_args), m_data), ...);
+		(WriteVariant<Args>(std::forward<Args>(args), m_data), ...);
 
 		m_num_commands++;
 	}
