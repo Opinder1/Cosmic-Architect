@@ -42,8 +42,10 @@
 *.vcxproj.user
 *.pdb
 /msvc_capture.log
+/Release
+/VoxelGame/Release
+
 
 # Godot
 /demo
 extension_api.json
-/Release
