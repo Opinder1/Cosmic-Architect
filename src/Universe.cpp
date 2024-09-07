@@ -12,6 +12,7 @@
 
 #define INITIALIZE_STRINGNAME(name) name = godot::StringName{ #name }
 
+namespace std
 namespace voxel_game
 {
 	std::optional<const Universe::SignalStrings> Universe::k_signals;
@@ -58,7 +59,7 @@ namespace voxel_game
 
 		simulation->Initialize(this, galaxy_path, "full_galaxy", UniverseSimulation::SERVER_TYPE_LOCAL);
 
-		// m_simulations.emplace(simulation);
+		m_simulations.emplace(simulation);
 		
 		return simulation;
 	}
@@ -71,6 +72,8 @@ namespace voxel_game
 
 		simulation->Initialize(this, fragment_path, fragment_type, UniverseSimulation::SERVER_TYPE_LOCAL);
 
+		m_simulations.emplace(simulation);
+
 		return simulation;
 	}
 
@@ -81,6 +84,8 @@ namespace voxel_game
 		simulation.instantiate();
 
 		simulation->Initialize(this, galaxy_path, "full_galaxy", UniverseSimulation::SERVER_TYPE_REMOTE);
+
+		m_simulations.emplace(simulation);
 
 		return simulation;
 	}
@@ -106,7 +111,7 @@ namespace voxel_game
 
 	void Universe::OnSimulationUninitialized(const godot::Ref<UniverseSimulation>& simulation)
 	{
-		// m_simulations.erase(simulation);
+		m_simulations.erase(simulation);
 	}
 
 	void Universe::_bind_methods()

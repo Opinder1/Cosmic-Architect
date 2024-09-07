@@ -10,7 +10,19 @@
 namespace voxel_game
 {
 	class UniverseSimulation;
+}
 
+namespace std
+{
+	template<>
+	struct hash<godot::Ref<voxel_game::UniverseSimulation>>
+	{
+		size_t operator()(const godot::Ref<voxel_game::UniverseSimulation>& simulation) const;
+	};
+}
+
+namespace voxel_game
+{
 	// Main voxel game info class that spawns galaxy simulations
 	class Universe : public godot::RefCounted
 	{
@@ -49,7 +61,7 @@ namespace voxel_game
 	private:
 		godot::Dictionary m_universe_info_cache;
 
-		// robin_hood::unordered_set<godot::Ref<UniverseSimulation>> m_simulations;
+		robin_hood::unordered_set<godot::Ref<UniverseSimulation>> m_simulations;
 	};
 
 	struct Universe::SignalStrings
