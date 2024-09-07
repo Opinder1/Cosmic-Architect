@@ -66,7 +66,10 @@ namespace voxel_game
 
 	void UniverseSimulation::InteractBlock(UUID volume_id, const godot::Vector4i& position, const godot::Dictionary& interaction)
 	{
-		if (DeferCommand(k_commands->interact_block, volume_id, position, interaction);
+		if (DeferCommand(k_commands->interact_block, volume_id, position, interaction))
+		{
+			return;
+		}
 	}
 
 	godot::Vector4i UniverseSimulation::GetEntityPositionInVolume(UUID volume_id, UUID entity_id)
