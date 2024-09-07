@@ -1,8 +1,10 @@
 #pragma once
 
 #include "CommandBuffer.h"
+#include "UniverseCache.h"
 
 #include "Util/Debug.h"
+#include "Util/UUID.h"
 
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/classes/ref_counted.hpp>
@@ -11,14 +13,10 @@
 
 #include <godot_cpp/variant/rid.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
-#include <godot_cpp/variant/color.hpp>
-#include <godot_cpp/variant/packed_color_array.hpp>
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/string_name.hpp>
 #include <godot_cpp/variant/vector4.hpp>
 #include <godot_cpp/variant/vector4i.hpp>
-
-#include <robin_hood/robin_hood.h>
 
 #include <flecs/flecs.h>
 
@@ -30,117 +28,6 @@
 namespace voxel_game
 {
 	class Universe;
-
-	using UUID = godot::Color;
-	using UUIDVector = godot::PackedColorArray;
-
-	struct UUIDHash
-	{
-		size_t operator()(const UUID&) const;
-	};
-
-	struct UniverseCache
-	{
-		using Info = godot::Dictionary;
-		using InfoMap = robin_hood::unordered_flat_map<UUID, Info, UUIDHash>;
-
-		enum class Type
-		{
-			Galaxy,
-			Account,
-			Player,
-			Fragment,
-			ChatChannel,
-			Party,
-			Entity,
-			Volume,
-			GalaxyRegion,
-			GalaxyObject,
-			Currency,
-			Bank,
-			BankInterface,
-			Good,
-			Internet,
-			Website,
-			Webpage,
-			Role,
-			Permission,
-			Faction,
-			Language,
-			Culture,
-			Inventory,
-			Ability,
-			Spell
-		};
-
-		Info galaxy_info;
-		Info account_info;
-		Info player_info;
-
-		InfoMap player_info_map;
-		InfoMap fragment_info_map;
-		InfoMap chat_channel_info_map;
-		InfoMap party_info_map;
-		InfoMap entity_info_map;
-		InfoMap volume_info_map;
-		InfoMap galaxy_region_info_map;
-		InfoMap galaxy_object_info_map;
-		InfoMap currency_info_map;
-		InfoMap bank_info_map;
-		InfoMap bank_interface_info_map;
-		InfoMap good_info_map;
-		InfoMap internet_info_map;
-		InfoMap website_info_map;
-		InfoMap webpage_info_map;
-		InfoMap role_info_map;
-		InfoMap permission_info_map;
-		InfoMap faction_info_map;
-		InfoMap language_info_map;
-		InfoMap culture_info_map;
-		InfoMap inventory_info_map;
-		InfoMap ability_info_map;
-		InfoMap spell_info_map;
-
-		static Info UniverseCache::* GetInfo(Type type);
-
-		static InfoMap UniverseCache::* GetInfoMap(Type type);
-	};
-
-	class UniverseCacheUpdater
-	{
-		struct InfoUpdate
-		{
-			union
-			{
-				UniverseCache::Info UniverseCache::* info = nullptr;
-				UniverseCache::InfoMap UniverseCache::* info_map;
-			};
-			UUID key;
-			UniverseCache::Info value;
-		};
-
-	public:
-		UniverseCacheUpdater();
-
-		void UpdateInfo(UniverseCache::Type type, const UniverseCache::Info& info);
-
-		void UpdateInfoMap(UniverseCache::Type type, UUID id, const UniverseCache::Info& info);
-
-		// Write the changes to the exchange buffer
-		void PublishUpdates();
-
-		// Obtain the latest changes made by the writer if there are any
-		void RetrieveUpdates(UniverseCache& cache);
-
-	private:
-		void AddInfoUpdate(InfoUpdate&& update);
-
-	private:
-		std::vector<InfoUpdate> m_write;
-		std::vector<InfoUpdate> m_read;
-
-		std::atomic_bool m_ready{ false };
-	};
 
 	// Simulation of a section of the universe
 	class UniverseSimulation : public godot::RefCounted
@@ -471,7 +358,6 @@ namespace voxel_game
 		UniverseCacheUpdater m_info_updater;
 
 		// Cache buffer to be read from by other threads
-		tkrzw::SpinSharedMutex m_cache_mutex;
 		UniverseCache m_info_cache;
 	};
 

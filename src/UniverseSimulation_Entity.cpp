@@ -5,7 +5,7 @@ namespace voxel_game
 {
 	godot::Dictionary UniverseSimulation::GetEntityInfo(UUID entity_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 
 		auto it = m_info_cache.entity_info_map.find(entity_id);
 

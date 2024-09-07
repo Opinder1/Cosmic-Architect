@@ -5,7 +5,7 @@ namespace voxel_game
 {
 	godot::Dictionary UniverseSimulation::GetInventoryInfo(UUID inventory_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		
 		auto it = m_info_cache.inventory_info_map.find(inventory_id);
 
@@ -21,13 +21,13 @@ namespace voxel_game
 
 	UUID UniverseSimulation::GetInventory()
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.player_info.find_key("inventory");
 	}
 
 	UUID UniverseSimulation::GetInventoryItemEntity(UUID inventory_id, uint64_t item_index)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 
 		godot::Dictionary inventory = GetInventoryInfo(inventory_id);
 

@@ -6,13 +6,13 @@ namespace voxel_game
 
 	godot::Dictionary UniverseSimulation::GetGalaxyInfo()
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.galaxy_info;
 	}
 
 	godot::Dictionary UniverseSimulation::GetGalaxyRegionInfo(UUID galaxy_region_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 
 		auto it = m_info_cache.galaxy_region_info_map.find(galaxy_region_id);
 
@@ -28,7 +28,7 @@ namespace voxel_game
 
 	UUIDVector UniverseSimulation::GetCurrentGalaxyRegions()
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.player_info.find_key("galaxy_regions");
 	}
 

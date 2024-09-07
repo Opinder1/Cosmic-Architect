@@ -5,7 +5,7 @@ namespace voxel_game
 {
 	UUIDVector UniverseSimulation::GetFriends()
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.account_info.find_key("friends");
 	}
 

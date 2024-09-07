@@ -5,7 +5,7 @@ namespace voxel_game
 {
 	godot::Dictionary UniverseSimulation::GetRoleInfo(UUID role_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		
 		auto it = m_info_cache.role_info_map.find(role_id);
 
@@ -21,7 +21,7 @@ namespace voxel_game
 
 	godot::Dictionary UniverseSimulation::GetPermissionInfo(UUID permission_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 
 		auto it = m_info_cache.permission_info_map.find(permission_id);
 
@@ -37,7 +37,7 @@ namespace voxel_game
 
 	UUID UniverseSimulation::GetEntityRole(UUID faction_id, UUID entity_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 
 		godot::Dictionary entity = GetEntityInfo(entity_id);
 
@@ -97,7 +97,7 @@ namespace voxel_game
 			return false;
 		}
 
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 
 		godot::Dictionary faction_role = GetRoleInfo(entity_role);
 

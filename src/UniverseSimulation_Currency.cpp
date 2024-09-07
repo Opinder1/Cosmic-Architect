@@ -5,7 +5,7 @@ namespace voxel_game
 {
 	godot::Dictionary UniverseSimulation::GetCurrencyInfo(UUID currency_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 
 		auto it = m_info_cache.currency_info_map.find(currency_id);
 
@@ -21,7 +21,7 @@ namespace voxel_game
 
 	godot::Dictionary UniverseSimulation::GetBankInfo(UUID bank_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 
 		auto it = m_info_cache.bank_info_map.find(bank_id);
 
@@ -37,7 +37,7 @@ namespace voxel_game
 
 	godot::Dictionary UniverseSimulation::GetBankInterfaceInfo(UUID bank_interface_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 
 		auto it = m_info_cache.bank_interface_info_map.find(bank_interface_id);
 
@@ -53,7 +53,7 @@ namespace voxel_game
 
 	godot::Dictionary UniverseSimulation::GetGoodInfo(UUID good_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 
 		auto it = m_info_cache.good_info_map.find(good_id);
 
@@ -69,7 +69,7 @@ namespace voxel_game
 
 	UUID UniverseSimulation::GetUniversalCurrency()
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.galaxy_info.find_key("universal_currency");
 	}
 
@@ -80,13 +80,13 @@ namespace voxel_game
 
 	UUIDVector UniverseSimulation::GetOwnedCurrencies()
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.player_info.find_key("owned_currencies");
 	}
 
 	double UniverseSimulation::GetBalance(UUID currency_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		
 		godot::Dictionary balances = m_info_cache.player_info.find_key("balances");
 

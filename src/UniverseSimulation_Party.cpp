@@ -5,7 +5,7 @@ namespace voxel_game
 {
 	godot::Dictionary UniverseSimulation::GetPartyInfo(UUID party_host_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		
 		auto it = m_info_cache.party_info_map.find(party_host_id);
 
@@ -46,7 +46,7 @@ namespace voxel_game
 
 	UUIDVector UniverseSimulation::GetPlayersInParty()
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		
 		godot::Dictionary party = m_info_cache.player_info.find_key("party");
 
@@ -60,7 +60,7 @@ namespace voxel_game
 
 	UUID UniverseSimulation::GetPartyChatChannel()
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 
 		godot::Dictionary party = m_info_cache.player_info.find_key("party");
 

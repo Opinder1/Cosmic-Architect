@@ -5,7 +5,7 @@ namespace voxel_game
 {
 	godot::Dictionary UniverseSimulation::GetInternetInfo(UUID internet_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		
 		auto it = m_info_cache.internet_info_map.find(internet_id);
 
@@ -21,7 +21,7 @@ namespace voxel_game
 
 	godot::Dictionary UniverseSimulation::GetWebsiteInfo(UUID website_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		
 		auto it = m_info_cache.website_info_map.find(website_id);
 
@@ -37,7 +37,7 @@ namespace voxel_game
 
 	godot::Dictionary UniverseSimulation::GetWebsitePageInfo(UUID website_page_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		
 		auto it = m_info_cache.webpage_info_map.find(website_page_id);
 
@@ -53,13 +53,13 @@ namespace voxel_game
 
 	UUIDVector UniverseSimulation::GetInternetWebsites(UUID internet_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		return GetInternetInfo(internet_id).find_key("websites");
 	}
 
 	UUIDVector UniverseSimulation::GetWebsitePages(UUID website_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		return GetWebsiteInfo(website_id).find_key("pages");
 	}
 
@@ -75,19 +75,19 @@ namespace voxel_game
 
 	UUID UniverseSimulation::GetCurrentInternet()
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.player_info.find_key("internet");
 	}
 
 	UUID UniverseSimulation::GetCurrentInternetSite()
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.player_info.find_key("internet_site");
 	}
 
 	UUID UniverseSimulation::GetCurrentInternetPage()
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.player_info.find_key("internet_page");
 	}
 

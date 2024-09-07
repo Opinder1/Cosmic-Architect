@@ -5,7 +5,7 @@ namespace voxel_game
 {
 	godot::Dictionary UniverseSimulation::GetChannelInfo(UUID channel_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 
 		auto it = m_info_cache.chat_channel_info_map.find(channel_id);
 
@@ -36,7 +36,7 @@ namespace voxel_game
 
 	godot::Array UniverseSimulation::GetPrivateChatHistory(UUID account_id)
 	{
-		std::shared_lock lock(m_cache_mutex);
+		std::shared_lock lock(m_info_cache.mutex);
 
 		godot::Dictionary private_chats = m_info_cache.account_info.find_key("private_chats");
 
