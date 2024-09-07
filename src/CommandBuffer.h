@@ -24,8 +24,8 @@ namespace voxel_game
 	enum class VariantType : uint8_t
 	{
 		NIL,
-		TRUE,
-		FALSE,
+		TRUE, // Boolean true which is more efficiently stored
+		FALSE, // Boolean false which is more efficiently stored
 		UINT8,
 		UINT16,
 		UINT32,
@@ -74,24 +74,10 @@ namespace voxel_game
 		PACKED_VECTOR4_ARRAY,
 	};
 
-	// Write a type to a buffer
-	template<class T>
-	void WriteType(T&& data, std::vector<std::byte>& buffer);
-
-	// Get a variant type id for a type
-	template<class T>
-	VariantType GetVariantType();
-
-	// Write a variant to a buffer
-	void WriteGenericVariant(const godot::Variant& argument, std::vector<std::byte>& buffer);
-
-	// Write a type interpreted as a variant to a buffer
-	template<class T>
-	void WriteVariant(T&& argument, std::vector<std::byte>& buffer);
-
 	// Buffer which commands can be added to and processed in the order they are added
 	class CommandBuffer : Nocopy
 	{
+	public:
 		using Storage = std::vector<std::byte>;
 
 	public:
@@ -112,6 +98,7 @@ namespace voxel_game
 
 		size_t NumCommands() const;
 
+		// Destroy all remaining commands and arguments. Optionally reallocate to free memory if we just had a huge buffer
 		void Clear(bool reallocate = true);
 
 	private:
@@ -120,8 +107,16 @@ namespace voxel_game
 		size_t m_num_commands = 0;
 	};
 
+	// Get a variant type id for a C++ type
 	template<class T>
-	void WriteType(T&& data, std::vector<std::byte>& buffer)
+	VariantType GetVariantType();
+
+	// Write a variant to a buffer
+	void WriteGenericVariant(const godot::Variant& argument, CommandBuffer::Storage& buffer);
+
+	// Write a type to a buffer
+	template<class T>
+	void WriteType(T&& data, CommandBuffer::Storage& buffer)
 	{
 		// Get the plain type while allowing pointers
 		using PlainT = std::remove_cv_t<std::remove_reference_t<T>>;
@@ -132,31 +127,32 @@ namespace voxel_game
 		new (buffer.data() + pos) PlainT(std::forward<T>(data));
 	}
 
+	// Write a type interpreted as a variant to a buffer
 	template<class T>
-	void WriteVariant(T&& argument, std::vector<std::byte>& buffer)
+	void WriteVariant(T&& argument, CommandBuffer::Storage& buffer)
 	{
 		// Get the plain type
 		using PlainT = std::remove_pointer_t<std::remove_cv_t<std::remove_reference_t<T>>>;
 
-		if constexpr (std::is_base_of_v<godot::RefCounted, PlainT>)
+		if constexpr (std::is_base_of_v<godot::RefCounted, PlainT>) // Specific handle for classes that inherit from refcounted
 		{
 			WriteType<VariantType>(VariantType::REFCOUNTED, buffer);
 			WriteType<godot::Ref<PlainT>>(argument, buffer);
 		}
-		else if constexpr (std::is_base_of_v<godot::Object, PlainT>)
+		else if constexpr (std::is_base_of_v<godot::Object, PlainT>) // Specific handle for classes that inherit from object
 		{
 			WriteType<VariantType>(VariantType::OBJECT, buffer);
 			WriteType<T>(std::forward<T>(argument), buffer);
 		}
-		else if constexpr (std::is_same_v<PlainT, bool>)
+		else if constexpr (std::is_same_v<PlainT, bool>) // Efficiently write booleans in just the type enum
 		{
 			WriteType<VariantType>(argument ? VariantType::TRUE : VariantType::FALSE, buffer);
 		}
-		else if constexpr (std::is_same_v<PlainT, godot::Variant>)
+		else if constexpr (std::is_same_v<PlainT, godot::Variant>) // We were given an actual variant
 		{
 			WriteGenericVariant(argument, buffer);
 		}
-		else
+		else // Write a C++ type that can be stored in a variant
 		{
 			WriteType<VariantType>(GetVariantType<PlainT>(), buffer);
 			WriteType<T>(std::forward<T>(argument), buffer);

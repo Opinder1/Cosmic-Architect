@@ -55,6 +55,7 @@ namespace voxel_game
 	template<> VariantType GetVariantType<godot::PackedColorArray>() { return VariantType::PACKED_COLOR_ARRAY; }
 	template<> VariantType GetVariantType<godot::PackedVector4Array>() { return VariantType::PACKED_VECTOR4_ARRAY; }
 
+	// Read an encoded type in a byte stream. Copies the object to the variant and then destroys the object in the buffer
 	template<class T>
 	const std::byte* ReadVariantInternal(godot::Variant& argument, const std::byte* buffer_pos, const std::byte* buffer_end)
 	{
@@ -73,6 +74,7 @@ namespace voxel_game
 		return buffer_pos + sizeof(T);
 	}
 
+	// Read an encoded variant in a byte stream. Copies the object to the variant and then destroys the object in the buffer
 	const std::byte* ReadVariant(godot::Variant& argument, const std::byte* buffer_pos, const std::byte* buffer_end)
 	{
 		if (buffer_pos + sizeof(VariantType) > buffer_end)
@@ -243,7 +245,7 @@ namespace voxel_game
 		}
 	}
 
-	void WriteGenericVariant(const godot::Variant& argument, std::vector<std::byte>& buffer)
+	void WriteGenericVariant(const godot::Variant& argument, CommandBuffer::Storage& buffer)
 	{
 		switch (argument.get_type())
 		{
@@ -466,6 +468,7 @@ namespace voxel_game
 
 		DEBUG_ASSERT(!command->command.is_empty(), "The command should not be an empty string");
 
+		// Read arguments and store them in temporary variants for call
 		VariableLengthArray<godot::Variant> args = MakeVariableLengthArray(godot::Variant, command->argcount);
 		VariableLengthArray<const godot::Variant*> argptrs = MakeVariableLengthArray(const godot::Variant*, command->argcount);
 
@@ -482,6 +485,7 @@ namespace voxel_game
 			argptrs[i] = &args[i];
 		}
 
+		// Do the call on the object and handle any error
 		godot::Variant ret;
 		GDExtensionCallError error;
 		object.callp(command->command, argptrs.data(), argptrs.size(), ret, error);
@@ -590,6 +594,7 @@ namespace voxel_game
 			buffer_pos = ProcessCommand(object_var, buffer_pos, buffer_end);
 			num_processed++;
 
+			// We reached the max commands we set for ourself
 			if (num_processed == max)
 			{
 				break;
@@ -610,7 +615,8 @@ namespace voxel_game
 
 	void CommandBuffer::Clear(bool reallocate)
 	{
-		// Destroy all remaining commands and arguments
+		// Go through the buffer and read command data as if we were processing the commands but only destroy the data
+
 		const std::byte* buffer_pos = m_data.data() + m_start;
 		const std::byte* buffer_end = m_data.data() + m_data.size();
 		while (buffer_pos != buffer_end)
@@ -641,7 +647,7 @@ namespace voxel_game
 
 		if (reallocate)
 		{
-			m_data = Storage{};
+			m_data = Storage{}; // Get a brand buffer to save memory if our current one was huge
 		}
 		else
 		{
