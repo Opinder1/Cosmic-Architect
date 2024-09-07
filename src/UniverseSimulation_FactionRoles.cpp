@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseSimulation::GetRoleInfo(UUID role_id)
+	godot::Dictionary UniverseSimulation::GetRoleInfo(const UUID& role_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		
@@ -19,7 +19,7 @@ namespace voxel_game
 		}
 	}
 
-	godot::Dictionary UniverseSimulation::GetPermissionInfo(UUID permission_id)
+	godot::Dictionary UniverseSimulation::GetPermissionInfo(const UUID& permission_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 
@@ -35,7 +35,7 @@ namespace voxel_game
 		}
 	}
 
-	UUID UniverseSimulation::GetEntityRole(UUID faction_id, UUID entity_id)
+	UUID UniverseSimulation::GetEntityRole(const UUID& faction_id, const UUID& entity_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 
@@ -56,7 +56,7 @@ namespace voxel_game
 		return entity_factions.find_key(faction_id);
 	}
 
-	void UniverseSimulation::AddFactionRole(UUID faction_id, UUID role_id, const godot::Dictionary& role_info)
+	void UniverseSimulation::AddFactionRole(const UUID& faction_id, const UUID& role_id, const godot::Dictionary& role_info)
 	{
 		if (DeferCommand(k_commands->add_faction_role, faction_id, role_id, role_info))
 		{
@@ -64,7 +64,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::RemoveFactionRole(UUID faction_id, UUID role_id)
+	void UniverseSimulation::RemoveFactionRole(const UUID& faction_id, const UUID& role_id)
 	{
 		if (DeferCommand(k_commands->remove_faction_role, faction_id, role_id))
 		{
@@ -72,7 +72,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::ModifyFactionRole(UUID faction_id, UUID role_id, const godot::Dictionary& role_info)
+	void UniverseSimulation::ModifyFactionRole(const UUID& faction_id, const UUID& role_id, const godot::Dictionary& role_info)
 	{
 		if (DeferCommand(k_commands->modify_faction_role, faction_id, role_id, role_info))
 		{
@@ -80,7 +80,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::AddPermissionToRole(UUID faction_id, UUID role_id, UUID permission_id)
+	void UniverseSimulation::AddPermissionToRole(const UUID& faction_id, const UUID& role_id, const UUID& permission_id)
 	{
 		if (DeferCommand(k_commands->add_permission_to_role, faction_id, role_id, permission_id))
 		{
@@ -88,7 +88,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::RemovePermissionFromRole(UUID faction_id, UUID role_id, UUID permission_id)
+	void UniverseSimulation::RemovePermissionFromRole(const UUID& faction_id, const UUID& role_id, const UUID& permission_id)
 	{
 		if (DeferCommand(k_commands->remove_permission_from_role, faction_id, role_id, permission_id))
 		{
@@ -96,7 +96,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::SetEntityRole(UUID faction_id, UUID entity_id, UUID role_id)
+	void UniverseSimulation::SetEntityRole(const UUID& faction_id, const UUID& entity_id, const UUID& role_id)
 	{
 		if (DeferCommand(k_commands->set_entity_role, faction_id, entity_id, role_id))
 		{
@@ -104,7 +104,7 @@ namespace voxel_game
 		}
 	}
 
-	bool UniverseSimulation::EntityHasPermission(UUID faction_id, UUID entity_id, UUID permission_id)
+	bool UniverseSimulation::EntityHasPermission(const UUID& faction_id, const UUID& entity_id, const UUID& permission_id)
 	{
 		// TODO: Have some better return value than just a bool so we can also have an error return value
 

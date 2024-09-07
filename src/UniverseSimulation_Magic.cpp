@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseSimulation::GetSpellInfo(UUID spell_id)
+	godot::Dictionary UniverseSimulation::GetSpellInfo(const UUID& spell_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		

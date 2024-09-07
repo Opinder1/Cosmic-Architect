@@ -5,7 +5,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseSimulation::GetFragmentInfo(UUID fragment_id)
+	godot::Dictionary UniverseSimulation::GetFragmentInfo(const UUID& fragment_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 
@@ -27,7 +27,7 @@ namespace voxel_game
 		return m_info_cache.player_info.find_key("current_fragment");
 	}
 
-	void UniverseSimulation::EnterFragment(UUID fragment_id, const godot::Dictionary& method)
+	void UniverseSimulation::EnterFragment(const UUID& fragment_id, const godot::Dictionary& method)
 	{
 		if (DeferCommand(k_commands->enter_fragment, fragment_id, method))
 		{

@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseSimulation::GetVolumeInfo(UUID volume_id)
+	godot::Dictionary UniverseSimulation::GetVolumeInfo(const UUID& volume_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		
@@ -19,7 +19,7 @@ namespace voxel_game
 		}
 	}
 
-	godot::Dictionary UniverseSimulation::GetBlockInfo(UUID volume_id, const godot::Vector4i& position)
+	godot::Dictionary UniverseSimulation::GetBlockInfo(const UUID& volume_id, const godot::Vector4i& position)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		
@@ -40,7 +40,7 @@ namespace voxel_game
 		return blocks.find_key(position);
 	}
 
-	void UniverseSimulation::PlaceBlock(UUID volume_id, const godot::Vector4i& position, UUID block_id, const godot::Dictionary& block_data)
+	void UniverseSimulation::PlaceBlock(const UUID& volume_id, const godot::Vector4i& position, const UUID& block_id, const godot::Dictionary& block_data)
 	{
 		if (DeferCommand(k_commands->place_block, volume_id, position, block_id, block_data))
 		{
@@ -48,7 +48,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::FillBlocks(UUID volume_id, const godot::Vector4i& position_first, const godot::Vector4i& position_second, UUID block_id, uint32_t block_data)
+	void UniverseSimulation::FillBlocks(const UUID& volume_id, const godot::Vector4i& position_first, const godot::Vector4i& position_second, const UUID& block_id, uint32_t block_data)
 	{
 		if (DeferCommand(k_commands->fill_blocks, volume_id, position_first, position_second, block_id, block_data))
 		{
@@ -56,7 +56,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::PlaceBlockInNewVolume(const godot::Vector4& fragment_position, UUID block_id, const godot::Dictionary& block_data)
+	void UniverseSimulation::PlaceBlockInNewVolume(const godot::Vector4& fragment_position, const UUID& block_id, const godot::Dictionary& block_data)
 	{
 		if (DeferCommand(k_commands->place_block_in_new_volume, fragment_position, block_id, block_data))
 		{
@@ -64,7 +64,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::InteractBlock(UUID volume_id, const godot::Vector4i& position, const godot::Dictionary& interaction)
+	void UniverseSimulation::InteractBlock(const UUID& volume_id, const godot::Vector4i& position, const godot::Dictionary& interaction)
 	{
 		if (DeferCommand(k_commands->interact_block, volume_id, position, interaction))
 		{
@@ -72,7 +72,7 @@ namespace voxel_game
 		}
 	}
 
-	godot::Vector4i UniverseSimulation::GetEntityPositionInVolume(UUID volume_id, UUID entity_id)
+	godot::Vector4i UniverseSimulation::GetEntityPositionInVolume(const UUID& volume_id, const UUID& entity_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 
@@ -93,7 +93,7 @@ namespace voxel_game
 		return entity_positions.find_key(entity_id);
 	}
 
-	godot::Vector4i UniverseSimulation::FragmentPositionToVolumePosition(UUID volume_id, const godot::Vector4& fragment_position)
+	godot::Vector4i UniverseSimulation::FragmentPositionToVolumePosition(const UUID& volume_id, const godot::Vector4& fragment_position)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 
@@ -113,7 +113,7 @@ namespace voxel_game
 		return godot::Vector4i(volume_position.x, volume_position.y, volume_position.z, fragment_position.w);
 	}
 
-	godot::Vector4 UniverseSimulation::VolumePositionToFragmentPosition(UUID volume_id, const godot::Vector4i& volume_position)
+	godot::Vector4 UniverseSimulation::VolumePositionToFragmentPosition(const UUID& volume_id, const godot::Vector4i& volume_position)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 

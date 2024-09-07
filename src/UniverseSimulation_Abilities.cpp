@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseSimulation::GetAbilityInfo(UUID ability_id)
+	godot::Dictionary UniverseSimulation::GetAbilityInfo(const UUID& ability_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 
@@ -19,7 +19,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::ActivateAbility(UUID ability_id)
+	void UniverseSimulation::ActivateAbility(const UUID& ability_id)
 	{
 		if (DeferCommand(k_commands->activate_ability, ability_id))
 		{
@@ -28,7 +28,7 @@ namespace voxel_game
 
 	}
 
-	void UniverseSimulation::ToggleAbility(UUID ability_id, bool toggled)
+	void UniverseSimulation::ToggleAbility(const UUID& ability_id, bool toggled)
 	{
 		if (DeferCommand(k_commands->toggle_ability, ability_id, toggled))
 		{
@@ -36,7 +36,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::SetPlayerSetting(UUID setting_id, const godot::Variant& value)
+	void UniverseSimulation::SetPlayerSetting(const UUID& setting_id, const godot::Variant& value)
 	{
 		if (DeferCommand(k_commands->set_player_setting, setting_id, value))
 		{

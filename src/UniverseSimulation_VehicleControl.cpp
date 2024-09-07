@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	void UniverseSimulation::TriggerVehicleControl(UUID control_id)
+	void UniverseSimulation::TriggerVehicleControl(const UUID& control_id)
 	{
 		if (DeferCommand(k_commands->trigger_vehicle_control, control_id))
 		{
@@ -11,7 +11,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::ToggleVehicleControl(UUID control_id, bool toggled)
+	void UniverseSimulation::ToggleVehicleControl(const UUID& control_id, bool toggled)
 	{
 		if (DeferCommand(k_commands->toggle_vehicle_control, control_id, toggled))
 		{
@@ -19,7 +19,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::SetVehicleControl(UUID control_id, const godot::Variant& value)
+	void UniverseSimulation::SetVehicleControl(const UUID& control_id, const godot::Variant& value)
 	{
 		if (DeferCommand(k_commands->set_vehicle_control, control_id, value))
 		{

@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseSimulation::GetPartyInfo(UUID party_host_id)
+	godot::Dictionary UniverseSimulation::GetPartyInfo(const UUID& party_host_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		
@@ -27,7 +27,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::InviteToParty(UUID player_id)
+	void UniverseSimulation::InviteToParty(const UUID& player_id)
 	{
 		if (DeferCommand(k_commands->invite_to_party, player_id))
 		{
@@ -35,7 +35,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::AcceptInvite(UUID player_id)
+	void UniverseSimulation::AcceptInvite(const UUID& player_id)
 	{
 		if (DeferCommand(k_commands->accept_invite, player_id))
 		{

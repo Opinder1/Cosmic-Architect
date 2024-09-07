@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	void UniverseSimulation::StoreEntity(UUID entity_id, UUID inventory_id)
+	void UniverseSimulation::StoreEntity(const UUID& entity_id, const UUID& inventory_id)
 	{
 		if (DeferCommand(k_commands->store_entity, entity_id, inventory_id))
 		{
@@ -11,7 +11,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::HoldBlock(UUID volume_id, const godot::Vector4i& position)
+	void UniverseSimulation::HoldBlock(const UUID& volume_id, const godot::Vector4i& position)
 	{
 		if (DeferCommand(k_commands->hold_block, volume_id, position))
 		{
@@ -19,7 +19,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::HoldEntity(UUID entity_id)
+	void UniverseSimulation::HoldEntity(const UUID& entity_id)
 	{
 		if (DeferCommand(k_commands->hold_entity, entity_id))
 		{
@@ -35,7 +35,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::EquipItemFromWorld(UUID entity_id)
+	void UniverseSimulation::EquipItemFromWorld(const UUID& entity_id)
 	{
 		if (DeferCommand(k_commands->equip_item_from_world, entity_id))
 		{
@@ -43,7 +43,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::EquipItemFromInventory(UUID entity_id, UUID inventory_id, uint64_t item_index)
+	void UniverseSimulation::EquipItemFromInventory(const UUID& entity_id, const UUID& inventory_id, uint64_t item_index)
 	{
 		if (DeferCommand(k_commands->equip_item_from_inventory, entity_id, inventory_id, item_index))
 		{
@@ -51,7 +51,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::DropEquipToWorld(UUID entity_id)
+	void UniverseSimulation::DropEquipToWorld(const UUID& entity_id)
 	{
 		if (DeferCommand(k_commands->drop_equip_to_world, entity_id))
 		{
@@ -59,7 +59,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::UnequipItemToInventory(UUID entity_id, UUID inventory_id, uint64_t item_index)
+	void UniverseSimulation::UnequipItemToInventory(const UUID& entity_id, const UUID& inventory_id, uint64_t item_index)
 	{
 		if (DeferCommand(k_commands->unequip_item_to_inventory, entity_id, inventory_id, item_index))
 		{
@@ -67,7 +67,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::SetLeftHandEquip(UUID entity_id)
+	void UniverseSimulation::SetLeftHandEquip(const UUID& entity_id)
 	{
 		if (DeferCommand(k_commands->set_left_hand_equip, entity_id))
 		{
@@ -75,7 +75,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::SetRightHandEquip(UUID entity_id)
+	void UniverseSimulation::SetRightHandEquip(const UUID& entity_id)
 	{
 		if (DeferCommand(k_commands->set_right_hand_equip, entity_id))
 		{
@@ -83,7 +83,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::UseEquip(UUID entity_id, uint64_t hand)
+	void UniverseSimulation::UseEquip(const UUID& entity_id, uint64_t hand)
 	{
 		if (DeferCommand(k_commands->use_equip, entity_id, hand))
 		{
@@ -91,7 +91,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::ToggleEquip(UUID entity_id, bool toggled)
+	void UniverseSimulation::ToggleEquip(const UUID& entity_id, bool toggled)
 	{
 		if (DeferCommand(k_commands->toggle_equip, entity_id, toggled))
 		{
@@ -99,7 +99,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::RideEntity(UUID entity_id, uint64_t attachment_point)
+	void UniverseSimulation::RideEntity(const UUID& entity_id, uint64_t attachment_point)
 	{
 		if (DeferCommand(k_commands->ride_entity, entity_id, attachment_point))
 		{
@@ -115,7 +115,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::ExitEntity(UUID entity_id)
+	void UniverseSimulation::ExitEntity(const UUID& entity_id)
 	{
 		if (DeferCommand(k_commands->exit_entity, entity_id))
 		{
@@ -123,7 +123,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::InteractWithEntity(UUID entity_id, const godot::Dictionary& interaction_info)
+	void UniverseSimulation::InteractWithEntity(const UUID& entity_id, const godot::Dictionary& interaction_info)
 	{
 		if (DeferCommand(k_commands->interact_with_entity, entity_id, interaction_info))
 		{

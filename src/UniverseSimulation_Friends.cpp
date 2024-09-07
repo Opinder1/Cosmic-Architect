@@ -9,7 +9,7 @@ namespace voxel_game
 		return m_info_cache.account_info.find_key("friends");
 	}
 
-	void UniverseSimulation::InviteFriend(UUID account_id)
+	void UniverseSimulation::InviteFriend(const UUID& account_id)
 	{
 		if (DeferCommand(k_commands->invite_friend, account_id))
 		{
@@ -17,7 +17,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::AcceptFreindInvite(UUID account_id)
+	void UniverseSimulation::AcceptFreindInvite(const UUID& account_id)
 	{
 		if (DeferCommand(k_commands->accept_friend_invite, account_id))
 		{
@@ -25,7 +25,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::RemoveFriend(UUID account_id)
+	void UniverseSimulation::RemoveFriend(const UUID& account_id)
 	{
 		if (DeferCommand(k_commands->remove_friend, account_id))
 		{

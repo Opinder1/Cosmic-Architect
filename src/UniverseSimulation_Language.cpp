@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseSimulation::GetLanguageInfo(UUID language_id)
+	godot::Dictionary UniverseSimulation::GetLanguageInfo(const UUID& language_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		
@@ -19,7 +19,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::GetLanguageTranslation(UUID language_id, const godot::StringName& string)
+	void UniverseSimulation::GetLanguageTranslation(const UUID& language_id, const godot::StringName& string)
 	{
 		if (DeferCommand(k_commands->get_language_translation, language_id, string))
 		{
@@ -27,7 +27,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::GetLanguageString(UUID language_id, uint64_t string_id)
+	void UniverseSimulation::GetLanguageString(const UUID& language_id, uint64_t string_id)
 	{
 		if (DeferCommand(k_commands->get_language_string, language_id, string_id))
 		{

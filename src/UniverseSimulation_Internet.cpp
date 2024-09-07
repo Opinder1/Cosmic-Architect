@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseSimulation::GetInternetInfo(UUID internet_id)
+	godot::Dictionary UniverseSimulation::GetInternetInfo(const UUID& internet_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		
@@ -19,7 +19,7 @@ namespace voxel_game
 		}
 	}
 
-	godot::Dictionary UniverseSimulation::GetWebsiteInfo(UUID website_id)
+	godot::Dictionary UniverseSimulation::GetWebsiteInfo(const UUID& website_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		
@@ -35,7 +35,7 @@ namespace voxel_game
 		}
 	}
 
-	godot::Dictionary UniverseSimulation::GetWebsitePageInfo(UUID website_page_id)
+	godot::Dictionary UniverseSimulation::GetWebsitePageInfo(const UUID& website_page_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		
@@ -51,19 +51,19 @@ namespace voxel_game
 		}
 	}
 
-	UUIDVector UniverseSimulation::GetInternetWebsites(UUID internet_id)
+	UUIDVector UniverseSimulation::GetInternetWebsites(const UUID& internet_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		return GetInternetInfo(internet_id).find_key("websites");
 	}
 
-	UUIDVector UniverseSimulation::GetWebsitePages(UUID website_id)
+	UUIDVector UniverseSimulation::GetWebsitePages(const UUID& website_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		return GetWebsiteInfo(website_id).find_key("pages");
 	}
 
-	void UniverseSimulation::UniverseSimulation::StartInternet(UUID internet_id, UUID device_id)
+	void UniverseSimulation::UniverseSimulation::StartInternet(const UUID& internet_id, const UUID& device_id)
 	{
 		if (DeferCommand(k_commands->start_internet, internet_id, device_id))
 		{
