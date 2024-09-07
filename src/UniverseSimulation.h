@@ -69,12 +69,9 @@ namespace voxel_game
 
 		void Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario);
 		void Uninitialize();
-
-		// ####### Simulation #######
-
-		bool IsThreaded();
 		void StartSimulation(ThreadMode thread_mode);
 		void StopSimulation();
+		bool IsThreaded();
 		bool Progress(real_t delta);
 
 		// ####### Universe #######

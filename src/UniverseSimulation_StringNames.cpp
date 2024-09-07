@@ -7,12 +7,14 @@ namespace voxel_game
 {
 	UniverseSimulation::CommandStrings::CommandStrings()
 	{
-		INITIALIZE_STRINGNAME(is_threaded);
-		INITIALIZE_STRINGNAME(get_universe);
-		INITIALIZE_STRINGNAME(get_galaxy_info);
 		INITIALIZE_STRINGNAME(start_simulation);
 		INITIALIZE_STRINGNAME(stop_simulation);
+		INITIALIZE_STRINGNAME(is_threaded);
 		INITIALIZE_STRINGNAME(progress);
+
+		// ####### Universe #######
+
+		INITIALIZE_STRINGNAME(get_universe);
 
 		// ####### Fragments (admin only) #######
 
@@ -79,6 +81,7 @@ namespace voxel_game
 
 		// ####### Galaxy Region #######
 
+		INITIALIZE_STRINGNAME(get_galaxy_info);
 		INITIALIZE_STRINGNAME(get_galaxy_region_info);
 		INITIALIZE_STRINGNAME(request_galaxy_region_info);
 		INITIALIZE_STRINGNAME(get_current_galaxy_regions);

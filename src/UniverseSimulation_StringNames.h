@@ -6,12 +6,14 @@ namespace voxel_game
 	{
 		CommandStrings();
 
-		godot::StringName is_threaded;
-		godot::StringName get_universe;
-		godot::StringName get_galaxy_info;
 		godot::StringName start_simulation;
 		godot::StringName stop_simulation;
+		godot::StringName is_threaded;
 		godot::StringName progress;
+
+		// ####### Universe #######
+
+		godot::StringName get_universe;
 
 		// ####### Fragments (admin only) #######
 
@@ -78,6 +80,7 @@ namespace voxel_game
 
 		// ####### Galaxy Region #######
 
+		godot::StringName get_galaxy_info;
 		godot::StringName get_galaxy_region_info;
 		godot::StringName request_galaxy_region_info;
 		godot::StringName get_current_galaxy_regions;

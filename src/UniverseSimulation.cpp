@@ -274,12 +274,13 @@ namespace voxel_game
 
 	void UniverseSimulation::BindMethods()
 	{
-		BIND_METHOD(godot::D_METHOD(k_commands->is_threaded), &UniverseSimulation::IsThreaded);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_universe), &UniverseSimulation::GetUniverse);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_galaxy_info), &UniverseSimulation::GetGalaxyInfo);
 		BIND_METHOD(godot::D_METHOD(k_commands->start_simulation, "thread_mode"), &UniverseSimulation::StartSimulation);
 		BIND_METHOD(godot::D_METHOD(k_commands->stop_simulation), &UniverseSimulation::StopSimulation);
+		BIND_METHOD(godot::D_METHOD(k_commands->is_threaded), &UniverseSimulation::IsThreaded);
 		BIND_METHOD(godot::D_METHOD(k_commands->progress, "delta"), &UniverseSimulation::Progress);
+
+		// ####### Universe #######
+		BIND_METHOD(godot::D_METHOD(k_commands->get_universe), &UniverseSimulation::GetUniverse);
 
 		// ####### Fragments (admin only) #######
 
@@ -346,6 +347,7 @@ namespace voxel_game
 
 		// ####### Galaxy Region #######
 
+		BIND_METHOD(godot::D_METHOD(k_commands->get_galaxy_info), &UniverseSimulation::GetGalaxyInfo);
 		BIND_METHOD(godot::D_METHOD(k_commands->get_galaxy_region_info, "galaxy_region_id"), &UniverseSimulation::GetGalaxyRegionInfo);
 		BIND_METHOD(godot::D_METHOD(k_commands->request_galaxy_region_info, "galaxy_region_id"), &UniverseSimulation::RequestGalaxyRegionInfo);
 		BIND_METHOD(godot::D_METHOD(k_commands->get_current_galaxy_regions), &UniverseSimulation::GetCurrentGalaxyRegions);
