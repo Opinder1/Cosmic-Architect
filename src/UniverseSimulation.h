@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CommandQueue.h"
+#include "CommandBuffer.h"
 
 #include "Util/Debug.h"
 
@@ -29,9 +29,7 @@
 
 namespace voxel_game
 {
-	class CommandQueue;
 	class Universe;
-	class UniverseRenderInfo;
 
 	using UUID = godot::Color;
 	using UUIDVector = godot::PackedColorArray;
@@ -185,13 +183,16 @@ namespace voxel_game
 		void Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario);
 		void Uninitialize();
 
+		// ####### Simulation #######
+
 		bool IsThreaded();
-		godot::Ref<Universe> GetUniverse();
-		godot::Dictionary GetGalaxyInfo();
-		void StartRenderer(UniverseRenderInfo* render_info);
 		void StartSimulation(ThreadMode thread_mode);
 		void StopSimulation();
 		bool Progress(real_t delta);
+
+		// ####### Universe #######
+
+		godot::Ref<Universe> GetUniverse();
 
 		// ####### Fragments (admin only) #######
 
@@ -258,6 +259,7 @@ namespace voxel_game
 
 		// ####### Galaxy Region #######
 
+		godot::Dictionary GetGalaxyInfo();
 		godot::Dictionary GetGalaxyRegionInfo(UUID galaxy_region_id);
 		void RequestGalaxyRegionInfo(UUID galaxy_region_id);
 		UUIDVector GetCurrentGalaxyRegions();

@@ -265,7 +265,7 @@ namespace voxel_game
 				universe_entity.ensure<rendering::Scenario>().id = scenario;
 
 				universe_entity.add<rendering::TreeNode>();
-	}
+			}
 
 			{
 				flecs::entity galaxy_entity(m_world, m_galaxy_entity);
@@ -304,18 +304,6 @@ namespace voxel_game
 	{
 		return m_thread.joinable();
 	}
-
-	godot::Ref<Universe> UniverseSimulation::GetUniverse()
-	{
-		return m_universe;
-	}
-
-	godot::Dictionary UniverseSimulation::GetGalaxyInfo()
-	{
-		std::shared_lock lock(m_cache_mutex);
-		return m_info_cache.galaxy_info;
-	}
-
 
 	void UniverseSimulation::StartSimulation(ThreadMode thread_mode)
 	{
@@ -412,12 +400,16 @@ namespace voxel_game
 		}
 	}
 
+	godot::Ref<Universe> UniverseSimulation::GetUniverse()
+	{
+		return m_universe;
+	}
+
 	void UniverseSimulation::BindMethods()
 	{
 		BIND_METHOD(godot::D_METHOD(k_commands->is_threaded), &UniverseSimulation::IsThreaded);
 		BIND_METHOD(godot::D_METHOD(k_commands->get_universe), &UniverseSimulation::GetUniverse);
 		BIND_METHOD(godot::D_METHOD(k_commands->get_galaxy_info), &UniverseSimulation::GetGalaxyInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->start_renderer, "render_info"), &UniverseSimulation::StartRenderer);
 		BIND_METHOD(godot::D_METHOD(k_commands->start_simulation, "thread_mode"), &UniverseSimulation::StartSimulation);
 		BIND_METHOD(godot::D_METHOD(k_commands->stop_simulation), &UniverseSimulation::StopSimulation);
 		BIND_METHOD(godot::D_METHOD(k_commands->progress, "delta"), &UniverseSimulation::Progress);
