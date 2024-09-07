@@ -55,7 +55,7 @@ namespace voxel_game
 
 	}
 
-	godot::Ref<UniverseSimulation> Universe::InitializeLocalGalaxy(const godot::String& galaxy_path)
+	godot::Ref<UniverseSimulation> Universe::InitializeLocalGalaxy(const godot::String& galaxy_path, godot::RID scenario)
 	{
 		godot::Ref<UniverseSimulation> simulation;
 
