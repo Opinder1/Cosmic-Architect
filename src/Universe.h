@@ -2,6 +2,7 @@
 
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/variant/rid.hpp>
 
 #include <robin_hood/robin_hood.h>
 
@@ -43,7 +44,7 @@ namespace voxel_game
 		void QueryGalaxyList(const godot::Dictionary& query);
 		void PingGalaxy(const godot::String& ip);
 
-		godot::Ref<UniverseSimulation> InitializeLocalGalaxy(const godot::String& galaxy_path);
+		godot::Ref<UniverseSimulation> InitializeLocalGalaxy(const godot::String& galaxy_path, godot::RID scenario);
 		godot::Ref<UniverseSimulation> InitializeLocalFragment(const godot::String& fragment_path, const godot::String& fragment_type);
 		godot::Ref<UniverseSimulation> InitializeRemoteGalaxy(const godot::String& galaxy_path);
 

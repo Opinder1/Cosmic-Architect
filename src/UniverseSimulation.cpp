@@ -223,7 +223,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type)
+	void UniverseSimulation::Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario)
 	{
 		DEBUG_ASSERT(!m_universe, "We can't initialize a simulation twice");
 
@@ -246,11 +246,33 @@ namespace voxel_game
 		m_world.import<GalaxyModule>();
 		m_world.import<UniverseModule>();
 
+		if (scenario.is_valid())
+		{
+			m_world.import<rendering::Module>();
+		}
+
 		// Create the universe and simulated galaxy
 
 		m_universe_entity = CreateNewUniverse(m_world);
 
 		m_galaxy_entity = CreateNewSimulatedGalaxy(m_world, m_universe_entity);
+
+		if (scenario.is_valid())
+		{
+			{
+				flecs::entity universe_entity(m_world, m_universe_entity);
+
+				universe_entity.ensure<rendering::Scenario>().id = scenario;
+
+				universe_entity.add<rendering::TreeNode>();
+	}
+
+			{
+				flecs::entity galaxy_entity(m_world, m_galaxy_entity);
+
+				galaxy_entity.add<rendering::TreeNode>();
+			}
+		}
 	}
 
 	void UniverseSimulation::Uninitialize()
@@ -294,24 +316,6 @@ namespace voxel_game
 		return m_info_cache.galaxy_info;
 	}
 
-	void UniverseSimulation::StartRenderer(UniverseRenderInfo* render_info)
-	{
-		m_world.import<rendering::Module>();
-
-		{
-			flecs::entity universe_entity(m_world, m_universe_entity);
-
-			universe_entity.ensure<rendering::Scenario>().id = render_info->GetScenario();
-
-			universe_entity.add<rendering::TreeNode>();
-		}
-
-		{
-			flecs::entity galaxy_entity(m_world, m_galaxy_entity);
-
-			galaxy_entity.add<rendering::TreeNode>();
-		}
-	}
 
 	void UniverseSimulation::StartSimulation(ThreadMode thread_mode)
 	{

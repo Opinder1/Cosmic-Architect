@@ -13,6 +13,13 @@
 #define INITIALIZE_STRINGNAME(name) name = godot::StringName{ #name }
 
 namespace std
+{
+	size_t hash<godot::Ref<voxel_game::UniverseSimulation>>::operator()(const godot::Ref<voxel_game::UniverseSimulation>& simulation) const
+	{
+		return reinterpret_cast<uintptr_t>(simulation.ptr());
+	}
+}
+
 namespace voxel_game
 {
 	std::optional<const Universe::SignalStrings> Universe::k_signals;
@@ -57,7 +64,7 @@ namespace voxel_game
 		simulation->connect(UniverseSimulation::k_signals->load_state_changed, godot::create_custom_callable_function_pointer(this, &Universe::OnSimulationStateChanged).bind(simulation));
 		simulation->connect(UniverseSimulation::k_signals->simulation_uninitialized, godot::create_custom_callable_function_pointer(this, &Universe::OnSimulationUninitialized).bind(simulation));
 
-		simulation->Initialize(this, galaxy_path, "full_galaxy", UniverseSimulation::SERVER_TYPE_LOCAL);
+		simulation->Initialize(this, galaxy_path, "full_galaxy", UniverseSimulation::SERVER_TYPE_LOCAL, scenario);
 
 		m_simulations.emplace(simulation);
 		
@@ -70,7 +77,7 @@ namespace voxel_game
 
 		simulation.instantiate();
 
-		simulation->Initialize(this, fragment_path, fragment_type, UniverseSimulation::SERVER_TYPE_LOCAL);
+		simulation->Initialize(this, fragment_path, fragment_type, UniverseSimulation::SERVER_TYPE_LOCAL, godot::RID());
 
 		m_simulations.emplace(simulation);
 
@@ -83,7 +90,7 @@ namespace voxel_game
 
 		simulation.instantiate();
 
-		simulation->Initialize(this, galaxy_path, "full_galaxy", UniverseSimulation::SERVER_TYPE_REMOTE);
+		simulation->Initialize(this, galaxy_path, "full_galaxy", UniverseSimulation::SERVER_TYPE_REMOTE, godot::RID());
 
 		m_simulations.emplace(simulation);
 
@@ -124,7 +131,7 @@ namespace voxel_game
 		BIND_METHOD(godot::D_METHOD("query_galaxy_list", "query"), &Universe::QueryGalaxyList);
 		BIND_METHOD(godot::D_METHOD("ping_galaxy", "ip"), &Universe::PingGalaxy);
 
-		BIND_METHOD(godot::D_METHOD("initialize_local_galaxy", "galaxy_path"), &Universe::InitializeLocalGalaxy);
+		BIND_METHOD(godot::D_METHOD("initialize_local_galaxy", "galaxy_path", "scenario"), &Universe::InitializeLocalGalaxy);
 		BIND_METHOD(godot::D_METHOD("initialize_local_fragment", "fragment_path", "fragment_type"), &Universe::InitializeLocalFragment);
 		BIND_METHOD(godot::D_METHOD("initialize_remote_galaxy", "galaxy_path"), &Universe::InitializeRemoteGalaxy);
 		BIND_METHOD(godot::D_METHOD("uninitialize", "simulation"), &Universe::Uninitialize);
