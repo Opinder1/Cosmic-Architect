@@ -48,21 +48,33 @@ namespace voxel_game
 
 	void UniverseSimulation::TrashInventoryItem(UUID inventory_id, uint64_t item_index)
 	{
-		SIM_DEFER_COMMAND(k_commands->trash_inventory_item, inventory_id, item_index);
+		if (DeferCommand(k_commands->trash_inventory_item, inventory_id, item_index))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::MoveInventoryItem(UUID inventory_id, uint64_t from_item_index, uint64_t to_item_index)
 	{
-		SIM_DEFER_COMMAND(k_commands->move_inventory_item, inventory_id, from_item_index, to_item_index);
+		if (DeferCommand(k_commands->move_inventory_item, inventory_id, from_item_index, to_item_index))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::TransferInventoryItem(UUID from_inventory_id, uint64_t from_item_index, UUID to_inventory_id, uint64_t to_item_index)
 	{
-		SIM_DEFER_COMMAND(k_commands->transfer_inventory_item, from_inventory_id, from_item_index, to_inventory_id, to_item_index);
+		if (DeferCommand(k_commands->transfer_inventory_item, from_inventory_id, from_item_index, to_inventory_id, to_item_index))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::InteractWithInventoryItem(UUID inventory_id, uint64_t item_index, const godot::Dictionary& interaction_info)
 	{
-		SIM_DEFER_COMMAND(k_commands->interact_with_inventory_item, inventory_id, item_index, interaction_info);
+		if (DeferCommand(k_commands->interact_with_inventory_item, inventory_id, item_index, interaction_info))
+		{
+			return;
+		}
 	}
 }

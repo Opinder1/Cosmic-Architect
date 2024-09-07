@@ -100,26 +100,41 @@ namespace voxel_game
 
 	void UniverseSimulation::Withdraw(UUID currency_id, real_t amount, UUID bank_interface_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->withdraw, currency_id, amount, bank_interface_id);
+		if (DeferCommand(k_commands->withdraw, currency_id, amount, bank_interface_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::Deposit(UUID currency_id, real_t amount, UUID bank_interface_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->deposit, currency_id, amount, bank_interface_id);
+		if (DeferCommand(k_commands->deposit, currency_id, amount, bank_interface_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::Convert(UUID from_currency_id, UUID to_currency_id, real_t amount, UUID bank_interface_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->convert, from_currency_id, to_currency_id, amount, bank_interface_id);
+		if (DeferCommand(k_commands->convert, from_currency_id, to_currency_id, amount, bank_interface_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::PayEntity(UUID currency_id, UUID entity_id, real_t amount, UUID bank_interface_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->pay_entity, currency_id, entity_id, amount, bank_interface_id);
+		if (DeferCommand(k_commands->pay_entity, currency_id, entity_id, amount, bank_interface_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::BuyGoodWithCurrency(UUID good_id, UUID currency_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->buy_good_with_currency, good_id, currency_id);
+		if (DeferCommand(k_commands->buy_good_with_currency, good_id, currency_id))
+		{
+			return;
+		}
 	}
 }

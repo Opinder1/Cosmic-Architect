@@ -21,12 +21,18 @@ namespace voxel_game
 
 	void UniverseSimulation::SendMessageToChannel(const godot::String& message, UUID channel_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->send_message_to_channel, message, channel_id);
+		if (DeferCommand(k_commands->send_message_to_channel, message, channel_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::SendMessageToPlayer(const godot::String& message, UUID account_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->send_message_to_player, message, account_id);
+		if (DeferCommand(k_commands->send_message_to_player, message, account_id))
+		{
+			return;
+		}
 	}
 
 	godot::Array UniverseSimulation::GetChatChannelHistory(UUID channel_id)

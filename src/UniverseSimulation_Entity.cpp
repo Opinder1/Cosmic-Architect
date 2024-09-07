@@ -21,6 +21,9 @@ namespace voxel_game
 
 	void UniverseSimulation::RequestEntityInfo(UUID entity_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->request_entity_info, entity_id);
+		if (DeferCommand(k_commands->request_entity_info, entity_id))
+		{
+			return;
+		}
 	}
 }

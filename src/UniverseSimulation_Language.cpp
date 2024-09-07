@@ -21,11 +21,17 @@ namespace voxel_game
 
 	void UniverseSimulation::GetLanguageTranslation(UUID language_id, const godot::StringName& string)
 	{
-		SIM_DEFER_COMMAND(k_commands->get_language_translation, language_id, string);
+		if (DeferCommand(k_commands->get_language_translation, language_id, string))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::GetLanguageString(UUID language_id, uint64_t string_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->get_language_string, language_id, string_id);
+		if (DeferCommand(k_commands->get_language_string, language_id, string_id))
+		{
+			return;
+		}
 	}
 }

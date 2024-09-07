@@ -27,41 +27,65 @@ namespace voxel_game
 
 	void UniverseSimulation::JoinFaction(UUID faction_id, const godot::Dictionary& request_info)
 	{
-		SIM_DEFER_COMMAND(k_commands->join_faction, faction_id, request_info);
+		if (DeferCommand(k_commands->join_faction, faction_id, request_info))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::LeaveFaction(UUID faction_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->leave_faction, faction_id);
+		if (DeferCommand(k_commands->leave_faction, faction_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::InviteEntityToFaction(UUID faction_id, UUID entity_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->invite_entity_to_faction, faction_id, entity_id);
+		if (DeferCommand(k_commands->invite_entity_to_faction, faction_id, entity_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::KickEntityFromFaction(UUID faction_id, UUID entity_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->kick_entity_from_faction, faction_id, entity_id);
+		if (DeferCommand(k_commands->kick_entity_from_faction, faction_id, entity_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::AddChildFaction(UUID parent_faction_id, UUID child_faction_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->add_child_faction, parent_faction_id, child_faction_id);
+		if (DeferCommand(k_commands->add_child_faction, parent_faction_id, child_faction_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::RemoveChildFaction(UUID faction_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->remove_child_faction, faction_id);
+		if (DeferCommand(k_commands->remove_child_faction, faction_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::InviteChildFaction(UUID parent_faction_id, UUID child_faction_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->invite_child_faction, parent_faction_id, child_faction_id);
+		if (DeferCommand(k_commands->invite_child_faction, parent_faction_id, child_faction_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::KickChildFaction(UUID faction_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->kick_child_faction, faction_id);
+		if (DeferCommand(k_commands->kick_child_faction, faction_id))
+		{
+			return;
+		}
 	}
 }

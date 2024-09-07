@@ -21,17 +21,26 @@ namespace voxel_game
 
 	void UniverseSimulation::ActivateAbility(UUID ability_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->activate_ability, ability_id);
+		if (DeferCommand(k_commands->activate_ability, ability_id))
+		{
+			return;
+		}
 
 	}
 
 	void UniverseSimulation::ToggleAbility(UUID ability_id, bool toggled)
 	{
-		SIM_DEFER_COMMAND(k_commands->toggle_ability, ability_id, toggled);
+		if (DeferCommand(k_commands->toggle_ability, ability_id, toggled))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::SetPlayerSetting(UUID setting_id, const godot::Variant& value)
 	{
-		SIM_DEFER_COMMAND(k_commands->set_player_setting, setting_id, value);
+		if (DeferCommand(k_commands->set_player_setting, setting_id, value))
+		{
+			return;
+		}
 	}
 }

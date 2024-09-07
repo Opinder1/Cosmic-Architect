@@ -21,6 +21,9 @@ namespace voxel_game
 
 	void UniverseSimulation::UseSpell(uint64_t spell_index, const godot::Dictionary& params)
 	{
-		SIM_DEFER_COMMAND(k_commands->use_spell, spell_index, params);
+		if (DeferCommand(k_commands->use_spell, spell_index, params))
+		{
+			return;
+		}
 	}
 }

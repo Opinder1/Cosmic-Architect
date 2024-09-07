@@ -42,22 +42,31 @@ namespace voxel_game
 
 	void UniverseSimulation::PlaceBlock(UUID volume_id, const godot::Vector4i& position, UUID block_id, const godot::Dictionary& block_data)
 	{
-		SIM_DEFER_COMMAND(k_commands->place_block, volume_id, position, block_id, block_data);
+		if (DeferCommand(k_commands->place_block, volume_id, position, block_id, block_data))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::FillBlocks(UUID volume_id, const godot::Vector4i& position_first, const godot::Vector4i& position_second, UUID block_id, uint32_t block_data)
 	{
-		SIM_DEFER_COMMAND(k_commands->fill_blocks, volume_id, position_first, position_second, block_id, block_data);
+		if (DeferCommand(k_commands->fill_blocks, volume_id, position_first, position_second, block_id, block_data))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::PlaceBlockInNewVolume(const godot::Vector4& fragment_position, UUID block_id, const godot::Dictionary& block_data)
 	{
-		SIM_DEFER_COMMAND(k_commands->place_block_in_new_volume, fragment_position, block_id, block_data);
+		if (DeferCommand(k_commands->place_block_in_new_volume, fragment_position, block_id, block_data))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::InteractBlock(UUID volume_id, const godot::Vector4i& position, const godot::Dictionary& interaction)
 	{
-		SIM_DEFER_COMMAND(k_commands->interact_block, volume_id, position, interaction);
+		if (DeferCommand(k_commands->interact_block, volume_id, position, interaction);
 	}
 
 	godot::Vector4i UniverseSimulation::GetEntityPositionInVolume(UUID volume_id, UUID entity_id)

@@ -326,6 +326,9 @@ namespace voxel_game
 		template<class... Args>
 		void QueueSignal(const godot::StringName& signal, Args&&... p_args);
 
+		template<class... Args>
+		bool DeferCommand(const godot::StringName& command, Args&&... p_args);
+
 		void ThreadLoop();
 
 		static void BindEnums();
@@ -369,12 +372,19 @@ namespace voxel_game
 		m_deferred_signals.AddCommand(*k_emit_signal, signal, std::forward<Args>(p_args)...);
 	}
 
-#define SIM_DEFER_COMMAND(command, ...) \
-	if (IsThreaded() && std::this_thread::get_id() != m_thread.get_id()) \
-	{ \
-		std::lock_guard lock(m_commands_mutex); \
-		m_deferred_commands.AddCommand(command, __VA_ARGS__); \
-		return; \
+	template<class... Args>
+	bool UniverseSimulation::DeferCommand(const godot::StringName& command, Args&&... args)
+	{
+		if (IsThreaded() && std::this_thread::get_id() != m_thread.get_id())
+		{
+			std::lock_guard lock(m_commands_mutex);
+			m_deferred_commands.AddCommand(command, std::forward<Args>(args)...);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 }
 

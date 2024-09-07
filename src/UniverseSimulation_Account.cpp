@@ -11,31 +11,49 @@ namespace voxel_game
 
 	void UniverseSimulation::CreateAccount(const godot::String& username, const godot::String& password_hash)
 	{
-		SIM_DEFER_COMMAND(k_commands->create_account, username, password_hash);
+		if (DeferCommand(k_commands->create_account, username, password_hash))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::AccountLogin(const godot::String& username, const godot::String& password_hash)
 	{
-		SIM_DEFER_COMMAND(k_commands->account_login, username, password_hash);
+		if (DeferCommand(k_commands->account_login, username, password_hash))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::SavedSessionLogin()
 	{
-		SIM_DEFER_COMMAND(k_commands->saved_session_login);
+		if (DeferCommand(k_commands->saved_session_login))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::ClearSavedSession()
 	{
-		SIM_DEFER_COMMAND(k_commands->clear_saved_session);
+		if (DeferCommand(k_commands->clear_saved_session))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::DeleteAccount()
 	{
-		SIM_DEFER_COMMAND(k_commands->delete_account);
+		if (DeferCommand(k_commands->delete_account))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::LogoutAccount()
 	{
-		SIM_DEFER_COMMAND(k_commands->logout_account);
+		if (DeferCommand(k_commands->logout_account))
+		{
+			return;
+		}
 	}
 }

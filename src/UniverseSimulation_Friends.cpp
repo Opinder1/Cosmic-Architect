@@ -11,16 +11,25 @@ namespace voxel_game
 
 	void UniverseSimulation::InviteFriend(UUID account_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->invite_friend, account_id);
+		if (DeferCommand(k_commands->invite_friend, account_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::AcceptFreindInvite(UUID account_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->accept_friend_invite, account_id);
+		if (DeferCommand(k_commands->accept_friend_invite, account_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::RemoveFriend(UUID account_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->remove_friend, account_id);
+		if (DeferCommand(k_commands->remove_friend, account_id))
+		{
+			return;
+		}
 	}
 }

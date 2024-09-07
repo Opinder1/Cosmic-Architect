@@ -17,6 +17,9 @@ namespace voxel_game
 
 	void UniverseSimulation::RequestJoinPlayerFaction(UUID faction_id, const godot::String& message)
 	{
-		SIM_DEFER_COMMAND(k_commands->request_join_player_faction, faction_id, message);
+		if (DeferCommand(k_commands->request_join_player_faction, faction_id, message))
+		{
+			return;
+		}
 	}
 }

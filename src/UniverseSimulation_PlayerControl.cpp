@@ -8,22 +8,34 @@ namespace voxel_game
 
 	void UniverseSimulation::SetSprint(bool is_sprinting)
 	{
-		SIM_DEFER_COMMAND(k_commands->set_sprint, is_sprinting);
+		if (DeferCommand(k_commands->set_sprint, is_sprinting))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::SetCrouching(bool is_crouching)
 	{
-		SIM_DEFER_COMMAND(k_commands->set_crouching, is_crouching);
+		if (DeferCommand(k_commands->set_crouching, is_crouching))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::SetProne(bool is_prone)
 	{
-		SIM_DEFER_COMMAND(k_commands->set_prone, is_prone);
+		if (DeferCommand(k_commands->set_prone, is_prone))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::DoWalk(const godot::Vector3& velocity)
 	{
-		SIM_DEFER_COMMAND(k_commands->do_walk, velocity);
+		if (DeferCommand(k_commands->do_walk, velocity))
+		{
+			return;
+		}
 
 		if (!m_player_entity)
 		{
@@ -38,7 +50,10 @@ namespace voxel_game
 
 	void UniverseSimulation::DoLook(const godot::Quaternion& direction)
 	{
-		SIM_DEFER_COMMAND(k_commands->do_look, direction);
+		if (DeferCommand(k_commands->do_look, direction))
+		{
+			return;
+		}
 
 		if (!m_player_entity)
 		{
@@ -53,7 +68,10 @@ namespace voxel_game
 
 	void UniverseSimulation::DoJump(double power)
 	{
-		SIM_DEFER_COMMAND(k_commands->do_jump, power);
+		if (DeferCommand(k_commands->do_jump, power))
+		{
+			return;
+		}
 
 		if (!m_player_entity)
 		{

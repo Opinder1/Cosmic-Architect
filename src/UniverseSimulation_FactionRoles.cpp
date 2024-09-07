@@ -58,32 +58,50 @@ namespace voxel_game
 
 	void UniverseSimulation::AddFactionRole(UUID faction_id, UUID role_id, const godot::Dictionary& role_info)
 	{
-		SIM_DEFER_COMMAND(k_commands->add_faction_role, faction_id, role_id, role_info);
+		if (DeferCommand(k_commands->add_faction_role, faction_id, role_id, role_info))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::RemoveFactionRole(UUID faction_id, UUID role_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->remove_faction_role, faction_id, role_id);
+		if (DeferCommand(k_commands->remove_faction_role, faction_id, role_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::ModifyFactionRole(UUID faction_id, UUID role_id, const godot::Dictionary& role_info)
 	{
-		SIM_DEFER_COMMAND(k_commands->modify_faction_role, faction_id, role_id, role_info);
+		if (DeferCommand(k_commands->modify_faction_role, faction_id, role_id, role_info))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::AddPermissionToRole(UUID faction_id, UUID role_id, UUID permission_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->add_permission_to_role, faction_id, role_id, permission_id);
+		if (DeferCommand(k_commands->add_permission_to_role, faction_id, role_id, permission_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::RemovePermissionFromRole(UUID faction_id, UUID role_id, UUID permission_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->remove_permission_from_role, faction_id, role_id, permission_id);
+		if (DeferCommand(k_commands->remove_permission_from_role, faction_id, role_id, permission_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::SetEntityRole(UUID faction_id, UUID entity_id, UUID role_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->set_entity_role, faction_id, entity_id, role_id);
+		if (DeferCommand(k_commands->set_entity_role, faction_id, entity_id, role_id))
+		{
+			return;
+		}
 	}
 
 	bool UniverseSimulation::EntityHasPermission(UUID faction_id, UUID entity_id, UUID permission_id)

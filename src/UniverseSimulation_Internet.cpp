@@ -65,12 +65,18 @@ namespace voxel_game
 
 	void UniverseSimulation::UniverseSimulation::StartInternet(UUID internet_id, UUID device_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->start_internet, internet_id, device_id);
+		if (DeferCommand(k_commands->start_internet, internet_id, device_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::StopInternet()
 	{
-		SIM_DEFER_COMMAND(k_commands->stop_internet);
+		if (DeferCommand(k_commands->stop_internet))
+		{
+			return;
+		}
 	}
 
 	UUID UniverseSimulation::GetCurrentInternet()
@@ -93,6 +99,9 @@ namespace voxel_game
 
 	void UniverseSimulation::RequestInternetURL(const godot::String& internet_url)
 	{
-		SIM_DEFER_COMMAND(k_commands->request_internet_url, internet_url);
+		if (DeferCommand(k_commands->request_internet_url, internet_url))
+		{
+			return;
+		}
 	}
 }

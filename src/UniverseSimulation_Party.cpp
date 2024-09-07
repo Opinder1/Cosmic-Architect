@@ -21,27 +21,42 @@ namespace voxel_game
 
 	void UniverseSimulation::CreateParty()
 	{
-		SIM_DEFER_COMMAND(k_commands->create_party);
+		if (DeferCommand(k_commands->create_party))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::InviteToParty(UUID player_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->invite_to_party, player_id);
+		if (DeferCommand(k_commands->invite_to_party, player_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::AcceptInvite(UUID player_id)
 	{
-		SIM_DEFER_COMMAND(k_commands->accept_invite, player_id);
+		if (DeferCommand(k_commands->accept_invite, player_id))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::KickFromParty()
 	{
-		SIM_DEFER_COMMAND(k_commands->kick_from_party);
+		if (DeferCommand(k_commands->kick_from_party))
+		{
+			return;
+		}
 	}
 
 	void UniverseSimulation::LeaveParty()
 	{
-		SIM_DEFER_COMMAND(k_commands->leave_party);
+		if (DeferCommand(k_commands->leave_party))
+		{
+			return;
+		}
 	}
 
 	UUIDVector UniverseSimulation::GetPlayersInParty()
