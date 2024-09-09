@@ -362,7 +362,7 @@ private:
     }
 
 private:
-    alignas(alignof(DataT)) std::byte m_storage[k_capacity * sizeof(DataT)];
+    alignas(DataT) std::byte m_storage[k_capacity * sizeof(DataT)];
 };
 
 template<class DataT, size_t k_capacity>
@@ -504,5 +504,5 @@ private:
 private:
     std::byte* m_buffer;
     size_t m_capacity;
-    alignas(alignof(DataT)) std::byte m_storage[k_capacity * sizeof(DataT)];
+    alignas(DataT) std::byte m_storage[k_capacity * sizeof(DataT)];
 };
