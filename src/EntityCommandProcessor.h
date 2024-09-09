@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Util/VariableLengthArray.h"
+#include "Util/StackAllocator.h"
 
 #include <flecs/flecs.h>
 
@@ -15,41 +15,63 @@ namespace voxel_game
 		void(*state_destroy)(void*);
 	};
 
-	template<class ProcessorT, class CommandT, class Callable>
-	void RunEntityCommandsWithProcessors(flecs::entity entity, const std::vector<ProcessorT>& processors, const std::vector<CommandT>& commands, Callable&& command_callback)
+	template<class ProcessorT>
+	struct EntityCommandProcessorExecutor
 	{
 		static_assert(std::is_base_of_v<EntityCommandProcessorBase, ProcessorT>);
 
-		if (commands.empty()) // Don't continue if there aren't any commands
+		EntityCommandProcessorExecutor(flecs::entity entity, ProcessorT* processors, size_t num_processors) :
+			entity(entity),
+			processors(processors),
+			num_processors(num_processors)
 		{
-			return;
+
 		}
 
-		VariableLengthArray<void*> states = MakeVariableLengthArray(void*, processors.size());
-
-		for (size_t i = 0; i < states.size(); i++)
+		template<class CommandIt, class Callable>
+		void Run(CommandIt commands_begin, CommandIt commands_end, Callable&& command_callback)
 		{
-			states[i] = alloca(processors[i].state_size);
-
-			processors[i].state_initialize(states[i], entity.world(), entity);
-		}
-
-		auto run_processors_delegate = [&processors, &states](auto&&... args)
-		{
-			for (size_t i = 0; i < states.size(); i++)
+			if (commands_begin == commands_end) // Don't continue if there aren't any commands
 			{
-				processors[i].process(states[i], args...);
+				return;
 			}
-		};
 
-		for (const CommandT& command : commands)
-		{
-			command_callback(command, run_processors_delegate);
+			StackAllocator state_alloc;
+
+			void** states = state_alloc.NewArray<void*>(num_processors);
+
+			for (size_t i = 0; i < num_processors; i++)
+			{
+				states[i] = state_alloc.Alloc(processors[i].state_size);
+
+				processors[i].state_initialize(states[i], entity.world(), entity);
+			}
+
+			auto run_processors_callback = [this, states](auto&&... args)
+			{
+				for (size_t i = 0; i < num_processors; i++)
+				{
+					processors[i].process(states[i], args...);
+				}
+			};
+
+			for (CommandIt commands_it = commands_begin; commands_it != commands_end; commands_it++)
+			{
+				command_callback(*commands_it, run_processors_callback);
+			}
+
+			for (size_t i = 0; i < num_processors; i++)
+			{
+				processors[i].state_destroy(states[i]);
+
+				state_alloc.Free(states[i]);
+			}
+
+			state_alloc.DeleteArray<void*>(states, num_processors);
 		}
 
-		for (size_t i = 0; i < states.size(); i++)
-		{
-			processors[i].state_destroy(states[i]);
-		}
-	}
+		flecs::entity entity;
+		ProcessorT* processors;
+		size_t num_processors;
+	};
 }

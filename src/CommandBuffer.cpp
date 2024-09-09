@@ -1,7 +1,7 @@
 #include "CommandBuffer.h"
 
-#include "Util/VariableLengthArray.h"
 #include "Util/Debug.h"
+#include "Util/StackAllocator.h"
 
 #include <godot_cpp/core/class_db.hpp>
 
@@ -468,11 +468,19 @@ namespace voxel_game
 
 		DEBUG_ASSERT(!command->command.is_empty(), "The command should not be an empty string");
 
-		// Read arguments and store them in temporary variants for call
-		VariableLengthArray<godot::Variant> args = MakeVariableLengthArray(godot::Variant, command->argcount);
-		VariableLengthArray<const godot::Variant*> argptrs = MakeVariableLengthArray(const godot::Variant*, command->argcount);
+		if (command->argcount > 16)
+		{
+			DEBUG_PRINT_ERROR(godot::vformat("Command buffers support up to 16 arguments per command (%d out of range)", command->argcount));
+			return buffer_end;
+		}
 
-		for (size_t i = 0; i < argptrs.size(); i++)
+		StackAllocator variant_alloc;
+
+		// Read arguments and store them in temporary variants for call
+		godot::Variant* args = variant_alloc.NewArray<godot::Variant>(command->argcount);
+		const godot::Variant** argptrs = variant_alloc.NewArray<const godot::Variant*>(command->argcount);
+
+		for (size_t i = 0; i < command->argcount; i++)
 		{
 			buffer_pos = ReadVariant(args[i], buffer_pos, buffer_end);
 
@@ -488,7 +496,7 @@ namespace voxel_game
 		// Do the call on the object and handle any error
 		godot::Variant ret;
 		GDExtensionCallError error;
-		object.callp(command->command, argptrs.data(), argptrs.size(), ret, error);
+		object.callp(command->command, argptrs, command->argcount, ret, error);
 
 		if (error.error != GDExtensionCallErrorType::GDEXTENSION_CALL_OK)
 		{
@@ -508,6 +516,10 @@ namespace voxel_game
 
 			DEBUG_PRINT_ERROR(godot::vformat("Failed to call %s: %s. Error at argument %d. Expected %d arguments. Actual %d arguments", command->command, error_type_str, error.argument, error.expected, command->argcount));
 		}
+
+		variant_alloc.DeleteArray<godot::Variant>(args, command->argcount);
+
+		variant_alloc.DeleteArray<const godot::Variant*>(argptrs, command->argcount);
 
 		command->~Command();
 

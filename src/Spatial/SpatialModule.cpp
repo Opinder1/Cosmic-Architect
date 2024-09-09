@@ -398,11 +398,16 @@ namespace voxel_game
 
 			if (spatial_world.load_command_processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
 			{
+				scale.load_commands.clear();
 				return;
 			}
 
-			RunEntityCommandsWithProcessors(worker_entity.parent(), spatial_world.load_command_processors, scale.load_commands, 
-				[&world, &spatial_world, &scale](godot::Vector3i pos, auto& run_processors_delegate)
+			if (scale.load_commands.empty())
+			{
+				return;
+			}
+
+			auto node_callback = [&world, &spatial_world, &scale](godot::Vector3i pos, auto& node_processors_callback)
 			{
 				SpatialNodeMap::iterator it = scale.nodes.find(pos);
 				DEBUG_ASSERT(it != scale.nodes.end(), "The node should have been initialized");
@@ -414,10 +419,14 @@ namespace voxel_game
 
 				DEBUG_ASSERT(node.state == NodeState::Loading, "Node should be in loading state");
 
-				run_processors_delegate(spatial_world, scale, node);
+				node_processors_callback(spatial_world, scale, node);
 
 				node.state = NodeState::Loaded;
-			});
+			};
+
+			EntityCommandProcessorExecutor node_command_executor(worker_entity.parent(), spatial_world.load_command_processors.data(), spatial_world.load_command_processors.size());
+
+			node_command_executor.Run(scale.load_commands.begin(), scale.load_commands.end(), node_callback);
 
 			scale.load_commands.clear();
 		});
@@ -438,8 +447,18 @@ namespace voxel_game
 
 			DEBUG_ASSERT(scale.destroy_commands.empty(), "We shouldn't have any destroy commands left over");
 
-			RunEntityCommandsWithProcessors(worker_entity.parent(), spatial_world.unload_command_processors, scale.unload_commands,
-				[&world, &spatial_world, &scale](godot::Vector3i pos, auto& run_processors_delegate)
+			if (spatial_world.unload_command_processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
+			{
+				scale.unload_commands.clear();
+				return;
+			}
+
+			if (scale.unload_commands.empty())
+			{
+				return;
+			}
+
+			auto node_callback = [&world, &spatial_world, &scale](godot::Vector3i pos, auto& node_processors_callback)
 			{
 				SpatialNodeMap::iterator it = scale.nodes.find(pos);
 				DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
@@ -450,10 +469,14 @@ namespace voxel_game
 
 				DEBUG_ASSERT(node.state == NodeState::Unloading, "Node should be in unloading state");
 
-				run_processors_delegate(spatial_world, scale, node);
+				node_processors_callback(spatial_world, scale, node);
 
 				node.state = NodeState::Unloaded;
-			});
+			};
+
+			EntityCommandProcessorExecutor node_command_executor(worker_entity.parent(), spatial_world.unload_command_processors.data(), spatial_world.unload_command_processors.size());
+
+			node_command_executor.Run(scale.unload_commands.begin(), scale.unload_commands.end(), node_callback);
 
 			scale.unload_commands.clear();
 		});
