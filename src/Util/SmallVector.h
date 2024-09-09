@@ -35,6 +35,16 @@ public:
         return get_derived().ptr() + m_size;
     }
 
+    const_iterator cbegin()
+    {
+        return get_derived().ptr();
+    }
+
+    const_iterator cend()
+    {
+        return get_derived().ptr() + m_size;
+    }
+
     DataT* data()
     {
         return get_derived().ptr();
@@ -59,7 +69,7 @@ public:
     {
         if (m_size > 0)
         {
-            std::destroy_at(get_derived().ptr() + m_size - 1);
+            std::destroy_at(end() - 1);
             m_size--;
         }
     }
@@ -86,7 +96,7 @@ public:
 
         std::move_backward(pos, end(), pos + 1);
 
-        DataT* item = get_derived().ptr() + m_size;
+        DataT* item = end();
 
         new (item) DataT(std::forward<Args>(args)...);
         m_size++;
@@ -148,12 +158,12 @@ public:
 
     DataT& at(size_t index)
     {
-        return *(get_derived().ptr() + index);
+        return *(begin() + index);
     }
 
     const DataT& at(size_t index) const
     {
-        return *(get_derived().ptr() + index);
+        return *(begin() + index);
     }
 
     DataT& operator[](size_t index)
@@ -182,10 +192,12 @@ public:
 
         if (last < end())
         {
-            std::move(last, end(), first);
+            std::move(last, cend(), const_cast<iterator>(first));
         }
 
         m_size -= std::distance(first, last);
+
+        return end();
     }
 
     void clear()
@@ -204,8 +216,8 @@ public:
 
         if (new_size > m_size)
         {
-            DataT* new_last = get_derived().ptr() + new_size;
-            for (DataT* item = get_derived().ptr(); item != new_last; item++)
+            DataT* new_last = begin() + new_size;
+            for (DataT* item = begin(); item != new_last; item++)
             {
                 new (item) DataT();
             }
@@ -216,7 +228,7 @@ public:
 
     DataT& front()
     {
-        return *get_derived().ptr();
+        return *begin();
     }
 
     const DataT& front() const
@@ -226,12 +238,12 @@ public:
 
     DataT& back()
     {
-        return *(get_derived().ptr() + m_size - 1);
+        return *(end() - 1);
     }
 
     const DataT& back() const
     {
-        return *(get_derived().ptr() + m_size - 1);
+        return *(end() - 1);
     }
 
     size_t size() const
