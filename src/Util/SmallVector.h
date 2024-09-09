@@ -233,7 +233,7 @@ public:
 
     const DataT& front() const
     {
-        return *get_derived().ptr();
+        return *begin();
     }
 
     DataT& back()
@@ -342,12 +342,12 @@ public:
 private:
     DataT* ptr()
     {
-        return (DataT*)&m_storage;
+        return reinterpret_cast<DataT*>(m_storage);
     }
 
     const DataT* ptr() const
     {
-        return (const DataT*)&m_storage;
+        return reinterpret_cast<const DataT*>(m_storage);
     }
 
     bool grow(size_t new_size)
@@ -375,6 +375,16 @@ class GrowingSmallVector : public SmallVectorBase<DataT, GrowingSmallVector<Data
 public:
     GrowingSmallVector() : m_buffer(storage_ptr()), m_capacity(k_capacity) {}
 
+    ~GrowingSmallVector()
+    {
+        clear();
+
+        if (m_buffer != storage_ptr())
+        {
+            delete[] m_buffer;
+        }
+    }
+
     size_t max_size()
     {
         return SIZE_MAX;
@@ -388,7 +398,7 @@ public:
         }
 
         std::byte* new_buffer = new std::byte[sizeof(DataT) * new_capacity];
-        DataT* new_ptr = (DataT*)new_buffer;
+        DataT* new_ptr = reinterpret_cast<DataT*>(new_buffer);
 
         if (m_buffer != storage_ptr())
         {
@@ -427,7 +437,7 @@ public:
             new_buffer = new std::byte[sizeof(DataT) * Base::m_size];
         }
 
-        DataT* new_ptr = (DataT*)new_buffer;
+        DataT* new_ptr = static_cast<DataT*>(new_buffer);
 
         for (DataT& item : *this)
         {
@@ -449,8 +459,8 @@ public:
         {
             Base::swap_array_items(other);
 
-            DataT* new_buffer = other_using_storage ? storage_ptr() : other.m_buffer;
-            DataT* other_new_buffer = using_storage ? other.storage_ptr() : m_buffer;
+            std::byte* new_buffer = other_using_storage ? storage_ptr() : other.m_buffer;
+            std::byte* other_new_buffer = using_storage ? other.storage_ptr() : m_buffer;
 
             m_buffer = new_buffer;
             other.m_buffer = other_new_buffer;
@@ -466,19 +476,19 @@ public:
     }
 
 private:
-    DataT* storage_ptr()
+    std::byte* storage_ptr()
     {
-        return (DataT*)&m_storage;
+        return m_storage;
     }
 
     DataT* ptr()
     {
-        return m_buffer;
+        return reinterpret_cast<DataT*>(m_buffer);
     }
 
     const DataT* ptr() const
     {
-        return m_buffer;
+        return reinterpret_cast<const DataT*>(m_buffer);
     }
 
     bool grow(size_t new_size)
@@ -492,7 +502,7 @@ private:
     }
 
 private:
-    DataT* m_buffer;
+    std::byte* m_buffer;
     size_t m_capacity;
     std::byte m_storage[k_capacity * sizeof(DataT)];
 };
