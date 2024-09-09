@@ -6,12 +6,15 @@
 #include <vector>
 #include <any>
 
+// Enable tracking of allocations to check nothing is being misused
 #define TRACK_STACK_ALLOCATIONS DEBUG
 
 #if defined(TRACK_STACK_ALLOCATIONS)
 #include <typeinfo>
 #endif
 
+// A memory and object allocator that has a constant size buffer and will allocate objects from that buffer.
+// Best used when constructed on the stack to construct multiple temporary objects with runtime sizes.
 template<size_t k_buffer_size = 4096>
 class StackAllocator
 {
@@ -40,6 +43,7 @@ public:
 #endif
 	}
 
+	// Allocate some bytes from the buffer
 	void* Alloc(size_t size)
 	{
 		void* ptr = static_cast<void*>(m_offset);
@@ -58,6 +62,7 @@ public:
 		return ptr;
 	}
 
+	// Free some bytes allocated with the basic Alloc(). In release this doesn't do anything
 	void Free(void* ptr)
 	{
 		DEBUG_ASSERT(ptr != nullptr, "We can't free a nullptr");
@@ -72,6 +77,7 @@ public:
 #endif
 	}
 
+	// Clear all typeless allocations so that new ones can be made if needed
 	void Clear()
 	{
 		m_offset = m_buffer;
@@ -83,18 +89,21 @@ public:
 #endif
 	}
 
+	// Allocate a new object that will be default constructed. Its alignment spec will not be followed
 	template<class T>
 	T* New()
 	{
 		return AllocArray<T>(1);
 	}
 
+	// Delete an object allocated with New(). In release this just destructs the object
 	template<class T>
 	void Delete(T* ptr)
 	{
 		FreeArray(ptr, 1);
 	}
 
+	// Allocate an array of a type that will be default constructed. Its alignment spec will not be followed
 	template<class T>
 	T* NewArray(size_t count)
 	{
@@ -112,6 +121,7 @@ public:
 		return static_cast<T*>(ptr);
 	}
 
+	// Delete an array of objects allocated with NewArray(). In release this just destructs the objects
 	template<class T>
 	void DeleteArray(T* ptr, size_t count)
 	{
