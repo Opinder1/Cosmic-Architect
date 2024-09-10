@@ -474,7 +474,8 @@ namespace voxel_game
 			return buffer_end;
 		}
 
-		StackAllocator variant_alloc;
+		const size_t k_command_args_alloc_size = (sizeof(const godot::Variant*) * 16) + (sizeof(godot::Variant) * 16);
+		StackAllocator<k_command_args_alloc_size> variant_alloc;
 
 		// Read arguments and store them in temporary variants for call
 		godot::Variant* args = variant_alloc.NewArray<godot::Variant>(command->argcount);
