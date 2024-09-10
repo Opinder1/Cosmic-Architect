@@ -424,7 +424,7 @@ namespace voxel_game
 				node.state = NodeState::Loaded;
 			};
 
-			EntityCommandProcessorExecutor node_command_executor(worker_entity.parent(), spatial_world.load_command_processors.data(), spatial_world.load_command_processors.size());
+			EntityCommandExecutor node_command_executor(worker_entity.parent(), spatial_world.load_command_processors.data(), spatial_world.load_command_processors.size());
 
 			node_command_executor.Run(scale.load_commands.begin(), scale.load_commands.end(), node_callback);
 
@@ -474,7 +474,7 @@ namespace voxel_game
 				node.state = NodeState::Unloaded;
 			};
 
-			EntityCommandProcessorExecutor node_command_executor(worker_entity.parent(), spatial_world.unload_command_processors.data(), spatial_world.unload_command_processors.size());
+			EntityCommandExecutor node_command_executor(worker_entity.parent(), spatial_world.unload_command_processors.data(), spatial_world.unload_command_processors.size());
 
 			node_command_executor.Run(scale.unload_commands.begin(), scale.unload_commands.end(), node_callback);
 
