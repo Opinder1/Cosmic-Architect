@@ -3,22 +3,22 @@
 
 #include <flecs/flecs.h>
 
-namespace voxel_game
+namespace voxel_game::sim
 {
-	SimulationModule::SimulationModule(flecs::world& world)
+	Module::Module(flecs::world& world)
 	{
-		world.module<SimulationModule>();
+		world.module<Module>();
 
-		world.import<SimulationComponents>();
+		world.import<Components>();
 
-		world.add<SimulationTime>();
+		world.add<GlobalTime>();
 
 		world.add<ThreadEntityPools>();
 
-		world.system<SimulationTime>("WorldUpdateTime")
+		world.system<GlobalTime>("WorldUpdateTime")
 			.kind(flecs::OnUpdate)
-			.term_at(0).src<SimulationTime>()
-			.each([](SimulationTime& world_time)
+			.term_at(0).src<GlobalTime>()
+			.each([](GlobalTime& world_time)
 		{
 			world_time.frame_index++;
 			world_time.frame_start = Clock::now();

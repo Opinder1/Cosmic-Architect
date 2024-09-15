@@ -44,10 +44,10 @@ namespace voxel_game
 		// Create the universe
 		flecs::entity universe_entity(world, DEBUG_ONLY("Universe"));
 
-		universe_entity.add<UniverseComponent>();
-		universe_entity.add<SpatialWorld3DComponent>();
+		universe_entity.add<universe::Universe>();
+		universe_entity.add<spatial::World3DComponent>();
 
-		SpatialModule::AddSpatialScaleWorkers(universe_entity);
+		spatial::AddScaleWorkers(universe_entity);
 
 		return universe_entity;
 	}
@@ -58,19 +58,19 @@ namespace voxel_game
 		flecs::entity galaxy_entity(world, DEBUG_ONLY("SimulatedGalaxy"));
 
 		galaxy_entity.child_of(universe_entity);
-		galaxy_entity.add<GalaxyComponent>();
-		galaxy_entity.add<SpatialWorld3DComponent>();
-		galaxy_entity.add<Position3DComponent>();
-		galaxy_entity.add<Rotation3DComponent>();
+		galaxy_entity.add<galaxy::Galaxy>();
+		galaxy_entity.add<spatial::World3DComponent>();
+		galaxy_entity.add<physics::Position3D>();
+		galaxy_entity.add<physics::Rotation3D>();
 
 		// We want the simulated galaxy to load all galaxies around it
-		SpatialLoader3DComponent& spatial_loader = galaxy_entity.ensure<SpatialLoader3DComponent>();
+		spatial::Loader3DComponent& spatial_loader = galaxy_entity.ensure<spatial::Loader3DComponent>();
 
 		spatial_loader.dist_per_lod = 3;
 		spatial_loader.min_lod = 0;
-		spatial_loader.max_lod = k_max_world_scale;
+		spatial_loader.max_lod = spatial::k_max_world_scale;
 
-		SpatialModule::AddSpatialScaleWorkers(galaxy_entity);
+		spatial::AddScaleWorkers(galaxy_entity);
 
 		return galaxy_entity;
 	}
@@ -109,12 +109,12 @@ namespace voxel_game
 		m_world.set<flecs::Rest>({});
 #endif
 
-		m_world.import<SimulationModule>();
-		m_world.import<PhysicsModule>();
-		m_world.import<SpatialModule>();
-		m_world.import<VoxelModule>();
-		m_world.import<GalaxyModule>();
-		m_world.import<UniverseModule>();
+		m_world.import<sim::Module>();
+		m_world.import<physics::Module>();
+		m_world.import<spatial::Module>();
+		m_world.import<voxel::Module>();
+		m_world.import<galaxy::Module>();
+		m_world.import<universe::Module>();
 
 		if (scenario.is_valid())
 		{

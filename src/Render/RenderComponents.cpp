@@ -6,9 +6,9 @@
 
 namespace voxel_game::rendering
 {
-    ComponentsModule::ComponentsModule(flecs::world& world)
+    Components::Components(flecs::world& world)
 	{
-		world.module<ComponentsModule>();
+		world.module<Components>();
 
         world.component<ServerContext>();
 

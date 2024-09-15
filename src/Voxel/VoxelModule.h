@@ -13,21 +13,25 @@ namespace flecs
 	struct entity;
 }
 
-namespace voxel_game
+namespace voxel_game::spatial
+{
+	struct World3DComponent;
+}
+
+namespace voxel_game::voxel
 {
 	struct Block;
-	struct SpatialWorld3DComponent;
 
-	struct VoxelModule
+	struct Module
 	{
-		VoxelModule(flecs::world& world);
-
-		static Block GetBlockAtScale(const SpatialWorld3DComponent& world, godot::Vector3i pos, uint32_t scale);
-
-		static Block GetBlockDepthFirst(const SpatialWorld3DComponent& world, godot::Vector3i pos, uint32_t start_scale);
-
-		static Block GetBlockBreadthFirst(const SpatialWorld3DComponent& world, godot::Vector3i pos, uint32_t start_scale);
-
-		static Block GetBlockOctreeSearch(const SpatialWorld3DComponent& world, godot::Vector3i pos, uint32_t start_scale);
+		Module(flecs::world& world);
 	};
+
+	Block GetBlockAtScale(const spatial::World3DComponent& spatial_world, godot::Vector3i pos, uint32_t scale);
+
+	Block GetBlockDepthFirst(const spatial::World3DComponent& spatial_world, godot::Vector3i pos, uint32_t start_scale);
+
+	Block GetBlockBreadthFirst(const spatial::World3DComponent& spatial_world, godot::Vector3i pos, uint32_t start_scale);
+
+	Block GetBlockOctreeSearch(const spatial::World3DComponent& spatial_world, godot::Vector3i pos, uint32_t start_scale);
 }

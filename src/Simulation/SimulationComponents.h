@@ -20,16 +20,16 @@ namespace flecs
 	struct world;
 }
 
-namespace voxel_game
+namespace voxel_game::sim
 {
 	constexpr const size_t k_max_pool_entities = 1024;
 
-	struct SimulationComponents
+	struct Components
 	{
-		SimulationComponents(flecs::world& world);
+		Components(flecs::world& world);
 	};
 
-	struct SimulationTime
+	struct GlobalTime
 	{
 		uint64_t frame_index = 0;
 		Clock::time_point frame_start;
@@ -50,7 +50,7 @@ namespace voxel_game
 		PerThread<ThreadEntityPool> threads;
 	};
 
-	struct SimulatedComponent : Nocopy
+	struct Simulation : Nocopy
 	{
 		godot::StringName name;
 		godot::StringName path;

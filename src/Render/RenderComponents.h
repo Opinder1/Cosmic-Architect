@@ -29,6 +29,11 @@ namespace godot
 
 namespace voxel_game::rendering
 {
+	struct Components
+	{
+		Components(flecs::world& world);
+	};
+
 	enum class InstanceDataFormat
 	{
 		Position12Bit, // 12 bit position (4 bit int)
@@ -196,9 +201,4 @@ namespace voxel_game::rendering
 	struct VisibilityNotifier {};
 
 	struct FogVolume {};
-
-	struct ComponentsModule
-	{
-		ComponentsModule(flecs::world& world);
-	};
 }

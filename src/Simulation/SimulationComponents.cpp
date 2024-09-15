@@ -2,13 +2,13 @@
 
 #include <flecs/flecs.h>
 
-namespace voxel_game
+namespace voxel_game::sim
 {
-	SimulationComponents::SimulationComponents(flecs::world& world)
+	Components::Components(flecs::world& world)
 	{
-		world.module<SimulationComponents>();
+		world.module<Components>();
 		
-		world.component<SimulationTime>();
+		world.component<GlobalTime>();
 		world.component<LocalTime>();
 		world.component<ThreadEntityPools>();
 	}

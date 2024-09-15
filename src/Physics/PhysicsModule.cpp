@@ -5,18 +5,18 @@
 
 #include <flecs/flecs.h>
 
-namespace voxel_game
+namespace voxel_game::physics
 {
-	PhysicsModule::PhysicsModule(flecs::world& world)
+	Module::Module(flecs::world& world)
 	{
-		world.import<PhysicsComponents>();
+		world.import<Components>();
 
-		world.singleton<Velocity3DComponent>()
-			.add_second<Position3DComponent>(flecs::With);
+		world.singleton<Velocity3D>()
+			.add_second<Position3D>(flecs::With);
 
-		world.system<Position3DComponent, Velocity3DComponent>(DEBUG_ONLY("ApplyVelocity"))
+		world.system<Position3D, Velocity3D>(DEBUG_ONLY("ApplyVelocity"))
 			.multi_threaded()
-			.each([](Position3DComponent& position, Velocity3DComponent& velocity)
+			.each([](Position3D& position, Velocity3D& velocity)
 		{
 			position.position += velocity.velocity;
 		});

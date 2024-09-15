@@ -2,12 +2,12 @@
 
 #include <flecs/flecs.h>
 
-namespace voxel_game
+namespace voxel_game::universe
 {
-	UniverseComponents::UniverseComponents(flecs::world& world)
+	Components::Components(flecs::world& world)
 	{
-		world.module<UniverseComponents>();
+		world.module<Components>();
 
-		world.component<UniverseComponent>();
+		world.component<Universe>();
 	}
 }

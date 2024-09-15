@@ -2,11 +2,11 @@
 
 #include <flecs/flecs.h>
 
-namespace voxel_game
+namespace voxel_game::voxel
 {
-	VoxelComponents::VoxelComponents(flecs::world& world)
+	Components::Components(flecs::world& world)
 	{
-		world.module<VoxelComponents>();
+		world.module<Components>();
 
 		world.component<VoxelWorldComponent>();
 	}

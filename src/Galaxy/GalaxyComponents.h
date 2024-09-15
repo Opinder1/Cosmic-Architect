@@ -9,31 +9,31 @@ namespace flecs
 	struct world;
 }
 
-namespace voxel_game
+namespace voxel_game::galaxy
 {
+	struct Components
+	{
+		Components(flecs::world& world);
+	};
+
 	// This is a specialised node for a galaxy
-	struct GalaxyNode : SpatialNode3D
+	struct Node : spatial::Node3D
 	{
 		std::vector<flecs::entity_t> entities;
 	};
 
 	// This is a specialised scale for a galaxy
-	struct GalaxyScale : SpatialScale3D
+	struct Scale : spatial::Scale3D
 	{
 
 	};
 
 	// This entity is a galaxy
-	struct GalaxyComponent {};
+	struct Galaxy {};
 
 	// This entity is a star
-	struct StarComponent
+	struct Star
 	{
 		godot::Color color;
-	};
-
-	struct GalaxyComponents
-	{
-		GalaxyComponents(flecs::world& world);
 	};
 }

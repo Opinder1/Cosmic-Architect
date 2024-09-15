@@ -24,11 +24,16 @@ namespace flecs
 	struct world;
 }
 
-namespace voxel_game
+namespace voxel_game::spatial
 {
-	struct SpatialNode3D;
-	struct SpatialScale3D;
-	struct SpatialNodeCommandProcessorBase;
+	struct Components
+	{
+		Components(flecs::world& world);
+	};
+
+	struct Node3D;
+	struct Scale3D;
+	struct NodeCommandProcessorBase;
 
 	// The max scale that a world can have
 	constexpr const uint8_t k_max_world_scale = 16;
@@ -46,13 +51,13 @@ namespace voxel_game
 		Deleting, // Has a delete command
 	};
 
-	using SpatialScaleNodeCommands = std::vector<godot::Vector3i>;
-	using SpatialNodeMap = robin_hood::unordered_flat_map<godot::Vector3i, std::unique_ptr<SpatialNode3D>>;
-	using SpatialNodeCommandProcessors = std::vector<SpatialNodeCommandProcessorBase>;
-	using WorldScaleArray = std::array<std::unique_ptr<SpatialScale3D>, k_max_world_scale>;
+	using ScaleNodeCommands = std::vector<godot::Vector3i>;
+	using NodeMap = robin_hood::unordered_flat_map<godot::Vector3i, std::unique_ptr<Node3D>>;
+	using NodeCommandProcessors = std::vector<NodeCommandProcessorBase>;
+	using WorldScaleArray = std::array<std::unique_ptr<Scale3D>, k_max_world_scale>;
 
 	// Phases which are used to synchronise the ecs between running each thread type in parallel
-	struct SpatialWorldMultithreadPhase {};
+	struct WorldMultithreadPhase {};
 
 	struct WorldRegionWorkerPhase {}; // In this phase we process select regions from different worlds in parallel
 	struct WorldScaleWorkerPhase {}; // In this phase we process all scales of all worlds in parallel
@@ -64,24 +69,24 @@ namespace voxel_game
 	struct WorldEndPhase {}; // In this phase we can do any singlethreaded post processing
 
 	// Specify that this entity is within a spatial world (the world is the entities parent)
-	struct SpatialEntity3DComponent {};
+	struct Entity3DComponent {};
 
 	// Define which scale an entity is within
-	struct SpatialScale3DWorkerComponent
+	struct Scale3DWorkerComponent
 	{
 		uint8_t scale = 0;
 	};
 
 	// Add this component to a child of a spatial world to signify it represents a region in that world
-	struct SpatialRegion3DWorkerComponent
+	struct Region3DWorkerComponent
 	{
-		SpatialAABB region;
+		AABB region;
 	};
 
 	// An object that tells a spatial world where to load nodes and at what lods
-	struct SpatialLoader3DComponent
+	struct Loader3DComponent
 	{
-		SpatialCoord3D coord;
+		Coord3D coord;
 
 		uint8_t dist_per_lod = 0; // The number of nodes there are until the next lod starts
 		uint8_t min_lod = 0; // The minimum lod this camera can see
@@ -90,9 +95,9 @@ namespace voxel_game
 	};
 
 	// A single node in a spatial world. This is meant to be inherited from for custom data
-	struct SpatialNode3D : Nocopy
+	struct Node3D : Nocopy
 	{
-		SpatialCoord3D coord;
+		Coord3D coord;
 
 		NodeState state = NodeState::Unloaded;
 
@@ -104,33 +109,33 @@ namespace voxel_game
 		uint32_t network_version = 0; // The version of this node. We use this to check if we should update to a newer version if there is one
 		Clock::time_point last_update_time; // Time since a loader last updated our unload timer
 
-		SpatialNode3D* parent = nullptr; // Octree parent
+		Node3D* parent = nullptr; // Octree parent
 
 		union
 		{
-			SpatialNode3D* children[2][2][2] = { nullptr }; // Octree children
-			SpatialNode3D* children_array[8];
+			Node3D* children[2][2][2] = { nullptr }; // Octree children
+			Node3D* children_array[8];
 		};
 
-		SpatialNode3D* neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
+		Node3D* neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
 	};
 
 	// A level of detail map for a world. The world will have multiple of these
-	struct SpatialScale3D : Nocopy
+	struct Scale3D : Nocopy
 	{
-		SpatialNodeMap nodes;
+		NodeMap nodes;
 
 		// Commands
-		SpatialScaleNodeCommands create_commands;
-		SpatialScaleNodeCommands load_commands;
-		SpatialScaleNodeCommands unload_commands;
-		SpatialScaleNodeCommands destroy_commands;
+		ScaleNodeCommands create_commands;
+		ScaleNodeCommands load_commands;
+		ScaleNodeCommands unload_commands;
+		ScaleNodeCommands destroy_commands;
 	};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
-	struct SpatialWorld3DComponent : Nocopy
+	struct World3DComponent : Nocopy
 	{
-		SpatialAABB bounds;
+		AABB bounds;
 		bool initialized = false;
 		uint8_t max_scale = 1;
 		uint8_t node_size = 1;
@@ -145,16 +150,11 @@ namespace voxel_game
 		WorldScaleArray scales;
 
 		// Scale and Node builder
-		SpatialBuilderBase builder = SpatialBuilder<SpatialScale3D, SpatialNode3D>();
+		BuilderBase builder = Builder<Scale3D, Node3D>();
 
 		// Command processors
-		SpatialNodeCommandProcessors load_command_processors;
-		SpatialNodeCommandProcessors unload_command_processors;
-		SpatialNodeCommandProcessors tick_command_processors;
-	};
-
-	struct SpatialComponents
-	{
-		SpatialComponents(flecs::world& world);
+		NodeCommandProcessors load_command_processors;
+		NodeCommandProcessors unload_command_processors;
+		NodeCommandProcessors tick_command_processors;
 	};
 }

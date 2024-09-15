@@ -44,8 +44,8 @@ namespace voxel_game
 
 		flecs::entity player_entity(m_world, m_player_entity);
 
-		player_entity.get_mut<Velocity3DComponent>()->velocity = velocity;
-		player_entity.modified<Velocity3DComponent>();
+		player_entity.get_mut<physics::Velocity3D>()->velocity = velocity;
+		player_entity.modified<physics::Velocity3D>();
 	}
 
 	void UniverseSimulation::DoLook(const godot::Quaternion& direction)
@@ -62,8 +62,8 @@ namespace voxel_game
 
 		flecs::entity player_entity(m_world, m_player_entity);
 
-		player_entity.get_mut<Rotation3DComponent>()->rotation = direction;
-		player_entity.modified<Rotation3DComponent>();
+		player_entity.get_mut<physics::Rotation3D>()->rotation = direction;
+		player_entity.modified<physics::Rotation3D>();
 	}
 
 	void UniverseSimulation::DoJump(double power)
@@ -78,10 +78,10 @@ namespace voxel_game
 			return;
 		}
 
-		m_world.query_builder<Velocity3DComponent, const Gravity3DComponent>()
+		m_world.query_builder<physics::Velocity3D, const physics::Gravity3D>()
 			.term_at(0).src(m_player_entity)
 			.term_at(1).up(flecs::ChildOf)
-			.each([power](Velocity3DComponent& velocity, const Gravity3DComponent& gravity)
+			.each([power](physics::Velocity3D& velocity, const physics::Gravity3D& gravity)
 		{
 			velocity.velocity = gravity.force * power * -1;
 		});

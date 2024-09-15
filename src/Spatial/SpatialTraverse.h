@@ -2,18 +2,18 @@
 
 #include "SpatialComponents.h"
 
-namespace voxel_game
+namespace voxel_game::spatial
 {
 	// Run a callback for a node and all of its children
 	template<class Callable>
-	void ForEachChildNodeRecursive(SpatialNode3D* node, Callable&& callback)
+	void ForEachChildNodeRecursive(Node3D* node, Callable&& callback)
 	{
 		if (node->children_mask == 0)
 		{
 			return;
 		}
 
-		for (SpatialNode3D* node : node->children_array)
+		for (Node3D* node : node->children_array)
 		{
 			if (node != nullptr)
 			{

@@ -6,25 +6,25 @@
 
 #include <flecs/flecs.h>
 
-namespace voxel_game
+namespace voxel_game::universe
 {
+	struct Components
+	{
+		Components(flecs::world& world);
+	};
+
 	// This is a specialised node for a universe
-	struct UniverseNode : SpatialNode3D
+	struct Node : spatial::Node3D
 	{
 		std::vector<flecs::entity_t> entities;
 	};
 
 	// This is a specialised scale for a universe
-	struct UniverseScale : SpatialScale3D
+	struct Scale : spatial::Scale3D
 	{
 
 	};
 
 	// This entitiy is a universe which has a specialised spatial world
-	struct UniverseComponent {};
-
-	struct UniverseComponents
-	{
-		UniverseComponents(flecs::world& world);
-	};
+	struct Universe {};
 }

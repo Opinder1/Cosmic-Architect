@@ -28,88 +28,88 @@ namespace
     }
 }
 
-namespace voxel_game
+namespace voxel_game::spatial
 {
-    SpatialCoord3D::SpatialCoord3D()
+    Coord3D::Coord3D()
     {}
 
-    SpatialCoord3D::SpatialCoord3D(int32_t x, int32_t y, int32_t z, uint8_t s) :
+    Coord3D::Coord3D(int32_t x, int32_t y, int32_t z, uint8_t s) :
         x(x),
         y(y),
         z(z),
         scale(s)
     {}
 
-    SpatialCoord3D::SpatialCoord3D(godot::Vector3i pos, uint8_t scale) :
+    Coord3D::Coord3D(godot::Vector3i pos, uint8_t scale) :
         x(pos.x),
         y(pos.y),
         z(pos.z),
         scale(scale)
     {}
 
-    SpatialCoord3D SpatialCoord3D::GetParent() const
+    Coord3D Coord3D::GetParent() const
     {
         if (scale % 2 == 0)
         {
-            return SpatialCoord3D((pos + 1) / 2, scale + 1);
+            return Coord3D((pos + 1) / 2, scale + 1);
         }
         else
         {
-            return SpatialCoord3D(pos / 2, scale + 1);
+            return Coord3D(pos / 2, scale + 1);
         }
     }
 
-    godot::Vector3i SpatialCoord3D::GetParentRelPos() const
+    godot::Vector3i Coord3D::GetParentRelPos() const
     {
         return VecEql(GetParent().GetBottomLeftChild().pos, pos);
     }
 
-    SpatialCoord3D SpatialCoord3D::GetBottomLeftChild() const
+    Coord3D Coord3D::GetBottomLeftChild() const
     {
         if (scale % 2 == 0)
         {
-            return SpatialCoord3D((pos * 2) + godot::Vector3i(0, 0, 0), scale - 1);
+            return Coord3D((pos * 2) + godot::Vector3i(0, 0, 0), scale - 1);
         }
         else
         {
-            return SpatialCoord3D((pos * 2) + godot::Vector3i(-1, -1, -1), scale - 1);
+            return Coord3D((pos * 2) + godot::Vector3i(-1, -1, -1), scale - 1);
         }
     }
 
-    godot::Vector3i SpatialCoord3D::GetTileSize() const
+    godot::Vector3i Coord3D::GetTileSize() const
     {
         return godot::Vector3i(1 << scale, 1 << scale, 1 << scale);
     }
 
-    godot::Vector3i SpatialCoord3D::GetRelPos() const
+    godot::Vector3i Coord3D::GetRelPos() const
     {
         int32_t offset = four_pow(ceil_div2(scale)) / 3;
         int32_t size = 1 << scale;
         return (pos * size) - offset;
     }
 
-    SpatialCoord3D SpatialCoord3D::operator*(uint64_t val)
+    Coord3D Coord3D::operator*(uint64_t val)
     {
-        return SpatialCoord3D(pos * val, scale);
+        return Coord3D(pos * val, scale);
     }
 
-    SpatialCoord3D SpatialCoord3D::operator/(uint64_t val)
+    Coord3D Coord3D::operator/(uint64_t val)
     {
-        return SpatialCoord3D(pos / val, scale);
+        return Coord3D(pos / val, scale);
     }
 
-    SpatialCoord3D SpatialCoord3D::operator+(uint64_t val)
+    Coord3D Coord3D::operator+(uint64_t val)
     {
-        return SpatialCoord3D(pos + val, scale);
+        return Coord3D(pos + val, scale);
     }
 
-    SpatialCoord3D SpatialCoord3D::operator-(uint64_t val)
+    Coord3D Coord3D::operator-(uint64_t val)
     {
-        return SpatialCoord3D(pos - val, scale);
+        return Coord3D(pos - val, scale);
     }
 
-    SpatialCoord3D SpatialCoord3D::operator%(uint64_t val)
+    Coord3D Coord3D::operator%(uint64_t val)
     {
-        return SpatialCoord3D(pos % val, scale);
+        return Coord3D(pos % val, scale);
     }
 }

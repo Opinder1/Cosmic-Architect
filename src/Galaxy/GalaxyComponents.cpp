@@ -2,13 +2,13 @@
 
 #include <flecs/flecs.h>
 
-namespace voxel_game
+namespace voxel_game::galaxy
 {
-	GalaxyComponents::GalaxyComponents(flecs::world& world)
+	Components::Components(flecs::world& world)
 	{
-		world.module<GalaxyComponents>();
+		world.module<Components>();
 
-		world.component<GalaxyComponent>();
-		world.component<StarComponent>();
+		world.component<Galaxy>();
+		world.component<Star>();
 	}
 }

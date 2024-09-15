@@ -9,11 +9,11 @@ namespace flecs
 	struct world;
 }
 
-namespace voxel_game
+namespace voxel_game::physics
 {
-	struct PhysicsComponents
+	struct Components
 	{
-		PhysicsComponents(flecs::world& world);
+		Components(flecs::world& world);
 	};
 
 	struct RotationComponent
@@ -28,57 +28,57 @@ namespace voxel_game
 
 	// Entities that are children of a world entity should have this component
 	// so that the system knows how to place them in the spatial world
-	struct Position3DComponent
+	struct Position3D
 	{
 		godot::Vector3 position;
 	};
 
-	struct Velocity3DComponent
+	struct Velocity3D
 	{
 		godot::Vector3 velocity;
 	};
 
-	struct Rotation3DComponent
+	struct Rotation3D
 	{
 		godot::Quaternion rotation;
 	};
 
-	struct Scale3DComponent
+	struct Scale3D
 	{
 		godot::Vector3 scale;
 	};
 
-	struct MassComponent
+	struct Mass
 	{
 		real_t mass = 0.0;
 	};
 
-	struct BouncinessComponent
+	struct Bounciness
 	{
 		real_t bounciness = 0.0;
 	};
 
-	struct RoughnessComponent
+	struct Roughness
 	{
 		real_t roughness = 0.0;
 	};
 
-	struct Gravity3DComponent
+	struct Gravity3D
 	{
 		godot::Vector3 force;
 	};
 
-	struct AABBComponent
+	struct AABB
 	{
 		godot::AABB aabb;
 	};
 
-	struct Box3DComponent
+	struct Box3D
 	{
 		godot::Vector3 size;
 	};
 
-	struct SphereComponent
+	struct Sphere
 	{
 		real_t radius = 0.0;
 	};

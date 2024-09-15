@@ -5,10 +5,10 @@ namespace flecs
 	struct world;
 }
 
-namespace voxel_game
+namespace voxel_game::physics
 {
-	struct PhysicsModule
+	struct Module
 	{
-		PhysicsModule(flecs::world& world);
+		Module(flecs::world& world);
 	};
 }

@@ -2,21 +2,21 @@
 
 #include <flecs/flecs.h>
 
-namespace voxel_game
+namespace voxel_game::physics
 {
-	PhysicsComponents::PhysicsComponents(flecs::world& world)
+	Components::Components(flecs::world& world)
 	{
-		world.module<PhysicsComponents>();
+		world.module<Components>();
 
-		world.component<Position3DComponent>();
-		world.component<Velocity3DComponent>();
-		world.component<Rotation3DComponent>();
-		world.component<Scale3DComponent>();
-		world.component<MassComponent>();
-		world.component<BouncinessComponent>();
-		world.component<RoughnessComponent>();
-		world.component<AABBComponent>();
-		world.component<Box3DComponent>();
-		world.component<SphereComponent>();
+		world.component<Position3D>();
+		world.component<Velocity3D>();
+		world.component<Rotation3D>();
+		world.component<Scale3D>();
+		world.component<Mass>();
+		world.component<Bounciness>();
+		world.component<Roughness>();
+		world.component<AABB>();
+		world.component<Box3D>();
+		world.component<Sphere>();
 	}
 }

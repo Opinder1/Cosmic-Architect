@@ -2,20 +2,20 @@
 
 #include <flecs/flecs.h>
 
-namespace voxel_game
+namespace voxel_game::spatial
 {
-	SpatialComponents::SpatialComponents(flecs::world& world)
+	Components::Components(flecs::world& world)
 	{
-		world.module<SpatialComponents>();
+		world.module<Components>();
 
 		// Components
-		world.component<SpatialEntity3DComponent>();
-		world.component<SpatialWorld3DComponent>();
-		world.component<SpatialScale3DWorkerComponent>();
-		world.component<SpatialScale3DWorkerComponent>();
-		world.component<SpatialRegion3DWorkerComponent>();
-		world.component<SpatialLoader3DComponent>();
+		world.component<Entity3DComponent>();
+		world.component<World3DComponent>();
+		world.component<Scale3DWorkerComponent>();
+		world.component<Scale3DWorkerComponent>();
+		world.component<Region3DWorkerComponent>();
+		world.component<Loader3DComponent>();
 
-		world.entity<SpatialWorldMultithreadPhase>();
+		world.entity<WorldMultithreadPhase>();
 	}
 }
