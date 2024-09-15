@@ -9,12 +9,12 @@ namespace voxel_game::spatial
 		world.module<Components>();
 
 		// Components
-		world.component<Entity3DComponent>();
-		world.component<World3DComponent>();
-		world.component<Scale3DWorkerComponent>();
-		world.component<Scale3DWorkerComponent>();
-		world.component<Region3DWorkerComponent>();
-		world.component<Loader3DComponent>();
+		world.component<Scale3DWorker>();
+		world.component<Scale3DWorker>();
+		world.component<Region3DWorker>();
+		world.component<Loader3D>();
+		world.component<World3D>();
+		world.component<Entity3D>();
 
 		world.entity<WorldMultithreadPhase>();
 	}

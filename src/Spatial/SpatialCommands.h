@@ -13,7 +13,7 @@
 
 namespace voxel_game::spatial
 {
-	struct World3DComponent;
+	struct World3D;
 	struct Scale3D;
 	struct Node3D;
 
@@ -27,21 +27,21 @@ namespace voxel_game::spatial
 
 	struct NodeCommandProcessorBase : EntityCommandProcessorBase
 	{
-		void(*process)(void*, World3DComponent&, Scale3D&, Node3D&) = nullptr;
+		void(*process)(void*, World3D&, Scale3D&, Node3D&) = nullptr;
 
 		bool operator==(const NodeCommandProcessorBase& other) { return process == other.process; }
 	};
 
 	struct RegionCommandProcessorBase : EntityCommandProcessorBase
 	{
-		void(*process)(void*, World3DComponent&, AABB) = nullptr;
+		void(*process)(void*, World3D&, AABB) = nullptr;
 
 		bool operator==(const RegionCommandProcessorBase& other) { return process == other.process; }
 	};
 
 	struct ScaleCommandProcessorBase : EntityCommandProcessorBase
 	{
-		void(*process)(void*, World3DComponent&, size_t, Scale3D&) = nullptr;
+		void(*process)(void*, World3D&, size_t, Scale3D&) = nullptr;
 
 		bool operator==(const ScaleCommandProcessorBase& other) { return process == other.process; }
 	};
@@ -106,7 +106,7 @@ namespace voxel_game::spatial
 			std::destroy_at(static_cast<StateT*>(state_ptr));
 		}
 
-		static void ProcessProc(void* state_ptr, World3DComponent& spatial_world, Scale3D& spatial_scale, Node3D& spatial_node)
+		static void ProcessProc(void* state_ptr, World3D& spatial_world, Scale3D& spatial_scale, Node3D& spatial_node)
 		{
 			static_cast<StateT*>(state_ptr)->Process(spatial_world, static_cast<ScaleT&>(spatial_scale), static_cast<NodeT&>(spatial_node));
 		}
@@ -134,7 +134,7 @@ namespace voxel_game::spatial
 			std::destroy_at(static_cast<StateT*>(state_ptr));
 		}
 
-		static void ProcessProc(void* state_ptr, World3DComponent& spatial_world, AABB region)
+		static void ProcessProc(void* state_ptr, World3D& spatial_world, AABB region)
 		{
 			static_cast<StateT*>(state_ptr)->Process(spatial_world, region);
 		}
@@ -164,7 +164,7 @@ namespace voxel_game::spatial
 			std::destroy_at(static_cast<StateT*>(state_ptr));
 		}
 
-		static void ProcessProc(void* state_ptr, World3DComponent& spatial_world, size_t scale_index, Scale3D& scale)
+		static void ProcessProc(void* state_ptr, World3D& spatial_world, size_t scale_index, Scale3D& scale)
 		{
 			static_cast<StateT*>(state_ptr)->Process(spatial_world, scale_index, static_cast<ScaleT&>(scale));
 		}

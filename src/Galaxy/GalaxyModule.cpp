@@ -27,9 +27,9 @@ namespace voxel_game::galaxy
 
 
 		// Initialise the spatial world of a galaxy
-		world.observer<const Galaxy, spatial::World3DComponent>(DEBUG_ONLY("GalaxyInitializeSpatialWorld"))
+		world.observer<const Galaxy, spatial::World3D>(DEBUG_ONLY("GalaxyInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
-			.each([](const Galaxy& galaxy, spatial::World3DComponent& spatial_world)
+			.each([](const Galaxy& galaxy, spatial::World3D& spatial_world)
 		{
 			spatial_world.max_scale = spatial::k_max_world_scale;
 
@@ -42,9 +42,9 @@ namespace voxel_game::galaxy
 		});
 
 		// Uninitialize spatial world of a galaxy
-		world.observer<const Galaxy, spatial::World3DComponent>(DEBUG_ONLY("GalaxyUninitializeSpatialWorld"))
+		world.observer<const Galaxy, spatial::World3D>(DEBUG_ONLY("GalaxyUninitializeSpatialWorld"))
 			.event(flecs::OnRemove)
-			.each([](const Galaxy& galaxy, spatial::World3DComponent& spatial_world)
+			.each([](const Galaxy& galaxy, spatial::World3D& spatial_world)
 		{
 			for (uint8_t i = 0; i < spatial_world.max_scale; i++)
 			{

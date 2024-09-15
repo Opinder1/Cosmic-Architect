@@ -68,26 +68,21 @@ namespace voxel_game::spatial
 	struct WorldDestroyPhase {}; // In this phase we destroy and unloaded nodes
 	struct WorldEndPhase {}; // In this phase we can do any singlethreaded post processing
 
-	// Specify that this entity is within a spatial world (the world is the entities parent)
-	struct Entity3DComponent {};
-
 	// Define which scale an entity is within
-	struct Scale3DWorkerComponent
+	struct Scale3DWorker
 	{
 		uint8_t scale = 0;
 	};
 
 	// Add this component to a child of a spatial world to signify it represents a region in that world
-	struct Region3DWorkerComponent
+	struct Region3DWorker
 	{
 		AABB region;
 	};
 
 	// An object that tells a spatial world where to load nodes and at what lods
-	struct Loader3DComponent
+	struct Loader3D
 	{
-		Coord3D coord;
-
 		uint8_t dist_per_lod = 0; // The number of nodes there are until the next lod starts
 		uint8_t min_lod = 0; // The minimum lod this camera can see
 		uint8_t max_lod = 0; // The maximum lod this camera can see
@@ -133,7 +128,7 @@ namespace voxel_game::spatial
 	};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
-	struct World3DComponent : Nocopy
+	struct World3D : Nocopy
 	{
 		AABB bounds;
 		bool initialized = false;
@@ -156,5 +151,11 @@ namespace voxel_game::spatial
 		NodeCommandProcessors load_command_processors;
 		NodeCommandProcessors unload_command_processors;
 		NodeCommandProcessors tick_command_processors;
+	};
+
+	// Specify that this entity is within a spatial world (the world is the entities parent)
+	struct Entity3D
+	{
+		Coord3D node;
 	};
 }

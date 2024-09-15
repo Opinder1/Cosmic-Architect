@@ -8,6 +8,7 @@ namespace voxel_game::voxel
 	{
 		world.module<Components>();
 
-		world.component<VoxelWorldComponent>();
+		world.component<Node>();
+		world.component<Scale>();
 	}
 }

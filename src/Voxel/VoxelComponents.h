@@ -21,7 +21,7 @@ namespace voxel_game::voxel
 	};
 
 	// A spatial node for voxels. This node also keeps track of the entities and factions within it.
-	struct VoxelNode : spatial::Node3D
+	struct Node : spatial::Node3D
 	{
 		flecs::entity_t owner; // The entity that owns this node (Mainly used for factions but could also be world protection)
 
@@ -36,8 +36,7 @@ namespace voxel_game::voxel
 		Block blocks[16][16][16] = {}; // This member is last since its large
 	};
 
-	struct VoxelWorldComponent
-	{
-		
-	};
+	struct Scale : spatial::Scale3D {};
+
+	struct World {};
 }

@@ -32,7 +32,7 @@ namespace voxel_game::universe
 
 		}
 
-		void Process(spatial::World3DComponent& spatial_world, Scale& universe_scale, Node& universe_node)
+		void Process(spatial::World3D& spatial_world, Scale& universe_scale, Node& universe_node)
 		{
 			const uint32_t entities_per_node = 4;
 			const uint32_t scale_step = 1 << universe_node.coord.scale;
@@ -67,17 +67,17 @@ namespace voxel_game::universe
 		}
 	};
 
-	struct UniverseUnloadNodeCommandProcessor
+	struct UnloadNodeCommandProcessor
 	{
 		flecs::world_t* world;
 		flecs::entity_t universe_entity;
 
-		UniverseUnloadNodeCommandProcessor(flecs::world_t* world, flecs::entity_t universe_entity) :
+		UnloadNodeCommandProcessor(flecs::world_t* world, flecs::entity_t universe_entity) :
 			world(world),
 			universe_entity(universe_entity)
 		{}
 
-		void Process(spatial::World3DComponent& spatial_world, Scale& universe_scale, Node& universe_node)
+		void Process(spatial::World3D& spatial_world, Scale& universe_scale, Node& universe_node)
 		{
 			const uint32_t entities_per_node = 4;
 			const uint32_t scale_step = 1 << universe_node.coord.scale;
@@ -99,9 +99,9 @@ namespace voxel_game::universe
 		world.import<universe::Components>();
 
 		// Initialise the spatial world of a universe
-		world.observer<const Universe, spatial::World3DComponent>(DEBUG_ONLY("UniverseInitializeSpatialWorld"))
+		world.observer<const Universe, spatial::World3D>(DEBUG_ONLY("UniverseInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
-			.each([](const Universe& universe, spatial::World3DComponent& spatial_world)
+			.each([](const Universe& universe, spatial::World3D& spatial_world)
 		{
 			DEBUG_ASSERT(!spatial_world.initialized, "The spatial world was already initialized with a type");
 
@@ -118,15 +118,15 @@ namespace voxel_game::universe
 
 			spatial_world.load_command_processors.push_back(spatial::NodeCommandProcessor<LoadNodeCommandProcessor, Scale, Node>());
 
-			spatial_world.unload_command_processors.push_back(spatial::NodeCommandProcessor<UniverseUnloadNodeCommandProcessor, Scale, Node>());
+			spatial_world.unload_command_processors.push_back(spatial::NodeCommandProcessor<UnloadNodeCommandProcessor, Scale, Node>());
 
 			spatial_world.initialized = true;
 		});
 
 		// Uninitialize spatial world of a universe
-		world.observer<const Universe, spatial::World3DComponent>(DEBUG_ONLY("UniverseUninitializeSpatialWorld"))
+		world.observer<const Universe, spatial::World3D>(DEBUG_ONLY("UniverseUninitializeSpatialWorld"))
 			.event(flecs::OnRemove)
-			.each([](const Universe& universe, spatial::World3DComponent& spatial_world)
+			.each([](const Universe& universe, spatial::World3D& spatial_world)
 		{
 			for (uint8_t i = 0; i < spatial_world.max_scale; i++)
 			{

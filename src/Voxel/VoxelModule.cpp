@@ -17,11 +17,11 @@ namespace voxel_game::voxel
 		world.import<Components>();
 		world.import<spatial::Module>();
 
-		world.singleton<VoxelWorldComponent>()
-			.add_second<spatial::World3DComponent>(flecs::With);
+		world.singleton<World>()
+			.add_second<spatial::World3D>(flecs::With);
 	}
 
-	Block GetBlockAtScale(const spatial::World3DComponent& spatial_world, godot::Vector3i pos, uint32_t scale)
+	Block GetBlockAtScale(const spatial::World3D& spatial_world, godot::Vector3i pos, uint32_t scale)
 	{
 		spatial::Node3D* node = spatial::GetNode(spatial_world, spatial::Coord3D(pos / 16, scale));
 
@@ -30,10 +30,10 @@ namespace voxel_game::voxel
 			return Block{};
 		}
 
-		return static_cast<VoxelNode*>(node)->blocks[pos.x % 16][pos.y % 16][pos.z % 16];
+		return static_cast<Node*>(node)->blocks[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Block GetBlockDepthFirst(const spatial::World3DComponent& spatial_world, godot::Vector3i pos, uint32_t start_scale)
+	Block GetBlockDepthFirst(const spatial::World3D& spatial_world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		if (start_scale == spatial::k_max_world_scale)
 		{
@@ -47,10 +47,10 @@ namespace voxel_game::voxel
 			return GetBlockDepthFirst(spatial_world, pos, start_scale + 1);
 		}
 
-		return static_cast<VoxelNode*>(node)->blocks[pos.x % 16][pos.y % 16][pos.z % 16];
+		return static_cast<Node*>(node)->blocks[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Block GetBlockBreadthFirst(const spatial::World3DComponent& spatial_world, godot::Vector3i pos, uint32_t start_scale)
+	Block GetBlockBreadthFirst(const spatial::World3D& spatial_world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		if (start_scale == 0)
 		{
@@ -64,10 +64,10 @@ namespace voxel_game::voxel
 			return GetBlockDepthFirst(spatial_world, pos, start_scale - 1);
 		}
 
-		return static_cast<VoxelNode*>(node)->blocks[pos.x % 16][pos.y % 16][pos.z % 16];
+		return static_cast<Node*>(node)->blocks[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Block GetBlockOctreeSearch(const spatial::World3DComponent& spatial_world, godot::Vector3i pos, uint32_t start_scale)
+	Block GetBlockOctreeSearch(const spatial::World3D& spatial_world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		godot::Vector3i node_pos = pos / 16;
 
@@ -92,6 +92,9 @@ namespace voxel_game::voxel
 			node_pos.x >>= 2; node_pos.y >>= 2; node_pos.z >>= 2;
 		}
 
-		return static_cast<VoxelNode*>(node)->blocks[pos.x % 16][pos.y % 16][pos.z % 16];
+		return static_cast<Node*>(node)->blocks[pos.x % 16][pos.y % 16][pos.z % 16];
+	}
+
+
 	}
 }
