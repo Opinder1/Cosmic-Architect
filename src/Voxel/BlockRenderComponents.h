@@ -5,7 +5,7 @@
 #include <godot_cpp/classes/texture.hpp>
 #include <godot_cpp/classes/mesh.hpp>
 
-namespace voxel_game
+namespace voxel_game::voxel
 {
 	struct BlockColorComponent
 	{

@@ -2,7 +2,7 @@
 
 #include <flecs/flecs.h>
 
-namespace voxel_game
+namespace voxel_game::voxel
 {
 	struct BlockTypeComponent {};
 
