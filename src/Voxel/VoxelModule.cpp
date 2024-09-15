@@ -10,6 +10,73 @@
 
 namespace voxel_game::voxel
 {
+	void AddSquare(godot::PackedVector3Array& array, godot::Vector3 origin, godot::Vector3 right, godot::Vector3 up, bool reverse)
+	{
+		godot::Vector3 bottom_left = origin;
+		godot::Vector3 bottom_right = origin + right;
+		godot::Vector3 top_left = origin + up;
+		godot::Vector3 top_right = origin + up + right;
+
+		if (reverse)
+		{
+			array.push_back(bottom_left);
+			array.push_back(bottom_right);
+			array.push_back(top_right);
+
+			array.push_back(top_right);
+			array.push_back(top_left);
+			array.push_back(bottom_left);
+		}
+		else
+		{
+			array.push_back(bottom_left);
+			array.push_back(top_left);
+			array.push_back(top_right);
+
+			array.push_back(top_right);
+			array.push_back(bottom_right);
+			array.push_back(bottom_left);
+		}
+	}
+
+	void GenerateVertexesForNode(const Node& node, godot::PackedVector3Array& array, std::vector<Block>& block_ids)
+	{
+		for (size_t x = 0; x < 16; x++)
+		for (size_t y = 0; y < 16; y++)
+		for (size_t z = 0; z < 16; z++)
+		{
+			Block block = node.blocks[x][y][z];
+			bool block_air = block.type == 0;
+
+			Block posx = node.blocks[x + 1][y][z];
+			bool posx_air = posx.type == 0;
+
+			if (block_air != posx_air)
+			{
+				AddSquare(array, godot::Vector3(x, y, z), godot::Vector3(0, 1, 0), godot::Vector3(0, 0, 1), block_air > posx_air);
+				block_ids.insert(block_ids.end(), 6, block);
+			}
+
+			Block posy = node.blocks[x][y + 1][z];
+			bool posy_air = posy.type == 0;
+
+			if (block_air != posy_air)
+			{
+				AddSquare(array, godot::Vector3(x, y, z), godot::Vector3(1, 0, 0), godot::Vector3(0, 0, 1), block_air > posy_air);
+				block_ids.insert(block_ids.end(), 6, block);
+			}
+
+			Block posz = node.blocks[x][y][z + 1];
+			bool posz_air = posz.type == 0;
+
+			if (block_air != posz_air)
+			{
+				AddSquare(array, godot::Vector3(x, y, z), godot::Vector3(1, 0, 0), godot::Vector3(0, 1, 0), block_air > posz_air);
+				block_ids.insert(block_ids.end(), 6, block);
+			}
+		}
+	}
+
 	Module::Module(flecs::world& world)
 	{
 		world.module<Module>();
@@ -93,8 +160,5 @@ namespace voxel_game::voxel
 		}
 
 		return static_cast<Node*>(node)->blocks[pos.x % 16][pos.y % 16][pos.z % 16];
-	}
-
-
 	}
 }
