@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Spatial/SpatialComponents.h"
+#include "Spatial3D/SpatialComponents.h"
 
 #include <flecs/flecs.h>
 
@@ -17,16 +17,13 @@ namespace voxel_game::galaxy
 	};
 
 	// This is a specialised node for a galaxy
-	struct Node : spatial::Node3D
+	struct Node : spatial3d::Node
 	{
 		std::vector<flecs::entity_t> entities;
 	};
 
 	// This is a specialised scale for a galaxy
-	struct Scale : spatial::Scale3D
-	{
-
-	};
+	struct Scale : spatial3d::Scale {};
 
 	// This entity is a galaxy
 	struct Galaxy {};

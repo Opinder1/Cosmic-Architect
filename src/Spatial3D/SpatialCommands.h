@@ -11,37 +11,37 @@
 #include <memory>
 #include <vector>
 
-namespace voxel_game::spatial
+namespace voxel_game::spatial3d
 {
-	struct World3D;
-	struct Scale3D;
-	struct Node3D;
+	struct World;
+	struct Scale;
+	struct Node;
 
 	struct BuilderBase
 	{
-		std::unique_ptr<Scale3D>(*scale_create)() = nullptr;
-		void(*scale_destroy)(std::unique_ptr<Scale3D>&) = nullptr;
-		std::unique_ptr<Node3D>(*node_create)() = nullptr;
-		void(*node_destroy)(std::unique_ptr<Node3D>&) = nullptr;
+		std::unique_ptr<Scale>(*scale_create)() = nullptr;
+		void(*scale_destroy)(std::unique_ptr<Scale>&) = nullptr;
+		std::unique_ptr<Node>(*node_create)() = nullptr;
+		void(*node_destroy)(std::unique_ptr<Node>&) = nullptr;
 	};
 
 	struct NodeCommandProcessorBase : EntityCommandProcessorBase
 	{
-		void(*process)(void*, World3D&, Scale3D&, Node3D&) = nullptr;
+		void(*process)(void*, World&, Scale&, Node&) = nullptr;
 
 		bool operator==(const NodeCommandProcessorBase& other) { return process == other.process; }
 	};
 
 	struct RegionCommandProcessorBase : EntityCommandProcessorBase
 	{
-		void(*process)(void*, World3D&, AABB) = nullptr;
+		void(*process)(void*, World&, AABB) = nullptr;
 
 		bool operator==(const RegionCommandProcessorBase& other) { return process == other.process; }
 	};
 
 	struct ScaleCommandProcessorBase : EntityCommandProcessorBase
 	{
-		void(*process)(void*, World3D&, size_t, Scale3D&) = nullptr;
+		void(*process)(void*, World&, size_t, Scale&) = nullptr;
 
 		bool operator==(const ScaleCommandProcessorBase& other) { return process == other.process; }
 	};
@@ -49,8 +49,8 @@ namespace voxel_game::spatial
 	template<class ScaleT, class NodeT>
 	struct Builder : BuilderBase
 	{
-		static_assert(std::is_base_of_v<Scale3D, ScaleT>);
-		static_assert(std::is_base_of_v<Node3D, NodeT>);
+		static_assert(std::is_base_of_v<Scale, ScaleT>);
+		static_assert(std::is_base_of_v<Node, NodeT>);
 
 		Builder()
 		{
@@ -60,22 +60,22 @@ namespace voxel_game::spatial
 			node_destroy = &NodeDestroy;
 		}
 
-		static std::unique_ptr<Scale3D> ScaleCreate()
+		static std::unique_ptr<Scale> ScaleCreate()
 		{
 			return std::make_unique<ScaleT>();
 		}
 
-		static void ScaleDestroy(std::unique_ptr<Scale3D>& scale)
+		static void ScaleDestroy(std::unique_ptr<Scale>& scale)
 		{
 			delete static_cast<ScaleT*>(scale.release());
 		}
 
-		static std::unique_ptr<Node3D> NodeCreate()
+		static std::unique_ptr<Node> NodeCreate()
 		{
 			return std::make_unique<NodeT>();
 		}
 
-		static void NodeDestroy(std::unique_ptr<Node3D>& node)
+		static void NodeDestroy(std::unique_ptr<Node>& node)
 		{
 			delete static_cast<NodeT*>(node.release());
 		}
@@ -84,8 +84,8 @@ namespace voxel_game::spatial
 	template<class StateT, class ScaleT, class NodeT>
 	struct NodeCommandProcessor : NodeCommandProcessorBase
 	{
-		static_assert(std::is_base_of_v<Scale3D, ScaleT>);
-		static_assert(std::is_base_of_v<Node3D, NodeT>);
+		static_assert(std::is_base_of_v<Scale, ScaleT>);
+		static_assert(std::is_base_of_v<Node, NodeT>);
 
 		NodeCommandProcessor()
 		{
@@ -106,7 +106,7 @@ namespace voxel_game::spatial
 			std::destroy_at(static_cast<StateT*>(state_ptr));
 		}
 
-		static void ProcessProc(void* state_ptr, World3D& spatial_world, Scale3D& spatial_scale, Node3D& spatial_node)
+		static void ProcessProc(void* state_ptr, World& spatial_world, Scale& spatial_scale, Node& spatial_node)
 		{
 			static_cast<StateT*>(state_ptr)->Process(spatial_world, static_cast<ScaleT&>(spatial_scale), static_cast<NodeT&>(spatial_node));
 		}
@@ -134,7 +134,7 @@ namespace voxel_game::spatial
 			std::destroy_at(static_cast<StateT*>(state_ptr));
 		}
 
-		static void ProcessProc(void* state_ptr, World3D& spatial_world, AABB region)
+		static void ProcessProc(void* state_ptr, World& spatial_world, AABB region)
 		{
 			static_cast<StateT*>(state_ptr)->Process(spatial_world, region);
 		}
@@ -143,7 +143,7 @@ namespace voxel_game::spatial
 	template<class StateT, class ScaleT>
 	struct ScaleCommandProcessor : ScaleCommandProcessorBase
 	{
-		static_assert(std::is_base_of_v<Scale3D, ScaleT>);
+		static_assert(std::is_base_of_v<Scale, ScaleT>);
 
 		ScaleCommandProcessor()
 		{
@@ -164,7 +164,7 @@ namespace voxel_game::spatial
 			std::destroy_at(static_cast<StateT*>(state_ptr));
 		}
 
-		static void ProcessProc(void* state_ptr, World3D& spatial_world, size_t scale_index, Scale3D& scale)
+		static void ProcessProc(void* state_ptr, World& spatial_world, size_t scale_index, Scale& scale)
 		{
 			static_cast<StateT*>(state_ptr)->Process(spatial_world, scale_index, static_cast<ScaleT&>(scale));
 		}

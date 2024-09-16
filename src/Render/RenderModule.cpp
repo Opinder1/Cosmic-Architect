@@ -1,7 +1,7 @@
 #include "RenderModule.h"
 #include "RenderComponents.h"
 
-#include "Physics/PhysicsComponents.h"
+#include "Physics3D/PhysicsComponents.h"
 
 #include <godot_cpp/classes/rendering_server.hpp>
 
@@ -16,6 +16,7 @@ namespace voxel_game::rendering
 		world.module<Module>();
 
 		world.import<Components>();
+        world.import<physics3d::Components>();
 
         world.singleton<Instance>()
             .add(flecs::Relationship)
@@ -61,14 +62,14 @@ namespace voxel_game::rendering
     void Module::InitTree(flecs::world& world)
     {
         // Update the render tree nodes transform based on the current nodes position, rotation, scale and parents transform
-        world.system<TreeNode, const physics::Position3D*, const physics::Rotation3D*, const physics::Scale3D*, const TreeNode*>(DEBUG_ONLY("UpdateTreeNodeTransforms"))
+        world.system<TreeNode, const physics3d::Position*, const physics3d::Rotation*, const physics3d::Scale*, const TreeNode*>(DEBUG_ONLY("UpdateTreeNodeTransforms"))
             .multi_threaded()
             .term_at(0).self()
             .term_at(1).self()
             .term_at(2).self()
             .term_at(3).self()
             .term_at(4).cascade(flecs::ChildOf)
-            .each([](TreeNode& tree_node, const physics::Position3D* position, const physics::Rotation3D* rotation, const physics::Scale3D* scale, const TreeNode* parent_tree_node)
+            .each([](TreeNode& tree_node, const physics3d::Position* position, const physics3d::Rotation* rotation, const physics3d::Scale* scale, const TreeNode* parent_tree_node)
         {
             godot::Transform3D transform;
 
@@ -123,7 +124,7 @@ namespace voxel_game::rendering
         });
 
         // Update the render instances transform based on the entities position, rotation, scale and parents transform given the entity is not a tree node
-        world.system<UniqueInstance, const physics::Position3D*, const physics::Rotation3D*, const physics::Scale3D*, const TreeNode, ServerContext>(DEBUG_ONLY("UpdateInstanceTransformUp"))
+        world.system<UniqueInstance, const physics3d::Position*, const physics3d::Rotation*, const physics3d::Scale*, const TreeNode, ServerContext>(DEBUG_ONLY("UpdateInstanceTransformUp"))
             .multi_threaded()
             .term_at(0).self().second(flecs::Any)
             .term_at(1).self()
@@ -132,7 +133,7 @@ namespace voxel_game::rendering
             .term_at(4).up(flecs::ChildOf)
             .term_at(5).singleton()
             .without<const TreeNode>().self()
-            .each([](flecs::entity entity, UniqueInstance& instance, const physics::Position3D* position, const physics::Rotation3D* rotation, const physics::Scale3D* scale, const TreeNode& parent_tree_node, ServerContext& context)
+            .each([](flecs::entity entity, UniqueInstance& instance, const physics3d::Position* position, const physics3d::Rotation* rotation, const physics3d::Scale* scale, const TreeNode& parent_tree_node, ServerContext& context)
         {
             godot::Transform3D transform;
 

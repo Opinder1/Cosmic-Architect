@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Spatial/SpatialComponents.h"
+#include "Spatial3D/SpatialComponents.h"
 
 #include <godot_cpp/variant/vector3i.hpp>
 
@@ -14,16 +14,13 @@ namespace voxel_game::universe
 	};
 
 	// This is a specialised node for a universe
-	struct Node : spatial::Node3D
+	struct Node : spatial3d::Node
 	{
 		std::vector<flecs::entity_t> entities;
 	};
 
 	// This is a specialised scale for a universe
-	struct Scale : spatial::Scale3D
-	{
-
-	};
+	struct Scale : spatial3d::Scale {};
 
 	// This entitiy is a universe which has a specialised spatial world
 	struct Universe {};

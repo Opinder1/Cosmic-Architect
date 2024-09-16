@@ -1,6 +1,6 @@
 #include "SpatialAABB.h"
 
-namespace voxel_game::spatial
+namespace voxel_game::spatial3d
 {
 	AABB::AABB()
 	{}
@@ -11,7 +11,7 @@ namespace voxel_game::spatial
 		scale(scale)
 	{}
 
-	AABB::AABB(Coord3D coord, godot::Vector3i size) :
+	AABB::AABB(Coord coord, godot::Vector3i size) :
 		first(coord.pos),
 		second(coord.pos + size),
 		scale(coord.scale)

@@ -5,7 +5,7 @@ namespace flecs
 	struct world;
 }
 
-namespace voxel_game::physics
+namespace voxel_game::physics3d
 {
 	struct Module
 	{

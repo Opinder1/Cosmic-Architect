@@ -5,12 +5,12 @@
 
 #include "Simulation/SimulationComponents.h"
 
-#include "Physics/PhysicsComponents.h"
+#include "Physics3D/PhysicsComponents.h"
 
 #include "Util/Debug.h"
 #include "Util/Callback.h"
 
-namespace voxel_game::spatial
+namespace voxel_game::spatial3d
 {
 	const godot::Vector3i node_neighbour_offsets[6] =
 	{
@@ -62,9 +62,9 @@ namespace voxel_game::spatial
 		phase.depends_on(sync_phase);
 	}
 
-	void InitializeNode(Node3D& node, World3D& spatial_world, uint8_t scale_index)
+	void InitializeNode(Node& node, World& spatial_world, uint8_t scale_index)
 	{
-		Scale3D& scale = *spatial_world.scales[scale_index];
+		Scale& scale = *spatial_world.scales[scale_index];
 
 		for (uint8_t neighbour_index = 0; neighbour_index < 6; neighbour_index++)
 		{
@@ -77,7 +77,7 @@ namespace voxel_game::spatial
 				continue;
 			}
 
-			Node3D* neighbour_node = it->second.get();
+			Node* neighbour_node = it->second.get();
 
 			node.neighbours[neighbour_index] = neighbour_node;
 			node.neighbour_mask |= 1 << neighbour_index;
@@ -88,15 +88,15 @@ namespace voxel_game::spatial
 
 		if (scale_index < spatial_world.max_scale - 1)
 		{
-			Scale3D& parent_scale = *spatial_world.scales[scale_index + 1];
+			Scale& parent_scale = *spatial_world.scales[scale_index + 1];
 
-			Coord3D parent_pos = node.coord.GetParent();
+			Coord parent_pos = node.coord.GetParent();
 
 			NodeMap::iterator it = parent_scale.nodes.find(parent_pos.pos);
 
 			if (it != parent_scale.nodes.end())
 			{
-				Node3D& parent_node = *it->second;
+				Node& parent_node = *it->second;
 
 				node.parent = &parent_node;
 				node.parent_index = GetNodeParentIndex(node.coord.GetParentRelPos());
@@ -110,18 +110,18 @@ namespace voxel_game::spatial
 
 		if (scale_index > 0)
 		{
-			Scale3D& child_scale = *spatial_world.scales[scale_index - 1];
+			Scale& child_scale = *spatial_world.scales[scale_index - 1];
 
 			for (uint8_t child_index = 0; child_index < 8; child_index++)
 			{
-				Coord3D child_pos = node.coord.GetBottomLeftChild();
+				Coord child_pos = node.coord.GetBottomLeftChild();
 				child_pos.pos += node_child_offsets[child_index];
 
 				NodeMap::iterator it = child_scale.nodes.find(child_pos.pos);
 
 				if (it != child_scale.nodes.end())
 				{
-					Node3D& child_node = *it->second;
+					Node& child_node = *it->second;
 
 					child_node.parent = &node;
 					child_node.parent_index = child_index;
@@ -133,11 +133,11 @@ namespace voxel_game::spatial
 		}
 	}
 
-	void UninitializeNode(Node3D& node, World3D& spatial_world, uint8_t scale_index)
+	void UninitializeNode(Node& node, World& spatial_world, uint8_t scale_index)
 	{
 		for (uint8_t neighbour_index = 0; neighbour_index < 6; neighbour_index++)
 		{
-			if (Node3D* neighbour_node = node.neighbours[neighbour_index])
+			if (Node* neighbour_node = node.neighbours[neighbour_index])
 			{
 				neighbour_node->neighbours[5 - neighbour_index] = nullptr;
 				neighbour_node->neighbour_mask &= ~(1 << (5 - neighbour_index));
@@ -146,7 +146,7 @@ namespace voxel_game::spatial
 
 		if (scale_index < spatial_world.max_scale - 1)
 		{
-			if (Node3D* parent_node = node.parent)
+			if (Node* parent_node = node.parent)
 			{
 				parent_node->children_array[node.parent_index] = nullptr;
 				parent_node->children_mask &= ~(1 << node.parent_index);
@@ -157,7 +157,7 @@ namespace voxel_game::spatial
 		{
 			for (uint8_t child_index = 0; child_index < 8; child_index++)
 			{
-				if (Node3D* child_node = node.children_array[child_index])
+				if (Node* child_node = node.children_array[child_index])
 				{
 					child_node->parent = nullptr;
 					child_node->parent_index = k_node_no_parent;
@@ -172,22 +172,22 @@ namespace voxel_game::spatial
 
 		world.import<Components>();
 		world.import<sim::Components>();
-		world.import<physics::Components>();
+		world.import<physics3d::Components>();
 
 		// Relationships
 
-		world.singleton<Entity3D>()
-			.add_second<World3D>(flecs::OneOf)
-			.add_second<physics::Position3D>(flecs::With);
+		world.singleton<Entity>()
+			.add_second<World>(flecs::OneOf)
+			.add_second<physics3d::Position>(flecs::With);
 
-		world.singleton<Scale3DWorker>()
-			.add_second<World3D>(flecs::OneOf);
+		world.singleton<ScaleWorker>()
+			.add_second<World>(flecs::OneOf);
 
-		world.singleton<Region3DWorker>()
-			.add_second<World3D>(flecs::OneOf);
+		world.singleton<RegionWorker>()
+			.add_second<World>(flecs::OneOf);
 
-		world.singleton<Loader3D>()
-			.add_second<Entity3D>(flecs::With);
+		world.singleton<Loader>()
+			.add_second<Entity>(flecs::With);
 
 		// Phases
 
@@ -208,28 +208,28 @@ namespace voxel_game::spatial
 		// Observers
 
 		// Add a cached query for all of a spatial worlds child nodes for fast access
-		world.observer<World3D>(DEBUG_ONLY("AddWorldQueries"))
+		world.observer<World>(DEBUG_ONLY("AddWorldQueries"))
 			.event(flecs::OnAdd)
-			.each([](flecs::entity world_entity, World3D& spatial_world)
+			.each([](flecs::entity world_entity, World& spatial_world)
 		{
 			flecs::scoped_world scope = world_entity.scope(); // Add the queries as children of the entity so they are automatically destructed
 
-			spatial_world.entities_query = scope.query_builder<const Entity3D>(DEBUG_ONLY("WorldEntitiesQuery"))
+			spatial_world.entities_query = scope.query_builder<const Entity>(DEBUG_ONLY("WorldEntitiesQuery"))
 				.with(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
 				.cached()
 				.build().c_ptr();
 
-			spatial_world.scale_workers_query = scope.query_builder<const Scale3DWorker>(DEBUG_ONLY("WorldScaleWorkersQuery"))
+			spatial_world.scale_workers_query = scope.query_builder<const ScaleWorker>(DEBUG_ONLY("WorldScaleWorkersQuery"))
 				.with(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
 				.cached()
 				.build().c_ptr();
 
-			spatial_world.region_workers_query = scope.query_builder<const Region3DWorker>(DEBUG_ONLY("WorldRegionWorkersQuery"))
+			spatial_world.region_workers_query = scope.query_builder<const RegionWorker>(DEBUG_ONLY("WorldRegionWorkersQuery"))
 				.with(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
 				.cached()
 				.build().c_ptr();
 
-			spatial_world.loaders_query = scope.query_builder<const Loader3D, const physics::Position3D>(DEBUG_ONLY("WorldLoadersQuery"))
+			spatial_world.loaders_query = scope.query_builder<const Loader, const physics3d::Position>(DEBUG_ONLY("WorldLoadersQuery"))
 				.with(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
 				.cached()
 				.build().c_ptr();
@@ -238,19 +238,19 @@ namespace voxel_game::spatial
 		// Systems
 
 		// System to mark any nodes that are no longer being observed to be unloaded
-		world.system<const Scale3DWorker, World3D, const sim::GlobalTime>(DEBUG_ONLY("ScaleUnloadUnusedNodes"))
+		world.system<const ScaleWorker, World, const sim::GlobalTime>(DEBUG_ONLY("ScaleUnloadUnusedNodes"))
 			.multi_threaded()
 			.interval(0.25)
 			.kind<WorldScaleWorkerPhase>()
 			.term_at(1).parent()
 			.term_at(2).src<sim::GlobalTime>()
-			.each([&world](const Scale3DWorker& scale_worker, World3D& spatial_world, const sim::GlobalTime& world_time)
+			.each([&world](const ScaleWorker& scale_worker, World& spatial_world, const sim::GlobalTime& world_time)
 		{
 			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
 			DEBUG_THREAD_CHECK_READ(&world, &world_time);
 
 			size_t scale_index = scale_worker.scale;
-			Scale3D& scale = *spatial_world.scales[scale_index];
+			Scale& scale = *spatial_world.scales[scale_index];
 
 			DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
@@ -279,27 +279,27 @@ namespace voxel_game::spatial
 		});
 
 		// Systen to create or update all nodes in the range of loaders
-		world.system<const Scale3DWorker, World3D, const sim::GlobalTime>(DEBUG_ONLY("LoaderCreateNodes"))
+		world.system<const ScaleWorker, World, const sim::GlobalTime>(DEBUG_ONLY("LoaderCreateNodes"))
 			.multi_threaded()
 			.interval(0.25)
 			.kind<WorldScaleWorkerPhase>()
 			.term_at(1).parent()
 			.term_at(2).src<sim::GlobalTime>()
-			.each([&world](flecs::entity worker_entity, const Scale3DWorker& scale_worker, World3D& spatial_world, const sim::GlobalTime& world_time)
+			.each([&world](flecs::entity worker_entity, const ScaleWorker& scale_worker, World& spatial_world, const sim::GlobalTime& world_time)
 		{
 			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
 			DEBUG_THREAD_CHECK_READ(&world, &world_time);
 
 			size_t scale_index = scale_worker.scale;
-			Scale3D& scale = *spatial_world.scales[scale_index];
+			Scale& scale = *spatial_world.scales[scale_index];
 
 			DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
-			flecs::query<const Loader3D, const physics::Position3D> staged_loaders_query(spatial_world.loaders_query);
+			flecs::query<const Loader, const physics3d::Position> staged_loaders_query(spatial_world.loaders_query);
 
 			// For each command list that is a child of the world
 			staged_loaders_query.iter(worker_entity.world())
-				.each([&world, scale_index, &scale, &spatial_world, &world_time](const Loader3D& spatial_loader, const physics::Position3D& position)
+				.each([&world, scale_index, &scale, &spatial_world, &world_time](const Loader& spatial_loader, const physics3d::Position& position)
 			{
 				const uint32_t scale_step = 1 << scale_index;
 				const uint32_t scale_node_step = scale_step * spatial_world.node_size;
@@ -317,7 +317,7 @@ namespace voxel_game::spatial
 
 					if (it != scale.nodes.end())
 					{
-						Node3D& node = *it->second;
+						Node& node = *it->second;
 
 						DEBUG_THREAD_CHECK_WRITE(&world, &node);
 
@@ -342,11 +342,11 @@ namespace voxel_game::spatial
 		});
 
 		// System to initialize spatial nodes that have been added
-		world.system<World3D, const sim::GlobalTime>(DEBUG_ONLY("WorldCreateNodes"))
+		world.system<World, const sim::GlobalTime>(DEBUG_ONLY("WorldCreateNodes"))
 			.multi_threaded()
 			.kind<WorldCreatePhase>()
 			.term_at(1).src<sim::GlobalTime>()
-			.each([&world](World3D& spatial_world, const sim::GlobalTime& world_time)
+			.each([&world](World& spatial_world, const sim::GlobalTime& world_time)
 		{
 			DEBUG_ASSERT(spatial_world.max_scale > 0, "The spatial world should have at least one scale");
 
@@ -355,7 +355,7 @@ namespace voxel_game::spatial
 			// Initialize the largest scales first
 			for (size_t scale_index = spatial_world.max_scale; scale_index-- > 0;)
 			{
-				Scale3D& scale = *spatial_world.scales[scale_index];
+				Scale& scale = *spatial_world.scales[scale_index];
 
 				DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
@@ -366,12 +366,12 @@ namespace voxel_game::spatial
 
 					DEBUG_ASSERT(emplaced, "The node should have been emplaced");
 
-					Node3D& node = *it->second;
+					Node& node = *it->second;
 
 					DEBUG_THREAD_CHECK_WRITE(&world, &node);
 
 					// Initialize the node
-					node.coord = Coord3D(pos, scale_index);
+					node.coord = Coord(pos, scale_index);
 					node.last_update_time = world_time.frame_start;
 					node.state = NodeState::Unloaded;
 
@@ -383,16 +383,16 @@ namespace voxel_game::spatial
 		});
 
 		// System to load spatial nodes that have been added
-		world.system<const Scale3DWorker, World3D>(DEBUG_ONLY("WorldProcessLoadCommands"))
+		world.system<const ScaleWorker, World>(DEBUG_ONLY("WorldProcessLoadCommands"))
 			.multi_threaded()
 			.kind<WorldLoadPhase>()
 			.term_at(1).parent()
-			.each([&world](flecs::entity worker_entity, const Scale3DWorker& scale_worker, World3D& spatial_world)
+			.each([&world](flecs::entity worker_entity, const ScaleWorker& scale_worker, World& spatial_world)
 		{
 			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
 
 			size_t scale_index = scale_worker.scale;
-			Scale3D& scale = *spatial_world.scales[scale_index];
+			Scale& scale = *spatial_world.scales[scale_index];
 
 			DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
@@ -413,7 +413,7 @@ namespace voxel_game::spatial
 				DEBUG_ASSERT(it != scale.nodes.end(), "The node should have been initialized");
 				DEBUG_ASSERT(it->second, "The node should have been initialized with data");
 
-				Node3D& node = *it->second;
+				Node& node = *it->second;
 
 				DEBUG_THREAD_CHECK_WRITE(&world, &node);
 
@@ -432,16 +432,16 @@ namespace voxel_game::spatial
 		});
 
 		// System to unload spatial nodes that have been marked to unload
-		world.system<const Scale3DWorker, World3D>(DEBUG_ONLY("WorldProcessUnloadNodeCommands"))
+		world.system<const ScaleWorker, World>(DEBUG_ONLY("WorldProcessUnloadNodeCommands"))
 			.multi_threaded()
 			.kind<WorldUnloadPhase>()
 			.term_at(1).parent()
-			.each([&world](flecs::entity worker_entity, const Scale3DWorker& scale_worker, World3D& spatial_world)
+			.each([&world](flecs::entity worker_entity, const ScaleWorker& scale_worker, World& spatial_world)
 		{
 			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
 
 			size_t scale_index = scale_worker.scale;
-			Scale3D& scale = *spatial_world.scales[scale_index];
+			Scale& scale = *spatial_world.scales[scale_index];
 
 			DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
@@ -463,7 +463,7 @@ namespace voxel_game::spatial
 				NodeMap::iterator it = scale.nodes.find(pos);
 				DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
 
-				Node3D& node = *it->second;
+				Node& node = *it->second;
 
 				DEBUG_THREAD_CHECK_WRITE(&world, &node);
 
@@ -482,16 +482,16 @@ namespace voxel_game::spatial
 		});
 
 		// System to delete spatial nodes that have been marked to unload
-		world.system<World3D>(DEBUG_ONLY("WorldDestroyNodes"))
+		world.system<World>(DEBUG_ONLY("WorldDestroyNodes"))
 			.multi_threaded()
 			.kind<WorldDestroyPhase>()
-			.each([&world](World3D& spatial_world)
+			.each([&world](World& spatial_world)
 		{
 			DEBUG_THREAD_CHECK_WRITE(&world, &spatial_world);
 
 			for (size_t scale_index = 0; scale_index < spatial_world.max_scale; scale_index++)
 			{
-				Scale3D& scale = *spatial_world.scales[scale_index];
+				Scale& scale = *spatial_world.scales[scale_index];
 
 				DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
@@ -500,7 +500,7 @@ namespace voxel_game::spatial
 					NodeMap::iterator it = scale.nodes.find(pos);
 					DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
 
-					Node3D& node = *it->second;
+					Node& node = *it->second;
 
 					DEBUG_THREAD_CHECK_WRITE(&world, &node);
 
@@ -524,7 +524,7 @@ namespace voxel_game::spatial
 	{
 		flecs::scoped_world scope = spatial_world_entity.scope();
 
-		const World3D* spatial_world = spatial_world_entity.get<World3D>();
+		const World* spatial_world = spatial_world_entity.get<World>();
 
 		DEBUG_ASSERT(spatial_world != nullptr, "The entity should have a spatial world to add spatial workers");
 
@@ -534,7 +534,7 @@ namespace voxel_game::spatial
 
 			flecs::entity worker_entity(scope, DEBUG_ONLY(worker_name.utf8()));
 
-			worker_entity.set(Scale3DWorker{ scale_index });
+			worker_entity.set(ScaleWorker{ scale_index });
 		}
 	}
 
@@ -542,15 +542,15 @@ namespace voxel_game::spatial
 	{
 		flecs::scoped_world scope = spatial_world_entity.scope();
 
-		scope.query_builder<const Scale3DWorker>()
+		scope.query_builder<const ScaleWorker>()
 			.read(flecs::ChildOf, spatial_world_entity)
-			.each([](flecs::entity entity, const Scale3DWorker& scale_worker)
+			.each([](flecs::entity entity, const ScaleWorker& scale_worker)
 		{
 			entity.destruct();
 		});
 	}
 
-	Node3D* GetNode(const World3D& world, Coord3D coord)
+	Node* GetNode(const World& world, Coord coord)
 	{
 		DEBUG_ASSERT(coord.scale < k_max_world_scale, "The coordinates scale is out of range");
 

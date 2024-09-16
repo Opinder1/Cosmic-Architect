@@ -2,30 +2,30 @@
 
 #include <godot_cpp/variant/vector3i.hpp>
 
-namespace voxel_game::spatial
+namespace voxel_game::spatial3d
 {
     // A coordinate in a Spatial world that has a position and a level of detail
-    struct Coord3D
+    struct Coord
     {
-        Coord3D();
-        Coord3D(int32_t x, int32_t y, int32_t z, uint8_t scale);
-        Coord3D(godot::Vector3i pos, uint8_t scale);
+        Coord();
+        Coord(int32_t x, int32_t y, int32_t z, uint8_t scale);
+        Coord(godot::Vector3i pos, uint8_t scale);
 
-        Coord3D GetParent() const;
+        Coord GetParent() const;
 
         godot::Vector3i GetParentRelPos() const;
 
-        Coord3D GetBottomLeftChild() const;
+        Coord GetBottomLeftChild() const;
 
         godot::Vector3i GetTileSize() const;
 
         godot::Vector3i GetRelPos() const;
 
-        Coord3D operator*(uint64_t val);
-        Coord3D operator/(uint64_t val);
-        Coord3D operator+(uint64_t val);
-        Coord3D operator-(uint64_t val);
-        Coord3D operator%(uint64_t val);
+        Coord operator*(uint64_t val);
+        Coord operator/(uint64_t val);
+        Coord operator+(uint64_t val);
+        Coord operator-(uint64_t val);
+        Coord operator%(uint64_t val);
 
         union
         {
@@ -41,7 +41,7 @@ namespace voxel_game::spatial
     };
 
     template<class Callable>
-    void ForEachChild(const Coord3D& coord, Callable&& callable)
+    void ForEachChild(const Coord& coord, Callable&& callable)
     {
         if (m_s % 2 == 0)
         {
@@ -49,7 +49,7 @@ namespace voxel_game::spatial
             for (int32_t y = 0; y < 2; y++)
             for (int32_t z = 0; z < 2; z++)
             {
-                callable(Coord3D((2 * coord.pos) + godot::Vector3i(x, y, z), coord.scale - 1));
+                callable(Coord((2 * coord.pos) + godot::Vector3i(x, y, z), coord.scale - 1));
             }
         }
         else
@@ -58,7 +58,7 @@ namespace voxel_game::spatial
             for (int32_t y = -1; y < 1; y++)
             for (int32_t z = -1; z < 1; z++)
             {
-                callable(Coord3D((2 * coord.pos) + godot::Vector3i(x, y, z), coord.scale - 1));
+                callable(Coord((2 * coord.pos) + godot::Vector3i(x, y, z), coord.scale - 1));
             }
         }
     }

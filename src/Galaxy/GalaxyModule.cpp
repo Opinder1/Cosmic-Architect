@@ -5,10 +5,10 @@
 
 #include "Universe/UniverseComponents.h"
 
-#include "Spatial/SpatialComponents.h"
-#include "Spatial/SpatialCommands.h"
+#include "Spatial3D/SpatialComponents.h"
+#include "Spatial3D/SpatialCommands.h"
 
-#include "Physics/PhysicsComponents.h"
+#include "Physics3D/PhysicsComponents.h"
 
 #include "Util/Debug.h"
 
@@ -22,18 +22,18 @@ namespace voxel_game::galaxy
 
 		world.import<universe::Components>();
 		world.import<Components>();
-		world.import<spatial::Components>();
-		world.import<physics::Components>();
+		world.import<spatial3d::Components>();
+		world.import<physics3d::Components>();
 
 
 		// Initialise the spatial world of a galaxy
-		world.observer<const Galaxy, spatial::World3D>(DEBUG_ONLY("GalaxyInitializeSpatialWorld"))
+		world.observer<const Galaxy, spatial3d::World>(DEBUG_ONLY("GalaxyInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
-			.each([](const Galaxy& galaxy, spatial::World3D& spatial_world)
+			.each([](const Galaxy& galaxy, spatial3d::World& spatial_world)
 		{
-			spatial_world.max_scale = spatial::k_max_world_scale;
+			spatial_world.max_scale = spatial3d::k_max_world_scale;
 
-			spatial_world.builder = spatial::Builder<Scale, Node>();
+			spatial_world.builder = spatial3d::Builder<Scale, Node>();
 
 			for (uint8_t i = 0; i < spatial_world.max_scale; i++)
 			{
@@ -42,9 +42,9 @@ namespace voxel_game::galaxy
 		});
 
 		// Uninitialize spatial world of a galaxy
-		world.observer<const Galaxy, spatial::World3D>(DEBUG_ONLY("GalaxyUninitializeSpatialWorld"))
+		world.observer<const Galaxy, spatial3d::World>(DEBUG_ONLY("GalaxyUninitializeSpatialWorld"))
 			.event(flecs::OnRemove)
-			.each([](const Galaxy& galaxy, spatial::World3D& spatial_world)
+			.each([](const Galaxy& galaxy, spatial3d::World& spatial_world)
 		{
 			for (uint8_t i = 0; i < spatial_world.max_scale; i++)
 			{

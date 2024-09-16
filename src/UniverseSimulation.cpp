@@ -8,8 +8,8 @@
 #include "Galaxy/GalaxyComponents.h"
 #include "Galaxy/GalaxyModule.h"
 
-#include "Spatial/SpatialComponents.h"
-#include "Spatial/SpatialModule.h"
+#include "Spatial3D/SpatialComponents.h"
+#include "Spatial3D/SpatialModule.h"
 
 #include "Voxel/VoxelComponents.h"
 #include "Voxel/VoxelModule.h"
@@ -17,8 +17,8 @@
 #include "Render/RenderComponents.h"
 #include "Render/RenderModule.h"
 
-#include "Physics/PhysicsComponents.h"
-#include "Physics/PhysicsModule.h"
+#include "Physics3D/PhysicsComponents.h"
+#include "Physics3D/PhysicsModule.h"
 
 #include "Simulation/SimulationComponents.h"
 #include "Simulation/SimulationModule.h"
@@ -45,9 +45,9 @@ namespace voxel_game
 		flecs::entity universe_entity(world, DEBUG_ONLY("Universe"));
 
 		universe_entity.add<universe::Universe>();
-		universe_entity.add<spatial::World3D>();
+		universe_entity.add<spatial3d::World>();
 
-		spatial::AddScaleWorkers(universe_entity);
+		spatial3d::AddScaleWorkers(universe_entity);
 
 		return universe_entity;
 	}
@@ -59,18 +59,18 @@ namespace voxel_game
 
 		galaxy_entity.child_of(universe_entity);
 		galaxy_entity.add<galaxy::Galaxy>();
-		galaxy_entity.add<spatial::World3D>();
-		galaxy_entity.add<physics::Position3D>();
-		galaxy_entity.add<physics::Rotation3D>();
+		galaxy_entity.add<spatial3d::World>();
+		galaxy_entity.add<physics3d::Position>();
+		galaxy_entity.add<physics3d::Rotation>();
 
 		// We want the simulated galaxy to load all galaxies around it
-		spatial::Loader3D& spatial_loader = galaxy_entity.ensure<spatial::Loader3D>();
+		spatial3d::Loader& spatial_loader = galaxy_entity.ensure<spatial3d::Loader>();
 
 		spatial_loader.dist_per_lod = 3;
 		spatial_loader.min_lod = 0;
-		spatial_loader.max_lod = spatial::k_max_world_scale;
+		spatial_loader.max_lod = spatial3d::k_max_world_scale;
 
-		spatial::AddScaleWorkers(galaxy_entity);
+		spatial3d::AddScaleWorkers(galaxy_entity);
 
 		return galaxy_entity;
 	}
@@ -110,8 +110,8 @@ namespace voxel_game
 #endif
 
 		m_world.import<sim::Module>();
-		m_world.import<physics::Module>();
-		m_world.import<spatial::Module>();
+		m_world.import<physics3d::Module>();
+		m_world.import<spatial3d::Module>();
 		m_world.import<voxel::Module>();
 		m_world.import<galaxy::Module>();
 		m_world.import<universe::Module>();

@@ -3,10 +3,10 @@
 
 #include "Galaxy/GalaxyComponents.h"
 
-#include "Spatial/SpatialComponents.h"
-#include "Spatial/SpatialCommands.h"
+#include "Spatial3D/SpatialComponents.h"
+#include "Spatial3D/SpatialCommands.h"
 
-#include "Physics/PhysicsComponents.h"
+#include "Physics3D/PhysicsComponents.h"
 
 #include "Simulation/SimulationComponents.h"
 
@@ -32,7 +32,7 @@ namespace voxel_game::universe
 
 		}
 
-		void Process(spatial::World3D& spatial_world, Scale& universe_scale, Node& universe_node)
+		void Process(spatial3d::World& spatial_world, Scale& universe_scale, Node& universe_node)
 		{
 			const uint32_t entities_per_node = 4;
 			const uint32_t scale_step = 1 << universe_node.coord.scale;
@@ -58,8 +58,8 @@ namespace voxel_game::universe
 				position_y += godot::UtilityFunctions::randf_range(0, scale_node_step);
 				position_z += godot::UtilityFunctions::randf_range(0, scale_node_step);
 
-				galaxy.set(physics::Position3D{ godot::Vector3(position_x, position_y, position_z) });
-				galaxy.set(physics::Scale3D{ godot::Vector3(box_size, box_size, box_size) });
+				galaxy.set(physics3d::Position{ godot::Vector3(position_x, position_y, position_z) });
+				galaxy.set(physics3d::Scale{ godot::Vector3(box_size, box_size, box_size) });
 				galaxy.add<rendering::UniqueInstance>(galaxy_schematic);
 
 				universe_node.entities.push_back(galaxy);
@@ -77,7 +77,7 @@ namespace voxel_game::universe
 			universe_entity(universe_entity)
 		{}
 
-		void Process(spatial::World3D& spatial_world, Scale& universe_scale, Node& universe_node)
+		void Process(spatial3d::World& spatial_world, Scale& universe_scale, Node& universe_node)
 		{
 			const uint32_t entities_per_node = 4;
 			const uint32_t scale_step = 1 << universe_node.coord.scale;
@@ -94,39 +94,39 @@ namespace voxel_game::universe
 	{
 		world.module<Module>("UniverseModule");
 
-		world.import<physics::Components>();
-		world.import<spatial::Components>();
+		world.import<physics3d::Components>();
+		world.import<spatial3d::Components>();
 		world.import<universe::Components>();
 
 		// Initialise the spatial world of a universe
-		world.observer<const Universe, spatial::World3D>(DEBUG_ONLY("UniverseInitializeSpatialWorld"))
+		world.observer<const Universe, spatial3d::World>(DEBUG_ONLY("UniverseInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
-			.each([](const Universe& universe, spatial::World3D& spatial_world)
+			.each([](const Universe& universe, spatial3d::World& spatial_world)
 		{
 			DEBUG_ASSERT(!spatial_world.initialized, "The spatial world was already initialized with a type");
 
-			spatial_world.max_scale = spatial::k_max_world_scale;
+			spatial_world.max_scale = spatial3d::k_max_world_scale;
 
 			spatial_world.node_size = 16;
 
-			spatial_world.builder = spatial::Builder<Scale, Node>();
+			spatial_world.builder = spatial3d::Builder<Scale, Node>();
 
 			for (uint8_t i = 0; i < spatial_world.max_scale; i++)
 			{
 				spatial_world.scales[i] = spatial_world.builder.scale_create();
 			}
 
-			spatial_world.load_command_processors.push_back(spatial::NodeCommandProcessor<LoadNodeCommandProcessor, Scale, Node>());
+			spatial_world.load_command_processors.push_back(spatial3d::NodeCommandProcessor<LoadNodeCommandProcessor, Scale, Node>());
 
-			spatial_world.unload_command_processors.push_back(spatial::NodeCommandProcessor<UnloadNodeCommandProcessor, Scale, Node>());
+			spatial_world.unload_command_processors.push_back(spatial3d::NodeCommandProcessor<UnloadNodeCommandProcessor, Scale, Node>());
 
 			spatial_world.initialized = true;
 		});
 
 		// Uninitialize spatial world of a universe
-		world.observer<const Universe, spatial::World3D>(DEBUG_ONLY("UniverseUninitializeSpatialWorld"))
+		world.observer<const Universe, spatial3d::World>(DEBUG_ONLY("UniverseUninitializeSpatialWorld"))
 			.event(flecs::OnRemove)
-			.each([](const Universe& universe, spatial::World3D& spatial_world)
+			.each([](const Universe& universe, spatial3d::World& spatial_world)
 		{
 			for (uint8_t i = 0; i < spatial_world.max_scale; i++)
 			{
