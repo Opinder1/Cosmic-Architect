@@ -16,16 +16,6 @@ namespace voxel_game::physics3d
 		Components(flecs::world& world);
 	};
 
-	struct RotationComponent
-	{
-		real_t rotation;
-	};
-
-	struct ScaleComponent
-	{
-		real_t scale;
-	};
-
 	// Entities that are children of a world entity should have this component
 	// so that the system knows how to place them in the spatial world
 	struct Position
