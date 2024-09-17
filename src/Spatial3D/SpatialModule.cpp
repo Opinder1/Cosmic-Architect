@@ -206,7 +206,7 @@ namespace voxel_game::spatial3d
 		CreateSyncedPhase<WorldEndPhase, WorldDestroyPhase>(world);
 
 		world.component<World>()
-			.on_remove([](spatial3d::World& spatial_world)
+			.on_remove([](World& spatial_world)
 		{
 			if (!spatial_world.initialized)
 			{
@@ -216,7 +216,7 @@ namespace voxel_game::spatial3d
 
 			for (uint8_t i = 0; i < spatial_world.max_scale; i++)
 			{
-				spatial3d::ScalePtr& scale = spatial_world.scales[i];
+				ScalePtr& scale = spatial_world.scales[i];
 
 				if (!scale)
 				{
