@@ -205,6 +205,35 @@ namespace voxel_game::spatial3d
 		CreateSyncedPhase<WorldDestroyPhase, WorldUnloadPhase>(world);
 		CreateSyncedPhase<WorldEndPhase, WorldDestroyPhase>(world);
 
+		world.component<World>()
+			.on_remove([](spatial3d::World& spatial_world)
+		{
+			if (!spatial_world.initialized)
+			{
+				DEBUG_PRINT_ERROR("The spatial world should have been initialized");
+				return;
+			}
+
+			for (uint8_t i = 0; i < spatial_world.max_scale; i++)
+			{
+				spatial3d::ScalePtr& scale = spatial_world.scales[i];
+
+				if (!scale)
+				{
+					continue;
+				}
+
+				DEBUG_ASSERT(scale->nodes.size() == 0, "We should have cleaned up all of our nodes before being finally destroyed");
+
+				for (auto&& [pos, node] : scale->nodes)
+				{
+					spatial_world.builder.node_destroy(node);
+				}
+
+				spatial_world.builder.scale_destroy(scale);
+			}
+		});
+
 		// Observers
 
 		// Add a cached query for all of a spatial worlds child nodes for fast access

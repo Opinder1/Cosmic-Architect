@@ -122,16 +122,5 @@ namespace voxel_game::universe
 
 			spatial_world.initialized = true;
 		});
-
-		// Uninitialize spatial world of a universe
-		world.observer<const Universe, spatial3d::World>(DEBUG_ONLY("UniverseUninitializeSpatialWorld"))
-			.event(flecs::OnRemove)
-			.each([](const Universe& universe, spatial3d::World& spatial_world)
-		{
-			for (uint8_t i = 0; i < spatial_world.max_scale; i++)
-			{
-				spatial_world.builder.scale_destroy(spatial_world.scales[i]);
-			}
-		});
 	}
 }
