@@ -10,6 +10,19 @@
 
 namespace voxel_game::voxel
 {
+	const VoxelTypeCache& GetVoxelType(Context& context, uint16_t voxel_type)
+	{
+		auto it = context.type_cache.find(voxel_type);
+
+		if (it == context.type_cache.end())
+		{
+			DEBUG_PRINT_ERROR(godot::vformat("The voxel type %d was not cached", voxel_type));
+			DEBUG_CRASH();
+		}
+
+		return it->second;
+	}
+
 	void AddSquare(godot::PackedVector3Array& array, godot::Vector3 origin, godot::Vector3 right, godot::Vector3 up, bool reverse)
 	{
 		godot::Vector3 bottom_left = origin;
@@ -39,40 +52,68 @@ namespace voxel_game::voxel
 		}
 	}
 
-	void GenerateVertexesForNode(const Node& node, godot::PackedVector3Array& array, std::vector<Block>& block_ids)
+	void GenerateVertexesForNode(Context& context, const Node& node, godot::PackedVector3Array& array, godot::PackedColorArray& voxel_colours)
 	{
 		for (size_t x = 0; x < 16; x++)
 		for (size_t y = 0; y < 16; y++)
 		for (size_t z = 0; z < 16; z++)
 		{
-			Block block = node.blocks[x][y][z];
-			bool block_air = block.type == 0;
+			Voxel voxel = node.voxels[x][y][z];
+			const VoxelTypeCache& voxel_cache = GetVoxelType(context, voxel.type);
+			bool voxel_invisible = voxel_cache.is_invisible;
 
-			Block posx = node.blocks[x + 1][y][z];
-			bool posx_air = posx.type == 0;
-
-			if (block_air != posx_air)
 			{
-				AddSquare(array, godot::Vector3(x, y, z), godot::Vector3(0, 1, 0), godot::Vector3(0, 0, 1), block_air > posx_air);
-				block_ids.insert(block_ids.end(), 6, block);
+				Voxel posx = node.voxels[x + 1][y][z];
+				const VoxelTypeCache& posx_cache = GetVoxelType(context, posx.type);
+				bool posx_invisible = posx_cache.is_invisible;
+
+				if (voxel_invisible != posx_invisible)
+				{
+					AddSquare(array, godot::Vector3(x, y, z), godot::Vector3(0, 1, 0), godot::Vector3(0, 0, 1), voxel_invisible > posx_invisible);
+
+					godot::Color color = voxel_invisible > posx_invisible ? voxel_cache.color(voxel.data) : posx_cache.color(posx.data);
+
+					for (size_t i = 0; i < 6; i++)
+					{
+						voxel_colours.push_back(color);
+					}
+				}
 			}
 
-			Block posy = node.blocks[x][y + 1][z];
-			bool posy_air = posy.type == 0;
-
-			if (block_air != posy_air)
 			{
-				AddSquare(array, godot::Vector3(x, y, z), godot::Vector3(1, 0, 0), godot::Vector3(0, 0, 1), block_air > posy_air);
-				block_ids.insert(block_ids.end(), 6, block);
+				Voxel posy = node.voxels[x][y + 1][z];
+				const VoxelTypeCache& posy_cache = GetVoxelType(context, posy.type);
+				bool posy_invisible = posy_cache.is_invisible;
+
+				if (voxel_invisible != posy_invisible)
+				{
+					AddSquare(array, godot::Vector3(x, y, z), godot::Vector3(1, 0, 0), godot::Vector3(0, 0, 1), voxel_invisible > posy_invisible);
+
+					godot::Color color = voxel_invisible > posy_invisible ? voxel_cache.color(voxel.data) : posy_cache.color(posy.data);
+
+					for (size_t i = 0; i < 6; i++)
+					{
+						voxel_colours.push_back(color);
+					}
+				}
 			}
 
-			Block posz = node.blocks[x][y][z + 1];
-			bool posz_air = posz.type == 0;
-
-			if (block_air != posz_air)
 			{
-				AddSquare(array, godot::Vector3(x, y, z), godot::Vector3(1, 0, 0), godot::Vector3(0, 1, 0), block_air > posz_air);
-				block_ids.insert(block_ids.end(), 6, block);
+				Voxel posz = node.voxels[x][y][z + 1];
+				const VoxelTypeCache& posz_cache = GetVoxelType(context, posz.type);
+				bool posz_invisible = posz_cache.is_invisible;
+
+				if (voxel_invisible != posz_invisible)
+				{
+					AddSquare(array, godot::Vector3(x, y, z), godot::Vector3(1, 0, 0), godot::Vector3(0, 1, 0), voxel_invisible > posz_invisible);
+
+					godot::Color color = voxel_invisible > posz_invisible ? voxel_cache.color(voxel.data) : posz_cache.color(posz.data);
+
+					for (size_t i = 0; i < 6; i++)
+					{
+						voxel_colours.push_back(color);
+					}
+				}
 			}
 		}
 	}
@@ -84,57 +125,59 @@ namespace voxel_game::voxel
 		world.import<Components>();
 		world.import<spatial3d::Module>();
 
+		world.add<Context>();
+
 		world.singleton<World>()
 			.add_second<spatial3d::World>(flecs::With);
 	}
 
-	Block GetBlockAtScale(const spatial3d::World& spatial_world, godot::Vector3i pos, uint32_t scale)
+	Voxel GetVoxelAtScale(const spatial3d::World& spatial_world, godot::Vector3i pos, uint32_t scale)
 	{
 		spatial3d::Node* node = spatial3d::GetNode(spatial_world, spatial3d::Coord(pos / 16, scale));
 
 		if (node == nullptr)
 		{
-			return Block{};
+			return Voxel{};
 		}
 
-		return static_cast<Node*>(node)->blocks[pos.x % 16][pos.y % 16][pos.z % 16];
+		return static_cast<Node*>(node)->voxels[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Block GetBlockDepthFirst(const spatial3d::World& spatial_world, godot::Vector3i pos, uint32_t start_scale)
+	Voxel GetVoxelDepthFirst(const spatial3d::World& spatial_world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		if (start_scale == spatial3d::k_max_world_scale)
 		{
-			return Block{};
+			return Voxel{};
 		}
 
 		spatial3d::Node* node = spatial3d::GetNode(spatial_world, spatial3d::Coord(pos / 16, start_scale));
 
 		if (node == nullptr)
 		{
-			return GetBlockDepthFirst(spatial_world, pos, start_scale + 1);
+			return GetVoxelDepthFirst(spatial_world, pos, start_scale + 1);
 		}
 
-		return static_cast<Node*>(node)->blocks[pos.x % 16][pos.y % 16][pos.z % 16];
+		return static_cast<Node*>(node)->voxels[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Block GetBlockBreadthFirst(const spatial3d::World& spatial_world, godot::Vector3i pos, uint32_t start_scale)
+	Voxel GetVoxelBreadthFirst(const spatial3d::World& spatial_world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		if (start_scale == 0)
 		{
-			return Block{};
+			return Voxel{};
 		}
 
 		spatial3d::Node* node = spatial3d::GetNode(spatial_world, spatial3d::Coord(pos / 16, start_scale));
 
 		if (node == nullptr)
 		{
-			return GetBlockDepthFirst(spatial_world, pos, start_scale - 1);
+			return GetVoxelDepthFirst(spatial_world, pos, start_scale - 1);
 		}
 
-		return static_cast<Node*>(node)->blocks[pos.x % 16][pos.y % 16][pos.z % 16];
+		return static_cast<Node*>(node)->voxels[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Block GetBlockOctreeSearch(const spatial3d::World& spatial_world, godot::Vector3i pos, uint32_t start_scale)
+	Voxel GetVoxelOctreeSearch(const spatial3d::World& spatial_world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		godot::Vector3i node_pos = pos / 16;
 
@@ -142,7 +185,7 @@ namespace voxel_game::voxel
 
 		if (node == nullptr)
 		{
-			return Block{};
+			return Voxel{};
 		}
 
 		while (1)
@@ -159,6 +202,6 @@ namespace voxel_game::voxel
 			node_pos.x >>= 2; node_pos.y >>= 2; node_pos.z >>= 2;
 		}
 
-		return static_cast<Node*>(node)->blocks[pos.x % 16][pos.y % 16][pos.z % 16];
+		return static_cast<Node*>(node)->voxels[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 }

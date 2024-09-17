@@ -10,5 +10,7 @@ namespace voxel_game::voxel
 
 		world.component<Node>();
 		world.component<Scale>();
+		world.component<World>();
+		world.component<Context>();
 	}
 }
