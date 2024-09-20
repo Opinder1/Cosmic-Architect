@@ -134,7 +134,15 @@ namespace voxel_game
 		// Get the plain type
 		using PlainT = std::remove_pointer_t<std::remove_cv_t<std::remove_reference_t<T>>>;
 
-		if constexpr (std::is_base_of_v<godot::RefCounted, PlainT>) // Specific handle for classes that inherit from refcounted
+		if constexpr (std::is_same_v<PlainT, bool>) // Efficiently write booleans in just the type enum
+		{
+			WriteType<VariantType>(argument ? VariantType::TRUE : VariantType::FALSE, buffer);
+		}
+		else if constexpr (std::is_same_v<PlainT, godot::Variant>) // We were given an actual variant
+		{
+			WriteGenericVariant(argument, buffer);
+		}
+		else if constexpr (std::is_base_of_v<godot::RefCounted, PlainT>) // Specific handle for classes that inherit from refcounted
 		{
 			WriteType<VariantType>(VariantType::REFCOUNTED, buffer);
 			WriteType<godot::Ref<PlainT>>(argument, buffer);
@@ -142,15 +150,7 @@ namespace voxel_game
 		else if constexpr (std::is_base_of_v<godot::Object, PlainT>) // Specific handle for classes that inherit from object
 		{
 			WriteType<VariantType>(VariantType::OBJECT, buffer);
-			WriteType<T>(std::forward<T>(argument), buffer);
-		}
-		else if constexpr (std::is_same_v<PlainT, bool>) // Efficiently write booleans in just the type enum
-		{
-			WriteType<VariantType>(argument ? VariantType::TRUE : VariantType::FALSE, buffer);
-		}
-		else if constexpr (std::is_same_v<PlainT, godot::Variant>) // We were given an actual variant
-		{
-			WriteGenericVariant(argument, buffer);
+			WriteType<T*>(argument, buffer);
 		}
 		else // Write a C++ type that can be stored in a variant
 		{
