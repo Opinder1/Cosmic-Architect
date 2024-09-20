@@ -74,7 +74,9 @@ namespace voxel_game
 		PACKED_VECTOR4_ARRAY,
 	};
 
-	// Buffer which commands can be added to and processed in the order they are added
+	// Buffer which commands can be added to and processed in the order they are added.
+	// We pay a cost for expensive types when writing the command name StringName and expensive arguments.
+	// We also pay a cost when moving expensive types into variants for execution but not inexpensive types nor the command name StringName
 	class CommandBuffer : Nocopy
 	{
 	public:
@@ -147,10 +149,10 @@ namespace voxel_game
 			WriteType<VariantType>(VariantType::REFCOUNTED, buffer);
 			WriteType<godot::Ref<PlainT>>(argument, buffer);
 		}
-		else if constexpr (std::is_base_of_v<godot::Object, PlainT>) // Specific handle for classes that inherit from object
+		else if constexpr (std::is_base_of_v<godot::Object, PlainT> && std::is_pointer_v<T>) // Specific handle for classes that inherit from object
 		{
 			WriteType<VariantType>(VariantType::OBJECT, buffer);
-			WriteType<T*>(argument, buffer);
+			WriteType<T>(std::forward<T>(argument), buffer);
 		}
 		else // Write a C++ type that can be stored in a variant
 		{
