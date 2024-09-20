@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CommandQueue.h"
+#include "Simulation/CommandQueue.h"
 
 #include "Util/PerThread.h"
 #include "Util/Time.h"

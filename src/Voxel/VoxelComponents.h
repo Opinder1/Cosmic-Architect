@@ -10,6 +10,8 @@
 
 namespace voxel_game::voxel
 {
+	constexpr const size_t k_max_voxel_types = UINT16_MAX;
+
 	struct Components
 	{
 		Components(flecs::world& world);
@@ -58,7 +60,6 @@ namespace voxel_game::voxel
 
 		size_t refcount = 0; // Number of chunks referencing us
 
-		flecs::entity_t entity = 0; // The entity that this cache is getting from
 		flecs::entity_t item = 0 ; // The related item type for this voxel type
 		flecs::entity_t interact = 0; // The entity that dictates our interaction outcome
 
@@ -76,11 +77,17 @@ namespace voxel_game::voxel
 		uint16_t break_time = 0;
 	};
 
+	struct VoxelType
+	{
+		flecs::entity_t entity = 0; // The entity that this cache is getting from
+
+		VoxelTypeCache cache;
+	};
+
 	struct World {};
 
 	struct Context
 	{
-		robin_hood::unordered_map<uint16_t, VoxelTypeCache> type_cache; // A cache of data for all known voxel types to avoid accessing the related entities
-		std::vector<uint16_t> cache_check_order; // The order to check cached voxel types for removal
+		GrowingSmallVector<VoxelType, 1024> types; // A cache of data for all known voxel types to avoid accessing the related entities
 	};
 }

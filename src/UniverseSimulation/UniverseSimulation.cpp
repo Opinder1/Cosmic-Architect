@@ -1,7 +1,7 @@
 #include "UniverseSimulation.h"
 #include "UniverseSimulation_StringNames.h"
-#include "Universe.h"
 
+#include "Universe/Universe.h"
 #include "Universe/UniverseComponents.h"
 #include "Universe/UniverseModule.h"
 
@@ -22,13 +22,12 @@
 
 #include "Simulation/SimulationComponents.h"
 #include "Simulation/SimulationModule.h"
+#include "Simulation/CommandQueue.h"
 
 #include "Util/Debug.h"
 #include "Util/PropertyMacros.h"
 
 #include <godot_cpp/classes/os.hpp>
-#include <godot_cpp/classes/thread.hpp>
-#include <godot_cpp/classes/rendering_server.hpp>
 
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/type_info.hpp>
@@ -149,7 +148,7 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(m_universe, "The simulation should have been initialized");
 
-		if (m_galaxy_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
+		if (m_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
 		{
 			DEBUG_PRINT_ERROR("This galaxy should not be loaded when we uninitialize");
 		}
@@ -183,13 +182,13 @@ namespace voxel_game
 			return;
 		}
 
-		if (m_galaxy_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
+		if (m_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
 		{
 			DEBUG_PRINT_ERROR("This galaxy should not be loaded when we start");
 			return;
 		}
 
-		m_galaxy_load_state.store(LOAD_STATE_LOADING, std::memory_order_release);
+		m_load_state.store(LOAD_STATE_LOADING, std::memory_order_release);
 		emit_signal(k_signals->load_state_changed, LOAD_STATE_LOADING);
 		emit_signal(k_signals->simulation_started);
 
@@ -201,7 +200,7 @@ namespace voxel_game
 
 	void UniverseSimulation::StopSimulation()
 	{
-		LoadState load_state = m_galaxy_load_state.load(std::memory_order_acquire);
+		LoadState load_state = m_load_state.load(std::memory_order_acquire);
 
 		if (load_state == LOAD_STATE_UNLOADED)
 		{
@@ -214,11 +213,11 @@ namespace voxel_game
 			return;
 		}
 
-		m_galaxy_load_state.store(LOAD_STATE_UNLOADING, std::memory_order_release);
+		m_load_state.store(LOAD_STATE_UNLOADING, std::memory_order_release);
 		emit_signal(k_signals->load_state_changed, LOAD_STATE_UNLOADING);
 
 		// TODO : Implement unloading
-		m_galaxy_load_state.store(LOAD_STATE_UNLOADED, std::memory_order_release);
+		m_load_state.store(LOAD_STATE_UNLOADED, std::memory_order_release);
 		emit_signal(k_signals->load_state_changed, LOAD_STATE_UNLOADED);
 	}
 
@@ -246,7 +245,7 @@ namespace voxel_game
 	{
 		m_world.set_target_fps(k_simulation_ticks_per_second);
 
-		while (m_galaxy_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
+		while (m_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
 		{
 			CommandBuffer command_buffer;
 			{

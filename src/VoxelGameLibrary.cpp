@@ -1,6 +1,8 @@
-#include "CommandQueue.h"
-#include "Universe.h"
-#include "UniverseSimulation.h"
+#include "UniverseSimulation/UniverseSimulation.h"
+
+#include "Universe/Universe.h"
+
+#include "Simulation/CommandQueue.h"
 
 #include "Util/Debug.h"
 

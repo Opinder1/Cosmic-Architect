@@ -2,7 +2,7 @@
 
 #include "SpatialAABB.h"
 
-#include "EntityCommandExecutor.h"
+#include "Util/EntityCommandExecutor.h"
 
 #include <godot_cpp/variant/vector3i.hpp>
 

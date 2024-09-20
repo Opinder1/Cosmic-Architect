@@ -10,19 +10,6 @@
 
 namespace voxel_game::voxel
 {
-	const VoxelTypeCache& GetVoxelType(Context& context, uint16_t voxel_type)
-	{
-		auto it = context.type_cache.find(voxel_type);
-
-		if (it == context.type_cache.end())
-		{
-			DEBUG_PRINT_ERROR(godot::vformat("The voxel type %d was not cached", voxel_type));
-			DEBUG_CRASH();
-		}
-
-		return it->second;
-	}
-
 	void AddSquare(godot::PackedVector3Array& array, godot::Vector3 origin, godot::Vector3 right, godot::Vector3 up, bool reverse)
 	{
 		godot::Vector3 bottom_left = origin;
@@ -59,19 +46,19 @@ namespace voxel_game::voxel
 		for (size_t z = 0; z < 16; z++)
 		{
 			Voxel voxel = node.voxels[x][y][z];
-			const VoxelTypeCache& voxel_cache = GetVoxelType(context, voxel.type);
-			bool voxel_invisible = voxel_cache.is_invisible;
+			const VoxelType& voxel_type = context.types[voxel.type];
+			bool voxel_invisible = voxel_type.cache.is_invisible;
 
 			{
 				Voxel posx = node.voxels[x + 1][y][z];
-				const VoxelTypeCache& posx_cache = GetVoxelType(context, posx.type);
-				bool posx_invisible = posx_cache.is_invisible;
+				const VoxelType& posx_type = context.types[posx.type];
+				bool posx_invisible = posx_type.cache.is_invisible;
 
 				if (voxel_invisible != posx_invisible)
 				{
 					AddSquare(array, godot::Vector3(x, y, z), godot::Vector3(0, 1, 0), godot::Vector3(0, 0, 1), voxel_invisible > posx_invisible);
 
-					godot::Color color = voxel_invisible > posx_invisible ? voxel_cache.color(voxel.data) : posx_cache.color(posx.data);
+					godot::Color color = voxel_invisible > posx_invisible ? voxel_type.cache.color(voxel.data) : posx_type.cache.color(posx.data);
 
 					for (size_t i = 0; i < 6; i++)
 					{
@@ -82,14 +69,14 @@ namespace voxel_game::voxel
 
 			{
 				Voxel posy = node.voxels[x][y + 1][z];
-				const VoxelTypeCache& posy_cache = GetVoxelType(context, posy.type);
-				bool posy_invisible = posy_cache.is_invisible;
+				const VoxelType& posy_type = context.types[posy.type];
+				bool posy_invisible = posy_type.cache.is_invisible;
 
 				if (voxel_invisible != posy_invisible)
 				{
 					AddSquare(array, godot::Vector3(x, y, z), godot::Vector3(1, 0, 0), godot::Vector3(0, 0, 1), voxel_invisible > posy_invisible);
 
-					godot::Color color = voxel_invisible > posy_invisible ? voxel_cache.color(voxel.data) : posy_cache.color(posy.data);
+					godot::Color color = voxel_invisible > posy_invisible ? voxel_type.cache.color(voxel.data) : posy_type.cache.color(posy.data);
 
 					for (size_t i = 0; i < 6; i++)
 					{
@@ -100,14 +87,14 @@ namespace voxel_game::voxel
 
 			{
 				Voxel posz = node.voxels[x][y][z + 1];
-				const VoxelTypeCache& posz_cache = GetVoxelType(context, posz.type);
-				bool posz_invisible = posz_cache.is_invisible;
+				const VoxelType& posz_type = context.types[posz.type];
+				bool posz_invisible = posz_type.cache.is_invisible;
 
 				if (voxel_invisible != posz_invisible)
 				{
 					AddSquare(array, godot::Vector3(x, y, z), godot::Vector3(1, 0, 0), godot::Vector3(0, 1, 0), voxel_invisible > posz_invisible);
 
-					godot::Color color = voxel_invisible > posz_invisible ? voxel_cache.color(voxel.data) : posz_cache.color(posz.data);
+					godot::Color color = voxel_invisible > posz_invisible ? voxel_type.cache.color(voxel.data) : posz_type.cache.color(posz.data);
 
 					for (size_t i = 0; i < 6; i++)
 					{

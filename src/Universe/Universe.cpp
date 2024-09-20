@@ -1,6 +1,7 @@
 #include "Universe.h"
-#include "UniverseSimulation.h"
-#include "UniverseSimulation_StringNames.h"
+
+#include "UniverseSimulation/UniverseSimulation.h"
+#include "UniverseSimulation/UniverseSimulation_StringNames.h"
 
 #include "Util/PropertyMacros.h"
 #include "Util/Debug.h"

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "CommandBuffer.h"
 #include "UniverseCache.h"
+
+#include "Simulation/CommandBuffer.h"
 
 #include "Util/Debug.h"
 #include "Util/UUID.h"
@@ -331,7 +332,7 @@ namespace voxel_game
 		godot::Variant m_universe;
 
 		// The load state to control the initial loading and final unloading of the simulation
-		std::atomic<LoadState> m_galaxy_load_state = LOAD_STATE_UNLOADED;
+		std::atomic<LoadState> m_load_state = LOAD_STATE_UNLOADED;
 		
 		// World and some quick access entities
 		flecs::world m_world;
