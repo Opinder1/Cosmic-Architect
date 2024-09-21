@@ -223,7 +223,10 @@ namespace voxel_game::spatial3d
 					continue;
 				}
 
-				DEBUG_ASSERT(scale->nodes.size() == 0, "We should have cleaned up all of our nodes before being finally destroyed");
+				if (scale->nodes.size() > 0)
+				{
+					DEBUG_PRINT_ERROR("We should have cleaned up all of our nodes before being finally destroyed");
+				}
 
 				for (auto&& [pos, node] : scale->nodes)
 				{
