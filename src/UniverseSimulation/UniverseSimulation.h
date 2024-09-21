@@ -2,7 +2,7 @@
 
 #include "UniverseCache.h"
 
-#include "Simulation/CommandBuffer.h"
+#include "Simulation/Simulation.h"
 
 #include "Util/Debug.h"
 #include "Util/UUID.h"
@@ -31,9 +31,9 @@ namespace voxel_game
 	class Universe;
 
 	// Simulation of a section of the universe
-	class UniverseSimulation : public godot::RefCounted
+	class UniverseSimulation : public Simulation
 	{
-		GDCLASS(UniverseSimulation, godot::RefCounted);
+		GDCLASS(UniverseSimulation, Simulation);
 
 		struct CommandStrings;
 		struct SignalStrings;
@@ -43,20 +43,6 @@ namespace voxel_game
 		{
 			SERVER_TYPE_LOCAL,
 			SERVER_TYPE_REMOTE
-		};
-
-		enum ThreadMode
-		{
-			THREAD_MODE_SINGLE_THREADED,
-			THREAD_MODE_MULTI_THREADED
-		};
-
-		enum LoadState
-		{
-			LOAD_STATE_LOADING,
-			LOAD_STATE_LOADED,
-			LOAD_STATE_UNLOADING,
-			LOAD_STATE_UNLOADED
 		};
 
 		// Cached string names for optimization
@@ -69,11 +55,13 @@ namespace voxel_game
 		~UniverseSimulation();
 
 		void Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario);
-		void Uninitialize();
-		void StartSimulation(ThreadMode thread_mode);
-		void StopSimulation();
-		bool IsThreaded();
-		bool Progress(real_t delta);
+
+		bool OnSimulationLoading() override;
+		void OnSimulationLoaded() override;
+		void OnSimulationUnloading() override;
+		void OnSimulationUnloaded() override;
+		bool DoSimulationProgress(real_t delta) override;
+		void DoSimulationThreadProgress() override;
 
 		// ####### Universe #######
 
@@ -316,23 +304,7 @@ namespace voxel_game
 		static void _cleanup_methods();
 
 	private:
-		template<class... Args>
-		void QueueSignal(const godot::StringName& signal, Args&&... p_args);
-
-		template<class... Args>
-		bool DeferCommand(const godot::StringName& command, Args&&... p_args);
-
-		void ThreadLoop();
-
-		static void BindEnums();
-		static void BindMethods();
-		static void BindSignals();
-
-	private:
-		godot::Variant m_universe;
-
-		// The load state to control the initial loading and final unloading of the simulation
-		std::atomic<LoadState> m_load_state = LOAD_STATE_UNLOADED;
+		godot::Ref<Universe> m_universe;
 		
 		// World and some quick access entities
 		flecs::world m_world;
@@ -340,47 +312,10 @@ namespace voxel_game
 		flecs::entity_t m_galaxy_entity = 0;
 		flecs::entity_t m_player_entity = 0;
 
-		// Internal thread used by the simulation to run in parallel with the main thread and other threads
-		std::thread m_thread;
-
-		// Commands to be deferred and processed by the internal thread
-		tkrzw::SpinMutex m_commands_mutex;
-		CommandBuffer m_deferred_commands;
-
-		// Signals sent by the internal thread and deferred to be run by the main thread
-		CommandBuffer m_deferred_signals;
-
-		// Cache buffer to be written to by the internal thread and its contents retrieved by the main thread
-		UniverseCacheUpdater m_info_updater;
-
-		// Cache buffer to be read from by other threads
+		// Cached info to be written to by the internal thread and its contents retrieved and read by other threads
+		UniverseCacheUpdater m_info_updater; 
 		UniverseCache m_info_cache;
 	};
-
-	template<class... Args>
-	void UniverseSimulation::QueueSignal(const godot::StringName& signal, Args&&... args)
-	{
-		DEBUG_ASSERT(!IsThreaded() || std::this_thread::get_id() == m_thread.get_id(), "When in threaded mode this should only be called by the worker");
-
-		m_deferred_signals.AddCommand(*k_emit_signal, signal, std::forward<Args>(args)...);
-	}
-
-	template<class... Args>
-	bool UniverseSimulation::DeferCommand(const godot::StringName& command, Args&&... args)
-	{
-		if (IsThreaded() && std::this_thread::get_id() != m_thread.get_id())
-		{
-			std::lock_guard lock(m_commands_mutex);
-			m_deferred_commands.AddCommand(command, std::forward<Args>(args)...);
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
 }
 
 VARIANT_ENUM_CAST(voxel_game::UniverseSimulation::ServerType);
-VARIANT_ENUM_CAST(voxel_game::UniverseSimulation::ThreadMode);
-VARIANT_ENUM_CAST(voxel_game::UniverseSimulation::LoadState);

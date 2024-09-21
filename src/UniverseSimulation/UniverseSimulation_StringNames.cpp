@@ -7,10 +7,7 @@ namespace voxel_game
 {
 	UniverseSimulation::CommandStrings::CommandStrings()
 	{
-		INITIALIZE_STRINGNAME(start_simulation);
-		INITIALIZE_STRINGNAME(stop_simulation);
-		INITIALIZE_STRINGNAME(is_threaded);
-		INITIALIZE_STRINGNAME(progress);
+		INITIALIZE_STRINGNAME(initialize);
 
 		// ####### Universe #######
 
@@ -236,12 +233,8 @@ namespace voxel_game
 
 	UniverseSimulation::SignalStrings::SignalStrings()
 	{
-		INITIALIZE_STRINGNAME(simulation_uninitialized);
-		INITIALIZE_STRINGNAME(simulation_started);
-		INITIALIZE_STRINGNAME(simulation_stopped);
 		INITIALIZE_STRINGNAME(connected_to_remote);
 		INITIALIZE_STRINGNAME(disonnected_from_remote);
-		INITIALIZE_STRINGNAME(load_state_changed);
 
 		// ####### Fragments (admin only) #######
 

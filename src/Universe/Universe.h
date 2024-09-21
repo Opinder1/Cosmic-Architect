@@ -44,25 +44,12 @@ namespace voxel_game
 		void QueryGalaxyList(const godot::Dictionary& query);
 		void PingGalaxy(const godot::String& ip);
 
-		godot::Ref<UniverseSimulation> InitializeLocalGalaxy(const godot::String& galaxy_path, godot::RID scenario);
-		godot::Ref<UniverseSimulation> InitializeLocalFragment(const godot::String& fragment_path, const godot::String& fragment_type);
-		godot::Ref<UniverseSimulation> InitializeRemoteGalaxy(const godot::String& galaxy_path);
-
-		void Uninitialize(const godot::Ref<UniverseSimulation>& simulation);
-
 	public:
 		static void _bind_methods();
 		static void _cleanup_methods();
 
 	private:
-		void OnSimulationStateChanged(uint64_t load_state, const godot::Ref<UniverseSimulation>& simulation);
-
-		void OnSimulationUninitialized(const godot::Ref<UniverseSimulation>& simulation);
-
-	private:
 		godot::Dictionary m_universe_info_cache;
-
-		robin_hood::unordered_set<godot::Ref<UniverseSimulation>> m_simulations;
 	};
 
 	struct Universe::SignalStrings
@@ -73,7 +60,5 @@ namespace voxel_game
 		godot::StringName disconnected_from_galaxy_list;
 		godot::StringName galaxy_list_query_response;
 		godot::StringName galaxy_ping_response;
-		godot::StringName galaxy_simulation_started;
-		godot::StringName galaxy_simulation_stopped;
 	};
 }

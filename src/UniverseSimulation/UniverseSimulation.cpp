@@ -25,7 +25,6 @@
 #include "Simulation/CommandQueue.h"
 
 #include "Util/Debug.h"
-#include "Util/PropertyMacros.h"
 
 #include <godot_cpp/classes/os.hpp>
 
@@ -82,25 +81,25 @@ namespace voxel_game
 	{}
 
 	UniverseSimulation::~UniverseSimulation()
-	{
-		DEBUG_ASSERT(!m_universe, "We should have uninitialized first");
-
-		// Join the thread just in case
-		if (IsThreaded())
-		{
-			m_thread.join();
-		}
-	}
+	{}
 
 	void UniverseSimulation::Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario)
 	{
-		DEBUG_ASSERT(!m_universe, "We can't initialize a simulation twice");
+		DEBUG_ASSERT(m_universe.is_null(), "We can't initialize a simulation twice");
 
-		m_universe = godot::UtilityFunctions::weakref(universe);
+		if (universe.is_null())
+		{
+			DEBUG_PRINT_ERROR("The universe must be valid");
+			return;
+		}
+
+		m_universe = universe;
 
 		m_world.reset();
 
 		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
+
+		m_world.set_target_fps(k_simulation_ticks_per_second);
 
 		// Import modules
 #if DEBUG
@@ -144,84 +143,37 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseSimulation::Uninitialize()
+	bool UniverseSimulation::OnSimulationLoading()
 	{
-		DEBUG_ASSERT(m_universe, "The simulation should have been initialized");
-
-		if (m_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
+		if (m_universe.is_null())
 		{
-			DEBUG_PRINT_ERROR("This galaxy should not be loaded when we uninitialize");
+			DEBUG_PRINT_ERROR("This universe simulation should have been instantiated by a universe");
+			return false;
 		}
 
-		// First stop our thread
-		if (IsThreaded())
-		{
-			m_thread.join();
-		}
+		return true;
+	}
+
+	void UniverseSimulation::OnSimulationLoaded()
+	{
+
+	}
+
+	void UniverseSimulation::OnSimulationUnloading()
+	{
+
+	}
+
+	void UniverseSimulation::OnSimulationUnloaded()
+	{
+		DEBUG_ASSERT(m_universe.is_valid(), "The simulation should have been initialized");
 
 		m_world.set_threads(0);
 
 		m_world.reset();
-
-		emit_signal(k_signals->simulation_uninitialized);
-
-		// Finally disconnect from our universe
-		m_universe.clear();
 	}
 
-	bool UniverseSimulation::IsThreaded()
-	{
-		return m_thread.joinable();
-	}
-
-	void UniverseSimulation::StartSimulation(ThreadMode thread_mode)
-	{
-		if (!m_universe)
-		{
-			DEBUG_PRINT_ERROR("This universe simulation should have been instantiated by a universe");
-			return;
-		}
-
-		if (m_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
-		{
-			DEBUG_PRINT_ERROR("This galaxy should not be loaded when we start");
-			return;
-		}
-
-		m_load_state.store(LOAD_STATE_LOADING, std::memory_order_release);
-		emit_signal(k_signals->load_state_changed, LOAD_STATE_LOADING);
-		emit_signal(k_signals->simulation_started);
-
-		if (thread_mode == THREAD_MODE_MULTI_THREADED)
-		{
-			m_thread = std::thread(&UniverseSimulation::ThreadLoop, this);
-		}
-	}
-
-	void UniverseSimulation::StopSimulation()
-	{
-		LoadState load_state = m_load_state.load(std::memory_order_acquire);
-
-		if (load_state == LOAD_STATE_UNLOADED)
-		{
-			DEBUG_PRINT_ERROR("This galaxy shouldn't be unloaded if we want to start unloading");
-			return;
-		}
-
-		if (load_state == LOAD_STATE_UNLOADING) // We are already unloading
-		{
-			return;
-		}
-
-		m_load_state.store(LOAD_STATE_UNLOADING, std::memory_order_release);
-		emit_signal(k_signals->load_state_changed, LOAD_STATE_UNLOADING);
-
-		// TODO : Implement unloading
-		m_load_state.store(LOAD_STATE_UNLOADED, std::memory_order_release);
-		emit_signal(k_signals->load_state_changed, LOAD_STATE_UNLOADED);
-	}
-
-	bool UniverseSimulation::Progress(real_t delta)
+	bool UniverseSimulation::DoSimulationProgress(real_t delta)
 	{
 		if (IsThreaded())
 		{
@@ -232,38 +184,16 @@ namespace voxel_game
 		}
 		else
 		{
-			bool keep_running = m_world.progress(static_cast<ecs_ftime_t>(delta));
-
-			// Process signals here as we don't need to defer them
-			m_deferred_signals.ProcessCommands(this);
-
-			return keep_running;
+			return m_world.progress(static_cast<ecs_ftime_t>(delta));
 		}
 	}
 
-	void UniverseSimulation::ThreadLoop()
+	void UniverseSimulation::DoSimulationThreadProgress()
 	{
-		m_world.set_target_fps(k_simulation_ticks_per_second);
+		m_world.progress();
 
-		while (m_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
-		{
-			CommandBuffer command_buffer;
-			{
-				std::lock_guard lock(m_commands_mutex);
-				command_buffer = std::move(m_deferred_commands);
-			}
-
-			// Process the deferred commands sent by other threads
-			command_buffer.ProcessCommands(this);
-
-			m_world.progress();
-
-			// Publish updates to the info caches to be read on the main thread
-			m_info_updater.PublishUpdates();
-
-			// Flush signals to be executed on main thread
-			CommandQueueServer::get_singleton()->AddCommands(get_instance_id(), std::move(m_deferred_signals));
-		}
+		// Publish updates to the info caches to be read on the main thread
+		m_info_updater.PublishUpdates();
 	}
 
 	godot::Ref<Universe> UniverseSimulation::GetUniverse()
@@ -271,12 +201,16 @@ namespace voxel_game
 		return m_universe;
 	}
 
-	void UniverseSimulation::BindMethods()
+	void UniverseSimulation::_bind_methods()
 	{
-		BIND_METHOD(godot::D_METHOD(k_commands->start_simulation, "thread_mode"), &UniverseSimulation::StartSimulation);
-		BIND_METHOD(godot::D_METHOD(k_commands->stop_simulation), &UniverseSimulation::StopSimulation);
-		BIND_METHOD(godot::D_METHOD(k_commands->is_threaded), &UniverseSimulation::IsThreaded);
-		BIND_METHOD(godot::D_METHOD(k_commands->progress, "delta"), &UniverseSimulation::Progress);
+		k_emit_signal = godot::StringName("emit_signal", true);
+		k_commands.emplace();
+		k_signals.emplace();
+
+		BIND_ENUM_CONSTANT(SERVER_TYPE_LOCAL);
+		BIND_ENUM_CONSTANT(SERVER_TYPE_REMOTE);
+
+		BIND_METHOD(godot::D_METHOD(k_commands->initialize, "universe", "path", "fragment_type", "server_type", "scenario"), &UniverseSimulation::Initialize);
 
 		// ####### Universe #######
 		BIND_METHOD(godot::D_METHOD(k_commands->get_universe), &UniverseSimulation::GetUniverse);
@@ -497,30 +431,9 @@ namespace voxel_game
 
 		BIND_METHOD(godot::D_METHOD(k_commands->get_spell_info, "spell_id"), &UniverseSimulation::GetSpellInfo);
 		BIND_METHOD(godot::D_METHOD(k_commands->use_spell, "spell_index", "params"), &UniverseSimulation::UseSpell);
-	}
 
-	void UniverseSimulation::BindEnums()
-	{
-		BIND_ENUM_CONSTANT(SERVER_TYPE_LOCAL);
-		BIND_ENUM_CONSTANT(SERVER_TYPE_REMOTE);
-
-		BIND_ENUM_CONSTANT(THREAD_MODE_SINGLE_THREADED);
-		BIND_ENUM_CONSTANT(THREAD_MODE_MULTI_THREADED);
-
-		BIND_ENUM_CONSTANT(LOAD_STATE_LOADING);
-		BIND_ENUM_CONSTANT(LOAD_STATE_LOADED);
-		BIND_ENUM_CONSTANT(LOAD_STATE_UNLOADING);
-		BIND_ENUM_CONSTANT(LOAD_STATE_UNLOADED);
-	}
-
-	void UniverseSimulation::BindSignals()
-	{
-		ADD_SIGNAL(godot::MethodInfo(k_signals->simulation_uninitialized));
-		ADD_SIGNAL(godot::MethodInfo(k_signals->simulation_started));
-		ADD_SIGNAL(godot::MethodInfo(k_signals->simulation_stopped));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_remote));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->disonnected_from_remote));
-		ADD_SIGNAL(godot::MethodInfo(k_signals->load_state_changed, ENUM_PROPERTY("state", UniverseSimulation::LoadState)));
 
 		// ####### Fragments (admin only) #######
 
@@ -680,17 +593,6 @@ namespace voxel_game
 		// ####### Magic #######
 
 		ADD_SIGNAL(godot::MethodInfo(k_signals->use_spell_response_response));
-	}
-
-	void UniverseSimulation::_bind_methods()
-	{
-		k_emit_signal = godot::StringName("emit_signal", true);
-		k_commands.emplace();
-		k_signals.emplace();
-
-		BindEnums();
-		BindMethods();
-		BindSignals();
 	}
 
 	void UniverseSimulation::_cleanup_methods()

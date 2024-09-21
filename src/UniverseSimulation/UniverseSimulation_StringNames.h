@@ -6,10 +6,7 @@ namespace voxel_game
 	{
 		CommandStrings();
 
-		godot::StringName start_simulation;
-		godot::StringName stop_simulation;
-		godot::StringName is_threaded;
-		godot::StringName progress;
+		godot::StringName initialize;
 
 		// ####### Universe #######
 
@@ -237,12 +234,8 @@ namespace voxel_game
 	{
 		SignalStrings();
 
-		godot::StringName simulation_uninitialized;
-		godot::StringName simulation_started;
-		godot::StringName simulation_stopped;
 		godot::StringName connected_to_remote;
 		godot::StringName disonnected_from_remote;
-		godot::StringName load_state_changed;
 
 		// ####### Fragments (admin only) #######
 

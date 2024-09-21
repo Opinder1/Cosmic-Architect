@@ -3,6 +3,7 @@
 #include "Universe/Universe.h"
 
 #include "Simulation/CommandQueue.h"
+#include "Simulation/Simulation.h"
 
 #include "Util/Debug.h"
 
@@ -122,6 +123,7 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 
 		godot::ClassDB::register_class<voxel_game::CommandQueue>();
 		godot::ClassDB::register_class<voxel_game::CommandQueueServer>();
+		godot::ClassDB::register_class<voxel_game::Simulation>(true);
 		godot::ClassDB::register_class<voxel_game::Universe>();
 		godot::ClassDB::register_class<voxel_game::UniverseSimulation>();
 
