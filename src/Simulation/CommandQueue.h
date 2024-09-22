@@ -5,6 +5,7 @@
 #include "Util/Debug.h"
 #include "Util/GodotMemory.h"
 #include "Util/Time.h"
+#include "Util/PerThread.h"
 
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/classes/ref.hpp>
@@ -107,8 +108,8 @@ namespace voxel_game
 	private:
 		static godot::OptObj<CommandQueueServer> k_singleton;
 
-		State m_state;
-		State m_rendering_state;
+		alignas(k_cache_line) State m_state;
+		alignas(k_cache_line) State m_rendering_state;
 	};
 
 	template<class... Args>

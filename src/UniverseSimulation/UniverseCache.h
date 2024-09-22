@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Util/UUID.h"
+#include "Util/PerThread.h"
 
 #include <godot_cpp/variant/dictionary.hpp>
 
@@ -114,9 +115,8 @@ namespace voxel_game
 		void AddInfoUpdate(InfoUpdate&& update);
 
 	private:
-		std::vector<InfoUpdate> m_write;
-		std::vector<InfoUpdate> m_read;
-
 		std::atomic_bool m_ready{ false };
+		alignas(k_cache_line) std::vector<InfoUpdate> m_write;
+		alignas(k_cache_line) std::vector<InfoUpdate> m_read;
 	};
 }

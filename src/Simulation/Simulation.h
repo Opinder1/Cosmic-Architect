@@ -3,6 +3,7 @@
 #include "Simulation/CommandBuffer.h"
 
 #include "Util/Debug.h"
+#include "Util/PerThread.h"
 
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/classes/ref_counted.hpp>
@@ -77,18 +78,18 @@ namespace voxel_game
 		static void _bind_methods();
 
 	private:
-		// The load state to control the initial loading and final unloading of the simulation
-		std::atomic<LoadState> m_load_state = LOAD_STATE_UNLOADED;
-
 		// Internal thread used by the simulation to run in parallel with the main thread and other threads
 		std::thread m_thread;
 
+		// The load state to control the initial loading and final unloading of the simulation
+		std::atomic<LoadState> m_load_state = LOAD_STATE_UNLOADED;
+
 		// Commands to be deferred and processed by the internal thread
 		tkrzw::SpinMutex m_commands_mutex;
-		CommandBuffer m_deferred_commands;
+		alignas(k_cache_line) CommandBuffer m_deferred_commands;
 
 		// Signals sent by the internal thread and deferred to be run by the main thread
-		CommandBuffer m_deferred_signals;
+		alignas(k_cache_line) CommandBuffer m_deferred_signals;
 	};
 
 	template<class... Args>
