@@ -19,7 +19,9 @@
 
 namespace voxel_game
 {
-	// Simulation of a section of the universe
+	// A simulation object that runs a simulation for which commands are given as an input and
+	// signals are given as an output. When running in threaded mode, the commands and signals
+	// are efficiently buffered and sent between threads with minimal blocking
 	class Simulation : public godot::RefCounted
 	{
 		GDCLASS(Simulation, godot::RefCounted);
@@ -43,11 +45,22 @@ namespace voxel_game
 		Simulation();
 		~Simulation();
 
+		// Start the simulation. Make sure to call FinishedLoading() on the thread when done loading
 		void StartSimulation(ThreadMode thread_mode);
-		void StopSimulation();
+
+		// Call when finished loading the simulation. Call on the simulation thread
 		void FinishedLoading();
+
+		// Stop the simulation. Make sure to call FinishedUnloading() when done unloading
+		void StopSimulation();
+
+		// Call when finished unloading the simulation. Call on the thread that owns the simulation
 		void FinishedUnloading();
+
+		// Check if we are in threaded mode
 		bool IsThreaded();
+
+		// Progress the simulation from the owning thread. When in thread mode, this is just to communicate with the thread
 		bool Progress(real_t delta);
 
 	protected:
@@ -58,9 +71,11 @@ namespace voxel_game
 		virtual bool DoSimulationProgress(real_t delta);
 		virtual void DoSimulationThreadProgress();
 
+		// Queue a signal to be broadcast to the main thread. Call this on the simulation thread
 		template<class... Args>
 		void QueueSignal(const godot::StringName& signal, Args&&... p_args);
 
+		// Send a command to the simulation. Call on any thread that is not the simulation thread
 		template<class... Args>
 		bool DeferCommand(const godot::StringName& command, Args&&... p_args);
 
