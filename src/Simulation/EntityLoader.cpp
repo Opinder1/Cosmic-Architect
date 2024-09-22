@@ -1,6 +1,6 @@
 #include "EntityLoader.h"
 
-namespace sim
+namespace voxel_game
 {
 	const size_t k_entity_pool_max = 1024;
 

@@ -11,7 +11,7 @@
 
 #include <thread>
 
-namespace sim
+namespace voxel_game
 {
 	class EntityLoader
 	{
