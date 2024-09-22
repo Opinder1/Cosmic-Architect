@@ -146,7 +146,7 @@ namespace voxel_game
 
 	bool Simulation::OnSimulationLoading()
 	{
-		bool should_load;
+		bool should_load = false;
 		GDVIRTUAL_CALL(_simulation_loading, should_load);
 		return should_load;
 	}
@@ -168,14 +168,17 @@ namespace voxel_game
 
 	bool Simulation::DoSimulationProgress(real_t delta)
 	{
-		bool keep_running;
+		bool keep_running = false;
 		GDVIRTUAL_CALL(_simulation_progress, delta, keep_running);
 		return keep_running;
 	}
 
 	void Simulation::DoSimulationThreadProgress()
 	{
-		GDVIRTUAL_CALL(_simulation_thread_progress);
+		if (!GDVIRTUAL_CALL(_simulation_thread_progress))
+		{
+			std::this_thread::yield(); // Avoid eating up tons of cpu running the progress loop constantly
+		}
 	}
 
 	void Simulation::_bind_methods()
