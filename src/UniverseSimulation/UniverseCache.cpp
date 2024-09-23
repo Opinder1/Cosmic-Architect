@@ -87,18 +87,13 @@ namespace voxel_game
 
 	void UniverseCacheUpdater::AddInfoUpdate(InfoUpdate&& update)
 	{
-		m_write.emplace_back(std::move(update));
+		m_updates.AddCommand(std::move(update));
 	}
 
 	// Write the changes to the exchange buffer
 	void UniverseCacheUpdater::PublishUpdates()
 	{
-		if (!m_ready.load(std::memory_order_acquire))
-		{
-			m_read = std::move(m_write);
-
-			m_ready.store(true, std::memory_order_release);
-		}
+		m_updates.PublishCommands();
 	}
 
 	// Obtain the latest changes made by the writer if there are any
@@ -106,12 +101,7 @@ namespace voxel_game
 	{
 		std::vector<InfoUpdate> updates;
 
-		if (m_ready.load(std::memory_order_acquire))
-		{
-			updates = std::move(m_read);
-
-			m_ready.store(false, std::memory_order_release);
-		}
+		m_updates.RetrieveCommands(updates);
 
 		std::lock_guard lock(out.mutex);
 

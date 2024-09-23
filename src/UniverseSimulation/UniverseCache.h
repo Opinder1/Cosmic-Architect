@@ -2,6 +2,7 @@
 
 #include "Util/UUID.h"
 #include "Util/PerThread.h"
+#include "Util/Debug.h"
 
 #include <godot_cpp/variant/dictionary.hpp>
 
@@ -115,8 +116,11 @@ namespace voxel_game
 		void AddInfoUpdate(InfoUpdate&& update);
 
 	private:
-		std::atomic_bool m_ready{ false };
-		alignas(k_cache_line) std::vector<InfoUpdate> m_write;
-		alignas(k_cache_line) std::vector<InfoUpdate> m_read;
+		CommandSwapBuffer<InfoUpdate> m_updates;
+
+#if DEBUG
+		std::thread::id m_owner_id; // The thread that owns the cache and should call RetrieveUpdates() on it
+		std::thread::id m_writer_id; // The thread that does updates and calls PublishUpdates() on it
+#endif
 	};
 }

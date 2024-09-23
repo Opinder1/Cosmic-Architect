@@ -1,7 +1,9 @@
 #pragma once
 
 #include "Util/UUID.h"
+#include "Util/Time.h"
 #include "Util/PerThread.h"
+#include "Util/Debug.h"
 
 #include <robin_hood/robin_hood.h>
 
@@ -18,10 +20,13 @@ namespace voxel_game
 	private:
 		enum class CommandType
 		{
+			CreateEntity,
+			DeleteEntity,
 			LoadEntity,
+			UnloadEntity,
+			ReloadEntity,
 			SaveEntity,
 			InstanceEntity,
-			UnloadEntity,
 		};
 
 		struct Command
@@ -33,6 +38,18 @@ namespace voxel_game
 				flecs::entity_t entity;
 				UUID uuid;
 			};
+		};
+
+		struct EntityData
+		{
+			flecs::entity_t entity;
+
+			size_t refcount;
+
+			std::vector<UUID> dependencies;
+
+			Clock::time_point load_time;
+			Clock::time_point last_reference_time;
 		};
 
 	public:
@@ -51,27 +68,19 @@ namespace voxel_game
 		std::atomic_bool m_running = false;
 
 		// Commands requested to loader
-		tkrzw::SpinMutex m_command_mutex;
-		alignas(k_cache_line) std::vector<Command> m_command_write;
-		alignas(k_cache_line) std::vector<Command> m_command_read;
+		CommandSwapBuffer<Command> m_commands;
 
-		// Modifications output by loader
-		struct alignas(k_cache_line)
-		{
-			std::atomic_bool m_modifications_ready = false;
-			flecs::world m_write_stage;
-			flecs::world m_swap_stage;
-			flecs::world m_read_stage;
-		};
+		flecs::world m_world; // World reference to generate more entities for the pool
+		std::vector<flecs::entity_t> m_entity_pool; // Alive entity handles that can be used in the stages
 
-		// Flag set when modifcations are made
-		bool m_modifications_added = false;
-
-		// Alive entity handles that can be used in the stages and world reference to generate more
-		flecs::world m_world;
-		std::vector<flecs::entity_t> m_entity_pool;
+		bool m_modifications_added = false; // Flag set when modifcations are made
+		TripleBuffer<flecs::world> m_modification_stage; // Modifications output by loader
 
 		// Cache of already loaded entities
-		robin_hood::unordered_map<UUID, flecs::entity_t, UUIDHash> m_entity_cache;
+		robin_hood::unordered_map<UUID, EntityData, UUIDHash> m_entity_cache;
+
+#if DEBUG
+		std::thread::id m_owner_id; // The thread that owns the loader and should call Progress() on it
+#endif
 	};
 }
