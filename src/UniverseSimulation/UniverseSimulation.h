@@ -3,6 +3,7 @@
 #include "UniverseCache.h"
 
 #include "Simulation/Simulation.h"
+#include "Simulation/EntityLoader.h"
 
 #include "Util/Debug.h"
 #include "Util/UUID.h"
@@ -311,6 +312,8 @@ namespace voxel_game
 		flecs::entity_t m_universe_entity = 0;
 		flecs::entity_t m_galaxy_entity = 0;
 		flecs::entity_t m_player_entity = 0;
+
+		EntityLoader m_loader;
 
 		// Cached info to be written to by the internal thread and its contents retrieved and read by other threads
 		UniverseCacheUpdater m_info_updater; 

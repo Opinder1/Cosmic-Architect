@@ -77,7 +77,8 @@ namespace voxel_game
 	std::optional<const UniverseSimulation::CommandStrings> UniverseSimulation::k_commands;
 	std::optional<const UniverseSimulation::SignalStrings> UniverseSimulation::k_signals;
 
-	UniverseSimulation::UniverseSimulation()
+	UniverseSimulation::UniverseSimulation() :
+		m_loader(m_world)
 	{}
 
 	UniverseSimulation::~UniverseSimulation()
