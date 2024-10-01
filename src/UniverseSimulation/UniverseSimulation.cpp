@@ -77,12 +77,13 @@ namespace voxel_game
 	std::optional<const UniverseSimulation::CommandStrings> UniverseSimulation::k_commands;
 	std::optional<const UniverseSimulation::SignalStrings> UniverseSimulation::k_signals;
 
-	UniverseSimulation::UniverseSimulation() :
-		m_loader(m_world)
+	UniverseSimulation::UniverseSimulation()
 	{}
 
 	UniverseSimulation::~UniverseSimulation()
-	{}
+	{
+		WaitUntilStopped();
+	}
 
 	void UniverseSimulation::Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario)
 	{
@@ -101,6 +102,8 @@ namespace voxel_game
 		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
 
 		m_world.set_target_fps(k_simulation_ticks_per_second);
+
+		m_world.component<EntityLoader>().emplace<EntityLoader>(m_world);
 
 		// Import modules
 #if DEBUG
@@ -144,7 +147,7 @@ namespace voxel_game
 		}
 	}
 
-	bool UniverseSimulation::OnSimulationLoading()
+	bool UniverseSimulation::CanSimulationStart()
 	{
 		if (m_universe.is_null())
 		{
@@ -155,17 +158,12 @@ namespace voxel_game
 		return true;
 	}
 
-	void UniverseSimulation::OnSimulationLoaded()
+	void UniverseSimulation::DoSimulationLoad()
 	{
 
 	}
 
-	void UniverseSimulation::OnSimulationUnloading()
-	{
-
-	}
-
-	void UniverseSimulation::OnSimulationUnloaded()
+	void UniverseSimulation::DoSimulationUnload()
 	{
 		DEBUG_ASSERT(m_universe.is_valid(), "The simulation should have been initialized");
 

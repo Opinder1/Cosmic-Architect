@@ -33,14 +33,6 @@ namespace voxel_game
 			THREAD_MODE_MULTI_THREADED
 		};
 
-		enum LoadState
-		{
-			LOAD_STATE_LOADING,
-			LOAD_STATE_LOADED,
-			LOAD_STATE_UNLOADING,
-			LOAD_STATE_UNLOADED
-		};
-
 	public:
 		Simulation();
 		~Simulation();
@@ -48,14 +40,11 @@ namespace voxel_game
 		// Start the simulation. Make sure to call FinishedLoading() on the thread when done loading
 		void StartSimulation(ThreadMode thread_mode);
 
-		// Call when finished loading the simulation. Call on the simulation thread
-		void FinishedLoading();
-
 		// Stop the simulation. Make sure to call FinishedUnloading() when done unloading
 		void StopSimulation();
 
-		// Call when finished unloading the simulation. Call on the thread that owns the simulation
-		void FinishedUnloading();
+		// When destroying the simulation one should make sure the thread is stopped before destroying
+		void WaitUntilStopped();
 
 		// Check if we are in threaded mode
 		bool IsThreaded();
@@ -64,10 +53,9 @@ namespace voxel_game
 		bool Progress(real_t delta);
 
 	protected:
-		virtual bool OnSimulationLoading();
-		virtual void OnSimulationLoaded();
-		virtual void OnSimulationUnloading();
-		virtual void OnSimulationUnloaded();
+		virtual bool CanSimulationStart();
+		virtual void DoSimulationLoad();
+		virtual void DoSimulationUnload();
 		virtual bool DoSimulationProgress(real_t delta);
 		virtual void DoSimulationThreadProgress();
 
@@ -82,10 +70,9 @@ namespace voxel_game
 	private:
 		void ThreadLoop();
 
-		GDVIRTUAL0R(bool, _simulation_loading);
-		GDVIRTUAL0(_simulation_loaded);
-		GDVIRTUAL0(_simulation_unloading);
-		GDVIRTUAL0(_simulation_unloaded);
+		GDVIRTUAL0R(bool, _can_simulation_start);
+		GDVIRTUAL0(_do_simulation_load);
+		GDVIRTUAL0(_do_simulation_unload);
 		GDVIRTUAL1R(bool, _simulation_progress, real_t);
 		GDVIRTUAL0(_simulation_thread_progress);
 
@@ -97,7 +84,7 @@ namespace voxel_game
 		std::thread m_thread;
 
 		// The load state to control the initial loading and final unloading of the simulation
-		std::atomic<LoadState> m_load_state = LOAD_STATE_UNLOADED;
+		std::atomic_bool m_running = false;
 
 		// Commands to be deferred and processed by the internal thread
 		tkrzw::SpinMutex m_commands_mutex;
@@ -136,4 +123,3 @@ namespace voxel_game
 }
 
 VARIANT_ENUM_CAST(voxel_game::Simulation::ThreadMode);
-VARIANT_ENUM_CAST(voxel_game::Simulation::LoadState);

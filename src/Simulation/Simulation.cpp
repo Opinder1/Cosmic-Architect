@@ -15,17 +15,15 @@ namespace voxel_game
 	const size_t k_simulation_ticks_per_second = 20;
 
 	Simulation::Simulation()
-	{}
+	{
+#if DEBUG
+		m_owner_id = std::this_thread::get_id();
+#endif
+	}
 
 	Simulation::~Simulation()
 	{
-		DEBUG_ASSERT(m_load_state.load(std::memory_order_acquire) == LOAD_STATE_UNLOADED, "We did not fully unload the simuation before destroying it");
-
-		// Join the thread just in case
-		if (IsThreaded())
-		{
-			m_thread.join();
-		}
+		WaitUntilStopped();
 	}
 
 	bool Simulation::IsThreaded()
@@ -35,78 +33,59 @@ namespace voxel_game
 
 	void Simulation::StartSimulation(ThreadMode thread_mode)
 	{
-		if (m_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
-		{
-			DEBUG_PRINT_ERROR("This galaxy should not be loaded when we start");
-			return;
-		}
+		DEBUG_ASSERT(std::this_thread::get_id() == m_owner_id, "StartSimulation() should be called by the thread that created the simulation");
 
-		if (!OnSimulationLoading())
+		WaitUntilStopped();
+
+		if (!CanSimulationStart())
 		{
 			return;
 		}
 
-		m_load_state.store(LOAD_STATE_LOADING, std::memory_order_release);
-		emit_signal("load_state_changed", LOAD_STATE_LOADING);
+		m_running.store(true, std::memory_order_release);
 
 		if (thread_mode == THREAD_MODE_MULTI_THREADED)
 		{
-			if (IsThreaded())
-			{
-				m_thread.join();
-			}
-
 			m_thread = std::thread(&Simulation::ThreadLoop, this);
 		}
-	}
-
-	void Simulation::FinishedLoading()
-	{
-		m_load_state.store(LOAD_STATE_LOADED, std::memory_order_release);
-		emit_signal("load_state_changed", LOAD_STATE_LOADED);
-
-		OnSimulationLoaded();
+		else
+		{
+			DoSimulationLoad();
+		}
 	}
 
 	void Simulation::StopSimulation()
 	{
-		LoadState load_state = m_load_state.load(std::memory_order_acquire);
+		DEBUG_ASSERT(std::this_thread::get_id() == m_owner_id, "StopSimulation() should be called by the thread that created the simulation");
 
-		if (load_state == LOAD_STATE_UNLOADED)
-		{
-			DEBUG_PRINT_ERROR("This galaxy shouldn't be unloaded if we want to start unloading");
-			return;
-		}
-
-		if (load_state == LOAD_STATE_UNLOADING) // We are already unloading
+		if (!m_running.load(std::memory_order_acquire))
 		{
 			return;
 		}
 
-		OnSimulationUnloading();
+		if (!IsThreaded())
+		{
+			DoSimulationUnload();
+		}
 
-		m_load_state.store(LOAD_STATE_UNLOADING, std::memory_order_release);
-		emit_signal("load_state_changed", LOAD_STATE_UNLOADING);
+		m_running.store(false);
 	}
 
-	void Simulation::FinishedUnloading()
+	void Simulation::WaitUntilStopped()
 	{
-		DEBUG_ASSERT(m_load_state.load(std::memory_order_acquire) == LOAD_STATE_UNLOADING, "This simulation should not be loaded or uninitialized when we uninitialize");
+		StopSimulation();
 
-		m_load_state.store(LOAD_STATE_UNLOADED, std::memory_order_release);
-		emit_signal("load_state_changed", LOAD_STATE_UNLOADED);
-
-		// First stop our thread
+		// Join the thread just in case it hasn't stopped just yet
 		if (IsThreaded())
 		{
 			m_thread.join();
 		}
-
-		OnSimulationUnloaded();
 	}
 
 	bool Simulation::Progress(real_t delta)
 	{
+		DEBUG_ASSERT(std::this_thread::get_id() == m_owner_id, "Progress() should always be called by the thread that created the simulation");
+
 		if (IsThreaded())
 		{
 			DoSimulationProgress(delta);
@@ -126,7 +105,11 @@ namespace voxel_game
 
 	void Simulation::ThreadLoop()
 	{
-		while (m_load_state.load(std::memory_order_acquire) != LOAD_STATE_UNLOADED)
+		DEBUG_ASSERT(std::this_thread::get_id() == m_thread.get_id(), "FinishedLoading() should be called by the simulations thread");
+
+		DoSimulationLoad();
+
+		while (m_running.load(std::memory_order_acquire))
 		{
 			CommandBuffer command_buffer;
 			{
@@ -142,28 +125,25 @@ namespace voxel_game
 			// Flush signals to be executed on main thread
 			CommandQueueServer::get_singleton()->AddCommands(get_instance_id(), std::move(m_deferred_signals));
 		}
+
+		DoSimulationUnload();
 	}
 
-	bool Simulation::OnSimulationLoading()
+	bool Simulation::CanSimulationStart()
 	{
 		bool should_load = false;
-		GDVIRTUAL_CALL(_simulation_loading, should_load);
+		GDVIRTUAL_CALL(_can_simulation_start, should_load);
 		return should_load;
 	}
 
-	void Simulation::OnSimulationLoaded()
+	void Simulation::DoSimulationLoad()
 	{
-		GDVIRTUAL_CALL(_simulation_loaded);
+		GDVIRTUAL_CALL(_do_simulation_load);
 	}
 
-	void Simulation::OnSimulationUnloading()
+	void Simulation::DoSimulationUnload()
 	{
-		GDVIRTUAL_CALL(_simulation_unloading);
-	}
-
-	void Simulation::OnSimulationUnloaded()
-	{
-		GDVIRTUAL_CALL(_simulation_unloaded);
+		GDVIRTUAL_CALL(_do_simulation_unload);
 	}
 
 	bool Simulation::DoSimulationProgress(real_t delta)
@@ -186,22 +166,14 @@ namespace voxel_game
 		BIND_ENUM_CONSTANT(THREAD_MODE_SINGLE_THREADED);
 		BIND_ENUM_CONSTANT(THREAD_MODE_MULTI_THREADED);
 
-		BIND_ENUM_CONSTANT(LOAD_STATE_LOADING);
-		BIND_ENUM_CONSTANT(LOAD_STATE_LOADED);
-		BIND_ENUM_CONSTANT(LOAD_STATE_UNLOADING);
-		BIND_ENUM_CONSTANT(LOAD_STATE_UNLOADED);
-
 		BIND_METHOD(godot::D_METHOD("start_simulation", "thread_mode"), &Simulation::StartSimulation);
 		BIND_METHOD(godot::D_METHOD("stop_simulation"), &Simulation::StopSimulation);
-		BIND_METHOD(godot::D_METHOD("finished_loading"), &Simulation::FinishedLoading);
-		BIND_METHOD(godot::D_METHOD("finished_unloading"), &Simulation::FinishedUnloading);
 		BIND_METHOD(godot::D_METHOD("is_threaded"), &Simulation::IsThreaded);
 		BIND_METHOD(godot::D_METHOD("progress", "delta"), &Simulation::Progress);
 
-		GDVIRTUAL_BIND(_simulation_loading, "thread_mode");
-		GDVIRTUAL_BIND(_simulation_loaded);
-		GDVIRTUAL_BIND(_simulation_unloading);
-		GDVIRTUAL_BIND(_simulation_unloaded);
+		GDVIRTUAL_BIND(_can_simulation_start, "thread_mode");
+		GDVIRTUAL_BIND(_do_simulation_load);
+		GDVIRTUAL_BIND(_do_simulation_unload);
 		GDVIRTUAL_BIND(_simulation_progress, "delta");
 		GDVIRTUAL_BIND(_simulation_thread_progress);
 

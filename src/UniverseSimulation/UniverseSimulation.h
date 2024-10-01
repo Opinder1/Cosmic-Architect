@@ -57,10 +57,9 @@ namespace voxel_game
 
 		void Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario);
 
-		bool OnSimulationLoading() override;
-		void OnSimulationLoaded() override;
-		void OnSimulationUnloading() override;
-		void OnSimulationUnloaded() override;
+		bool CanSimulationStart() override;
+		void DoSimulationLoad() override;
+		void DoSimulationUnload() override;
 		bool DoSimulationProgress(real_t delta) override;
 		void DoSimulationThreadProgress() override;
 
@@ -307,13 +306,13 @@ namespace voxel_game
 	private:
 		godot::Ref<Universe> m_universe;
 		
-		// World and some quick access entities
+		// World
 		flecs::world m_world;
+
+		// Quick access entities
 		flecs::entity_t m_universe_entity = 0;
 		flecs::entity_t m_galaxy_entity = 0;
 		flecs::entity_t m_player_entity = 0;
-
-		EntityLoader m_loader;
 
 		// Cached info to be written to by the internal thread and its contents retrieved and read by other threads
 		UniverseCacheUpdater m_info_updater; 
