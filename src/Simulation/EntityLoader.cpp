@@ -13,13 +13,17 @@ namespace voxel_game
 	const size_t k_num_database_workers = 4;
 	const size_t k_entity_pool_max = 1024;
 
-	EntityLoader::EntityLoader(const flecs::world& world) :
+	EntityLoader::EntityLoader(flecs::world& world) :
 		m_world(world),
 		m_modification_stage(world.async_stage(), world.async_stage(), world.async_stage()),
 		m_database_async(&m_database, k_num_database_workers)
 	{
 		m_running.store(true, std::memory_order_release);
-		m_thread = std::thread(&EntityLoader::ThreadLoop, this);
+
+		if (!m_thread.joinable())
+		{
+			m_thread = std::thread(&EntityLoader::ThreadLoop, this);
+		}
 	}
 
 	EntityLoader::~EntityLoader()
@@ -40,7 +44,7 @@ namespace voxel_game
 
 		while (m_entity_pool.size() < k_entity_pool_max)
 		{
-			m_entity_pool.push_back(m_world.entity());
+			m_entity_pool.push_back(flecs::entity(m_world));
 		}
 	}
 
@@ -52,7 +56,13 @@ namespace voxel_game
 
 			m_modifications_added = false;
 
+			ProcessCreateTasks();
+			ProcessDeleteTasks();
 			ProcessLoadTasks();
+			ProcessUnloadTasks();
+			ProcessReloadTasks();
+			ProcessSaveTasks();
+			ProcessSaveAndUnloadTasks();
 
 			if (m_modifications_added)
 			{
@@ -71,10 +81,92 @@ namespace voxel_game
 		{
 			switch (command.type)
 			{
+			case CommandType::CreateEntity:
+				CreateEntity(command.uuid);
+				break;
+
+			case CommandType::DeleteEntity:
+				DeleteEntity(command.uuid);
+				break;
+
 			case CommandType::LoadEntity:
 				LoadEntity(command.uuid);
 				break;
+
+			case CommandType::UnloadEntity:
+				UnloadEntity(command.uuid);
+				break;
+
+			case CommandType::ReloadEntity:
+				ReloadEntity(command.uuid);
+				break;
+
+			case CommandType::SaveEntity:
+				SaveEntity(command.uuid);
+				break;
+
+			case CommandType::SaveAndUnloadEntity:
+				SaveAndUnloadEntity(command.uuid);
+				break;
 			}
+		}
+	}
+
+	void EntityLoader::CreateEntity(UUID id)
+	{
+
+	}
+
+	void EntityLoader::DeleteEntity(UUID id)
+	{
+
+	}
+
+	void EntityLoader::LoadEntity(UUID id)
+	{
+		LoadTask& task = m_load_tasks.emplace_back();
+
+		task.id = id;
+		task.future = m_database_async.Get(UUIDToData(id));
+	}
+
+	void EntityLoader::UnloadEntity(UUID id)
+	{
+
+	}
+
+	void EntityLoader::ReloadEntity(UUID id)
+	{
+		UnloadEntity(id);
+		LoadEntity(id);
+	}
+
+	void EntityLoader::SaveEntity(UUID id)
+	{
+
+	}
+
+	void EntityLoader::SaveAndUnloadEntity(UUID id)
+	{
+		SaveEntity(id);
+		UnloadEntity(id);
+	}
+
+	void EntityLoader::ProcessCreateTasks()
+	{
+		auto end = m_create_tasks.end();
+		for (auto it = m_create_tasks.begin(); it != end;)
+		{
+
+		}
+	}
+
+	void EntityLoader::ProcessDeleteTasks()
+	{
+		auto end = m_delete_tasks.end();
+		for (auto it = m_delete_tasks.begin(); it != end;)
+		{
+
 		}
 	}
 
@@ -98,16 +190,43 @@ namespace voxel_game
 			m_modifications_added = true;
 
 			// Unordered erase
-			*it = std::move(m_load_tasks.back());
-			m_load_tasks.pop_back();
+			m_load_tasks.erase(it);
 		}
 	}
 
-	void EntityLoader::LoadEntity(UUID id)
+	void EntityLoader::ProcessUnloadTasks()
 	{
-		LoadTask& task = m_load_tasks.emplace_back();
+		auto end = m_unload_tasks.end();
+		for (auto it = m_unload_tasks.begin(); it != end;)
+		{
 
-		task.id = id;
-		task.future = m_database_async.Get(UUIDToData(id));
+		}
+	}
+
+	void EntityLoader::ProcessReloadTasks()
+	{
+		auto end = m_reload_tasks.end();
+		for (auto it = m_reload_tasks.begin(); it != end;)
+		{
+
+		}
+	}
+
+	void EntityLoader::ProcessSaveTasks()
+	{
+		auto end = m_save_tasks.end();
+		for (auto it = m_save_tasks.begin(); it != end;)
+		{
+
+		}
+	}
+
+	void EntityLoader::ProcessSaveAndUnloadTasks()
+	{
+		auto end = m_save_and_unload_tasks.end();
+		for (auto it = m_save_and_unload_tasks.begin(); it != end;)
+		{
+
+		}
 	}
 }

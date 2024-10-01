@@ -16,12 +16,12 @@
 #include <TKRZW/tkrzw_dbm_async.h>
 
 #include <vector>
-#include <variant>
+#include <deque>
 #include <thread>
 
 namespace voxel_game
 {
-	class EntityLoader : Nocopy
+	class EntityLoader
 	{
 	private:
 		enum class CommandType
@@ -32,7 +32,8 @@ namespace voxel_game
 			UnloadEntity,
 			ReloadEntity,
 			SaveEntity,
-			InstanceEntity,
+
+			SaveAndUnloadEntity,
 		};
 
 		struct Command
@@ -65,40 +66,62 @@ namespace voxel_game
 		};
 
 	public:
-		EntityLoader(const flecs::world& world);
+		EntityLoader(flecs::world& world);
 		~EntityLoader();
 
 		void Progress();
 
 	private:
+
 		void ThreadLoop();
 
 		void ProcessCommands();
 
-		void ProcessLoadTasks();
-
+		void CreateEntity(UUID id);
+		void DeleteEntity(UUID id);
 		void LoadEntity(UUID id);
+		void UnloadEntity(UUID id);
+		void ReloadEntity(UUID id);
+		void SaveEntity(UUID id);
+		void SaveAndUnloadEntity(UUID id);
+
+		void ProcessCreateTasks();
+		void ProcessDeleteTasks();
+		void ProcessLoadTasks();
+		void ProcessUnloadTasks();
+		void ProcessReloadTasks();
+		void ProcessSaveTasks();
+		void ProcessSaveAndUnloadTasks();
 
 	private:
 		std::thread m_thread;
 		std::atomic_bool m_running = false;
+		flecs::world_t* m_world;
 
 		// Commands requested to loader
 		CommandSwapBuffer<Command> m_commands;
 
-		flecs::world m_world; // World reference to generate more entities for the pool
-		std::vector<flecs::entity_t> m_entity_pool; // Alive entity handles that can be used in the stages
-
+		// Modifications output by loader
 		bool m_modifications_added = false; // Flag set when modifcations are made
-		TripleBuffer<flecs::world> m_modification_stage; // Modifications output by loader
+		TripleBuffer<flecs::world> m_modification_stage;
+
+		// Alive entity handles that can be used in the stages
+		std::vector<flecs::entity_t> m_entity_pool; 
 
 		// Cache of already loaded entities
 		robin_hood::unordered_map<UUID, EntityData, UUIDHash> m_entity_cache;
 
+		// Database that stores all entities on disk
 		tkrzw::ShardDBM m_database;
 		tkrzw::AsyncDBM m_database_async;
 
-		std::vector<LoadTask> m_load_tasks;
+		std::deque<LoadTask> m_create_tasks;
+		std::deque<LoadTask> m_delete_tasks;
+		std::deque<LoadTask> m_load_tasks;
+		std::deque<LoadTask> m_unload_tasks;
+		std::deque<LoadTask> m_reload_tasks;
+		std::deque<LoadTask> m_save_tasks;
+		std::deque<LoadTask> m_save_and_unload_tasks;
 
 #if DEBUG
 		std::thread::id m_owner_id; // The thread that owns the loader and should call Progress() on it
