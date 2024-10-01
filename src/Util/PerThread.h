@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Nocopy.h"
+
 #include <array>
 #include <vector>
 #include <thread>
@@ -14,13 +16,13 @@ struct alignas(k_cache_line) AlignedData : DataT {};
 
 // An array to store data for worker threads that avoids false sharing
 template<class DataT>
-struct PerThread : std::array<AlignedData<DataT>, k_worker_thread_max>
+struct PerThread : std::array<AlignedData<DataT>, k_worker_thread_max>, Nocopy, Nomove
 {
 	using std::array<AlignedData<DataT>, k_worker_thread_max>::array;
 };
 
 template<class CommandT>
-class CommandSwapBuffer
+class CommandSwapBuffer : Nocopy, Nomove
 {
 public:
 	CommandSwapBuffer() {}
@@ -64,7 +66,7 @@ private:
 };
 
 template<class T>
-class alignas(k_cache_line) TripleBuffer
+class alignas(k_cache_line) TripleBuffer : Nocopy, Nomove
 {
 public:
 	TripleBuffer() {}
