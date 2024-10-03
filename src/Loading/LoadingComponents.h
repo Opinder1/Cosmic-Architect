@@ -2,16 +2,31 @@
 
 #include <cstdint>
 
-namespace voxel_game
+namespace flecs
 {
-	struct Loadable
+	class world;
+}
+
+namespace voxel_game::loading
+{
+	enum class LoadingMode
 	{
-		uint32_t children_to_load;
-		uint32_t children_loaded;
+		Loading,
+		Loaded,
+		Unloading,
+		Unloaded
 	};
 
-	struct Load
+	// Entities should manage their own progress and loading/unloading their children
+	struct Loadable
 	{
+		LoadingMode mode = LoadingMode::Unloaded;
+		size_t progress = 0;
+		size_t child_count = 0;
+	};
 
+	struct Components
+	{
+		Components(flecs::world& world);
 	};
 }
