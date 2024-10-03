@@ -83,6 +83,12 @@ public:
 		m_read(std::move(read))
 	{}
 
+	// Write changes the write buffer. Calling Publish() with references still around is undefined
+	T& Write()
+	{
+		return m_write;
+	}
+
 	// Write the changes to the exchange buffer
 	void Publish()
 	{
