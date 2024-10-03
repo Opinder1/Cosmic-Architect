@@ -21,30 +21,27 @@
 
 namespace voxel_game
 {
+	// An asynchronous entity loader that manages generating and loading entities from disk. Entities can have dependenices on other entities
+	// that will be loaded or generated as needed. The entities added by this loader should only be removed by this loader.
 	class EntityLoader
 	{
 	private:
 		enum class CommandType
 		{
 			CreateEntity,
-			DeleteEntity,
 			LoadEntity,
+			DeleteEntity,
 			UnloadEntity,
 			ReloadEntity,
 			SaveEntity,
-
 			SaveAndUnloadEntity,
 		};
 
 		struct Command
 		{
-			CommandType type = CommandType::CreateEntity;
-
-			union // Command data
-			{
-				flecs::entity_t entity;
-				UUID uuid;
-			};
+			CommandType type;
+			flecs::entity_t entity;
+			UUID uuid;
 		};
 
 		struct EntityData
@@ -59,6 +56,12 @@ namespace voxel_game
 			Clock::time_point last_reference_time;
 		};
 
+		struct CreateTask
+		{
+			flecs::entity_t target;
+			UUID schematic;
+		};
+
 		struct LoadTask
 		{
 			UUID id;
@@ -71,19 +74,26 @@ namespace voxel_game
 
 		void Progress();
 
-	private:
+		void CreateEntity(flecs::entity_t target, UUID schematic);
+		void LoadEntity(UUID uuid);
+		void DeleteEntity(flecs::entity_t entity);
+		void UnloadEntity(flecs::entity_t entity);
+		void ReloadEntity(flecs::entity_t entity);
+		void SaveEntity(flecs::entity_t entity);
+		void SaveAndUnloadEntity(flecs::entity_t entity);
 
+	private:
 		void ThreadLoop();
 
 		void ProcessCommands();
 
-		void CreateEntity(UUID id);
-		void DeleteEntity(UUID id);
-		void LoadEntity(UUID id);
-		void UnloadEntity(UUID id);
-		void ReloadEntity(UUID id);
-		void SaveEntity(UUID id);
-		void SaveAndUnloadEntity(UUID id);
+		void DoCreateEntity(flecs::entity_t target, UUID schematic);
+		void DoLoadEntity(UUID uuid);
+		void DoDeleteEntity(flecs::entity_t entity);
+		void DoUnloadEntity(flecs::entity_t entity);
+		void DoReloadEntity(flecs::entity_t entity);
+		void DoSaveEntity(flecs::entity_t entity);
+		void DoSaveAndUnloadEntity(flecs::entity_t entity);
 
 		void ProcessCreateTasks();
 		void ProcessDeleteTasks();
@@ -109,15 +119,16 @@ namespace voxel_game
 		std::vector<flecs::entity_t> m_entity_pool; 
 
 		// Cache of already loaded entities
+		robin_hood::unordered_map<flecs::entity_t, UUID> m_entity_to_uuid;
 		robin_hood::unordered_map<UUID, EntityData, UUIDHash> m_entity_cache;
 
 		// Database that stores all entities on disk
 		tkrzw::ShardDBM m_database;
 		tkrzw::AsyncDBM m_database_async;
 
-		std::deque<LoadTask> m_create_tasks;
-		std::deque<LoadTask> m_delete_tasks;
+		std::deque<CreateTask> m_create_tasks;
 		std::deque<LoadTask> m_load_tasks;
+		std::deque<LoadTask> m_delete_tasks;
 		std::deque<LoadTask> m_unload_tasks;
 		std::deque<LoadTask> m_reload_tasks;
 		std::deque<LoadTask> m_save_tasks;
