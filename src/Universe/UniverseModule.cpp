@@ -92,7 +92,7 @@ namespace voxel_game::universe
 
 	Module::Module(flecs::world& world)
 	{
-		world.module<Module>("UniverseModule");
+		world.module<Module>();
 
 		world.import<physics3d::Components>();
 		world.import<spatial3d::Components>();

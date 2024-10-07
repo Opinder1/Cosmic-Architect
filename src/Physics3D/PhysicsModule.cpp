@@ -9,6 +9,8 @@ namespace voxel_game::physics3d
 {
 	Module::Module(flecs::world& world)
 	{
+		world.module<Module>();
+
 		world.import<Components>();
 
 		world.singleton<Velocity>()
