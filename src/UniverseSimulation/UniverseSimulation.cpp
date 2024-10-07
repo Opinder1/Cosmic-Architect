@@ -24,6 +24,9 @@
 #include "Simulation/SimulationModule.h"
 #include "Simulation/CommandQueue.h"
 
+#include "Loading/LoadingComponents.h"
+#include "Loading/LoadingModule.h"
+
 #include "Util/Debug.h"
 
 #include <godot_cpp/classes/os.hpp>
@@ -111,6 +114,7 @@ namespace voxel_game
 		m_world.set<flecs::Rest>({});
 #endif
 
+		m_world.import<loading::Module>();
 		m_world.import<sim::Module>();
 		m_world.import<physics3d::Module>();
 		m_world.import<spatial3d::Module>();
