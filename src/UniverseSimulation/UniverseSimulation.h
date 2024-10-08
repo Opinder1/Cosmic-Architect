@@ -3,7 +3,6 @@
 #include "UniverseCache.h"
 
 #include "Simulation/Simulation.h"
-#include "Simulation/EntityLoader.h"
 
 #include "Util/Debug.h"
 #include "Util/UUID.h"

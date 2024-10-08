@@ -106,8 +106,6 @@ namespace voxel_game
 
 		m_world.set_target_fps(k_simulation_ticks_per_second);
 
-		m_world.component<EntityLoader>().emplace<EntityLoader>(m_world);
-
 		// Import modules
 #if DEBUG
 		m_world.import<flecs::stats>();
@@ -126,6 +124,8 @@ namespace voxel_game
 		{
 			m_world.import<rendering::Module>();
 		}
+
+		m_world.emplace<EntityLoader>(m_world);
 
 		// Create the universe and simulated galaxy
 

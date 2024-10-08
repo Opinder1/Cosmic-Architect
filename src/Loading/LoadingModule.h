@@ -3,6 +3,7 @@
 namespace flecs
 {
 	class world;
+	struct entity;
 }
 
 namespace voxel_game::loading
@@ -11,4 +12,6 @@ namespace voxel_game::loading
 	{
 		Module(flecs::world& world);
 	};
+
+	void SaveEntity(flecs::entity entity);
 }

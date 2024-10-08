@@ -23,18 +23,15 @@ namespace voxel_game
 {
 	// An asynchronous entity loader that manages generating and loading entities from disk. Entities can have dependenices on other entities
 	// that will be loaded or generated as needed. The entities added by this loader should only be removed by this loader.
-	class EntityLoader
+	class EntityLoader : Nomove
 	{
 	private:
 		enum class CommandType
 		{
 			CreateEntity,
 			LoadEntity,
-			DeleteEntity,
-			UnloadEntity,
-			ReloadEntity,
 			SaveEntity,
-			SaveAndUnloadEntity,
+			DeleteEntity,
 		};
 
 		struct Command
@@ -76,11 +73,8 @@ namespace voxel_game
 
 		void CreateEntity(flecs::entity_t target, UUID schematic);
 		void LoadEntity(UUID uuid);
-		void DeleteEntity(flecs::entity_t entity);
-		void UnloadEntity(flecs::entity_t entity);
-		void ReloadEntity(flecs::entity_t entity);
 		void SaveEntity(flecs::entity_t entity);
-		void SaveAndUnloadEntity(flecs::entity_t entity);
+		void DeleteEntity(flecs::entity_t entity);
 
 	private:
 		void ThreadLoop();
@@ -89,19 +83,13 @@ namespace voxel_game
 
 		void DoCreateEntity(flecs::entity_t target, UUID schematic);
 		void DoLoadEntity(UUID uuid);
-		void DoDeleteEntity(flecs::entity_t entity);
-		void DoUnloadEntity(flecs::entity_t entity);
-		void DoReloadEntity(flecs::entity_t entity);
 		void DoSaveEntity(flecs::entity_t entity);
-		void DoSaveAndUnloadEntity(flecs::entity_t entity);
+		void DoDeleteEntity(flecs::entity_t entity);
 
 		void ProcessCreateTasks();
-		void ProcessDeleteTasks();
 		void ProcessLoadTasks();
-		void ProcessUnloadTasks();
-		void ProcessReloadTasks();
 		void ProcessSaveTasks();
-		void ProcessSaveAndUnloadTasks();
+		void ProcessDeleteTasks();
 
 	private:
 		std::thread m_thread;
@@ -128,11 +116,8 @@ namespace voxel_game
 
 		std::deque<CreateTask> m_create_tasks;
 		std::deque<LoadTask> m_load_tasks;
-		std::deque<LoadTask> m_delete_tasks;
-		std::deque<LoadTask> m_unload_tasks;
-		std::deque<LoadTask> m_reload_tasks;
 		std::deque<LoadTask> m_save_tasks;
-		std::deque<LoadTask> m_save_and_unload_tasks;
+		std::deque<LoadTask> m_delete_tasks;
 
 #if DEBUG
 		std::thread::id m_owner_id; // The thread that owns the loader and should call Progress() on it

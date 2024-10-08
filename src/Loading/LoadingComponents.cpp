@@ -1,5 +1,7 @@
 #include "LoadingComponents.h"
 
+#include "EntityLoader.h"
+
 #include <flecs/flecs.h>
 
 namespace voxel_game::loading
@@ -8,10 +10,6 @@ namespace voxel_game::loading
 	{
 		world.module<Components>();
 
-		world.component<LoadState>();
-		world.component<Loadable>();
 		world.component<EntityLoader>();
-
-		world.entity<LoadingPhase>();
 	}
 }
