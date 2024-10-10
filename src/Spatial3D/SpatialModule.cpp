@@ -456,7 +456,7 @@ namespace voxel_game::spatial3d
 				node.state = NodeState::Loaded;
 			};
 
-			EntityCommandExecutor node_command_executor(worker_entity.parent(), spatial_world.load_command_processors.data(), spatial_world.load_command_processors.size());
+			EntityCommandExecutor node_command_executor(worker_entity.world(), worker_entity.parent(), spatial_world.load_command_processors.data(), spatial_world.load_command_processors.size());
 
 			node_command_executor.Run(scale.load_commands.begin(), scale.load_commands.end(), node_callback);
 
@@ -506,7 +506,7 @@ namespace voxel_game::spatial3d
 				node.state = NodeState::Unloaded;
 			};
 
-			EntityCommandExecutor node_command_executor(worker_entity.parent(), spatial_world.unload_command_processors.data(), spatial_world.unload_command_processors.size());
+			EntityCommandExecutor node_command_executor(worker_entity.world(), worker_entity.parent(), spatial_world.unload_command_processors.data(), spatial_world.unload_command_processors.size());
 
 			node_command_executor.Run(scale.unload_commands.begin(), scale.unload_commands.end(), node_callback);
 

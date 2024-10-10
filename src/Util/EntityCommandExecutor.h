@@ -21,7 +21,7 @@ namespace voxel_game
 		static_assert(std::is_base_of_v<EntityCommandProcessorBase, ProcessorT>);
 
 	public:
-		EntityCommandExecutor(flecs::entity entity, ProcessorT* processors, size_t num_processors) :
+		EntityCommandExecutor(flecs::world_t* world, flecs::entity_t entity, ProcessorT* processors, size_t num_processors) :
 			m_entity(entity),
 			m_processors(processors),
 			m_num_processors(num_processors)
@@ -32,7 +32,7 @@ namespace voxel_game
 			{
 				m_states[i] = m_state_alloc.Alloc(m_processors[i].state_size);
 
-				m_processors[i].state_initialize(m_states[i], entity.world(), entity);
+				m_processors[i].state_initialize(m_states[i], world, entity);
 			}
 		}
 
