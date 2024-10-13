@@ -40,7 +40,7 @@ namespace voxel_game
 {
 	const size_t k_simulation_ticks_per_second = 20;
 
-	flecs::entity CreateNewUniverse(flecs::world& world)
+	flecs::entity CreateNewUniverse(flecs::world& world, godot::RID scenario)
 	{
 		// Create the universe
 		flecs::entity universe_entity(world, DEBUG_ONLY("Universe"));
@@ -50,10 +50,17 @@ namespace voxel_game
 
 		spatial3d::AddScaleWorkers(universe_entity);
 
+		if (scenario.is_valid())
+		{
+			universe_entity.ensure<rendering::Scenario>().id = scenario;
+
+			universe_entity.add<rendering::TreeNode>();
+		}
+
 		return universe_entity;
 	}
 
-	flecs::entity CreateNewSimulatedGalaxy(flecs::world& world, flecs::entity_t universe_entity)
+	flecs::entity CreateNewSimulatedGalaxy(flecs::world& world, flecs::entity_t universe_entity, godot::RID scenario)
 	{
 		// Create the simulated galaxy
 		flecs::entity galaxy_entity(world, DEBUG_ONLY("SimulatedGalaxy"));
@@ -72,6 +79,11 @@ namespace voxel_game
 		spatial_loader.max_lod = spatial3d::k_max_world_scale;
 
 		spatial3d::AddScaleWorkers(galaxy_entity);
+
+		if (scenario.is_valid())
+		{
+			galaxy_entity.add<rendering::TreeNode>();
+		}
 
 		return galaxy_entity;
 	}
@@ -129,27 +141,10 @@ namespace voxel_game
 
 		// Create the universe and simulated galaxy
 
-		m_universe_entity = CreateNewUniverse(m_world);
+		m_universe_entity = CreateNewUniverse(m_world, scenario);
 
-		m_galaxy_entity = CreateNewSimulatedGalaxy(m_world, m_universe_entity);
-
-		if (scenario.is_valid())
-		{
-			{
-				flecs::entity universe_entity(m_world, m_universe_entity);
-
-				universe_entity.ensure<rendering::Scenario>().id = scenario;
-
-				universe_entity.add<rendering::TreeNode>();
+		m_galaxy_entity = CreateNewSimulatedGalaxy(m_world, m_universe_entity, scenario);
 			}
-
-			{
-				flecs::entity galaxy_entity(m_world, m_galaxy_entity);
-
-				galaxy_entity.add<rendering::TreeNode>();
-			}
-		}
-	}
 
 	bool UniverseSimulation::CanSimulationStart()
 	{
