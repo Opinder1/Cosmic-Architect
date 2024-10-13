@@ -36,7 +36,7 @@ namespace voxel_game::universe
 		{
 			const uint32_t entities_per_node = 4;
 			const uint32_t scale_step = 1 << universe_node.coord.scale;
-			const uint32_t scale_node_step = scale_step * spatial_world.node_size;
+			const double scale_node_step = scale_step * spatial_world.node_size;
 			const double box_size = double(scale_step) / 2.0;
 
 			flecs::entity galaxy_schematic(world, CreateThreadEntity(entity_pool));
@@ -50,9 +50,9 @@ namespace voxel_game::universe
 				galaxy.child_of(universe_entity);
 				galaxy.add<galaxy::Galaxy>();
 
-				float position_x = (float(universe_node.coord.pos.x) * scale_node_step); 
-				float position_y = (float(universe_node.coord.pos.y) * scale_node_step);
-				float position_z = (float(universe_node.coord.pos.z) * scale_node_step);
+				double position_x = universe_node.coord.pos.x * scale_node_step; 
+				double position_y = universe_node.coord.pos.y * scale_node_step;
+				double position_z = universe_node.coord.pos.z * scale_node_step;
 
 				position_x += godot::UtilityFunctions::randf_range(0, scale_node_step);
 				position_y += godot::UtilityFunctions::randf_range(0, scale_node_step);
