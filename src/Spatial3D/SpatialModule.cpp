@@ -290,7 +290,8 @@ namespace voxel_game::spatial3d
 			{
 				DEBUG_THREAD_CHECK_WRITE(&world, &node);
 
-				if (world_time.frame_start - node->last_update_time < 10s)
+				// Check if node hasn't been touched in too long
+				if (world_time.frame_start - node->last_update_time < spatial_world.node_keepalive)
 				{
 					continue;
 				}

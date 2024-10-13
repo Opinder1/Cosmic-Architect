@@ -39,6 +39,7 @@ namespace voxel_game::spatial3d
 	constexpr const uint8_t k_max_world_scale = 16;
 	constexpr const size_t k_max_frame_load_commands = 16;
 	constexpr const size_t k_max_frame_unload_commands = 16;
+	constexpr const size_t k_max_frame_destroy_commands = 16;
 	constexpr const uint8_t k_node_no_parent = UINT8_MAX;
 
 	enum class NodeState : uint8_t
@@ -136,6 +137,8 @@ namespace voxel_game::spatial3d
 		bool initialized = false;
 		uint8_t max_scale = 1;
 		uint8_t node_size = 1;
+
+		Clock::duration node_keepalive = 10s;
 
 		// Queries
 		const flecs::query_t* entities_query = nullptr;
