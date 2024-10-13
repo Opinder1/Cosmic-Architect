@@ -13,15 +13,6 @@ namespace voxel_game
 	class UniverseSimulation;
 }
 
-namespace std
-{
-	template<>
-	struct hash<godot::Ref<voxel_game::UniverseSimulation>>
-	{
-		size_t operator()(const godot::Ref<voxel_game::UniverseSimulation>& simulation) const;
-	};
-}
-
 namespace voxel_game
 {
 	// Main voxel game info class that spawns galaxy simulations

@@ -13,14 +13,6 @@
 
 #define INITIALIZE_STRINGNAME(name) name = godot::StringName{ #name }
 
-namespace std
-{
-	size_t hash<godot::Ref<voxel_game::UniverseSimulation>>::operator()(const godot::Ref<voxel_game::UniverseSimulation>& simulation) const
-	{
-		return reinterpret_cast<uintptr_t>(simulation.ptr());
-	}
-}
-
 namespace voxel_game
 {
 	std::optional<const Universe::SignalStrings> Universe::k_signals;
