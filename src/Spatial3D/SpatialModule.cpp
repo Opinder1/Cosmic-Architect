@@ -440,16 +440,12 @@ namespace voxel_game::spatial3d
 
 			DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
-			if (spatial_world.load_command_processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
-			{
-				scale.load_commands.clear();
-				return;
-			}
-
 			if (scale.load_commands.empty()) // Don't continue if we have no commands
 			{
 				return;
 			}
+
+			DEBUG_ASSERT(!spatial_world.load_command_processors.empty(), "We should probably do something when a node loads");
 
 			// Callback for each node
 			auto node_callback = [&world, &spatial_world, &scale](godot::Vector3i pos, auto& node_processors_callback)
@@ -491,18 +487,12 @@ namespace voxel_game::spatial3d
 
 			DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
-			// DEBUG_ASSERT(scale.destroy_commands.empty(), "We shouldn't have any destroy commands left over");
-
-			if (spatial_world.unload_command_processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
-			{
-				scale.unload_commands.clear();
-				return;
-			}
-
 			if (scale.unload_commands.empty()) // Don't continue if we have no commands
 			{
 				return;
 			}
+
+			DEBUG_ASSERT(!spatial_world.unload_command_processors.empty(), "We should probably do something when a node unloads");
 
 			// Callback for each node
 			auto node_callback = [&world, &spatial_world, &scale](godot::Vector3i pos, auto& node_processors_callback)
