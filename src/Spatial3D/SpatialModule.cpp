@@ -295,17 +295,19 @@ namespace voxel_game::spatial3d
 					continue;
 				}
 
-				if (node->state == NodeState::Unloaded)
+				switch (node->state)
 				{
+				case NodeState::Unloaded:
 					node->state = NodeState::Deleting;
-				}
-				else if (node->state == NodeState::Loaded)
-				{
+					break;
+
+				case NodeState::Loaded:
 					if (scale.unload_commands.size() < k_max_frame_unload_commands)
 					{
 						scale.unload_commands.push_back(node->coord.pos);
 						node->state = NodeState::Unloading;
 					}
+					break;
 				}
 			}
 		});
@@ -347,27 +349,26 @@ namespace voxel_game::spatial3d
 				{
 					NodeMap::iterator it = scale.nodes.find(pos);
 
-					if (it != scale.nodes.end())
-					{
-						Node& node = *it->second;
-
-						DEBUG_THREAD_CHECK_WRITE(&world, &node);
-
-						node.last_update_time = world_time.frame_start;
-
-						if (node.state == NodeState::Unloaded)
-						{
-							if (scale.load_commands.size() < k_max_frame_load_commands)
-							{
-								scale.load_commands.push_back(node.coord.pos);
-								node.state = NodeState::Loading;
-							}
-						}
-					}
-					else
+					if (it == scale.nodes.end())
 					{
 						DEBUG_ASSERT(std::find(scale.create_commands.begin(), scale.create_commands.end(), pos) == scale.create_commands.end(), "Already exists");
 						scale.create_commands.push_back(pos);
+						return;
+					}
+
+					Node& node = *it->second;
+
+					DEBUG_THREAD_CHECK_WRITE(&world, &node);
+
+					node.last_update_time = world_time.frame_start;
+
+					if (node.state == NodeState::Unloaded)
+					{
+						if (scale.load_commands.size() < k_max_frame_load_commands)
+						{
+							scale.load_commands.push_back(node.coord.pos);
+							node.state = NodeState::Loading;
+						}
 					}
 				});
 			});
