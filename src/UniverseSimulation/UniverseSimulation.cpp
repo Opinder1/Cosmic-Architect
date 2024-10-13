@@ -125,7 +125,7 @@ namespace voxel_game
 			m_world.import<rendering::Module>();
 		}
 
-		m_world.emplace<EntityLoader>(m_world);
+		m_world.emplace<loading::EntityLoader>(m_world);
 
 		// Create the universe and simulated galaxy
 

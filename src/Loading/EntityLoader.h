@@ -7,6 +7,7 @@
 #include "Util/Debug.h"
 
 #include <godot_cpp/variant/string.hpp>
+#include <godot_cpp/variant/variant.hpp>
 
 #include <flecs/flecs.h>
 
@@ -18,29 +19,17 @@
 #include <vector>
 #include <deque>
 #include <thread>
+#include <memory>
 
-namespace voxel_game
+namespace voxel_game::loading
 {
+	using EntitySaveData = robin_hood::unordered_flat_map<std::string, godot::Variant>;
+
 	// An asynchronous entity loader that manages generating and loading entities from disk. Entities can have dependenices on other entities
 	// that will be loaded or generated as needed. The entities added by this loader should only be removed by this loader.
 	class EntityLoader : Nomove
 	{
 	private:
-		enum class CommandType
-		{
-			CreateEntity,
-			LoadEntity,
-			SaveEntity,
-			DeleteEntity,
-		};
-
-		struct Command
-		{
-			CommandType type;
-			flecs::entity_t entity;
-			UUID uuid;
-		};
-
 		struct EntityData
 		{
 			flecs::entity_t entity;
@@ -53,16 +42,22 @@ namespace voxel_game
 			Clock::time_point last_reference_time;
 		};
 
-		struct CreateTask
-		{
-			flecs::entity_t target;
-			UUID schematic;
-		};
-
 		struct LoadTask
 		{
-			UUID id;
+			flecs::entity_t entity;
+			UUID uuid;
 			std::future<std::pair<tkrzw::Status, std::string>> future;
+		};
+
+		struct SaveTask
+		{
+			flecs::entity_t entity;
+			EntitySaveData data;
+		};
+
+		struct DeleteTask
+		{
+			flecs::entity_t entity;
 		};
 
 	public:
@@ -71,22 +66,13 @@ namespace voxel_game
 
 		void Progress();
 
-		void CreateEntity(flecs::entity_t target, UUID schematic);
-		void LoadEntity(UUID uuid);
-		void SaveEntity(flecs::entity_t entity);
+		void LoadEntity(flecs::entity_t entity, UUID uuid);
+		void SaveEntity(flecs::entity_t entity, EntitySaveData&& data);
 		void DeleteEntity(flecs::entity_t entity);
 
 	private:
 		void ThreadLoop();
 
-		void ProcessCommands();
-
-		void DoCreateEntity(flecs::entity_t target, UUID schematic);
-		void DoLoadEntity(UUID uuid);
-		void DoSaveEntity(flecs::entity_t entity);
-		void DoDeleteEntity(flecs::entity_t entity);
-
-		void ProcessCreateTasks();
 		void ProcessLoadTasks();
 		void ProcessSaveTasks();
 		void ProcessDeleteTasks();
@@ -97,7 +83,9 @@ namespace voxel_game
 		flecs::world_t* m_world;
 
 		// Commands requested to loader
-		CommandSwapBuffer<Command> m_commands;
+		CommandSwapBuffer<LoadTask> m_load_commands;
+		CommandSwapBuffer<SaveTask> m_save_commands;
+		CommandSwapBuffer<DeleteTask> m_delete_commands;
 
 		// Modifications output by loader
 		bool m_modifications_added = false; // Flag set when modifcations are made
@@ -114,10 +102,9 @@ namespace voxel_game
 		tkrzw::ShardDBM m_database;
 		tkrzw::AsyncDBM m_database_async;
 
-		std::deque<CreateTask> m_create_tasks;
 		std::deque<LoadTask> m_load_tasks;
-		std::deque<LoadTask> m_save_tasks;
-		std::deque<LoadTask> m_delete_tasks;
+		std::deque<SaveTask> m_save_tasks;
+		std::deque<DeleteTask> m_delete_tasks;
 
 #if DEBUG
 		std::thread::id m_owner_id; // The thread that owns the loader and should call Progress() on it

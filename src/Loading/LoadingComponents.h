@@ -2,9 +2,6 @@
 
 #include "EntityLoader.h"
 
-#include <optional>
-#include <cstdint>
-
 namespace flecs
 {
 	class world;
@@ -12,7 +9,10 @@ namespace flecs
 
 namespace voxel_game::loading
 {
-	struct SaveEvent {};
+	struct SaveEvent
+	{
+		EntitySaveData data;
+	};
 
 	struct Components
 	{

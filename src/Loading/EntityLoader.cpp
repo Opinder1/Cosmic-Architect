@@ -8,7 +8,7 @@ namespace
 	}
 }
 
-namespace voxel_game
+namespace voxel_game::loading
 {
 	const size_t k_num_database_workers = 4;
 	const size_t k_entity_pool_max = 1024;
@@ -34,13 +34,22 @@ namespace voxel_game
 		{
 			m_thread.join();
 		}
+
+		// Merge remaining modifications that were already published
+		m_modification_stage.Retrieve().merge();
+
+		// Merge remaining modifications that were not published
+		m_modification_stage.Publish();
+		m_modification_stage.Retrieve().merge();
 	}
 
 	void EntityLoader::Progress()
 	{
-		m_modification_stage.Retrieve().merge();
+		m_load_commands.PublishCommands();
+		m_save_commands.PublishCommands();
+		m_delete_commands.PublishCommands();
 
-		m_commands.PublishCommands();
+		m_modification_stage.Retrieve().merge();
 
 		while (m_entity_pool.size() < k_entity_pool_max)
 		{
@@ -48,35 +57,12 @@ namespace voxel_game
 		}
 	}
 
-	void EntityLoader::CreateEntity(flecs::entity_t target, UUID schematic)
-	{
-		m_commands.AddCommand(Command{ CommandType::CreateEntity, target, schematic });
-	}
-
-	void EntityLoader::LoadEntity(UUID uuid)
-	{
-		m_commands.AddCommand(Command{ CommandType::LoadEntity, 0, uuid });
-	}
-
-	void EntityLoader::SaveEntity(flecs::entity_t entity)
-	{
-		m_commands.AddCommand(Command{ CommandType::SaveEntity, entity });
-	}
-
-	void EntityLoader::DeleteEntity(flecs::entity_t entity)
-	{
-		m_commands.AddCommand(Command{ CommandType::DeleteEntity, entity });
-	}
-
 	void EntityLoader::ThreadLoop()
 	{
 		while (m_running.load(std::memory_order_acquire))
 		{
-			ProcessCommands();
-
 			m_modifications_added = false;
 
-			ProcessCreateTasks();
 			ProcessLoadTasks();
 			ProcessSaveTasks();
 			ProcessDeleteTasks();
@@ -88,110 +74,36 @@ namespace voxel_game
 		}
 	}
 
-	void EntityLoader::ProcessCommands()
+	void EntityLoader::LoadEntity(flecs::entity_t entity, UUID uuid)
 	{
-		std::vector<Command> commands;
-
-		m_commands.RetrieveCommands(commands);
-
-		for (const Command& command : commands)
-		{
-			switch (command.type)
-			{
-			case CommandType::CreateEntity:
-				DoCreateEntity(command.entity, command.uuid);
-				break;
-
-			case CommandType::LoadEntity:
-				DoLoadEntity(command.uuid);
-				break;
-
-			case CommandType::SaveEntity:
-				DoSaveEntity(command.entity);
-				break;
-
-			case CommandType::DeleteEntity:
-				DoDeleteEntity(command.entity);
-				break;
-			}
-		}
+		m_load_commands.AddCommand({ entity, uuid });
 	}
 
-	void EntityLoader::DoCreateEntity(flecs::entity_t target, UUID schematic)
+	void EntityLoader::SaveEntity(flecs::entity_t entity, EntitySaveData&& data)
 	{
-		auto it = m_entity_cache.find(schematic);
-
-		if (it == m_entity_cache.end())
-		{
-			DoLoadEntity(schematic);
-		}
-
-		CreateTask& task = m_create_tasks.emplace_back();
-
-		task.target = target;
-		task.schematic = schematic;
+		m_save_commands.AddCommand({ entity, std::move(data) });
 	}
 
-	void EntityLoader::DoLoadEntity(UUID uuid)
+	void EntityLoader::DeleteEntity(flecs::entity_t entity)
 	{
-		LoadTask& task = m_load_tasks.emplace_back();
-
-		task.id = uuid;
-		task.future = m_database_async.Get(UUIDToData(uuid));
-	}
-
-	void EntityLoader::DoSaveEntity(flecs::entity_t entity)
-	{
-
-	}
-
-	void EntityLoader::DoDeleteEntity(flecs::entity_t entity)
-	{
-
-	}
-
-	void EntityLoader::ProcessCreateTasks()
-	{
-		auto task_end = m_create_tasks.end();
-		for (auto task_it = m_create_tasks.begin(); task_it != task_end;)
-		{
-			auto cache_it = m_entity_cache.find(task_it->schematic);
-
-			if (cache_it == m_entity_cache.end())
-			{
-				task_it++;
-				continue;
-			}
-			
-			flecs::entity target = m_modification_stage.Write().entity(task_it->target);
-
-			target.add(flecs::OneOf, cache_it->second.entity);
-
-			// Unordered erase
-			task_it = m_create_tasks.erase(task_it);
-		}
-	}
-
-	void EntityLoader::ProcessDeleteTasks()
-	{
-		auto task_end = m_delete_tasks.end();
-		for (auto task_it = m_delete_tasks.begin(); task_it != task_end;)
-		{
-			task_it++;
-		}
-	}
-
-	void EntityLoader::ProcessSaveTasks()
-	{
-		auto task_end = m_save_tasks.end();
-		for (auto task_it = m_save_tasks.begin(); task_it != task_end;)
-		{
-			task_it++;
-		}
+		m_delete_commands.AddCommand({ entity });
 	}
 
 	void EntityLoader::ProcessLoadTasks()
 	{
+		std::vector<LoadTask> load_commands;
+
+		m_load_commands.RetrieveCommands(load_commands);
+
+		for (LoadTask& task : load_commands)
+		{
+			task.future = m_database_async.Get(UUIDToData(task.uuid));
+
+			m_load_tasks.emplace_back(std::move(task));
+		}
+
+		load_commands.clear();
+
 		auto task_end = m_load_tasks.end();
 		for (auto task_it = m_load_tasks.begin(); task_it != task_end;)
 		{
@@ -212,6 +124,46 @@ namespace voxel_game
 
 			// Unordered erase
 			task_it = m_load_tasks.erase(task_it);
+		}
+	}
+
+	void EntityLoader::ProcessSaveTasks()
+	{
+		std::vector<SaveTask> save_commands;
+
+		m_save_commands.RetrieveCommands(save_commands);
+
+		for (SaveTask& task : save_commands)
+		{
+			m_save_tasks.emplace_back(std::move(task));
+		}
+
+		save_commands.clear();
+
+		auto task_end = m_save_tasks.end();
+		for (auto task_it = m_save_tasks.begin(); task_it != task_end;)
+		{
+			task_it++;
+		}
+	}
+
+	void EntityLoader::ProcessDeleteTasks()
+	{
+		std::vector<DeleteTask> delete_commands;
+
+		m_delete_commands.RetrieveCommands(delete_commands);
+
+		for (DeleteTask& task : delete_commands)
+		{
+			m_delete_tasks.emplace_back(std::move(task));
+		}
+
+		delete_commands.clear();
+
+		auto task_end = m_delete_tasks.end();
+		for (auto task_it = m_delete_tasks.begin(); task_it != task_end;)
+		{
+			task_it++;
 		}
 	}
 }

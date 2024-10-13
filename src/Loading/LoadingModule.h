@@ -1,10 +1,6 @@
 #pragma once
 
-namespace flecs
-{
-	class world;
-	struct entity;
-}
+#include <flecs/flecs.h>
 
 namespace voxel_game::loading
 {
@@ -13,5 +9,5 @@ namespace voxel_game::loading
 		Module(flecs::world& world);
 	};
 
-	void SaveEntity(flecs::entity entity);
+	void SaveEntity(flecs::world& world, flecs::entity_t entity);
 }

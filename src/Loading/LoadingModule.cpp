@@ -1,8 +1,6 @@
 #include "LoadingModule.h"
 #include "LoadingComponents.h"
 
-#include <flecs/flecs.h>
-
 namespace voxel_game::loading
 {
 	Module::Module(flecs::world& world)
@@ -19,11 +17,15 @@ namespace voxel_game::loading
 		});
 	}
 
-	void SaveEntity(flecs::entity entity)
+	void SaveEntity(flecs::world& world, flecs::entity_t entity)
 	{
-		entity.world().event<SaveEvent>()
-			.ctx(SaveEvent {})
+		SaveEvent event;
+
+		world.event<SaveEvent>()
+			.ctx(event)
 			.entity(entity)
-			.enqueue();
+			.emit();
+
+		world.get_mut<EntityLoader>()->SaveEntity(entity, std::move(event.data));
 	}
 }
