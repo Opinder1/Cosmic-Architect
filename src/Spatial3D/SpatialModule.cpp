@@ -298,7 +298,11 @@ namespace voxel_game::spatial3d
 				switch (node->state)
 				{
 				case NodeState::Unloaded:
+					if (scale.destroy_commands.size() < k_max_frame_destroy_commands)
+					{
+						scale.destroy_commands.push_back(node->coord.pos);
 					node->state = NodeState::Deleting;
+					}
 					break;
 
 				case NodeState::Loaded:
@@ -543,9 +547,7 @@ namespace voxel_game::spatial3d
 
 					spatial_world.builder.node_destroy(it->second);
 
-					it = scale.nodes.erase(it);
-
-					DEBUG_ASSERT(it != scale.nodes.end(), "The node should have been erased");
+					scale.nodes.erase(it);
 				}
 
 				scale.destroy_commands.clear();
