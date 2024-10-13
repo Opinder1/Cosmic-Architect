@@ -248,24 +248,24 @@ namespace voxel_game::spatial3d
 			flecs::scoped_world scope = world_entity.scope(); // Add the queries as children of the entity so they are automatically destructed
 
 			spatial_world.entities_query = scope.query_builder<const Entity>(DEBUG_ONLY("WorldEntitiesQuery"))
-				.with(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
+				.with(flecs::ChildOf, world_entity)
 				.cached()
-				.build().c_ptr();
+				.build();
 
 			spatial_world.scale_workers_query = scope.query_builder<const ScaleWorker>(DEBUG_ONLY("WorldScaleWorkersQuery"))
-				.with(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
+				.with(flecs::ChildOf, world_entity)
 				.cached()
-				.build().c_ptr();
+				.build();
 
 			spatial_world.region_workers_query = scope.query_builder<const RegionWorker>(DEBUG_ONLY("WorldRegionWorkersQuery"))
-				.with(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
+				.with(flecs::ChildOf, world_entity)
 				.cached()
-				.build().c_ptr();
+				.build();
 
 			spatial_world.loaders_query = scope.query_builder<const Loader, const physics3d::Position>(DEBUG_ONLY("WorldLoadersQuery"))
-				.with(flecs::ChildOf, world_entity).read() // Use read() as its required for queries run inside systems
+				.with(flecs::ChildOf, world_entity)
 				.cached()
-				.build().c_ptr();
+				.build();
 		});
 
 		// Systems
@@ -337,10 +337,8 @@ namespace voxel_game::spatial3d
 
 			DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
-			flecs::query<const Loader, const physics3d::Position> staged_loaders_query(spatial_world.loaders_query);
-
 			// For each command list that is a child of the world
-			staged_loaders_query.iter(worker_entity.world())
+			spatial_world.loaders_query.iter(worker_entity.world())
 				.each([&world, scale_index, &scale, &spatial_world, &world_time](const Loader& spatial_loader, const physics3d::Position& position)
 			{
 				const uint32_t scale_step = 1 << scale_index;

@@ -4,6 +4,8 @@
 #include "SpatialAABB.h"
 #include "SpatialCommands.h"
 
+#include "Physics3D/PhysicsComponents.h"
+
 #include "Util/Time.h"
 #include "Util/Hash.h"
 #include "Util/Nocopy.h"
@@ -83,6 +85,12 @@ namespace voxel_game::spatial3d
 		AABB region;
 	};
 
+	// Specify that this entity is within a spatial world (the world is the entities parent)
+	struct Entity
+	{
+		Coord node;
+	};
+
 	// An object that tells a spatial world where to load nodes and at what lods
 	struct Loader
 	{
@@ -141,10 +149,10 @@ namespace voxel_game::spatial3d
 		Clock::duration node_keepalive = 10s;
 
 		// Queries
-		const flecs::query_t* entities_query = nullptr;
-		const flecs::query_t* scale_workers_query = nullptr;
-		const flecs::query_t* region_workers_query = nullptr;
-		const flecs::query_t* loaders_query = nullptr;
+		flecs::query<const Entity> entities_query;
+		flecs::query<const ScaleWorker> scale_workers_query;
+		flecs::query<const RegionWorker> region_workers_query;
+		flecs::query<const Loader, const physics3d::Position> loaders_query;
 
 		// World data
 		WorldScaleArray scales;
@@ -156,11 +164,5 @@ namespace voxel_game::spatial3d
 		NodeCommandProcessors load_command_processors;
 		NodeCommandProcessors unload_command_processors;
 		NodeCommandProcessors tick_command_processors;
-	};
-
-	// Specify that this entity is within a spatial world (the world is the entities parent)
-	struct Entity
-	{
-		Coord node;
 	};
 }
