@@ -205,6 +205,7 @@ namespace voxel_game::spatial3d
 		CreateSyncedPhase<WorldDestroyPhase, WorldUnloadPhase>(world);
 		CreateSyncedPhase<WorldEndPhase, WorldDestroyPhase>(world);
 
+		// Do spatial world destruction for any left over nodes/scales
 		world.component<World>()
 			.on_remove([](World& spatial_world)
 		{
@@ -286,6 +287,7 @@ namespace voxel_game::spatial3d
 
 			DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
+			// For each node in the scale
 			for (auto&& [pos, node] : scale.nodes)
 			{
 				DEBUG_THREAD_CHECK_WRITE(&world, &node);
@@ -296,13 +298,14 @@ namespace voxel_game::spatial3d
 					continue;
 				}
 
+				// Move the entity along to deletion
 				switch (node->state)
 				{
 				case NodeState::Unloaded:
 					if (scale.destroy_commands.size() < k_max_frame_destroy_commands)
 					{
 						scale.destroy_commands.push_back(node->coord.pos);
-					node->state = NodeState::Deleting;
+						node->state = NodeState::Deleting;
 					}
 					break;
 
@@ -341,7 +344,7 @@ namespace voxel_game::spatial3d
 				.each([&world, scale_index, &scale, &spatial_world, &world_time](const Loader& spatial_loader, const physics3d::Position& position)
 			{
 				const uint32_t scale_step = 1 << scale_index;
-				const uint32_t scale_node_step = scale_step * spatial_world.node_size;
+				const double scale_node_step = scale_step * spatial_world.node_size;
 
 				DEBUG_THREAD_CHECK_READ(&world, &spatial_loader);
 
@@ -350,14 +353,14 @@ namespace voxel_game::spatial3d
 					return;
 				}
 
+				// For each node in the sphere of the loader
 				ForEachCoordInSphere(position.position / scale_node_step, spatial_loader.dist_per_lod, [&world, &scale, &world_time](godot::Vector3i pos)
 				{
 					NodeMap::iterator it = scale.nodes.find(pos);
 
 					if (it == scale.nodes.end())
 					{
-						DEBUG_ASSERT(std::find(scale.create_commands.begin(), scale.create_commands.end(), pos) == scale.create_commands.end(), "Already exists");
-						scale.create_commands.push_back(pos);
+						scale.create_commands.push_back(pos); // Create commands should immediately be executed this frame so don't worry about duplicates
 						return;
 					}
 
@@ -365,15 +368,19 @@ namespace voxel_game::spatial3d
 
 					DEBUG_THREAD_CHECK_WRITE(&world, &node);
 
+					// Touch the node so it stays loaded
 					node.last_update_time = world_time.frame_start;
-
-					if (node.state == NodeState::Unloaded)
+					
+					// Load the node if its not loaded yet
+					switch (node.state)
 					{
+					case NodeState::Unloaded:
 						if (scale.load_commands.size() < k_max_frame_load_commands)
 						{
 							scale.load_commands.push_back(node.coord.pos);
 							node.state = NodeState::Loading;
 						}
+						break;
 					}
 				});
 			});
@@ -397,12 +404,13 @@ namespace voxel_game::spatial3d
 
 				DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
+				// For each create command
 				for (const godot::Vector3i& pos : scale.create_commands)
 				{
 					// Try and create the node
 					auto&& [it, emplaced] = scale.nodes.try_emplace(pos, spatial_world.builder.node_create());
 
-					DEBUG_ASSERT(emplaced, "The node should have been emplaced");
+					DEBUG_ASSERT(emplaced, "The node should have been emplaced. We must have had a duplicate command.");
 
 					Node& node = *it->second;
 
@@ -440,11 +448,12 @@ namespace voxel_game::spatial3d
 				return;
 			}
 
-			if (scale.load_commands.empty())
+			if (scale.load_commands.empty()) // Don't continue if we have no commands
 			{
 				return;
 			}
 
+			// Callback for each node
 			auto node_callback = [&world, &spatial_world, &scale](godot::Vector3i pos, auto& node_processors_callback)
 			{
 				NodeMap::iterator it = scale.nodes.find(pos);
@@ -457,6 +466,7 @@ namespace voxel_game::spatial3d
 
 				DEBUG_ASSERT(node.state == NodeState::Loading, "Node should be in loading state");
 
+				// Run the processors on the node
 				node_processors_callback(spatial_world, scale, node);
 
 				node.state = NodeState::Loaded;
@@ -483,7 +493,7 @@ namespace voxel_game::spatial3d
 
 			DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
-			DEBUG_ASSERT(scale.destroy_commands.empty(), "We shouldn't have any destroy commands left over");
+			// DEBUG_ASSERT(scale.destroy_commands.empty(), "We shouldn't have any destroy commands left over");
 
 			if (spatial_world.unload_command_processors.empty()) // Don't continue if there aren't any processors but make sure to clear the commands
 			{
@@ -491,11 +501,12 @@ namespace voxel_game::spatial3d
 				return;
 			}
 
-			if (scale.unload_commands.empty())
+			if (scale.unload_commands.empty()) // Don't continue if we have no commands
 			{
 				return;
 			}
 
+			// Callback for each node
 			auto node_callback = [&world, &spatial_world, &scale](godot::Vector3i pos, auto& node_processors_callback)
 			{
 				NodeMap::iterator it = scale.nodes.find(pos);
@@ -507,6 +518,7 @@ namespace voxel_game::spatial3d
 
 				DEBUG_ASSERT(node.state == NodeState::Unloading, "Node should be in unloading state");
 
+				// Run the processors on the node
 				node_processors_callback(spatial_world, scale, node);
 
 				node.state = NodeState::Unloaded;
@@ -527,12 +539,14 @@ namespace voxel_game::spatial3d
 		{
 			DEBUG_THREAD_CHECK_WRITE(&world, &spatial_world);
 
+			// For each scale
 			for (size_t scale_index = 0; scale_index < spatial_world.max_scale; scale_index++)
 			{
 				Scale& scale = *spatial_world.scales[scale_index];
 
 				DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
+				// For each destroy command of the scale
 				for (const godot::Vector3i& pos : scale.destroy_commands)
 				{
 					NodeMap::iterator it = scale.nodes.find(pos);
