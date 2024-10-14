@@ -109,6 +109,8 @@ namespace voxel_game::universe
 
 			spatial_world.node_size = 16;
 
+			spatial_world.node_keepalive = 1s;
+
 			spatial_world.builder = spatial3d::Builder<Scale, Node>();
 
 			for (uint8_t i = 0; i < spatial_world.max_scale; i++)

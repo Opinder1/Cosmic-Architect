@@ -321,9 +321,9 @@ namespace voxel_game::spatial3d
 		});
 
 		// Systen to create or update all nodes in the range of loaders
-		world.system<const ScaleWorker, World, const sim::GlobalTime>(DEBUG_ONLY("LoaderCreateNodes"))
+		world.system<const ScaleWorker, World, const sim::GlobalTime>(DEBUG_ONLY("LoaderTouchNodes"))
 			.multi_threaded()
-			.interval(0.25)
+			.interval(0.1)
 			.kind<WorldScaleWorkerPhase>()
 			.term_at(1).parent()
 			.term_at(2).src<sim::GlobalTime>()
