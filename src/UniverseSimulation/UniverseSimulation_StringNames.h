@@ -7,6 +7,7 @@ namespace voxel_game
 		CommandStrings();
 
 		godot::StringName initialize;
+		godot::StringName debug_command;
 
 		// ####### Universe #######
 

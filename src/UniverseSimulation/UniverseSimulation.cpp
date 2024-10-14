@@ -144,7 +144,7 @@ namespace voxel_game
 		m_universe_entity = CreateNewUniverse(m_world, scenario);
 
 		m_galaxy_entity = CreateNewSimulatedGalaxy(m_world, m_universe_entity, scenario);
-			}
+	}
 
 	bool UniverseSimulation::CanSimulationStart()
 	{
@@ -199,6 +199,33 @@ namespace voxel_game
 		return m_universe;
 	}
 
+#if DEBUG
+	void UniverseSimulation::DebugCommand(const godot::StringName& command, const godot::Array& args)
+	{
+		if (DeferCommand(k_commands->debug_command, command, args))
+		{
+			return;
+		}
+
+		if (command == godot::StringName("set_debug_camera_transform"))
+		{
+			if (args[0].get_type() != godot::Variant::TRANSFORM3D)
+			{
+				DEBUG_PRINT_WARN("The first argument of set_debug_camera_transform was not a transform");
+				return;
+			}
+
+			godot::Transform3D transform = args[0];
+
+			flecs::entity(m_world, m_galaxy_entity).set<physics3d::Position>({ transform.origin });
+		}
+		else
+		{
+			DEBUG_PRINT_WARN(godot::vformat("Unknown debug command: %s", command));
+		}
+	}
+#endif
+
 	void UniverseSimulation::_bind_methods()
 	{
 		k_emit_signal = godot::StringName("emit_signal", true);
@@ -211,7 +238,11 @@ namespace voxel_game
 		BIND_METHOD(godot::D_METHOD(k_commands->initialize, "universe", "path", "fragment_type", "server_type", "scenario"), &UniverseSimulation::Initialize);
 
 		// ####### Universe #######
+
 		BIND_METHOD(godot::D_METHOD(k_commands->get_universe), &UniverseSimulation::GetUniverse);
+#if DEBUG
+		BIND_METHOD(godot::D_METHOD(k_commands->debug_command, "command", "arguments"), &UniverseSimulation::DebugCommand);
+#endif
 
 		// ####### Fragments (admin only) #######
 
@@ -429,6 +460,8 @@ namespace voxel_game
 
 		BIND_METHOD(godot::D_METHOD(k_commands->get_spell_info, "spell_id"), &UniverseSimulation::GetSpellInfo);
 		BIND_METHOD(godot::D_METHOD(k_commands->use_spell, "spell_index", "params"), &UniverseSimulation::UseSpell);
+
+		// ####### Universe #######
 
 		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_remote));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->disonnected_from_remote));

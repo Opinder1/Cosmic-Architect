@@ -8,6 +8,7 @@ namespace voxel_game
 	UniverseSimulation::CommandStrings::CommandStrings()
 	{
 		INITIALIZE_STRINGNAME(initialize);
+		INITIALIZE_STRINGNAME(debug_command);
 
 		// ####### Universe #######
 

@@ -62,6 +62,10 @@ namespace voxel_game
 		bool DoSimulationProgress(real_t delta) override;
 		void DoSimulationThreadProgress() override;
 
+#if DEBUG
+		void DebugCommand(const godot::StringName& command, const godot::Array& args);
+#endif
+
 		// ####### Universe #######
 
 		godot::Ref<Universe> GetUniverse();
