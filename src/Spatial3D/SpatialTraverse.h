@@ -33,14 +33,10 @@ namespace voxel_game::spatial3d
 		if (end.z < start.z) std::swap(start.z, end.z);
 
 		for (; start.x < end.x; start.x++)
+		for (; start.y < end.y; start.y++)
+		for (; start.z < end.z; start.z++)
 		{
-			for (; start.y < end.y; start.y++)
-			{
-				for (; start.z < end.z; start.z++)
-				{
-					callback(start);
-				}
-			}
+			callback(start);
 		}
 	}
 
@@ -48,24 +44,23 @@ namespace voxel_game::spatial3d
 	template<class Callable>
 	void ForEachCoordInSphere(godot::Vector3 pos, double radius, Callable&& callback)
 	{
-		godot::Vector3i start = pos - godot::Vector3i(radius, radius, radius);
-		godot::Vector3i end = pos + godot::Vector3i(radius, radius, radius);
+		const godot::Vector3i start = pos - godot::Vector3i(radius, radius, radius);
+		const godot::Vector3i end = pos + godot::Vector3i(radius, radius, radius);
+
+		// This shifts the grid by 0.5 so that we use the center of each node instead of the corner
+		pos -= godot::Vector3(0.5, 0.5, 0.5);
+
+		const double radius_squared = radius * radius;
 
 		godot::Vector3i it;
 
-		double radius_squared = radius * radius;
-
 		for (it.x = start.x; it.x < end.x; it.x++)
+		for (it.y = start.y; it.y < end.y; it.y++)
+		for (it.z = start.z; it.z < end.z; it.z++)
 		{
-			for (it.y = start.y; it.y < end.y; it.y++)
+			if (pos.distance_squared_to(it) < radius_squared)
 			{
-				for (it.z = start.z; it.z < end.z; it.z++)
-				{
-					if (pos.distance_squared_to(it) < radius_squared)
-					{
-						callback(it);
-					}
-				}
+				callback(it);
 			}
 		}
 	}
