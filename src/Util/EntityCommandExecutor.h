@@ -11,6 +11,7 @@ namespace voxel_game
 	struct EntityCommandProcessorBase
 	{
 		size_t state_size;
+		size_t state_align;
 		void(*state_initialize)(void*, flecs::world_t*, flecs::entity_t);
 		void(*state_destroy)(void*);
 	};
@@ -30,7 +31,7 @@ namespace voxel_game
 
 			for (size_t i = 0; i < num_processors; i++)
 			{
-				m_states[i] = m_state_alloc.Alloc(m_processors[i].state_size);
+				m_states[i] = m_state_alloc.Alloc(m_processors[i].state_size, m_processors[i].state_align);
 
 				m_processors[i].state_initialize(m_states[i], world, entity);
 			}

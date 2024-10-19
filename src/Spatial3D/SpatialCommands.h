@@ -90,6 +90,7 @@ namespace voxel_game::spatial3d
 		NodeCommandProcessor()
 		{
 			state_size = sizeof(StateT);
+			state_align = alignof(StateT);
 			state_initialize = &StateInitializeProc;
 			state_destroy = &StateDestroyProc;
 			process = &ProcessProc;
@@ -118,6 +119,7 @@ namespace voxel_game::spatial3d
 		RegionCommandProcessor()
 		{
 			state_size = sizeof(StateT);
+			state_align = alignof(StateT);
 			state_initialize = &StateInitializeProc;
 			state_destroy = &StateDestroyProc;
 			process = &ProcessProc;
@@ -148,6 +150,7 @@ namespace voxel_game::spatial3d
 		ScaleCommandProcessor()
 		{
 			state_size = sizeof(StateT);
+			state_align = alignof(StateT);
 			state_initialize = &StateInitializeProc;
 			state_destroy = &StateDestroyProc;
 			process = &ProcessProc;

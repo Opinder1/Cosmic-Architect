@@ -45,7 +45,29 @@ public:
 #endif
 	}
 
-	// Allocate some bytes from the buffer
+	// Allocate some aligned bytes from the buffer
+	void* Alloc(size_t size, size_t align)
+	{
+		std::intptr_t ptr = reinterpret_cast<std::intptr_t>(m_offset);
+		
+		std::intptr_t aligned_ptr = (ptr + align - 1) & ~(align - 1);
+		size = aligned_ptr - ptr + size;
+
+#if defined(TRACK_STACK_ALLOCATIONS)
+		if (m_offset + size > m_buffer + k_buffer_size)
+		{
+			DEBUG_PRINT_ERROR("We are trying to allocate more than we can hold");
+			return nullptr;
+		}
+
+		m_allocations.push_back(reinterpret_cast<void*>(aligned_ptr));
+#endif
+
+		m_offset += size;
+		return reinterpret_cast<void*>(aligned_ptr);
+	}
+
+	// Allocate some unaligned bytes from the buffer
 	void* Alloc(size_t size)
 	{
 		void* ptr = static_cast<void*>(m_offset);
@@ -109,7 +131,7 @@ public:
 	template<class T>
 	T* NewArray(size_t count)
 	{
-		void* ptr = Alloc(sizeof(T) * count);
+		void* ptr = Alloc(sizeof(T) * count, alignof(T));
 
 #if defined(TRACK_STACK_ALLOCATIONS)
 		m_typed_allocations.emplace_back(ptr, typeid(T).hash_code(), count);
