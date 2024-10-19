@@ -77,6 +77,12 @@ namespace voxel_game::spatial3d
 	struct ScaleWorker
 	{
 		uint8_t scale = 0;
+
+		// Commands
+		ScaleNodeCommands create_commands;
+		ScaleNodeCommands load_commands;
+		ScaleNodeCommands unload_commands;
+		ScaleNodeCommands destroy_commands;
 	};
 
 	// Add this component to a child of a spatial world to signify it represents a region in that world
@@ -130,12 +136,6 @@ namespace voxel_game::spatial3d
 	struct Scale : Nocopy
 	{
 		NodeMap nodes;
-
-		// Commands
-		ScaleNodeCommands create_commands;
-		ScaleNodeCommands load_commands;
-		ScaleNodeCommands unload_commands;
-		ScaleNodeCommands destroy_commands;
 	};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
@@ -150,7 +150,7 @@ namespace voxel_game::spatial3d
 
 		// Queries
 		flecs::query<const Entity> entities_query;
-		flecs::query<const ScaleWorker> scale_workers_query;
+		flecs::query<ScaleWorker> scale_workers_query;
 		flecs::query<const RegionWorker> region_workers_query;
 		flecs::query<const Loader, const physics3d::Position> loaders_query;
 
