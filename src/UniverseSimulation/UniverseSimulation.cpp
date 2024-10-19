@@ -34,6 +34,8 @@
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/type_info.hpp>
 
+#include <easy/profiler.h>
+
 #define BIND_METHOD godot::ClassDB::bind_method
 
 namespace voxel_game
@@ -173,6 +175,8 @@ namespace voxel_game
 
 	bool UniverseSimulation::DoSimulationProgress(real_t delta)
 	{
+		EASY_FUNCTION();
+
 		if (IsThreaded())
 		{
 			// If we we are threaded then get the latest info cache data
@@ -188,6 +192,8 @@ namespace voxel_game
 
 	void UniverseSimulation::DoSimulationThreadProgress()
 	{
+		EASY_FUNCTION();
+
 		m_world.progress();
 
 		// Publish updates to the info caches to be read on the main thread

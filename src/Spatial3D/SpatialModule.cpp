@@ -10,6 +10,8 @@
 #include "Util/Debug.h"
 #include "Util/Callback.h"
 
+#include <easy/profiler.h>
+
 namespace voxel_game::spatial3d
 {
 	const godot::Vector3i node_neighbour_offsets[6] =
@@ -279,8 +281,7 @@ namespace voxel_game::spatial3d
 			.term_at(2).src<sim::GlobalTime>()
 			.each([&world](const ScaleWorker& scale_worker, World& spatial_world, const sim::GlobalTime& world_time)
 		{
-			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
-			DEBUG_THREAD_CHECK_READ(&world, &world_time);
+			EASY_BLOCK("ScaleUnloadUnusedNodes");
 
 			size_t scale_index = scale_worker.scale;
 			Scale& scale = *spatial_world.scales[scale_index];
@@ -329,8 +330,7 @@ namespace voxel_game::spatial3d
 			.term_at(2).src<sim::GlobalTime>()
 			.each([&world](flecs::entity worker_entity, const ScaleWorker& scale_worker, World& spatial_world, const sim::GlobalTime& world_time)
 		{
-			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
-			DEBUG_THREAD_CHECK_READ(&world, &world_time);
+			EASY_BLOCK("LoaderTouchNodes");
 
 			size_t scale_index = scale_worker.scale;
 			Scale& scale = *spatial_world.scales[scale_index];
@@ -391,6 +391,8 @@ namespace voxel_game::spatial3d
 			.term_at(1).src<sim::GlobalTime>()
 			.each([&world](World& spatial_world, const sim::GlobalTime& world_time)
 		{
+			EASY_BLOCK("WorldCreateNodes");
+
 			DEBUG_ASSERT(spatial_world.max_scale > 0, "The spatial world should have at least one scale");
 
 			DEBUG_THREAD_CHECK_WRITE(&world, &spatial_world);
@@ -398,7 +400,7 @@ namespace voxel_game::spatial3d
 			// Initialize the largest scales first
 			for (size_t scale_index = spatial_world.max_scale; scale_index-- > 0;)
 			{
-				Scale& scale = *spatial_world.scales[scale_index];
+				EASY_BLOCK("ScaleCreateNodes");
 
 				DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 
@@ -433,7 +435,7 @@ namespace voxel_game::spatial3d
 			.term_at(1).parent()
 			.each([&world](flecs::entity worker_entity, const ScaleWorker& scale_worker, World& spatial_world)
 		{
-			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
+			EASY_BLOCK("WorldProcessLoadCommands");
 
 			size_t scale_index = scale_worker.scale;
 			Scale& scale = *spatial_world.scales[scale_index];
@@ -480,7 +482,7 @@ namespace voxel_game::spatial3d
 			.term_at(1).parent()
 			.each([&world](flecs::entity worker_entity, const ScaleWorker& scale_worker, World& spatial_world)
 		{
-			DEBUG_THREAD_CHECK_READ(&world, &spatial_world);
+			EASY_BLOCK("WorldProcessUnloadNodeCommands");
 
 			size_t scale_index = scale_worker.scale;
 			Scale& scale = *spatial_world.scales[scale_index];
@@ -525,12 +527,12 @@ namespace voxel_game::spatial3d
 			.kind<WorldDestroyPhase>()
 			.each([&world](World& spatial_world)
 		{
-			DEBUG_THREAD_CHECK_WRITE(&world, &spatial_world);
+			EASY_BLOCK("WorldDestroyNodes");
 
 			// For each scale
 			for (size_t scale_index = 0; scale_index < spatial_world.max_scale; scale_index++)
 			{
-				Scale& scale = *spatial_world.scales[scale_index];
+				EASY_BLOCK("ScaleDestroyNodes");
 
 				DEBUG_THREAD_CHECK_WRITE(&world, &scale);
 

@@ -39,7 +39,8 @@ sources = SourcesRecursive(["src", "lib"])
 
 #include paths
 env.Append(CPPPATH=["src", "lib"])
-env.Append(CPPDEFINES=["FLECS_CPP_NO_AUTO_REGISTRATION", "ecs_ftime_t=double"])
+env.Append(CPPDEFINES=["FLECS_CPP_NO_AUTO_REGISTRATION", "ecs_ftime_t=double", "USING_EASY_PROFILER"])
+env.Append(LIBS=["lib/easy_profiler.lib"]) # Must include own easy_profiler.lib
 
 if env["platform"] == "macos":
     library = env.SharedLibrary(

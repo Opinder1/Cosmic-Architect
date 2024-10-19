@@ -17,6 +17,8 @@
 
 #include <flecs/flecs.h>
 
+#include <easy/profiler.h>
+
 void flecs_log_to_godot(int32_t level, const char* file, int32_t line, const char* msg)
 {
 	/* >0: Debug tracing. Only enabled in debug builds. */
@@ -128,6 +130,8 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 		godot::ClassDB::register_class<voxel_game::UniverseSimulation>();
 
 		godot::Engine::get_singleton()->register_singleton("CommandQueueServer", voxel_game::CommandQueueServer::get_singleton());
+
+		profiler::startListen();
 
 		godot::UtilityFunctions::print("Loaded voxel world extension");
 	}
