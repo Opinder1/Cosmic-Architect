@@ -31,7 +31,7 @@ namespace voxel_game::sim
 		{
 			for (ThreadEntityPool& thread : thread_pools.threads)
 			{
-				size_t new_required = thread.new_entities.capacity() - thread.new_entities.size();
+				size_t new_required = k_max_pool_entities - thread.new_entities.size();
 
 				for (size_t i = 0; i < new_required; i++)
 				{

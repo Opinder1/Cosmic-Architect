@@ -65,9 +65,7 @@ namespace voxel_game::sim
 		godot::Ref<godot::DirAccess> m_directory;
 	};
 
-	ThreadEntityPool& GetThreadEntityPool(flecs::world_t* stage);
+	ThreadEntityPool& GetThreadEntityPool(ThreadEntityPools& pools, flecs::world_t* stage);
 
 	flecs::entity_t CreateThreadEntity(ThreadEntityPool& entity_pool);
-
-	flecs::entity_t CreateThreadEntity(flecs::world_t* stage);
 }

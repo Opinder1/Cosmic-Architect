@@ -235,7 +235,6 @@ namespace voxel_game::spatial3d
 		// System to mark any nodes that are no longer being observed to be unloaded
 		world.system<World, const sim::GlobalTime>(DEBUG_ONLY("ScaleUnloadUnusedNodes"))
 			.multi_threaded()
-			.interval(0.25)
 			.term_at(1).src<sim::GlobalTime>()
 			.each([](flecs::entity worker_entity, World& spatial_world, const sim::GlobalTime& world_time)
 		{
@@ -244,6 +243,10 @@ namespace voxel_game::spatial3d
 			for (size_t scale_index = 0; scale_index < spatial_world.max_scale; scale_index++)
 			{
 				Scale& scale = spatial_world.scales[scale_index];
+
+				// Clear previous commands. If you didn't handle them then too bad
+				scale.unload_commands.clear();
+				scale.destroy_commands.clear();
 
 				// For each node in the scale
 				for (auto&& [pos, node_poly] : scale.nodes)
@@ -282,7 +285,6 @@ namespace voxel_game::spatial3d
 		// Systen to create or update all nodes in the range of loaders
 		world.system<World, const sim::GlobalTime>(DEBUG_ONLY("LoaderTouchNodes"))
 			.multi_threaded()
-			.interval(0.1)
 			.term_at(1).src<sim::GlobalTime>()
 			.each([](flecs::entity worker_entity, World& spatial_world, const sim::GlobalTime& world_time)
 		{
@@ -292,6 +294,10 @@ namespace voxel_game::spatial3d
 			{
 				Scale& scale = spatial_world.scales[scale_index];
 
+				// Clear previous commands. If you didn't handle them then too bad
+				scale.create_commands.clear();
+				scale.load_commands.clear();
+
 				// For each command list that is a child of the world
 				spatial_world.loaders_query.iter(worker_entity.world()).each([&](const Loader& spatial_loader, const physics3d::Position& position)
 				{
@@ -299,8 +305,6 @@ namespace voxel_game::spatial3d
 
 					const uint32_t scale_step = 1 << scale_index;
 					const double scale_node_step = scale_step * spatial_world.node_size;
-
-					DEBUG_THREAD_CHECK_READ(worker_entity.world(), &spatial_loader);
 
 					if (scale_index < spatial_loader.min_lod || scale_index > spatial_loader.max_lod)
 					{
@@ -372,8 +376,6 @@ namespace voxel_game::spatial3d
 
 					InitializeNode(node, spatial_world, scale_index);
 				}
-
-				scale.create_commands.clear();
 			}
 		});
 
@@ -403,8 +405,6 @@ namespace voxel_game::spatial3d
 
 					scale.nodes.erase(node.coord.pos);
 				}
-
-				scale.destroy_commands.clear();
 			}
 		});
 	}

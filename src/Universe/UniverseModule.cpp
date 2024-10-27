@@ -17,77 +17,6 @@
 
 namespace voxel_game::universe
 {
-	struct LoadNodeCommandProcessor
-	{
-		flecs::world_t* world;
-		flecs::entity_t universe_entity;
-		sim::ThreadEntityPool& entity_pool;
-
-		LoadNodeCommandProcessor(flecs::world_t* world, flecs::entity_t universe_entity) :
-			world(world),
-			universe_entity(universe_entity),
-			entity_pool(sim::GetThreadEntityPool(world))
-		{
-
-		}
-
-		void Process(spatial3d::World& spatial_world, Scale& universe_scale, Node& universe_node)
-		{
-			const uint32_t entities_per_node = 4;
-			const uint32_t scale_step = 1 << universe_node.coord.scale;
-			const double scale_node_step = scale_step * spatial_world.node_size;
-			const double box_size = double(scale_step) / 2.0;
-
-			flecs::entity galaxy_schematic(world, CreateThreadEntity(entity_pool));
-
-			galaxy_schematic.add<rendering::PlaceholderCube>();
-
-			for (size_t i = 0; i < entities_per_node; i++)
-			{
-				double position_x = universe_node.coord.pos.x * scale_node_step; 
-				double position_y = universe_node.coord.pos.y * scale_node_step;
-				double position_z = universe_node.coord.pos.z * scale_node_step;
-
-				position_x += godot::UtilityFunctions::randf_range(0, scale_node_step);
-				position_y += godot::UtilityFunctions::randf_range(0, scale_node_step);
-				position_z += godot::UtilityFunctions::randf_range(0, scale_node_step);
-
-				flecs::entity galaxy(world, CreateThreadEntity(entity_pool));
-
-				galaxy.child_of(universe_entity);
-				galaxy.add<galaxy::Galaxy>();
-				galaxy.set(physics3d::Position{ godot::Vector3(position_x, position_y, position_z) });
-				galaxy.set(physics3d::Scale{ godot::Vector3(box_size, box_size, box_size) });
-				galaxy.add<rendering::UniqueInstance>(galaxy_schematic);
-
-				universe_node.entities.push_back(galaxy);
-			}
-		}
-	};
-
-	struct UnloadNodeCommandProcessor
-	{
-		flecs::world_t* world;
-		flecs::entity_t universe_entity;
-
-		UnloadNodeCommandProcessor(flecs::world_t* world, flecs::entity_t universe_entity) :
-			world(world),
-			universe_entity(universe_entity)
-		{}
-
-		void Process(spatial3d::World& spatial_world, Scale& universe_scale, Node& universe_node)
-		{
-			const uint32_t entities_per_node = 4;
-			const uint32_t scale_step = 1 << universe_node.coord.scale;
-			const uint32_t scale_node_step = scale_step * spatial_world.node_size;
-
-			for (flecs::entity_t galaxy : universe_node.entities)
-			{
-				flecs::entity(world, galaxy).destruct();
-			}
-		}
-	};
-
 	Module::Module(flecs::world& world)
 	{
 		world.module<Module>();
@@ -108,6 +37,89 @@ namespace voxel_game::universe
 			spatial_world.node_keepalive = 1s;
 
 			universe.node_entry = spatial_world.node_type.AddEntry<Node>();
+		});
+
+		world.system<const Universe, spatial3d::World, sim::ThreadEntityPools>(DEBUG_ONLY("UniverseLoadSpatialNode"))
+			.multi_threaded()
+			.term_at(2).src<sim::ThreadEntityPools>()
+			.each([](flecs::entity entity, const Universe& universe, spatial3d::World& spatial_world, sim::ThreadEntityPools& entity_pools)
+		{
+			flecs::world world = entity.world();
+
+			sim::ThreadEntityPool& entity_pool = sim::GetThreadEntityPool(entity_pools, world);
+
+			for (spatial3d::Scale& scale : spatial_world.scales)
+			{
+				flecs::entity galaxy_schematic;
+				
+				if (!scale.load_commands.empty())
+				{
+					galaxy_schematic = flecs::entity(world, sim::CreateThreadEntity(entity_pool));
+
+					galaxy_schematic.add<rendering::PlaceholderCube>();
+				}
+
+				for (Poly node_poly : scale.load_commands)
+				{
+					spatial3d::Node& node = node_poly.GetEntry(spatial_world.node_entry);
+					Node& universe_node = node_poly.GetEntry(universe.node_entry);
+
+					const uint32_t entities_per_node = 4;
+					const uint32_t scale_step = 1 << node.coord.scale;
+					const double scale_node_step = scale_step * spatial_world.node_size;
+					const double box_size = double(scale_step) / 2.0;
+
+
+					for (size_t i = 0; i < entities_per_node; i++)
+					{
+						double position_x = node.coord.pos.x * scale_node_step;
+						double position_y = node.coord.pos.y * scale_node_step;
+						double position_z = node.coord.pos.z * scale_node_step;
+
+						position_x += godot::UtilityFunctions::randf_range(0, scale_node_step);
+						position_y += godot::UtilityFunctions::randf_range(0, scale_node_step);
+						position_z += godot::UtilityFunctions::randf_range(0, scale_node_step);
+
+						flecs::entity galaxy(world, sim::CreateThreadEntity(entity_pool));
+
+						galaxy.child_of(entity);
+						galaxy.add<galaxy::Galaxy>();
+						galaxy.set(physics3d::Position{ godot::Vector3(position_x, position_y, position_z) });
+						galaxy.set(physics3d::Scale{ godot::Vector3(box_size, box_size, box_size) });
+						galaxy.add<rendering::UniqueInstance>(galaxy_schematic);
+
+						universe_node.entities.push_back(galaxy);
+					}
+				}
+			}
+		});
+
+		world.system<const Universe, spatial3d::World, sim::ThreadEntityPools>(DEBUG_ONLY("UniverseUnloadSpatialNode"))
+			.multi_threaded()
+			.term_at(2).src<sim::ThreadEntityPools>()
+			.each([](flecs::entity entity, const Universe& universe, spatial3d::World& spatial_world, sim::ThreadEntityPools& entity_pools)
+		{
+			flecs::world world = entity.world();
+
+			sim::ThreadEntityPool& entity_pool = sim::GetThreadEntityPool(entity_pools, world);
+
+			for (spatial3d::Scale& scale : spatial_world.scales)
+			{
+				for (Poly node_poly : scale.unload_commands)
+				{
+					spatial3d::Node& node = node_poly.GetEntry(spatial_world.node_entry);
+					Node& universe_node = node_poly.GetEntry(universe.node_entry);
+
+					const uint32_t entities_per_node = 4;
+					const uint32_t scale_step = 1 << node.coord.scale;
+					const uint32_t scale_node_step = scale_step * spatial_world.node_size;
+
+					for (flecs::entity_t galaxy : universe_node.entities)
+					{
+						flecs::entity(world, galaxy).destruct();
+					}
+				}
+			}
 		});
 	}
 }

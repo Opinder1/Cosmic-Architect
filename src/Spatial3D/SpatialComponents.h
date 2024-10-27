@@ -38,9 +38,9 @@ namespace voxel_game::spatial3d
 
 	// The max scale that a world can have
 	constexpr const uint8_t k_max_world_scale = 16;
-	constexpr const size_t k_max_frame_load_commands = 16;
-	constexpr const size_t k_max_frame_unload_commands = 16;
-	constexpr const size_t k_max_frame_destroy_commands = 16;
+	constexpr const size_t k_max_frame_load_commands = 4;
+	constexpr const size_t k_max_frame_unload_commands = 4;
+	constexpr const size_t k_max_frame_destroy_commands = 4;
 	constexpr const uint8_t k_node_no_parent = UINT8_MAX;
 
 	enum class NodeState : uint8_t

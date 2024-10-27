@@ -13,21 +13,15 @@ namespace voxel_game::sim
 		world.component<ThreadEntityPools>();
 	}
 
-	ThreadEntityPool& GetThreadEntityPool(flecs::world_t* stage)
+	ThreadEntityPool& GetThreadEntityPool(ThreadEntityPools& pools, flecs::world_t* stage)
 	{
 		DEBUG_ASSERT(flecs_poly_is(stage, ecs_stage_t), "We should be only using this function when in multithreaded systems");
 
-		flecs::world stage_obj(stage);
+		size_t thread_id = ecs_stage_get_id(stage);
 
-		ThreadEntityPools* entity_pools = stage_obj.get_mut<ThreadEntityPools>();
+		DEBUG_ASSERT(thread_id < pools.threads.size(), "We should be calling this for a worker thread in the worker thread range");
 
-		DEBUG_ASSERT(entity_pools != nullptr, "The thread entity pools should have been initialized before we call this");
-
-		size_t thread_id = stage_obj.get_stage_id();
-
-		DEBUG_ASSERT(thread_id < entity_pools->threads.size(), "We should be calling this for a worker thread in the worker thread range");
-
-		return entity_pools->threads[thread_id];
+		return pools.threads[thread_id];
 	}
 
 	flecs::entity_t CreateThreadEntity(ThreadEntityPool& entity_pool)
@@ -38,15 +32,5 @@ namespace voxel_game::sim
 		entity_pool.new_entities.pop_back();
 
 		return entity;
-	}
-
-	flecs::entity_t CreateThreadEntity(flecs::world_t* stage)
-	{
-		if (flecs_poly_is(stage, ecs_world_t))
-		{
-			return ecs_new(stage);
-		}
-
-		return CreateThreadEntity(GetThreadEntityPool(stage));
 	}
 }
