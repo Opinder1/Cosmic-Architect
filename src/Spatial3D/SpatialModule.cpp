@@ -1,7 +1,6 @@
 #include "SpatialModule.h"
 #include "SpatialComponents.h"
 #include "SpatialTraverse.h"
-#include "SpatialCommands.h"
 
 #include "Simulation/SimulationComponents.h"
 
@@ -41,32 +40,24 @@ namespace voxel_game::spatial3d
 		return (pos.x) + (pos.y * 2) + (pos.z * 4);
 	}
 
-	template<typename PhaseT, typename DependT>
-	void CreateSyncedPhase(flecs::world& world)
+	flecs::entity CreateSyncPhase(flecs::world& world, flecs::entity_t parent)
 	{
-		flecs::entity phase = world.entity<PhaseT>()
-			.add(flecs::Phase);
-
-		flecs::scoped_world scope = phase.scope();
-
-		flecs::entity sync_phase = scope.entity(DEBUG_ONLY("ThreadSyncPhase"))
+		flecs::entity sync_phase = world.entity(DEBUG_ONLY("ThreadSyncPhase"))
 			.add(flecs::Phase)
-			.depends_on<DependT>();
+			.child_of(parent)
+			.depends_on(parent);
 
-		scope.system(DEBUG_ONLY("ThreadSyncSystem"))
+		world.system(DEBUG_ONLY("ThreadSyncSystem"))
 			.immediate()
 			.kind(sync_phase)
-			.run([&world](flecs::iter& it)
-		{
-			DEBUG_THREAD_CHECK_SYNC(&world);
-		});
+			.run([](flecs::iter& it) {});
 
-		phase.depends_on(sync_phase);
+		return sync_phase;
 	}
 
 	void InitializeNode(Node& node, World& spatial_world, uint8_t scale_index)
 	{
-		Scale& scale = *spatial_world.scales[scale_index];
+		Scale& scale = spatial_world.scales[scale_index];
 
 		for (uint8_t neighbour_index = 0; neighbour_index < 6; neighbour_index++)
 		{
@@ -74,23 +65,21 @@ namespace voxel_game::spatial3d
 
 			NodeMap::iterator it = scale.nodes.find(neighbour_pos);
 
-			if (it == scale.nodes.end())
+			if (it != scale.nodes.end())
 			{
-				continue;
+				Node& neighbour_node = it->second.GetEntry(spatial_world.node_entry);
+
+				node.neighbours[neighbour_index] = &neighbour_node;
+				node.neighbour_mask |= 1 << neighbour_index;
+
+				neighbour_node.neighbours[5 - neighbour_index] = &node;
+				neighbour_node.neighbour_mask |= 1 << (5 - neighbour_index);
 			}
-
-			Node* neighbour_node = it->second.get();
-
-			node.neighbours[neighbour_index] = neighbour_node;
-			node.neighbour_mask |= 1 << neighbour_index;
-
-			neighbour_node->neighbours[5 - neighbour_index] = &node;
-			neighbour_node->neighbour_mask |= 1 << (5 - neighbour_index);
 		}
 
 		if (scale_index < spatial_world.max_scale - 1)
 		{
-			Scale& parent_scale = *spatial_world.scales[scale_index + 1];
+			Scale& parent_scale = spatial_world.scales[scale_index + 1];
 
 			Coord parent_pos = node.coord.GetParent();
 
@@ -98,7 +87,7 @@ namespace voxel_game::spatial3d
 
 			if (it != parent_scale.nodes.end())
 			{
-				Node& parent_node = *it->second;
+				Node& parent_node = it->second.GetEntry(spatial_world.node_entry);
 
 				node.parent = &parent_node;
 				node.parent_index = GetNodeParentIndex(node.coord.GetParentRelPos());
@@ -112,7 +101,7 @@ namespace voxel_game::spatial3d
 
 		if (scale_index > 0)
 		{
-			Scale& child_scale = *spatial_world.scales[scale_index - 1];
+			Scale& child_scale = spatial_world.scales[scale_index - 1];
 
 			for (uint8_t child_index = 0; child_index < 8; child_index++)
 			{
@@ -123,7 +112,7 @@ namespace voxel_game::spatial3d
 
 				if (it != child_scale.nodes.end())
 				{
-					Node& child_node = *it->second;
+					Node& child_node = it->second.GetEntry(spatial_world.node_entry);
 
 					child_node.parent = &node;
 					child_node.parent_index = child_index;
@@ -182,10 +171,10 @@ namespace voxel_game::spatial3d
 			.add_second<World>(flecs::OneOf)
 			.add_second<physics3d::Position>(flecs::With);
 
-		world.singleton<ScaleWorker>()
+		world.singleton<ScaleMarker>()
 			.add_second<World>(flecs::OneOf);
 
-		world.singleton<RegionWorker>()
+		world.singleton<RegionMarker>()
 			.add_second<World>(flecs::OneOf);
 
 		world.singleton<Loader>()
@@ -193,52 +182,21 @@ namespace voxel_game::spatial3d
 
 		// Phases
 
-		// The phase that all spatial wrold processing happens in
-		world.singleton<WorldMultithreadPhase>()
+		world.singleton<NodeCreatePhase>()
 			.add(flecs::Phase)
 			.depends_on(flecs::OnUpdate);
 
-		CreateSyncedPhase<WorldRegionWorkerPhase, WorldMultithreadPhase>(world);
-		CreateSyncedPhase<WorldScaleWorkerPhase, WorldRegionWorkerPhase>(world);
-		CreateSyncedPhase<WorldWorkerPhase, WorldScaleWorkerPhase>(world);
-		CreateSyncedPhase<WorldCreatePhase, WorldWorkerPhase>(world);
-		CreateSyncedPhase<WorldLoadPhase, WorldCreatePhase>(world);
-		CreateSyncedPhase<WorldUnloadPhase, WorldLoadPhase>(world);
-		CreateSyncedPhase<WorldDestroyPhase, WorldUnloadPhase>(world);
-		CreateSyncedPhase<WorldEndPhase, WorldDestroyPhase>(world);
+		world.singleton<NodeLoadPhase>()
+			.add(flecs::Phase)
+			.depends_on(flecs::OnUpdate);
 
-		// Do spatial world destruction for any left over nodes/scales
-		world.component<World>()
-			.on_remove([](World& spatial_world)
-		{
-			if (!spatial_world.initialized)
-			{
-				DEBUG_PRINT_ERROR("The spatial world should have been initialized");
-				return;
-			}
+		world.singleton<NodeUnloadPhase>()
+			.add(flecs::Phase)
+			.depends_on(flecs::OnUpdate);
 
-			for (uint8_t i = 0; i < spatial_world.max_scale; i++)
-			{
-				ScalePtr& scale = spatial_world.scales[i];
-
-				if (!scale)
-				{
-					continue;
-				}
-
-				if (scale->nodes.size() > 0)
-				{
-					DEBUG_PRINT_ERROR("We should have cleaned up all of our nodes before being finally destroyed");
-				}
-
-				for (auto&& [pos, node] : scale->nodes)
-				{
-					spatial_world.builder.node_destroy(node);
-				}
-
-				spatial_world.builder.scale_destroy(scale);
-			}
-		});
+		world.singleton<NodeDestroyPhase>()
+			.add(flecs::Phase)
+			.depends_on(flecs::OnUpdate);
 
 		// Observers
 
@@ -249,17 +207,9 @@ namespace voxel_game::spatial3d
 		{
 			flecs::scoped_world scope = world_entity.scope(); // Add the queries as children of the entity so they are automatically destructed
 
+			spatial_world.node_entry = spatial_world.node_type.AddEntry<Node>();
+
 			spatial_world.entities_query = scope.query_builder<const Entity>(DEBUG_ONLY("WorldEntitiesQuery"))
-				.with(flecs::ChildOf, world_entity)
-				.cached()
-				.build();
-
-			spatial_world.scale_workers_query = scope.query_builder<ScaleWorker>(DEBUG_ONLY("WorldScaleWorkersQuery"))
-				.with(flecs::ChildOf, world_entity)
-				.cached()
-				.build();
-
-			spatial_world.region_workers_query = scope.query_builder<const RegionWorker>(DEBUG_ONLY("WorldRegionWorkersQuery"))
 				.with(flecs::ChildOf, world_entity)
 				.cached()
 				.build();
@@ -268,133 +218,130 @@ namespace voxel_game::spatial3d
 				.with(flecs::ChildOf, world_entity)
 				.cached()
 				.build();
+
+			spatial_world.scale_marker_query = scope.query_builder<const ScaleMarker>(DEBUG_ONLY("WorldScaleMarkerQuery"))
+				.with(flecs::ChildOf, world_entity)
+				.cached()
+				.build();
+
+			spatial_world.region_marker_query = scope.query_builder<const RegionMarker>(DEBUG_ONLY("WorldRegionMarkerQuery"))
+				.with(flecs::ChildOf, world_entity)
+				.cached()
+				.build();
 		});
 
 		// Systems
 
 		// System to mark any nodes that are no longer being observed to be unloaded
-		world.system<ScaleWorker, World, const sim::GlobalTime>(DEBUG_ONLY("ScaleUnloadUnusedNodes"))
+		world.system<World, const sim::GlobalTime>(DEBUG_ONLY("ScaleUnloadUnusedNodes"))
 			.multi_threaded()
 			.interval(0.25)
-			.kind<WorldScaleWorkerPhase>()
-			.term_at(1).parent()
-			.term_at(2).src<sim::GlobalTime>()
-			.each([](flecs::entity worker_entity, ScaleWorker& scale_worker, World& spatial_world, const sim::GlobalTime& world_time)
+			.term_at(1).src<sim::GlobalTime>()
+			.each([](flecs::entity worker_entity, World& spatial_world, const sim::GlobalTime& world_time)
 		{
 			EASY_BLOCK("ScaleUnloadUnusedNodes");
 
-			DEBUG_THREAD_CHECK_READ(worker_entity.world(), &spatial_world);
-			DEBUG_THREAD_CHECK_READ(worker_entity.world(), &world_time);
-
-			size_t scale_index = scale_worker.scale;
-			Scale& scale = *spatial_world.scales[scale_index];
-
-			DEBUG_THREAD_CHECK_WRITE(worker_entity.world(), &scale);
-
-			// For each node in the scale
-			for (auto&& [pos, node] : scale.nodes)
+			for (size_t scale_index = 0; scale_index < spatial_world.max_scale; scale_index++)
 			{
-				DEBUG_THREAD_CHECK_WRITE(worker_entity.world(), &node);
+				Scale& scale = spatial_world.scales[scale_index];
 
-				// Check if node hasn't been touched in too long
-				if (world_time.frame_start - node->last_update_time < spatial_world.node_keepalive)
+				// For each node in the scale
+				for (auto&& [pos, node_poly] : scale.nodes)
 				{
-					continue;
-				}
+					Node& node = node_poly.GetEntry(spatial_world.node_entry);
 
-				// Move the entity along to deletion
-				switch (node->state)
-				{
-				case NodeState::Unloaded:
-					if (scale_worker.destroy_commands.size() < k_max_frame_destroy_commands)
+					// Check if node hasn't been touched in too long
+					if (world_time.frame_start - node.last_update_time < spatial_world.node_keepalive)
 					{
-						scale_worker.destroy_commands.push_back(node->coord.pos);
-						node->state = NodeState::Deleting;
+						continue;
 					}
-					break;
 
-				case NodeState::Loaded:
-					if (scale_worker.unload_commands.size() < k_max_frame_unload_commands)
+					// Move the entity along to deletion
+					switch (node.state)
 					{
-						scale_worker.unload_commands.push_back(node->coord.pos);
-						node->state = NodeState::Unloading;
+					case NodeState::Unloaded:
+						if (scale.destroy_commands.size() < k_max_frame_destroy_commands)
+						{
+							scale.destroy_commands.push_back(node_poly);
+							node.state = NodeState::Deleting;
+						}
+						break;
+
+					case NodeState::Loaded:
+						if (scale.unload_commands.size() < k_max_frame_unload_commands)
+						{
+							scale.unload_commands.push_back(node_poly);
+							node.state = NodeState::Unloading;
+						}
+						break;
 					}
-					break;
 				}
 			}
 		});
 
 		// Systen to create or update all nodes in the range of loaders
-		world.system<ScaleWorker, World, const sim::GlobalTime>(DEBUG_ONLY("LoaderTouchNodes"))
+		world.system<World, const sim::GlobalTime>(DEBUG_ONLY("LoaderTouchNodes"))
 			.multi_threaded()
 			.interval(0.1)
-			.kind<WorldScaleWorkerPhase>()
-			.term_at(1).parent()
-			.term_at(2).src<sim::GlobalTime>()
-			.each([](flecs::entity worker_entity, ScaleWorker& scale_worker, World& spatial_world, const sim::GlobalTime& world_time)
+			.term_at(1).src<sim::GlobalTime>()
+			.each([](flecs::entity worker_entity, World& spatial_world, const sim::GlobalTime& world_time)
 		{
 			EASY_BLOCK("LoaderTouchNodes");
 
-			DEBUG_THREAD_CHECK_READ(worker_entity.world(), &spatial_world);
-			DEBUG_THREAD_CHECK_READ(worker_entity.world(), &world_time);
-
-			size_t scale_index = scale_worker.scale;
-			Scale& scale = *spatial_world.scales[scale_index];
-
-			DEBUG_THREAD_CHECK_WRITE(worker_entity.world(), &scale);
-
-			// For each command list that is a child of the world
-			spatial_world.loaders_query.iter(worker_entity.world()).each([&](const Loader& spatial_loader, const physics3d::Position& position)
+			for (size_t scale_index = 0; scale_index < spatial_world.max_scale; scale_index++)
 			{
-				EASY_BLOCK("SingleLoader");
+				Scale& scale = spatial_world.scales[scale_index];
 
-				const uint32_t scale_step = 1 << scale_index;
-				const double scale_node_step = scale_step * spatial_world.node_size;
-
-				DEBUG_THREAD_CHECK_READ(worker_entity.world(), &spatial_loader);
-
-				if (scale_index < spatial_loader.min_lod || scale_index > spatial_loader.max_lod)
+				// For each command list that is a child of the world
+				spatial_world.loaders_query.iter(worker_entity.world()).each([&](const Loader& spatial_loader, const physics3d::Position& position)
 				{
-					return;
-				}
+					EASY_BLOCK("SingleLoader");
 
-				// For each node in the sphere of the loader
-				ForEachCoordInSphere(position.position / scale_node_step, spatial_loader.dist_per_lod, [&](godot::Vector3i pos)
-				{
-					NodeMap::iterator it = scale.nodes.find(pos);
+					const uint32_t scale_step = 1 << scale_index;
+					const double scale_node_step = scale_step * spatial_world.node_size;
 
-					if (it == scale.nodes.end())
+					DEBUG_THREAD_CHECK_READ(worker_entity.world(), &spatial_loader);
+
+					if (scale_index < spatial_loader.min_lod || scale_index > spatial_loader.max_lod)
 					{
-						scale_worker.create_commands.push_back(pos); // Create commands should immediately be executed this frame so don't worry about duplicates
 						return;
 					}
 
-					Node& node = *it->second;
-
-					DEBUG_THREAD_CHECK_WRITE(worker_entity.world(), &node);
-
-					// Touch the node so it stays loaded
-					node.last_update_time = world_time.frame_start;
-					
-					// Load the node if its not loaded yet
-					switch (node.state)
+					// For each node in the sphere of the loader
+					ForEachCoordInSphere(position.position / scale_node_step, spatial_loader.dist_per_lod, [&](godot::Vector3i pos)
 					{
-					case NodeState::Unloaded:
-						if (scale_worker.load_commands.size() < k_max_frame_load_commands)
+						NodeMap::iterator it = scale.nodes.find(pos);
+
+						if (it == scale.nodes.end())
 						{
-							scale_worker.load_commands.push_back(node.coord.pos);
-							node.state = NodeState::Loading;
+							scale.create_commands.push_back(pos); // Create commands should immediately be executed this frame so don't worry about duplicates
+							return;
 						}
-						break;
-					}
+
+						Node& node = it->second.GetEntry(spatial_world.node_entry);
+
+						// Touch the node so it stays loaded
+						node.last_update_time = world_time.frame_start;
+
+						// Load the node if its not loaded yet
+						switch (node.state)
+						{
+						case NodeState::Unloaded:
+							if (scale.load_commands.size() < k_max_frame_load_commands)
+							{
+								scale.load_commands.push_back(it->second);
+								node.state = NodeState::Loading;
+							}
+							break;
+						}
+					});
 				});
-			});
+			}
 		});
 
 		// System to initialize spatial nodes that have been added
 		world.system<World, const sim::GlobalTime>(DEBUG_ONLY("WorldCreateNodes"))
 			.multi_threaded()
-			.kind<WorldCreatePhase>()
 			.term_at(1).src<sim::GlobalTime>()
 			.each([](flecs::entity entity, World& spatial_world, const sim::GlobalTime& world_time)
 		{
@@ -402,180 +349,67 @@ namespace voxel_game::spatial3d
 
 			DEBUG_ASSERT(spatial_world.max_scale > 0, "The spatial world should have at least one scale");
 
-			DEBUG_THREAD_CHECK_WRITE(entity.world(), &spatial_world);
-
-			spatial_world.scale_workers_query.iter(entity.world()).each([&](ScaleWorker& scale_worker)
+			for (size_t scale_index = 0; scale_index < spatial_world.max_scale; scale_index++)
 			{
 				EASY_BLOCK("ScaleCreateNodes");
 
-				Scale& scale = *spatial_world.scales[scale_worker.scale];
-
-				DEBUG_THREAD_CHECK_WRITE(entity.world(), &scale);
+				Scale& scale = spatial_world.scales[scale_index];
 
 				// For each create command
-				for (const godot::Vector3i& pos : scale_worker.create_commands)
+				for (const godot::Vector3i& pos : scale.create_commands)
 				{
 					// Try and create the node
-					auto&& [it, emplaced] = scale.nodes.try_emplace(pos, spatial_world.builder.node_create());
+					auto&& [it, emplaced] = scale.nodes.try_emplace(pos, spatial_world.node_type.CreatePoly());
 
 					DEBUG_ASSERT(emplaced, "The node should have been emplaced. We must have had a duplicate command.");
 
-					Node& node = *it->second;
-
-					DEBUG_THREAD_CHECK_WRITE(entity.world(), &node);
+					Node& node = it->second.GetEntry(spatial_world.node_entry);
 
 					// Initialize the node
-					node.coord = Coord(pos, scale_worker.scale);
+					node.coord = Coord(pos, scale_index);
 					node.last_update_time = world_time.frame_start;
 					node.state = NodeState::Unloaded;
 
-					InitializeNode(node, spatial_world, scale_worker.scale);
+					InitializeNode(node, spatial_world, scale_index);
 				}
 
-				scale_worker.create_commands.clear();
-			});
-		});
-
-		// System to load spatial nodes that have been added
-		world.system<ScaleWorker, World>(DEBUG_ONLY("WorldProcessLoadCommands"))
-			.multi_threaded()
-			.kind<WorldLoadPhase>()
-			.term_at(1).parent()
-			.each([](flecs::entity worker_entity, ScaleWorker& scale_worker, World& spatial_world)
-		{
-			EASY_BLOCK("WorldProcessLoadCommands");
-
-			DEBUG_THREAD_CHECK_READ(worker_entity.world(), &spatial_world);
-
-			size_t scale_index = scale_worker.scale;
-			Scale& scale = *spatial_world.scales[scale_index];
-
-			DEBUG_THREAD_CHECK_WRITE(worker_entity.world(), &scale);
-
-			if (scale_worker.load_commands.empty()) // Don't continue if we have no commands
-			{
-				return;
+				scale.create_commands.clear();
 			}
-
-			DEBUG_ASSERT(!spatial_world.load_command_processors.empty(), "We should probably do something when a node loads");
-
-			// Callback for each node
-			auto node_callback = [&](godot::Vector3i pos, auto& node_processors_callback)
-			{
-				NodeMap::iterator it = scale.nodes.find(pos);
-				DEBUG_ASSERT(it != scale.nodes.end(), "The node should have been initialized");
-				DEBUG_ASSERT(it->second, "The node should have been initialized with data");
-
-				Node& node = *it->second;
-
-				DEBUG_THREAD_CHECK_WRITE(worker_entity.world(), &node);
-
-				DEBUG_ASSERT(node.state == NodeState::Loading, "Node should be in loading state");
-
-				// Run the processors on the node
-				node_processors_callback(spatial_world, scale, node);
-
-				node.state = NodeState::Loaded;
-			};
-
-			EntityCommandExecutor node_command_executor(worker_entity.world(), worker_entity.parent(), spatial_world.load_command_processors.data(), spatial_world.load_command_processors.size());
-
-			node_command_executor.Run(scale_worker.load_commands.begin(), scale_worker.load_commands.end(), node_callback);
-
-			scale_worker.load_commands.clear();
-		});
-
-		// System to unload spatial nodes that have been marked to unload
-		world.system<ScaleWorker, World>(DEBUG_ONLY("WorldProcessUnloadNodeCommands"))
-			.multi_threaded()
-			.kind<WorldUnloadPhase>()
-			.term_at(1).parent()
-			.each([](flecs::entity worker_entity, ScaleWorker& scale_worker, World& spatial_world)
-		{
-			EASY_BLOCK("WorldProcessUnloadNodeCommands");
-
-			DEBUG_THREAD_CHECK_READ(worker_entity.world(), &spatial_world);
-
-			size_t scale_index = scale_worker.scale;
-			Scale& scale = *spatial_world.scales[scale_index];
-
-			DEBUG_THREAD_CHECK_WRITE(worker_entity.world(), &scale);
-
-			if (scale_worker.unload_commands.empty()) // Don't continue if we have no commands
-			{
-				return;
-			}
-
-			DEBUG_ASSERT(!spatial_world.unload_command_processors.empty(), "We should probably do something when a node unloads");
-
-			// Callback for each node
-			auto node_callback = [&](godot::Vector3i pos, auto& node_processors_callback)
-			{
-				NodeMap::iterator it = scale.nodes.find(pos);
-				DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
-
-				Node& node = *it->second;
-
-				DEBUG_THREAD_CHECK_WRITE(worker_entity.world(), &node);
-
-				DEBUG_ASSERT(node.state == NodeState::Unloading, "Node should be in unloading state");
-
-				// Run the processors on the node
-				node_processors_callback(spatial_world, scale, node);
-
-				node.state = NodeState::Unloaded;
-			};
-
-			EntityCommandExecutor node_command_executor(worker_entity.world(), worker_entity.parent(), spatial_world.unload_command_processors.data(), spatial_world.unload_command_processors.size());
-
-			node_command_executor.Run(scale_worker.unload_commands.begin(), scale_worker.unload_commands.end(), node_callback);
-
-			scale_worker.unload_commands.clear();
 		});
 
 		// System to delete spatial nodes that have been marked to unload
 		world.system<World>(DEBUG_ONLY("WorldDestroyNodes"))
 			.multi_threaded()
-			.kind<WorldDestroyPhase>()
 			.each([](flecs::entity entity, World& spatial_world)
 		{
 			EASY_BLOCK("WorldDestroyNodes");
 
-			DEBUG_THREAD_CHECK_WRITE(entity.world(), &spatial_world);
-
-			spatial_world.scale_workers_query.iter(entity.world()).each([&](ScaleWorker& scale_worker)
+			for (size_t scale_index = 0; scale_index < spatial_world.max_scale; scale_index++)
 			{
 				EASY_BLOCK("ScaleDestroyNodes");
 
-				Scale& scale = *spatial_world.scales[scale_worker.scale];
-
-				DEBUG_THREAD_CHECK_WRITE(entity.world(), &scale);
+				Scale& scale = spatial_world.scales[scale_index];
 
 				// For each destroy command of the scale
-				for (const godot::Vector3i& pos : scale_worker.destroy_commands)
+				for (Poly node_poly : scale.destroy_commands)
 				{
-					NodeMap::iterator it = scale.nodes.find(pos);
-					DEBUG_ASSERT(it != scale.nodes.end(), "We should have only sent unload commands for existing nodes");
-
-					Node& node = *it->second;
-
-					DEBUG_THREAD_CHECK_WRITE(entity.world(), &node);
+					Node& node = node_poly.GetEntry(spatial_world.node_entry);
 
 					DEBUG_ASSERT(node.state == NodeState::Deleting, "Node should be in deleting state");
 
-					UninitializeNode(node, spatial_world, scale_worker.scale);
+					UninitializeNode(node, spatial_world, scale_index);
 
-					spatial_world.builder.node_destroy(it->second);
+					spatial_world.node_type.DestroyPoly(node_poly);
 
-					scale.nodes.erase(it);
+					scale.nodes.erase(node.coord.pos);
 				}
 
-				scale_worker.destroy_commands.clear();
-			});
+				scale.destroy_commands.clear();
+			}
 		});
 	}
 
-	void AddScaleWorkers(flecs::entity spatial_world_entity)
+	void AddScaleMarkers(flecs::entity spatial_world_entity)
 	{
 		flecs::scoped_world scope = spatial_world_entity.scope();
 
@@ -589,35 +423,35 @@ namespace voxel_game::spatial3d
 
 			flecs::entity worker_entity(scope, DEBUG_ONLY(worker_name.utf8()));
 
-			worker_entity.set(ScaleWorker{ scale_index });
+			worker_entity.set(ScaleMarker{ scale_index });
 		}
 	}
 
-	void RemoveScaleWorkers(flecs::entity spatial_world_entity)
+	void RemoveScaleMarkers(flecs::entity spatial_world_entity)
 	{
 		flecs::scoped_world scope = spatial_world_entity.scope();
 
-		scope.query_builder<const ScaleWorker>()
+		scope.query_builder<const ScaleMarker>()
 			.read(flecs::ChildOf, spatial_world_entity)
-			.each([](flecs::entity entity, const ScaleWorker& scale_worker)
+			.each([](flecs::entity entity, const ScaleMarker& scale_marker)
 		{
 			entity.destruct();
 		});
 	}
 
-	Node* GetNode(const World& world, Coord coord)
+	Poly GetNode(const World& world, Coord coord)
 	{
 		DEBUG_ASSERT(coord.scale < k_max_world_scale, "The coordinates scale is out of range");
 
-		NodeMap& nodes = world.scales[coord.scale]->nodes;
+		const Scale& scale = world.scales[coord.scale];
 
-		NodeMap::iterator it = nodes.find(coord.pos);
+		NodeMap::const_iterator it = scale.nodes.find(coord.pos);
 
-		if (it == nodes.end())
+		if (it == scale.nodes.end())
 		{
-			return nullptr;
+			return Poly{};
 		}
 
-		return it->second.get();
+		return it->second;
 	}
 }

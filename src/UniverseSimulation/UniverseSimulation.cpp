@@ -50,7 +50,7 @@ namespace voxel_game
 		universe_entity.add<universe::Universe>();
 		universe_entity.add<spatial3d::World>();
 
-		spatial3d::AddScaleWorkers(universe_entity);
+		spatial3d::AddScaleMarkers(universe_entity);
 
 		if (scenario.is_valid())
 		{
@@ -80,7 +80,7 @@ namespace voxel_game
 		spatial_loader.min_lod = 0;
 		spatial_loader.max_lod = spatial3d::k_max_world_scale;
 
-		spatial3d::AddScaleWorkers(galaxy_entity);
+		spatial3d::AddScaleMarkers(galaxy_entity);
 
 		if (scenario.is_valid())
 		{

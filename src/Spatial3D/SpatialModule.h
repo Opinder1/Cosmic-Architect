@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Util/Time.h"
+#include "Util/Poly.h"
 
 #include <flecs/flecs.h>
 
@@ -16,9 +17,9 @@ namespace voxel_game::spatial3d
 	struct World;
 
 	// Add scale workers to a world for each scale the world currently has
-	void AddScaleWorkers(flecs::entity spatial_world_entity);
+	void AddScaleMarkers(flecs::entity spatial_world_entity);
 
-	void RemoveScaleWorkers(flecs::entity spatial_world_entity);
+	void RemoveScaleMarkers(flecs::entity spatial_world_entity);
 
-	Node* GetNode(const World& world, Coord coord);
+	Poly GetNode(const World& world, Coord coord);
 }

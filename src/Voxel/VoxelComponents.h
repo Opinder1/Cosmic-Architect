@@ -3,6 +3,7 @@
 #include "Spatial3D/SpatialComponents.h"
 
 #include "Util/TinyOctree.h"
+#include "Util/SmallVector.h"
 
 #include <flecs/flecs.h>
 
@@ -25,7 +26,7 @@ namespace voxel_game::voxel
 	};
 
 	// A spatial node for voxels. This node also keeps track of the entities and factions within it.
-	struct Node : spatial3d::Node
+	struct Node
 	{
 		Node() :
 			update_children(false),
@@ -46,7 +47,12 @@ namespace voxel_game::voxel
 		Voxel voxels[16][16][16] = {}; // This member is last since its large
 	};
 
-	struct Scale : spatial3d::Scale {};
+	struct Scale {};
+
+	struct World
+	{
+		PolyEntry<Node> node_entry;
+	};
 
 	struct VoxelTypeCache
 	{
@@ -63,7 +69,7 @@ namespace voxel_game::voxel
 		flecs::entity_t item = 0 ; // The related item type for this voxel type
 		flecs::entity_t interact = 0; // The entity that dictates our interaction outcome
 
-		godot::Color(*color)(uint16_t) = nullptr;
+		godot::Color(*color)(uint16_t) = nullptr; // Convert the block to a color when displayed in things like a minimap
 
 		godot::RID texture;
 		godot::RID custom_mesh;
@@ -83,8 +89,6 @@ namespace voxel_game::voxel
 
 		VoxelTypeCache cache;
 	};
-
-	struct World {};
 
 	struct Context
 	{

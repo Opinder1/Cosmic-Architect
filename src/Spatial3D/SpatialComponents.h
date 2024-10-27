@@ -2,10 +2,10 @@
 
 #include "SpatialCoord.h"
 #include "SpatialAABB.h"
-#include "SpatialCommands.h"
 
 #include "Physics3D/PhysicsComponents.h"
 
+#include "Util/Poly.h"
 #include "Util/Time.h"
 #include "Util/Hash.h"
 #include "Util/Nocopy.h"
@@ -35,7 +35,6 @@ namespace voxel_game::spatial3d
 
 	struct Node;
 	struct Scale;
-	struct NodeCommandProcessorBase;
 
 	// The max scale that a world can have
 	constexpr const uint8_t k_max_world_scale = 16;
@@ -54,42 +53,13 @@ namespace voxel_game::spatial3d
 		Deleting, // Has a delete command
 	};
 
-	using NodePtr = std::unique_ptr<Node>;
-	using NodeMap = robin_hood::unordered_flat_map<godot::Vector3i, NodePtr>;
-	using ScalePtr = std::unique_ptr<Scale>;
-	using WorldScaleArray = std::array<ScalePtr, k_max_world_scale>;
-	using ScaleNodeCommands = std::vector<godot::Vector3i>;
-	using NodeCommandProcessors = std::vector<NodeCommandProcessorBase>;
+	struct NodeCreatePhase {}; // In this phase we create any new nodes
+	struct NodeLoadPhase {}; // In this phase we load any new nodes
+	struct NodeUnloadPhase {}; // In this phase we unload any marked nodes
+	struct NodeDestroyPhase {}; // In this phase we destroy and unloaded nodes
 
-	// Phases which are used to synchronise the ecs between running each thread type in parallel
-	struct WorldMultithreadPhase {};
-
-	struct WorldRegionWorkerPhase {}; // In this phase we process select regions from different worlds in parallel
-	struct WorldScaleWorkerPhase {}; // In this phase we process all scales of all worlds in parallel
-	struct WorldWorkerPhase {}; // In this phase we process all worlds in parallel
-	struct WorldCreatePhase {}; // In this phase we create any new nodes
-	struct WorldLoadPhase {}; // In this phase we load any new nodes
-	struct WorldUnloadPhase {}; // In this phase we unload any marked nodes
-	struct WorldDestroyPhase {}; // In this phase we destroy and unloaded nodes
-	struct WorldEndPhase {}; // In this phase we can do any singlethreaded post processing
-
-	// Define which scale an entity is within
-	struct ScaleWorker
-	{
-		uint8_t scale = 0;
-
-		// Commands
-		ScaleNodeCommands create_commands;
-		ScaleNodeCommands load_commands;
-		ScaleNodeCommands unload_commands;
-		ScaleNodeCommands destroy_commands;
-	};
-
-	// Add this component to a child of a spatial world to signify it represents a region in that world
-	struct RegionWorker
-	{
-		AABB region;
-	};
+	struct WorldCreateEvent {};
+	struct WorldDestroyEvent {};
 
 	// Specify that this entity is within a spatial world (the world is the entities parent)
 	struct Entity
@@ -104,6 +74,18 @@ namespace voxel_game::spatial3d
 		uint8_t min_lod = 0; // The minimum lod this camera can see
 		uint8_t max_lod = 0; // The maximum lod this camera can see
 		uint8_t update_frequency = 0; // The frequency
+	};
+
+	// Add this component to a child of a spatial world to signify it represents a scale of that world
+	struct ScaleMarker
+	{
+		uint8_t scale = 0;
+	};
+
+	// Add this component to a child of a spatial world to signify it represents a region in that world
+	struct RegionMarker
+	{
+		AABB region;
 	};
 
 	// A single node in a spatial world. This is meant to be inherited from for custom data
@@ -132,37 +114,43 @@ namespace voxel_game::spatial3d
 		Node* neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
 	};
 
+	using NodeMap = robin_hood::unordered_flat_map<godot::Vector3i, Poly>;
+
 	// A level of detail map for a world. The world will have multiple of these
 	struct Scale : Nocopy
 	{
 		NodeMap nodes;
+
+		// Commands
+		std::vector<godot::Vector3i> create_commands;
+		std::vector<Poly> load_commands;
+		std::vector<Poly> unload_commands;
+		std::vector<Poly> destroy_commands;
 	};
+
+	using WorldScaleArray = std::array<Scale, k_max_world_scale>;
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct World : Nocopy
 	{
 		AABB bounds;
-		bool initialized = false;
 		uint8_t max_scale = 1;
 		uint8_t node_size = 1;
 
 		Clock::duration node_keepalive = 10s;
 
+		// Scale and Node builder
+		PolyType node_type;
+
+		PolyEntry<Node> node_entry;
+
 		// Queries
 		flecs::query<const Entity> entities_query;
-		flecs::query<ScaleWorker> scale_workers_query;
-		flecs::query<const RegionWorker> region_workers_query;
 		flecs::query<const Loader, const physics3d::Position> loaders_query;
+		flecs::query<const ScaleMarker> scale_marker_query;
+		flecs::query<const RegionMarker> region_marker_query;
 
 		// World data
 		WorldScaleArray scales;
-
-		// Scale and Node builder
-		BuilderBase builder = Builder<Scale, Node>();
-
-		// Command processors
-		NodeCommandProcessors load_command_processors;
-		NodeCommandProcessors unload_command_processors;
-		NodeCommandProcessors tick_command_processors;
 	};
 }

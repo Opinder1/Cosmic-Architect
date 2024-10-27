@@ -116,64 +116,86 @@ namespace voxel_game::voxel
 
 		world.singleton<World>()
 			.add_second<spatial3d::World>(flecs::With);
+
+		// Initialise the spatial world of a universe
+		world.observer<World, spatial3d::World>(DEBUG_ONLY("UniverseInitializeSpatialWorld"))
+			.event(flecs::OnAdd)
+			.each([](World& voxel_world, spatial3d::World& spatial_world)
+		{
+			spatial_world.max_scale = spatial3d::k_max_world_scale;
+
+			spatial_world.node_size = 16;
+
+			spatial_world.node_keepalive = 1s;
+
+			voxel_world.node_entry = spatial_world.node_type.AddEntry<Node>();
+		});
 	}
 
-	Voxel GetVoxelAtScale(const spatial3d::World& spatial_world, godot::Vector3i pos, uint32_t scale)
+	Voxel GetVoxelAtScale(const spatial3d::World& spatial_world, const World& voxel_world, godot::Vector3i pos, uint32_t scale)
 	{
-		spatial3d::Node* node = spatial3d::GetNode(spatial_world, spatial3d::Coord(pos / 16, scale));
+		Poly node_poly = spatial3d::GetNode(spatial_world, spatial3d::Coord(pos / 16, scale));
 
-		if (node == nullptr)
+		if (!node_poly.IsValid())
 		{
 			return Voxel{};
 		}
 
-		return static_cast<Node*>(node)->voxels[pos.x % 16][pos.y % 16][pos.z % 16];
+		Node& node = node_poly.GetEntry(voxel_world.node_entry);
+
+		return node.voxels[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Voxel GetVoxelDepthFirst(const spatial3d::World& spatial_world, godot::Vector3i pos, uint32_t start_scale)
+	Voxel GetVoxelDepthFirst(const spatial3d::World& spatial_world, const World& voxel_world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		if (start_scale == spatial3d::k_max_world_scale)
 		{
 			return Voxel{};
 		}
 
-		spatial3d::Node* node = spatial3d::GetNode(spatial_world, spatial3d::Coord(pos / 16, start_scale));
+		Poly node_poly = spatial3d::GetNode(spatial_world, spatial3d::Coord(pos / 16, start_scale));
 
-		if (node == nullptr)
+		if (!node_poly.IsValid())
 		{
-			return GetVoxelDepthFirst(spatial_world, pos, start_scale + 1);
+			return GetVoxelDepthFirst(spatial_world, voxel_world, pos, start_scale + 1);
 		}
 
-		return static_cast<Node*>(node)->voxels[pos.x % 16][pos.y % 16][pos.z % 16];
+		Node& node = node_poly.GetEntry(voxel_world.node_entry);
+
+		return node.voxels[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Voxel GetVoxelBreadthFirst(const spatial3d::World& spatial_world, godot::Vector3i pos, uint32_t start_scale)
+	Voxel GetVoxelBreadthFirst(const spatial3d::World& spatial_world, const World& voxel_world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		if (start_scale == 0)
 		{
 			return Voxel{};
 		}
 
-		spatial3d::Node* node = spatial3d::GetNode(spatial_world, spatial3d::Coord(pos / 16, start_scale));
+		Poly node_poly = spatial3d::GetNode(spatial_world, spatial3d::Coord(pos / 16, start_scale));
 
-		if (node == nullptr)
+		if (!node_poly.IsValid())
 		{
-			return GetVoxelDepthFirst(spatial_world, pos, start_scale - 1);
+			return GetVoxelDepthFirst(spatial_world, voxel_world, pos, start_scale - 1);
 		}
 
-		return static_cast<Node*>(node)->voxels[pos.x % 16][pos.y % 16][pos.z % 16];
+		Node& node = node_poly.GetEntry(voxel_world.node_entry);
+
+		return node.voxels[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Voxel GetVoxelOctreeSearch(const spatial3d::World& spatial_world, godot::Vector3i pos, uint32_t start_scale)
+	Voxel GetVoxelOctreeSearch(const spatial3d::World& spatial_world, const World& voxel_world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		godot::Vector3i node_pos = pos / 16;
 
-		spatial3d::Node* node = spatial3d::GetNode(spatial_world, spatial3d::Coord(node_pos, start_scale));
+		Poly node_poly = spatial3d::GetNode(spatial_world, spatial3d::Coord(node_pos, start_scale));
 
-		if (node == nullptr)
+		if (!node_poly.IsValid())
 		{
 			return Voxel{};
 		}
+
+		spatial3d::Node* node = &node_poly.GetEntry(spatial_world.node_entry);
 
 		while (1)
 		{
@@ -189,6 +211,8 @@ namespace voxel_game::voxel
 			node_pos.x >>= 2; node_pos.y >>= 2; node_pos.z >>= 2;
 		}
 
-		return static_cast<Node*>(node)->voxels[pos.x % 16][pos.y % 16][pos.z % 16];
+		Node& voxel_node = node_poly.GetEntry(voxel_world.node_entry);
+
+		return voxel_node.voxels[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 }

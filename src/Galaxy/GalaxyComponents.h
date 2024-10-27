@@ -26,7 +26,10 @@ namespace voxel_game::galaxy
 	struct Scale : spatial3d::Scale {};
 
 	// This entity is a galaxy
-	struct Galaxy {};
+	struct Galaxy
+	{
+		PolyEntry<Node> node_entry;
+	};
 
 	// This entity is a star
 	struct Star

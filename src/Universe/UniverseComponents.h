@@ -23,5 +23,8 @@ namespace voxel_game::universe
 	struct Scale : spatial3d::Scale {};
 
 	// This entitiy is a universe which has a specialised spatial world
-	struct Universe {};
+	struct Universe
+	{
+		PolyEntry<Node> node_entry;
+	};
 }
