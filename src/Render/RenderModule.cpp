@@ -7,6 +7,8 @@
 
 #include <flecs/flecs.h>
 
+#include <easy/profiler.h>
+
 namespace voxel_game::rendering
 {
     const godot::Transform3D k_invisible_transform{ godot::Basis(), godot::Vector3(FLT_MAX, FLT_MAX, FLT_MAX) };
@@ -171,6 +173,8 @@ namespace voxel_game::rendering
             .with<const OwnedScenario>().self()
             .each([](flecs::entity entity, Scenario& scenario, const ServerContext& context)
         {
+            EASY_BLOCK("AddScenario");
+
             scenario.id = context.server->scenario_create();
 
             entity.modified<Scenario>();
@@ -235,6 +239,8 @@ namespace voxel_game::rendering
             .term_at(1).singleton().filter()
             .each([](flecs::iter& it, size_t i, UniqueInstance& instance, const ServerContext& context)
         {
+            EASY_BLOCK("AddUniqueInstance");
+
             instance.id = context.server->instance_create();
 
             it.entity(i).modified(it.pair(0));
@@ -317,6 +323,8 @@ namespace voxel_game::rendering
             .term_at(2).singleton().filter()
             .each([](flecs::entity entity, const PlaceholderCube& mesh, Base& base, const ServerContext& context)
         {
+            EASY_BLOCK("AddPlaceholderCube");
+
             base.id = context.server->get_test_cube();
 
             entity.modified<Base>();
@@ -332,6 +340,8 @@ namespace voxel_game::rendering
             .term_at(2).singleton().filter()
             .each([](flecs::entity entity, const Mesh& mesh, Base& base, const ServerContext& context)
         {
+            EASY_BLOCK("AddMesh");
+
             base.id = context.server->mesh_create();
 
             entity.modified<Base>();

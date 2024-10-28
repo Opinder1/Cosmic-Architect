@@ -8,6 +8,8 @@
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/type_info.hpp>
 
+#include <easy/profiler.h>
+
 #define BIND_METHOD godot::ClassDB::bind_method
 
 namespace voxel_game
@@ -50,6 +52,8 @@ namespace voxel_game
 		}
 		else
 		{
+			EASY_MAIN_THREAD;
+
 			DoSimulationLoad();
 		}
 	}
@@ -105,6 +109,8 @@ namespace voxel_game
 
 	void Simulation::ThreadLoop()
 	{
+		EASY_MAIN_THREAD;
+
 		DEBUG_ASSERT(std::this_thread::get_id() == m_thread.get_id(), "FinishedLoading() should be called by the simulations thread");
 
 		DoSimulationLoad();
