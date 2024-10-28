@@ -1,6 +1,5 @@
 #include "UniverseSimulation/UniverseSimulation.h"
-
-#include "Universe/Universe.h"
+#include "UniverseSimulation/Universe.h"
 
 #include "Simulation/CommandQueue.h"
 #include "Simulation/Simulation.h"
@@ -91,6 +90,16 @@ void flecs_free_godot(void* ptr)
 	}
 }
 
+void flecs_perf_trace_push(const char* filename, size_t line, const char* name)
+{
+	EASY_NONSCOPED_BLOCK(name);
+}
+
+void flecs_perf_trace_pop(const char* filename, size_t line, const char* name)
+{
+	EASY_END_BLOCK;
+}
+
 void initialize_flecs()
 {
 	ecs_os_set_api_defaults();
@@ -105,7 +114,10 @@ void initialize_flecs()
 	api.calloc_ = flecs_calloc_godot;
 	api.free_ = flecs_free_godot;
 
-	ecs_os_set_api(&ecs_os_api); // Set the initialized flag so we don't override the log_ again
+	api.perf_trace_push_ = flecs_perf_trace_push;
+	api.perf_trace_pop_ = flecs_perf_trace_pop;
+
+	ecs_os_set_api(&api); // Set the initialized flag so we don't override the log_ again
 
 	ecs_os_init();
 }
@@ -142,6 +154,8 @@ void uninitialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 	if (p_level == godot::MODULE_INITIALIZATION_LEVEL_SCENE)
 	{
 		godot::UtilityFunctions::print("Unloading voxel world extension");
+
+		profiler::stopListen();
 
 		godot::Engine::get_singleton()->unregister_singleton("CommandQueueServer");
 
