@@ -143,6 +143,8 @@ void uninitialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 	{
 		godot::UtilityFunctions::print("Unloading voxel world extension");
 
+		godot::Engine::get_singleton()->unregister_singleton("CommandQueueServer");
+
 		voxel_game::UniverseSimulation::_cleanup_methods();
 		voxel_game::Universe::_cleanup_methods();
 		voxel_game::CommandQueueServer::_cleanup_methods();
