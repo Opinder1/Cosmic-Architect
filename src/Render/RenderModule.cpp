@@ -20,39 +20,30 @@ namespace voxel_game::rendering
 		world.import<Components>();
         world.import<physics3d::Components>();
 
-        world.singleton<Instance>()
-            .add(flecs::Relationship)
-            .add(flecs::Exclusive);
-
-        world.singleton<UniqueInstance>()
-            .add(flecs::Relationship)
-            .add(flecs::Exclusive)
-            .add_second<Instance>(flecs::With);
-
-        world.singleton<PlaceholderCube>()
-            .add_second<Base>(flecs::With);
-
-        world.singleton<Mesh>()
-            .add_second<Base>(flecs::With);
-
         world.add<ServerContext>();
 
         // Flush each threads render commands to the command queue server which will run them on the rendering server thread
-        world.system<ServerContext>(DEBUG_ONLY("FrameFlushRenderingCommands"))
+        world.system<ServerContext>(DEBUG_ONLY("FrameFlushCommands"))
             .immediate()
             .each([](ServerContext& context)
         {
-            CommandQueueServer* command_queue_server = CommandQueueServer::get_singleton();
-
-            uint64_t server_instance = context.server->get_instance_id();
+            CommandQueueServer* cqserver = CommandQueueServer::get_singleton();
+            uint64_t server_instance = godot::RenderingServer::get_singleton()->get_instance_id();
 
             for (ServerThreadContext& thread_context : context.threads)
             {
-                command_queue_server->AddCommands(server_instance, std::move(thread_context.commands));
+                cqserver->AddCommands(server_instance, std::move(thread_context.commands));
             }
 
             // Do main thread commands last as they may include freeing of rids
-            command_queue_server->AddCommands(server_instance, std::move(context.main_thread.commands));
+            cqserver->AddCommands(server_instance, std::move(context.main_thread.commands));
+        });
+
+        world.system<ServerContext>(DEBUG_ONLY("PreallocateObjects"))
+            .immediate()
+            .each([](ServerContext& context)
+        {
+            context.allocator.Process();
         });
 
         InitTree(world);
@@ -175,7 +166,7 @@ namespace voxel_game::rendering
         {
             EASY_BLOCK("AddScenario");
 
-            scenario.id = context.server->scenario_create();
+            scenario.id = godot::RenderingServer::get_singleton()->scenario_create();
 
             entity.modified<Scenario>();
         });
@@ -210,7 +201,7 @@ namespace voxel_game::rendering
             thread_context.commands.AddCommand("instance_set_scenario", instance.id, scenario.id);
         });
 
-#if defined(CLEANUP_INSTANCE_LINKS)
+#if DEBUG
         // When a render instance or scenario is destroyed unset the scenario. This should happen automatically in the render server
         world.observer<const UniqueInstance, const Scenario, ServerContext>(DEBUG_ONLY("InstanceRemoveScenario"))
             .event(flecs::OnRemove)
@@ -233,15 +224,15 @@ namespace voxel_game::rendering
 
     void Module::InitUniqueInstance(flecs::world& world)
     {
-        world.observer<UniqueInstance, const ServerContext>(DEBUG_ONLY("AddUniqueInstance"))
+        world.observer<UniqueInstance, ServerContext>(DEBUG_ONLY("AddUniqueInstance"))
             .event(flecs::OnAdd)
             .term_at(0).self().second(flecs::Any)
             .term_at(1).singleton().filter()
-            .each([](flecs::iter& it, size_t i, UniqueInstance& instance, const ServerContext& context)
+            .each([](flecs::iter& it, size_t i, UniqueInstance& instance, ServerContext& context)
         {
             EASY_BLOCK("AddUniqueInstance");
 
-            instance.id = context.server->instance_create();
+            instance.id = context.allocator.CreateInstance();
 
             it.entity(i).modified(it.pair(0));
         });
@@ -290,7 +281,7 @@ namespace voxel_game::rendering
             thread_context.commands.AddCommand("free_rid", base.id);
         });
 
-#if defined(CLEANUP_INSTANCE_LINKS)
+#if DEBUG
         // When a render instance or base is destroyed unset the base. This should happen automatically in the render server
         world.observer<const UniqueInstance, const Base, ServerContext>(DEBUG_ONLY("RenderInstanceRemoveBase"))
             .event(flecs::OnRemove)
@@ -325,7 +316,7 @@ namespace voxel_game::rendering
         {
             EASY_BLOCK("AddPlaceholderCube");
 
-            base.id = context.server->get_test_cube();
+            base.id = godot::RenderingServer::get_singleton()->get_test_cube();
 
             entity.modified<Base>();
         });
@@ -342,7 +333,7 @@ namespace voxel_game::rendering
         {
             EASY_BLOCK("AddMesh");
 
-            base.id = context.server->mesh_create();
+            base.id = godot::RenderingServer::get_singleton()->mesh_create();
 
             entity.modified<Base>();
         });

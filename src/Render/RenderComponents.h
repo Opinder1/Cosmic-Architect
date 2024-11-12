@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Simulation/CommandQueue.h"
+#include "RenderAllocator.h"
 
-#include "Util/PerThread.h"
+#include "Util/CommandQueue.h"
 #include "Util/Time.h"
 #include "Util/SmallVector.h"
 #include "Util/DirtyTracker.h"
@@ -10,6 +10,7 @@
 
 #include <godot_cpp/variant/rid.hpp>
 #include <godot_cpp/variant/packed_byte_array.hpp>
+#include <godot_cpp/classes/rendering_server.hpp>
 
 #include <robin_hood/robin_hood.h>
 
@@ -62,12 +63,10 @@ namespace voxel_game::rendering
 
 	struct ServerContext : Nocopy
 	{
-		ServerContext();
-		~ServerContext();
-
-		godot::RenderingServer* server = nullptr;
-		PerThread<ServerThreadContext> threads;
 		ServerThreadContext main_thread;
+		PerThread<ServerThreadContext> threads;
+
+		Allocator allocator;
 	};
 
 	struct InstanceDataType

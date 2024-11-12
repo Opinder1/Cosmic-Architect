@@ -3,7 +3,10 @@
 
 #include "Simulation/Simulation.h"
 
+#include "Render/RenderAllocator.h"
+
 #include "Util/CommandQueue.h"
+
 #include "Util/Debug.h"
 
 #include <godot_cpp/classes/engine.hpp>
@@ -137,11 +140,13 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 
 		godot::ClassDB::register_class<voxel_game::CommandQueue>();
 		godot::ClassDB::register_class<voxel_game::CommandQueueServer>();
+		godot::ClassDB::register_class<voxel_game::rendering::AllocatorServer>();
 		godot::ClassDB::register_class<voxel_game::Simulation>(true);
 		godot::ClassDB::register_class<voxel_game::Universe>();
 		godot::ClassDB::register_class<voxel_game::UniverseSimulation>();
 
 		godot::Engine::get_singleton()->register_singleton("CommandQueueServer", voxel_game::CommandQueueServer::get_singleton());
+		godot::Engine::get_singleton()->register_singleton("AllocatorServer", voxel_game::rendering::AllocatorServer::get_singleton());
 
 		profiler::startListen();
 
@@ -157,10 +162,12 @@ void uninitialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 
 		profiler::stopListen();
 
+		godot::Engine::get_singleton()->unregister_singleton("AllocatorServer");
 		godot::Engine::get_singleton()->unregister_singleton("CommandQueueServer");
 
 		voxel_game::UniverseSimulation::_cleanup_methods();
 		voxel_game::Universe::_cleanup_methods();
+		voxel_game::rendering::AllocatorServer::_cleanup_methods();
 		voxel_game::CommandQueueServer::_cleanup_methods();
 
 		uninitialize_flecs();
