@@ -176,7 +176,7 @@ namespace godot
 		T& value()
 		{
 			DEBUG_ASSERT(is_valid(), "Trying to get an invalid optional");
-			return (T&)m_memory;
+			return *(T*)&m_memory;
 		}
 
 		bool is_valid() const
