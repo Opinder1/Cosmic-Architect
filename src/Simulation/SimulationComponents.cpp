@@ -11,6 +11,20 @@ namespace voxel_game::sim
 		world.component<GlobalTime>();
 		world.component<LocalTime>();
 		world.component<ThreadEntityPools>();
+
+		world.component<ThreadEntityPools>()
+			.on_remove([world = world.c_ptr()](ThreadEntityPools& pools)
+		{
+			for (ThreadEntityPool& pool : pools.threads)
+			{
+				for (flecs::entity_t entity : pool.new_entities)
+				{
+					flecs::entity(world, entity).destruct();
+				}
+
+				pool.new_entities.clear();
+			}
+		});
 	}
 
 	ThreadEntityPool& GetThreadEntityPool(ThreadEntityPools& pools, flecs::world_t* stage)
