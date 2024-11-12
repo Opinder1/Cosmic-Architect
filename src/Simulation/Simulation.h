@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Util/CommandBuffer.h"
-
 #include "Util/Debug.h"
 #include "Util/PerThread.h"
 

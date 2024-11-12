@@ -1,7 +1,6 @@
 #include "Simulation.h"
 
 #include "Util/CommandQueue.h"
-
 #include "Util/Debug.h"
 #include "Util/PropertyMacros.h"
 
