@@ -1,9 +1,9 @@
 #include "UniverseSimulation/UniverseSimulation.h"
 #include "UniverseSimulation/Universe.h"
 
-#include "Simulation/CommandQueue.h"
 #include "Simulation/Simulation.h"
 
+#include "Util/CommandQueue.h"
 #include "Util/Debug.h"
 
 #include <godot_cpp/classes/engine.hpp>

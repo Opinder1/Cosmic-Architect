@@ -1,11 +1,10 @@
 #pragma once
 
 #include "CommandBuffer.h"
-
-#include "Util/Debug.h"
-#include "Util/GodotMemory.h"
-#include "Util/Time.h"
-#include "Util/PerThread.h"
+#include "Debug.h"
+#include "GodotMemory.h"
+#include "Time.h"
+#include "PerThread.h"
 
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/classes/ref.hpp>
@@ -101,7 +100,7 @@ namespace voxel_game
 		static void _cleanup_methods();
 
 	private:
-		void RenderingFlush();
+		static void RenderingFlush();
 
 		static void FlushState(State& state, godot::Object* object, Clock::duration max_flush_time);
 

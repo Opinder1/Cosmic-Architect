@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Util/Nocopy.h"
-#include "Util/Debug.h"
+#include "Nocopy.h"
+#include "Debug.h"
 
 #include <godot_cpp/variant/variant.hpp>
 #include <godot_cpp/classes/object.hpp>

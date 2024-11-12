@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Simulation/CommandBuffer.h"
+#include "Util/CommandBuffer.h"
 
 #include "Util/Debug.h"
 #include "Util/PerThread.h"

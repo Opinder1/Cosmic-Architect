@@ -22,11 +22,11 @@
 
 #include "Simulation/SimulationComponents.h"
 #include "Simulation/SimulationModule.h"
-#include "Simulation/CommandQueue.h"
 
 #include "Loading/LoadingComponents.h"
 #include "Loading/LoadingModule.h"
 
+#include "Util/CommandQueue.h"
 #include "Util/Debug.h"
 
 #include <godot_cpp/classes/os.hpp>

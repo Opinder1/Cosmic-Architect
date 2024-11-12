@@ -103,7 +103,6 @@ namespace voxel_game
 
 	CommandQueueServer* CommandQueueServer::get_singleton()
 	{
-		DEBUG_ASSERT(k_singleton, "The singleton doesn't exist");
 		return &k_singleton.value();
 	}
 
@@ -149,7 +148,9 @@ namespace voxel_game
 
 		FlushState(m_state, nullptr, k_max_time_per_flush);
 
-		godot::RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &CommandQueueServer::RenderingFlush));
+		// The rendering flush should always be called while we are alive
+		// When the game starts shutting down, the render server should no longer do any calls
+		godot::RenderingServer::get_singleton()->call_on_render_thread(callable_mp_static(&CommandQueueServer::RenderingFlush));
 	}
 
 	bool CommandQueueServer::HasCommandsLeft()
@@ -175,11 +176,12 @@ namespace voxel_game
 
 	void CommandQueueServer::RenderingFlush()
 	{
-		godot::RenderingServer* server = godot::RenderingServer::get_singleton();
+		CommandQueueServer* cqserver = CommandQueueServer::get_singleton();
+		godot::RenderingServer* rserver = godot::RenderingServer::get_singleton();
 
-		DEBUG_ASSERT(server->is_on_render_thread(), "The rendering flush should only be done on the rendering thread");
+		DEBUG_ASSERT(rserver->is_on_render_thread(), "The rendering flush should only be done on the rendering thread");
 
-		FlushState(m_rendering_state, server, k_max_time_per_render_flush);
+		FlushState(cqserver->m_rendering_state, rserver, k_max_time_per_render_flush);
 	}
 
 	void CommandQueueServer::FlushState(State& state, godot::Object* object, Clock::duration max_flush_time)
