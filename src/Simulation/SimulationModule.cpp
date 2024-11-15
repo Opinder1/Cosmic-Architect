@@ -27,7 +27,7 @@ namespace voxel_game::sim
 		world.system<ThreadEntityPools>("ProcessEntityThreadCommands")
 			.kind(flecs::OnUpdate)
 			.term_at(0).src<ThreadEntityPools>()
-			.each([&world](ThreadEntityPools& thread_pools)
+			.each([world](ThreadEntityPools& thread_pools)
 		{
 			for (ThreadEntityPool& thread : thread_pools.threads)
 			{

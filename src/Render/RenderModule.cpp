@@ -104,9 +104,9 @@ namespace voxel_game::rendering
             .term_at(0).self().second(flecs::Any)
             .term_at(1).self()
             .term_at(2).singleton()
-            .each([](flecs::entity entity, UniqueInstance& instance, const TreeNode& tree_node, ServerContext& context)
+            .each([world](UniqueInstance& instance, const TreeNode& tree_node, ServerContext& context)
         {
-            ServerThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
+            ServerThreadContext& thread_context = context.threads[world.get_stage_id()];
 
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
 
@@ -126,7 +126,7 @@ namespace voxel_game::rendering
             .term_at(4).up(flecs::ChildOf)
             .term_at(5).singleton()
             .without<const TreeNode>().self()
-            .each([](flecs::entity entity, UniqueInstance& instance, const physics3d::Position* position, const physics3d::Rotation* rotation, const physics3d::Scale* scale, const TreeNode& parent_tree_node, ServerContext& context)
+            .each([world](UniqueInstance& instance, const physics3d::Position* position, const physics3d::Rotation* rotation, const physics3d::Scale* scale, const TreeNode& parent_tree_node, ServerContext& context)
         {
             godot::Transform3D transform;
 
@@ -147,7 +147,7 @@ namespace voxel_game::rendering
 
             transform *= parent_tree_node.transform;
 
-            ServerThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
+            ServerThreadContext& thread_context = context.threads[world.get_stage_id()];
 
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
 
