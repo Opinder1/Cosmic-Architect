@@ -9,9 +9,7 @@
 *.vcxproj.user
 *.pdb
 *.obj
-/msvc_capture.log
-/Release
-/VoxelGame/Release
+*.log
 
 # Godot
 /demo

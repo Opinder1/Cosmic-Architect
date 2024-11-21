@@ -42,7 +42,7 @@ env.Append(CPPPATH=["src", "lib"])
 env.Append(CPPDEFINES=["FLECS_CPP_NO_AUTO_REGISTRATION", "ecs_ftime_t=double"])
 
 # Optional profiler (windows x64 only)
-if env["profile"] == "true":
+if ARGUMENTS.get("profile"):
     env.Append(CPPDEFINES=["USING_EASY_PROFILER", "FLECS_PERF_TRACE"])
     env.Append(LIBS=["lib/easy/easy_profiler.lib"]) # Must include own easy_profiler.lib
 
@@ -86,7 +86,7 @@ if ARGUMENTS.get("vs_proj"): # Generate VS project for intellisense and nice bui
         target = '#VoxelGame' + env2['MSVSPROJECTSUFFIX'],
         incs = str_headers,
         srcs = str_sources,
-        variant = ['Release'],
+        variant = ['Release|x64'],
         buildtarget = [target],
         DebugSettings = [debug_settings],
     )
