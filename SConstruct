@@ -37,11 +37,16 @@ env = SConscript("godot-cpp/SConstruct")
 # source paths
 sources = SourcesRecursive(["src", "lib"])
 
-#include paths
+# Include paths
 env.Append(CPPPATH=["src", "lib"])
-env.Append(CPPDEFINES=["FLECS_CPP_NO_AUTO_REGISTRATION", "ecs_ftime_t=double", "USING_EASY_PROFILER", "FLECS_PERF_TRACE"])
-env.Append(LIBS=["lib/easy/easy_profiler.lib"]) # Must include own easy_profiler.lib
+env.Append(CPPDEFINES=["FLECS_CPP_NO_AUTO_REGISTRATION", "ecs_ftime_t=double"])
 
+# Optional profiler (windows x64 only)
+if env["profile"] == "true":
+    env.Append(CPPDEFINES=["USING_EASY_PROFILER", "FLECS_PERF_TRACE"])
+    env.Append(LIBS=["lib/easy/easy_profiler.lib"]) # Must include own easy_profiler.lib
+
+# Create library
 if env["platform"] == "macos":
     library = env.SharedLibrary(
         "VoxelGameDemo/bin/voxelgame.{}.{}.framework/voxelgame.{}.{}".format(
