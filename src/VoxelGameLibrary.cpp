@@ -34,20 +34,21 @@ void flecs_log_to_godot(int32_t level, const char* file, int32_t line, const cha
 	switch (level)
 	{
 	case -4:
-		DEBUG_PRINT_ERROR(log_msg);
-		DEBUG_CRASH();
+		godot::_err_print_error(FUNCTION_STR, file, line, log_msg, true, false);
+		godot::_err_flush_stdout();
+		GENERATE_TRAP();
 		break;
 
 	case -3:
-		DEBUG_PRINT_ERROR(log_msg);
+		godot::_err_print_error(FUNCTION_STR, file, line, log_msg, true, false);
 		break;
 
 	case -2:
-		DEBUG_PRINT_WARN(log_msg);
+		godot::_err_print_error(FUNCTION_STR, file, line, log_msg, true, true);
 		break;
 
 	case -1:
-		DEBUG_PRINT_INFO(log_msg);
+		godot::UtilityFunctions::print(log_msg);
 		break;
 
 	case 0:
@@ -111,6 +112,7 @@ void initialize_flecs()
 
 	api.log_ = flecs_log_to_godot;
 	api.log_level_ = 0;
+	api.flags_ = EcsOsApiHighResolutionTimer | EcsOsApiLogWithTimeStamp | EcsOsApiLogWithTimeDelta;
 
 	api.malloc_ = flecs_malloc_godot;
 	api.realloc_ = flecs_realloc_godot;
