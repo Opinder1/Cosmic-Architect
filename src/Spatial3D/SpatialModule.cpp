@@ -236,7 +236,7 @@ namespace voxel_game::spatial3d
 		world.system<World, const sim::GlobalTime>(DEBUG_ONLY("ScaleUnloadUnusedNodes"))
 			.multi_threaded()
 			.term_at(1).src<sim::GlobalTime>()
-			.each([](World& spatial_world, const sim::GlobalTime& world_time)
+			.each([](flecs::entity worker_entity, World& spatial_world, const sim::GlobalTime& world_time)
 		{
 			EASY_BLOCK("ScaleUnloadUnusedNodes");
 
@@ -286,7 +286,7 @@ namespace voxel_game::spatial3d
 		world.system<World, const sim::GlobalTime>(DEBUG_ONLY("LoaderTouchNodes"))
 			.multi_threaded()
 			.term_at(1).src<sim::GlobalTime>()
-			.each([world](World& spatial_world, const sim::GlobalTime& world_time)
+			.each([](flecs::entity worker_entity, World& spatial_world, const sim::GlobalTime& world_time)
 		{
 			EASY_BLOCK("LoaderTouchNodes");
 
@@ -299,7 +299,7 @@ namespace voxel_game::spatial3d
 				scale.load_commands.clear();
 
 				// For each command list that is a child of the world
-				spatial_world.loaders_query.iter(world).each([&](const Loader& spatial_loader, const physics3d::Position& position)
+				spatial_world.loaders_query.iter(worker_entity.world()).each([&](const Loader& spatial_loader, const physics3d::Position& position)
 				{
 					EASY_BLOCK("SingleLoader");
 
@@ -347,7 +347,7 @@ namespace voxel_game::spatial3d
 		world.system<World, const sim::GlobalTime>(DEBUG_ONLY("WorldCreateNodes"))
 			.multi_threaded()
 			.term_at(1).src<sim::GlobalTime>()
-			.each([](World& spatial_world, const sim::GlobalTime& world_time)
+			.each([](flecs::entity entity, World& spatial_world, const sim::GlobalTime& world_time)
 		{
 			EASY_BLOCK("WorldCreateNodes");
 
@@ -382,7 +382,7 @@ namespace voxel_game::spatial3d
 		// System to delete spatial nodes that have been marked to unload
 		world.system<World>(DEBUG_ONLY("WorldDestroyNodes"))
 			.multi_threaded()
-			.each([](World& spatial_world)
+			.each([](flecs::entity entity, World& spatial_world)
 		{
 			EASY_BLOCK("WorldDestroyNodes");
 
