@@ -14,16 +14,14 @@ namespace voxel_game::loading
 	const size_t k_entity_pool_max = 1024;
 
 	EntityLoader::EntityLoader(flecs::world& world) :
-		m_world(world),
-		m_modification_stage(world.async_stage(), world.async_stage(), world.async_stage()),
+		m_world(world.c_ptr()),
 		m_database_async(&m_database, k_num_database_workers)
 	{
+		m_modification_stage.Reset(world.async_stage(), world.async_stage(), world.async_stage());
+
 		m_running.store(true, std::memory_order_release);
 
-		if (!m_thread.joinable())
-		{
-			m_thread = std::thread(&EntityLoader::ThreadLoop, this);
-		}
+		m_thread = std::thread(&EntityLoader::ThreadLoop, this);
 	}
 
 	EntityLoader::~EntityLoader()
@@ -35,6 +33,11 @@ namespace voxel_game::loading
 			m_thread.join();
 		}
 
+#if DEBUG
+		m_modification_stage.SetReadThread(std::this_thread::get_id());
+		m_modification_stage.SetWriteThread(std::this_thread::get_id());
+#endif
+
 		// Merge remaining modifications that were already published
 		m_modification_stage.Retrieve().merge();
 
@@ -42,6 +45,16 @@ namespace voxel_game::loading
 		m_modification_stage.Publish();
 		m_modification_stage.Retrieve().merge();
 	}
+
+#if DEBUG
+	void EntityLoader::SetProgressThread(std::thread::id thread_id)
+	{
+		m_load_commands.SetWriteThread(thread_id);
+		m_save_commands.SetWriteThread(thread_id);
+		m_delete_commands.SetWriteThread(thread_id);
+		m_modification_stage.SetReadThread(thread_id);
+	}
+#endif
 
 	void EntityLoader::Progress()
 	{
@@ -59,6 +72,14 @@ namespace voxel_game::loading
 
 	void EntityLoader::ThreadLoop()
 	{
+#if DEBUG
+		std::thread::id thread_id = std::this_thread::get_id();
+		m_load_commands.SetReadThread(thread_id);
+		m_save_commands.SetReadThread(thread_id);
+		m_delete_commands.SetReadThread(thread_id);
+		m_modification_stage.SetWriteThread(thread_id);
+#endif
+
 		while (m_running.load(std::memory_order_acquire))
 		{
 			m_modifications_added = false;
@@ -72,6 +93,12 @@ namespace voxel_game::loading
 				m_modification_stage.Publish();
 			}
 		}
+#if DEBUG
+		m_modification_stage.SetWriteThread(std::thread::id{});
+		m_delete_commands.SetReadThread(std::thread::id{});
+		m_save_commands.SetReadThread(std::thread::id{});
+		m_load_commands.SetReadThread(std::thread::id{});
+#endif
 	}
 
 	void EntityLoader::LoadEntity(flecs::entity_t entity, UUID uuid)

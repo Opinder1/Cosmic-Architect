@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Nocopy.h"
+#include "Debug.h"
 
 #include <array>
 #include <vector>
@@ -27,19 +28,38 @@ class CommandSwapBuffer : Nocopy, Nomove
 public:
 	CommandSwapBuffer() {}
 
+#if DEBUG
+	void SetReadThread(std::thread::id thread_id)
+	{
+		m_reader_id = thread_id;
+	}
+
+	void SetWriteThread(std::thread::id thread_id)
+	{
+		m_writer_id = thread_id;
+	}
+#endif
+
 	void AddCommand(const CommandT& value)
 	{
+		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "AddCommand() should be called by the writer thread");
+
 		m_write.emplace_back(value);
 	}
 
 	void AddCommand(CommandT&& value)
 	{
+		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "AddCommand() should be called by the writer thread");
+
 		m_write.emplace_back(std::move(value));
 	}
 
 	// Write the changes to the exchange buffer
 	void PublishCommands()
 	{
+		auto r = std::this_thread::get_id();
+		DEBUG_ASSERT(m_writer_id == r, "PublishCommands() should be called by the writer thread");
+
 		if (m_write.size() > 0 && !m_ready.load(std::memory_order_acquire))
 		{
 			m_read = std::move(m_write);
@@ -51,6 +71,8 @@ public:
 	// Obtain the latest changes made by the writer if there are any
 	void RetrieveCommands(std::vector<CommandT>& out)
 	{
+		DEBUG_ASSERT(m_reader_id == std::this_thread::get_id(), "RetrieveCommands() should be called by the owner thread");
+
 		if (m_ready.load(std::memory_order_acquire))
 		{
 			out = std::move(m_read);
@@ -63,35 +85,64 @@ private:
 	std::atomic_bool m_ready = false;
 	alignas(k_cache_line) std::vector<CommandT> m_write;
 	alignas(k_cache_line) std::vector<CommandT> m_read;
+
+#if DEBUG
+	std::thread::id m_reader_id; // The thread that reads the cache and should call RetrieveCommands() on it
+	std::thread::id m_writer_id; // The thread that does updates and calls AddCommand() and PublishCommands() on it
+#endif
 };
 
 template<class T>
 class alignas(k_cache_line) TripleBuffer : Nocopy, Nomove
 {
 public:
-	TripleBuffer() {}
+	TripleBuffer()
+	{
+	}
 
-	TripleBuffer(const T& write, const T& swap, const T& read) :
-		m_write(write),
-		m_swap(swap),
-		m_read(read)
-	{}
+#if DEBUG
+	void SetReadThread(std::thread::id thread_id)
+	{
+		m_reader_id = thread_id;
+	}
 
-	TripleBuffer(T&& write, T&& swap, T&& read) :
-		m_write(std::move(write)),
-		m_swap(std::move(swap)),
-		m_read(std::move(read))
-	{}
+	void SetWriteThread(std::thread::id thread_id)
+	{
+		m_writer_id = thread_id;
+	}
+#endif
+
+	void Reset(const T& write, const T& swap, const T& read)
+	{
+		DEBUG_ASSERT(m_reader_id == std::thread::id{} && m_writer_id == std::thread::id{}, "Threads should not be set when resetting");
+
+		m_write = write;
+		m_swap = swap;
+		m_read = read;
+	}
+
+	void Reset(T&& write, T&& swap, T&& read)
+	{
+		DEBUG_ASSERT(m_reader_id == std::thread::id{} && m_writer_id == std::thread::id{}, "Threads should not be set when resetting");
+
+		m_write = std::move(write);
+		m_swap = std::move(swap);
+		m_read = std::move(read);
+	}
 
 	// Write changes the write buffer. Calling Publish() with references still around is undefined
 	T& Write()
 	{
+		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "Write() should be called by the writer thread");
+
 		return m_write;
 	}
 
 	// Write the changes to the exchange buffer
 	void Publish()
 	{
+		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "Publish() should be called by the writer thread");
+
 		if (!m_ready.load(std::memory_order_acquire))
 		{
 			std::swap(m_swap, m_write);
@@ -103,6 +154,8 @@ public:
 	// Obtain the latest changes made by the writer if there are any
 	T& Retrieve()
 	{
+		DEBUG_ASSERT(m_reader_id == std::this_thread::get_id(), "Retrieve() should be called by the owner thread");
+
 		if (m_ready.load(std::memory_order_acquire))
 		{
 			std::swap(m_read, m_swap);
@@ -118,4 +171,9 @@ private:
 	T m_write;
 	T m_swap;
 	T m_read;
+
+#if DEBUG
+	std::thread::id m_reader_id; // The thread that reads the cache and should call Retrieve() on it
+	std::thread::id m_writer_id; // The thread that does updates and calls Write() and Publish() on it
+#endif
 };

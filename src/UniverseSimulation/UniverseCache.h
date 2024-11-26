@@ -86,6 +86,8 @@ namespace voxel_game
 	};
 
 	// A cache updater that queues cache updates and executes them in a thread efficient way
+	// 
+	// This class is thread safe but will complain if the wrong thread calls certain methods
 	class UniverseCacheUpdater
 	{
 		struct InfoUpdate
@@ -102,8 +104,14 @@ namespace voxel_game
 	public:
 		UniverseCacheUpdater();
 
+#if DEBUG
+		void SetThreads(std::thread::id reader_id, std::thread::id writer_id);
+#endif
+
+		// Update a info entry of a singleton type
 		void UpdateInfo(UniverseCache::Type type, const UniverseCache::Info& info);
 
+		// Update a info entry of a map type
 		void UpdateInfoMap(UniverseCache::Type type, UUID id, const UniverseCache::Info& info);
 
 		// Write the changes to the exchange buffer
@@ -117,10 +125,5 @@ namespace voxel_game
 
 	private:
 		CommandSwapBuffer<InfoUpdate> m_updates;
-
-#if DEBUG
-		std::thread::id m_owner_id; // The thread that owns the cache and should call RetrieveUpdates() on it
-		std::thread::id m_writer_id; // The thread that does updates and calls PublishUpdates() on it
-#endif
 	};
 }

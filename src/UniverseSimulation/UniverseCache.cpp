@@ -48,8 +48,15 @@ namespace voxel_game
 		}
 	}
 
-	UniverseCacheUpdater::UniverseCacheUpdater()
-	{}
+	UniverseCacheUpdater::UniverseCacheUpdater() {}
+
+#if DEBUG
+	void UniverseCacheUpdater::SetThreads(std::thread::id reader_id, std::thread::id writer_id)
+	{
+		m_updates.SetReadThread(reader_id);
+		m_updates.SetWriteThread(writer_id);
+	}
+#endif
 
 	void UniverseCacheUpdater::UpdateInfo(UniverseCache::Type type, const UniverseCache::Info& info)
 	{
@@ -90,13 +97,11 @@ namespace voxel_game
 		m_updates.AddCommand(std::move(update));
 	}
 
-	// Write the changes to the exchange buffer
 	void UniverseCacheUpdater::PublishUpdates()
 	{
 		m_updates.PublishCommands();
 	}
 
-	// Obtain the latest changes made by the writer if there are any
 	void UniverseCacheUpdater::RetrieveUpdates(UniverseCache& out)
 	{
 		std::vector<InfoUpdate> updates;

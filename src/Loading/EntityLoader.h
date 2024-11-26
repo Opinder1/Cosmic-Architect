@@ -64,6 +64,10 @@ namespace voxel_game::loading
 		EntityLoader(flecs::world& world);
 		~EntityLoader();
 
+#if DEBUG
+		void SetProgressThread(std::thread::id thread_id);
+#endif
+
 		void Progress();
 
 		void LoadEntity(flecs::entity_t entity, UUID uuid);

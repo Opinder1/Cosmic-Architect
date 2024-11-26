@@ -34,7 +34,7 @@ namespace voxel_game
 
 	void Simulation::StartSimulation(ThreadMode thread_mode)
 	{
-		DEBUG_ASSERT(std::this_thread::get_id() == m_owner_id, "StartSimulation() should be called by the thread that created the simulation");
+		DEBUG_ASSERT(m_owner_id == std::this_thread::get_id(), "StartSimulation() should be called by the thread that created the simulation");
 
 		WaitUntilStopped();
 
@@ -59,7 +59,7 @@ namespace voxel_game
 
 	void Simulation::StopSimulation()
 	{
-		DEBUG_ASSERT(std::this_thread::get_id() == m_owner_id, "StopSimulation() should be called by the thread that created the simulation");
+		DEBUG_ASSERT(m_owner_id == std::this_thread::get_id(), "StopSimulation() should be called by the thread that created the simulation");
 
 		if (!m_running.load(std::memory_order_acquire))
 		{
@@ -87,7 +87,7 @@ namespace voxel_game
 
 	bool Simulation::Progress(real_t delta)
 	{
-		DEBUG_ASSERT(std::this_thread::get_id() == m_owner_id, "Progress() should always be called by the thread that created the simulation");
+		DEBUG_ASSERT(m_owner_id == std::this_thread::get_id(), "Progress() should always be called by the thread that created the simulation");
 
 		if (IsThreaded())
 		{
@@ -110,7 +110,7 @@ namespace voxel_game
 	{
 		EASY_MAIN_THREAD;
 
-		DEBUG_ASSERT(std::this_thread::get_id() == m_thread.get_id(), "FinishedLoading() should be called by the simulations thread");
+		DEBUG_ASSERT(m_thread.get_id() == std::this_thread::get_id(), "FinishedLoading() should be called by the simulations thread");
 
 		DoSimulationLoad();
 

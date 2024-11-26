@@ -21,6 +21,8 @@ namespace voxel_game
 	// A simulation object that runs a simulation for which commands are given as an input and
 	// signals are given as an output. When running in threaded mode, the commands and signals
 	// are efficiently buffered and sent between threads with minimal blocking
+	// 
+	// The simulations methods should only be called by the thread that creates the simulation
 	class Simulation : public godot::RefCounted
 	{
 		GDCLASS(Simulation, godot::RefCounted);
@@ -47,6 +49,10 @@ namespace voxel_game
 
 		// Check if we are in threaded mode
 		bool IsThreaded();
+
+		// Get the thread ids
+		uint64_t GetOwningThread();
+		uint64_t GetWorkerThread();
 
 		// Progress the simulation from the owning thread. When in thread mode, this is just to communicate with the thread
 		bool Progress(real_t delta);
@@ -92,7 +98,8 @@ namespace voxel_game
 		// Signals sent by the internal thread and deferred to be run by the main thread
 		alignas(k_cache_line) CommandBuffer m_deferred_signals;
 
-#if DEBUG 
+#if DEBUG
+	protected:
 		std::thread::id m_owner_id; // The thread that owns the simulation and should call Progress() on it
 #endif
 	};

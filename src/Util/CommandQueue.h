@@ -21,6 +21,8 @@
 namespace voxel_game
 {
 	// Container for a command buffer to write commands for an object in script
+	// 
+	// The queues methods should only be called by the thread that creates the queue
 	class CommandQueue : public godot::RefCounted
 	{
 		GDCLASS(CommandQueue, godot::RefCounted);
@@ -53,12 +55,15 @@ namespace voxel_game
 		void _add_command_vararg(const godot::Variant** p_args, GDExtensionInt p_argcount, GDExtensionCallError& error);
 
 	private:
-		uint64_t m_thread_id = 0;
+		std::thread::id m_owner_id;
+		uint64_t m_owner_gdid = 0;
 		uint64_t m_object_id = 0;
 		CommandBuffer m_command_buffer;
 	};
 
 	// Server which command buffers can be flushed to and processed frame by frame on the main thread or render thread
+	// 
+	// This class is thread safe but will complain if the wrong thread calls certain methods
 	class CommandQueueServer : public godot::Object
 	{
 		GDCLASS(CommandQueueServer, godot::Object);
@@ -114,7 +119,7 @@ namespace voxel_game
 	template<class... Args>
 	void CommandQueue::AddCommand(const godot::StringName& command, Args&&... p_args)
 	{
-		DEBUG_ASSERT(godot::OS::get_singleton()->get_thread_caller_id() == m_thread_id, "Should be run by the owning thread");
+		DEBUG_ASSERT(m_thread_id == std::this_thread::get_id(), "Should be run by the owning thread");
 
 		return CommandBuffer::AddCommand(m_command_buffer, command, std::forward<Args>(p_args)...);
 	}

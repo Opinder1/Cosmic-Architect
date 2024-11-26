@@ -169,12 +169,22 @@ namespace voxel_game
 
 	void UniverseSimulation::DoSimulationLoad()
 	{
+#if DEBUG
+		m_info_updater.SetThreads(m_owner_id, std::this_thread::get_id());
 
+		m_world.get_mut<loading::EntityLoader>()->SetProgressThread(std::this_thread::get_id());
+#endif
 	}
 
 	void UniverseSimulation::DoSimulationUnload()
 	{
 		DEBUG_ASSERT(m_universe.is_valid(), "The simulation should have been initialized");
+
+#if DEBUG
+		m_world.get_mut<loading::EntityLoader>()->SetProgressThread(std::thread::id{});
+
+		m_info_updater.SetThreads(std::thread::id{}, std::thread::id{});
+#endif
 
 		m_world.set_threads(0);
 
