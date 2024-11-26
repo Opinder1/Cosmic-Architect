@@ -8,6 +8,6 @@ namespace voxel_game::universe
 	{
 		world.module<Components>();
 
-		world.component<Universe>();
+		world.component<World>();
 	}
 }

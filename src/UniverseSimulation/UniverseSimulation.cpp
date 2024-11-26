@@ -47,7 +47,7 @@ namespace voxel_game
 		// Create the universe
 		flecs::entity universe_entity(world, DEBUG_ONLY("Universe"));
 
-		universe_entity.add<universe::Universe>();
+		universe_entity.add<universe::World>();
 		universe_entity.add<spatial3d::World>();
 		universe_entity.emplace<sim::Path>(path);
 
@@ -69,7 +69,7 @@ namespace voxel_game
 		flecs::entity galaxy_entity(world, DEBUG_ONLY("SimulatedGalaxy"));
 
 		galaxy_entity.child_of(universe_entity);
-		galaxy_entity.add<galaxy::Galaxy>();
+		galaxy_entity.add<galaxy::World>();
 		galaxy_entity.add<spatial3d::World>();
 		galaxy_entity.add<physics3d::Position>();
 		galaxy_entity.add<physics3d::Rotation>();

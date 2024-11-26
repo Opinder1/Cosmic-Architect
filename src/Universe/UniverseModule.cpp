@@ -26,9 +26,9 @@ namespace voxel_game::universe
 		world.import<universe::Components>();
 
 		// Initialise the spatial world of a universe
-		world.observer<Universe, spatial3d::World>(DEBUG_ONLY("UniverseInitializeSpatialWorld"))
+		world.observer<World, spatial3d::World>(DEBUG_ONLY("UniverseInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
-			.each([](Universe& universe, spatial3d::World& spatial_world)
+			.each([](World& universe_world, spatial3d::World& spatial_world)
 		{
 			spatial_world.max_scale = spatial3d::k_max_world_scale;
 
@@ -36,13 +36,13 @@ namespace voxel_game::universe
 
 			spatial_world.node_keepalive = 1s;
 
-			universe.node_entry = spatial_world.node_type.AddEntry<Node>();
+			universe_world.node_entry = spatial_world.node_type.AddEntry<Node>();
 		});
 
-		world.system<const Universe, spatial3d::World, sim::ThreadEntityPools>(DEBUG_ONLY("UniverseLoadSpatialNode"))
+		world.system<const World, spatial3d::World, sim::ThreadEntityPools>(DEBUG_ONLY("UniverseLoadSpatialNode"))
 			.multi_threaded()
 			.term_at(2).src<sim::ThreadEntityPools>()
-			.each([](flecs::entity entity, const Universe& universe, spatial3d::World& spatial_world, sim::ThreadEntityPools& entity_pools)
+			.each([](flecs::entity entity, const World& universe_world, spatial3d::World& spatial_world, sim::ThreadEntityPools& entity_pools)
 		{
 			flecs::world world = entity.world();
 
@@ -62,7 +62,7 @@ namespace voxel_game::universe
 				for (Poly node_poly : scale.load_commands)
 				{
 					spatial3d::Node& node = node_poly.GetEntry(spatial_world.node_entry);
-					Node& universe_node = node_poly.GetEntry(universe.node_entry);
+					Node& universe_node = node_poly.GetEntry(universe_world.node_entry);
 
 					const uint32_t entities_per_node = 4;
 					const uint32_t scale_step = 1 << node.coord.scale;
@@ -83,7 +83,7 @@ namespace voxel_game::universe
 						flecs::entity galaxy(world, sim::CreateThreadEntity(entity_pool));
 
 						galaxy.child_of(entity);
-						galaxy.add<galaxy::Galaxy>();
+						galaxy.add<galaxy::World>();
 						galaxy.set(physics3d::Position{ godot::Vector3(position_x, position_y, position_z) });
 						galaxy.set(physics3d::Scale{ godot::Vector3(box_size, box_size, box_size) });
 						galaxy.add<rendering::UniqueInstance>(galaxy_schematic);
@@ -94,10 +94,10 @@ namespace voxel_game::universe
 			}
 		});
 
-		world.system<const Universe, spatial3d::World, sim::ThreadEntityPools>(DEBUG_ONLY("UniverseUnloadSpatialNode"))
+		world.system<const World, spatial3d::World, sim::ThreadEntityPools>(DEBUG_ONLY("UniverseUnloadSpatialNode"))
 			.multi_threaded()
 			.term_at(2).src<sim::ThreadEntityPools>()
-			.each([](flecs::entity entity, const Universe& universe, spatial3d::World& spatial_world, sim::ThreadEntityPools& entity_pools)
+			.each([](flecs::entity entity, const World& universe_world, spatial3d::World& spatial_world, sim::ThreadEntityPools& entity_pools)
 		{
 			flecs::world world = entity.world();
 
@@ -108,7 +108,7 @@ namespace voxel_game::universe
 				for (Poly node_poly : scale.unload_commands)
 				{
 					spatial3d::Node& node = node_poly.GetEntry(spatial_world.node_entry);
-					Node& universe_node = node_poly.GetEntry(universe.node_entry);
+					Node& universe_node = node_poly.GetEntry(universe_world.node_entry);
 
 					const uint32_t entities_per_node = 4;
 					const uint32_t scale_step = 1 << node.coord.scale;

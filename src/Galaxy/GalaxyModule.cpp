@@ -25,13 +25,13 @@ namespace voxel_game::galaxy
 		world.import<physics3d::Components>();
 
 		// Initialise the spatial world of a galaxy
-		world.observer<Galaxy, spatial3d::World>(DEBUG_ONLY("GalaxyInitializeSpatialWorld"))
+		world.observer<World, spatial3d::World>(DEBUG_ONLY("GalaxyInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
-			.each([](Galaxy& galaxy, spatial3d::World& spatial_world)
+			.each([](World& galaxy_world, spatial3d::World& spatial_world)
 		{
 			spatial_world.max_scale = spatial3d::k_max_world_scale;
 
-			galaxy.node_entry = spatial_world.node_type.AddEntry<Node>();
+			galaxy_world.node_entry = spatial_world.node_type.AddEntry<Node>();
 		});
 	}
 }

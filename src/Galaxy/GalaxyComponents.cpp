@@ -8,7 +8,7 @@ namespace voxel_game::galaxy
 	{
 		world.module<Components>();
 
-		world.component<Galaxy>();
+		world.component<World>();
 		world.component<Star>();
 	}
 }
