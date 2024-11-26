@@ -308,6 +308,7 @@ namespace voxel_game
 
 	private:
 		godot::Ref<Universe> m_universe;
+		godot::StringName m_fragment_type;
 		
 		// World
 		flecs::world m_world;

@@ -10,6 +10,7 @@
 
 #include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/variant/string_name.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
 
 #include <flecs/flecs.h>
 
@@ -29,6 +30,16 @@ namespace voxel_game::sim
 		Components(flecs::world& world);
 	};
 
+	struct Name
+	{
+		godot::StringName name;
+	};
+
+	struct Path
+	{
+		godot::StringName path;
+	};
+
 	struct GlobalTime
 	{
 		uint64_t frame_index = 0;
@@ -40,6 +51,11 @@ namespace voxel_game::sim
 		Clock::time_point epoch;
 	};
 
+	struct Config
+	{
+		godot::Dictionary values;
+	};
+
 	struct ThreadEntityPool
 	{
 		SmallVector<flecs::entity_t, k_max_pool_entities> new_entities;
@@ -48,21 +64,6 @@ namespace voxel_game::sim
 	struct ThreadEntityPools : Nocopy
 	{
 		PerThread<ThreadEntityPool> threads;
-	};
-
-	struct Simulation : Nocopy
-	{
-		godot::StringName name;
-		godot::StringName path;
-		godot::StringName fragment_type;
-
-		bool networked = false;
-		bool is_remote = false;
-		godot::StringName remote_ip;
-
-		size_t main_seed = 0;
-
-		godot::Ref<godot::DirAccess> m_directory;
 	};
 
 	ThreadEntityPool& GetThreadEntityPool(ThreadEntityPools& pools, flecs::world_t* stage);

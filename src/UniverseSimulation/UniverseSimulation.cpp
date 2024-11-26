@@ -42,13 +42,14 @@ namespace voxel_game
 {
 	const size_t k_simulation_ticks_per_second = 20;
 
-	flecs::entity CreateNewUniverse(flecs::world& world, godot::RID scenario)
+	flecs::entity CreateNewUniverse(flecs::world& world, const godot::String& path, godot::RID scenario)
 	{
 		// Create the universe
 		flecs::entity universe_entity(world, DEBUG_ONLY("Universe"));
 
 		universe_entity.add<universe::Universe>();
 		universe_entity.add<spatial3d::World>();
+		universe_entity.emplace<sim::Path>(path);
 
 		spatial3d::AddScaleMarkers(universe_entity);
 
@@ -114,6 +115,8 @@ namespace voxel_game
 
 		m_universe = universe;
 
+		m_fragment_type = fragment_type;
+
 		m_world.reset();
 
 		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
@@ -134,6 +137,11 @@ namespace voxel_game
 		m_world.import<galaxy::Module>();
 		m_world.import<universe::Module>();
 
+		if (server_type == ServerType::SERVER_TYPE_REMOTE)
+		{
+			// Import networking
+		}
+
 		if (scenario.is_valid())
 		{
 			m_world.import<rendering::Module>();
@@ -143,7 +151,7 @@ namespace voxel_game
 
 		// Create the universe and simulated galaxy
 
-		m_universe_entity = CreateNewUniverse(m_world, scenario);
+		m_universe_entity = CreateNewUniverse(m_world, path, scenario);
 
 		m_galaxy_entity = CreateNewSimulatedGalaxy(m_world, m_universe_entity, scenario);
 	}

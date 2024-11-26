@@ -13,6 +13,8 @@ namespace voxel_game::sim
 
 		world.add<GlobalTime>();
 
+		world.add<Config>();
+
 		world.add<ThreadEntityPools>();
 
 		world.system<GlobalTime>("WorldUpdateTime")
