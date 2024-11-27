@@ -104,7 +104,7 @@ namespace voxel_game
 	public:
 		UniverseCacheUpdater();
 
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 		void SetThreads(std::thread::id reader_id, std::thread::id writer_id);
 #endif
 

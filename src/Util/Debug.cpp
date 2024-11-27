@@ -9,7 +9,7 @@
 
 #include <thread>
 
-#if DEBUG
+#if defined(DEBUG_THREAD_CHECK)
 namespace
 {
 	struct CheckGroup : Nocopy
@@ -101,4 +101,4 @@ void DebugThreadCheckSync(const void* group)
 
 	check_group.objects.clear();
 }
-#endif // DEBUG
+#endif // DEBUG_THREAD_CHECK

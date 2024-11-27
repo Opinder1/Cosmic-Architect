@@ -28,7 +28,7 @@ class CommandSwapBuffer : Nocopy, Nomove
 public:
 	CommandSwapBuffer() {}
 
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 	void SetReadThread(std::thread::id thread_id)
 	{
 		m_reader_id = thread_id;
@@ -86,7 +86,7 @@ private:
 	alignas(k_cache_line) std::vector<CommandT> m_write;
 	alignas(k_cache_line) std::vector<CommandT> m_read;
 
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 	std::thread::id m_reader_id; // The thread that reads the cache and should call RetrieveCommands() on it
 	std::thread::id m_writer_id; // The thread that does updates and calls AddCommand() and PublishCommands() on it
 #endif
@@ -100,7 +100,7 @@ public:
 	{
 	}
 
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 	void SetReadThread(std::thread::id thread_id)
 	{
 		m_reader_id = thread_id;
@@ -172,7 +172,7 @@ private:
 	T m_swap;
 	T m_read;
 
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 	std::thread::id m_reader_id; // The thread that reads the cache and should call Retrieve() on it
 	std::thread::id m_writer_id; // The thread that does updates and calls Write() and Publish() on it
 #endif

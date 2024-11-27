@@ -7,8 +7,6 @@
 
 #if defined(DEBUG_ENABLED) || defined(TOOLS_ENABLED)
 
-#define DEBUG 1
-
 #define DEBUG_CRASH() CRASH_NOW()
 #define DEBUG_ASSERT(m_cond, m_msg) CRASH_COND_MSG(!(m_cond), m_msg)
 #define DEBUG_ONLY(m_cond) m_cond
@@ -24,8 +22,6 @@
 #define DEBUG_THREAD_CHECK
 
 #else // DEBUG
-
-#define DEBUG 0
 
 #define DEBUG_CRASH()
 #define DEBUG_ASSERT(m_cond, m_msg)

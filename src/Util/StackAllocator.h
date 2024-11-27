@@ -7,7 +7,7 @@
 #include <any>
 
 // Enable tracking of allocations to check nothing is being misused
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 #define TRACK_STACK_ALLOCATIONS
 #endif
 

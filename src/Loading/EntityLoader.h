@@ -64,7 +64,7 @@ namespace voxel_game::loading
 		EntityLoader(flecs::world& world);
 		~EntityLoader();
 
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 		void SetProgressThread(std::thread::id thread_id);
 #endif
 
@@ -110,7 +110,7 @@ namespace voxel_game::loading
 		std::deque<SaveTask> m_save_tasks;
 		std::deque<DeleteTask> m_delete_tasks;
 
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 		std::thread::id m_owner_id; // The thread that owns the loader and should call Progress() on it
 #endif
 	};

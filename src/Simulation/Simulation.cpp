@@ -17,7 +17,7 @@ namespace voxel_game
 
 	Simulation::Simulation()
 	{
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 		m_owner_id = std::this_thread::get_id();
 #endif
 	}

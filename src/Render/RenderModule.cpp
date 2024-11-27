@@ -201,7 +201,7 @@ namespace voxel_game::rendering
             thread_context.commands.AddCommand("instance_set_scenario", instance.id, scenario.id);
         });
 
-#if DEBUG
+#if defined(DEBUG_ENABLED)
         // When a render instance or scenario is destroyed unset the scenario. This should happen automatically in the render server
         world.observer<const UniqueInstance, const Scenario, ServerContext>(DEBUG_ONLY("InstanceRemoveScenario"))
             .event(flecs::OnRemove)
@@ -281,7 +281,7 @@ namespace voxel_game::rendering
             thread_context.commands.AddCommand("free_rid", base.id);
         });
 
-#if DEBUG
+#if defined(DEBUG_ENABLED)
         // When a render instance or base is destroyed unset the base. This should happen automatically in the render server
         world.observer<const UniqueInstance, const Base, ServerContext>(DEBUG_ONLY("RenderInstanceRemoveBase"))
             .event(flecs::OnRemove)

@@ -33,7 +33,7 @@ namespace voxel_game::loading
 			m_thread.join();
 		}
 
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 		m_modification_stage.SetReadThread(std::this_thread::get_id());
 		m_modification_stage.SetWriteThread(std::this_thread::get_id());
 #endif
@@ -46,7 +46,7 @@ namespace voxel_game::loading
 		m_modification_stage.Retrieve().merge();
 	}
 
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 	void EntityLoader::SetProgressThread(std::thread::id thread_id)
 	{
 		m_load_commands.SetWriteThread(thread_id);
@@ -72,7 +72,7 @@ namespace voxel_game::loading
 
 	void EntityLoader::ThreadLoop()
 	{
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 		std::thread::id thread_id = std::this_thread::get_id();
 		m_load_commands.SetReadThread(thread_id);
 		m_save_commands.SetReadThread(thread_id);
@@ -93,7 +93,7 @@ namespace voxel_game::loading
 				m_modification_stage.Publish();
 			}
 		}
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 		m_modification_stage.SetWriteThread(std::thread::id{});
 		m_delete_commands.SetReadThread(std::thread::id{});
 		m_save_commands.SetReadThread(std::thread::id{});

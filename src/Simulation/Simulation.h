@@ -98,7 +98,7 @@ namespace voxel_game
 		// Signals sent by the internal thread and deferred to be run by the main thread
 		alignas(k_cache_line) CommandBuffer m_deferred_signals;
 
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 	protected:
 		std::thread::id m_owner_id; // The thread that owns the simulation and should call Progress() on it
 #endif

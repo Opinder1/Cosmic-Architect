@@ -124,7 +124,7 @@ namespace voxel_game
 		m_world.set_target_fps(k_simulation_ticks_per_second);
 
 		// Import modules
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 		m_world.import<flecs::stats>();
 		m_world.set<flecs::Rest>({});
 #endif
@@ -169,7 +169,7 @@ namespace voxel_game
 
 	void UniverseSimulation::DoSimulationLoad()
 	{
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 		m_info_updater.SetThreads(m_owner_id, std::this_thread::get_id());
 
 		m_world.get_mut<loading::EntityLoader>()->SetProgressThread(std::this_thread::get_id());
@@ -180,7 +180,7 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(m_universe.is_valid(), "The simulation should have been initialized");
 
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 		m_world.get_mut<loading::EntityLoader>()->SetProgressThread(std::thread::id{});
 
 		m_info_updater.SetThreads(std::thread::id{}, std::thread::id{});
@@ -223,7 +223,7 @@ namespace voxel_game
 		return m_universe;
 	}
 
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 	void UniverseSimulation::DebugCommand(const godot::StringName& command, const godot::Array& args)
 	{
 		if (DeferCommand(k_commands->debug_command, command, args))
@@ -264,7 +264,7 @@ namespace voxel_game
 		// ####### Universe #######
 
 		BIND_METHOD(godot::D_METHOD(k_commands->get_universe), &UniverseSimulation::GetUniverse);
-#if DEBUG
+#if defined(DEBUG_ENABLED)
 		BIND_METHOD(godot::D_METHOD(k_commands->debug_command, "command", "arguments"), &UniverseSimulation::DebugCommand);
 #endif
 
