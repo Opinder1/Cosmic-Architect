@@ -21,15 +21,14 @@ namespace voxel_game
 
 		command_queue.instantiate();
 
+		command_queue->m_owner_id = godot::OS::get_singleton()->get_thread_caller_id();
 		command_queue->m_object_id = object;
 
 		return command_queue;
 	}
 
 	CommandQueue::CommandQueue()
-	{
-		m_owner_gdid = godot::OS::get_singleton()->get_thread_caller_id();
-	}
+	{}
 
 	CommandQueue::~CommandQueue()
 	{
@@ -38,7 +37,7 @@ namespace voxel_game
 
 	uint64_t CommandQueue::GetOwningThread()
 	{
-		return m_owner_gdid;
+		return m_owner_id;
 	}
 
 	uint64_t CommandQueue::GetObject()
@@ -48,7 +47,7 @@ namespace voxel_game
 
 	void CommandQueue::_add_command_vararg(const godot::Variant** p_args, GDExtensionInt p_argcount, GDExtensionCallError& error)
 	{
-		if (m_owner_id != std::this_thread::get_id())
+		if (m_owner_id != godot::OS::get_singleton()->get_thread_caller_id())
 		{
 			error.error = GDEXTENSION_CALL_ERROR_INVALID_METHOD;
 			DEBUG_PRINT_ERROR("Should be run by the owning thread");
@@ -88,7 +87,7 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(godot::ObjectID(m_object_id).is_valid(), "Command queue should have an assigned object");
 
-		if (m_owner_id != std::this_thread::get_id())
+		if (m_owner_id != godot::OS::get_singleton()->get_thread_caller_id())
 		{
 			DEBUG_PRINT_ERROR("Should be run by the owning thread");
 			return;
