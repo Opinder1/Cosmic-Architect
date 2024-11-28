@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 
+// Circular buffer interface that is implemented with a static and growing buffer. Has the same api as a std::vector
 template<class DataT, class DerivedT>
 class CircularBufferBase
 {
@@ -255,6 +256,7 @@ protected:
     size_t m_last = 0;
 };
 
+// Constant size buffer that items can be pushed to the front and popped from behind
 template<class DataT, size_t k_capacity>
 class CircularBuffer : public CircularBufferBase<DataT, CircularBuffer<DataT, k_capacity>>
 {
@@ -287,6 +289,7 @@ public:
     }
 
 private:
+    // Get index of the last item after adding to the back. Return false if we ran out of space
     bool get_new_last(size_t& new_last)
     {
         new_last = (Base::m_last + 1) % capacity();
@@ -300,6 +303,7 @@ private:
         return true;
     }
 
+    // Get index of the first item after adding to the front.  Return false if we ran out of space
     bool get_new_first(size_t& new_first)
     {
         new_first = (Base::m_first + capacity() - 1) % capacity();
@@ -327,6 +331,7 @@ private:
     std::byte m_storage[k_capacity * sizeof(DataT)];
 };
 
+// Growing buffer that items can be pushed to the front and popped from behind
 template<class DataT>
 class GrowingCircularBuffer : public CircularBufferBase<DataT, GrowingCircularBuffer<DataT>>
 {
@@ -372,6 +377,7 @@ public:
         m_capacity = 0;
     }
 
+    // Resize the buffer to a certain capacity and move the current data to that buffer
     void reserve(size_t new_capacity)
     {
         if (new_capacity < 4)
@@ -379,10 +385,12 @@ public:
             new_capacity = 4;
         }
 
+        // Allocate a new buffer
         size_t old_size = Base::size();
         std::byte* new_buffer = new std::byte[sizeof(DataT) * new_capacity];
         DataT* new_ptr = (DataT*)new_buffer;
 
+        // If we have an old buffer then copy from it and delete it
         if (m_buffer != nullptr)
         {
             for (DataT& item : *this)
@@ -393,6 +401,7 @@ public:
             delete[] m_buffer;
         }
 
+        // Initialize our values
         Base::m_first = 0;
         Base::m_last = old_size;
         m_buffer = new_buffer;
@@ -400,6 +409,7 @@ public:
     }
 
 private:
+    // Get index of the last item after adding to the back
     bool get_new_last(size_t& new_last)
     {
         if (Base::size() + 1 >= capacity())
@@ -412,6 +422,7 @@ private:
         return true;
     }
 
+    // Get index of the first item after adding to the front
     bool get_new_first(size_t& new_first)
     {
         if (Base::size() + 1 >= capacity())
@@ -424,6 +435,7 @@ private:
         return true;
     }
 
+    // Grow our buffer to have more space
     void grow()
     {
         reserve(capacity() * 2);

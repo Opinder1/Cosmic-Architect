@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 
+// Small vector interface that is implemented with a static and growing buffer. Has the same api as a std::vector
 template<class DataT, class DerivedT>
 class SmallVectorBase
 {
@@ -262,11 +263,15 @@ public:
     }
 
 protected:
+    // Helper function used by the derived classes to swap the base members
     void swap(SmallVectorBase& other)
     {
         std::swap(m_size, other.m_size);
     }
 
+    // Helper function used by the derived classes to swap the physical items in memory.
+    // We swap the items themselves as both small vectors may have different capacities or
+    // storage methods
     void swap_array_items(SmallVectorBase& other)
     {
         size_t common_size = std::min(m_size, other.m_size);
@@ -392,14 +397,16 @@ public:
 
     void reserve(size_t new_capacity)
     {
-        if (new_capacity <= m_capacity)
+        if (new_capacity <= m_capacity) // Don't reallocate if we already can fit the requested capacity
         {
             return;
         }
 
+        // Allocate a new larger buffer
         std::byte* new_buffer = new std::byte[sizeof(DataT) * new_capacity];
         DataT* new_ptr = reinterpret_cast<DataT*>(new_buffer);
 
+        // If we have an old buffer then move all the items and delete it
         if (m_buffer != storage_ptr())
         {
             for (DataT& item : *this)
@@ -419,6 +426,7 @@ public:
         return m_capacity;
     }
 
+    // Reallocate our buffer to be just small enough to fit all our items
     void shrink_to_fit()
     {
         if (m_buffer == storage_ptr()) // Don't reallocate if we are using the array buffer
@@ -437,6 +445,7 @@ public:
             new_buffer = new std::byte[sizeof(DataT) * Base::m_size];
         }
 
+        // Move all items and delete the old buffer. We definitely have items if we are not using the array buffer.
         DataT* new_ptr = static_cast<DataT*>(new_buffer);
 
         for (DataT& item : *this)
@@ -457,6 +466,7 @@ public:
 
         if (using_storage || other_using_storage)
         {
+            // Complex swapping method when at least one is using the storage array
             Base::swap_array_items(other);
 
             std::byte* new_buffer = other_using_storage ? storage_ptr() : other.m_buffer;

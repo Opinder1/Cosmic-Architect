@@ -22,6 +22,7 @@ struct PerThread : std::array<AlignedData<DataT>, k_worker_thread_max>, Nocopy, 
 	using std::array<AlignedData<DataT>, k_worker_thread_max>::array;
 };
 
+// A buffer where one thread adds items and the other retrieves items while being lock free
 template<class CommandT>
 class CommandSwapBuffer : Nocopy, Nomove
 {
@@ -92,13 +93,12 @@ private:
 #endif
 };
 
+// A triple buffer where a writer thread can write and a reader thread can read simultaneously while being lock free
 template<class T>
 class alignas(k_cache_line) TripleBuffer : Nocopy, Nomove
 {
 public:
-	TripleBuffer()
-	{
-	}
+	TripleBuffer() {}
 
 #if defined(DEBUG_ENABLED)
 	void SetReadThread(std::thread::id thread_id)

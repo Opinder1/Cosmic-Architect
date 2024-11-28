@@ -10,11 +10,6 @@ Poly::Poly(std::byte* ptr) :
 	ptr(ptr)
 {}
 
-bool Poly::IsValid() const
-{
-	return ptr != nullptr;
-}
-
 bool Poly::operator==(Poly other) const
 {
 	return ptr == other.ptr;
@@ -23,6 +18,11 @@ bool Poly::operator==(Poly other) const
 bool Poly::operator!=(Poly other) const
 {
 	return ptr != other.ptr;
+}
+
+bool Poly::IsValid() const
+{
+	return ptr != nullptr;
 }
 
 uint16_t PolyType::AddEntry(FactoryCB construct, FactoryCB destruct, uint16_t size)

@@ -8,6 +8,8 @@
 
 constexpr const size_t DynamicSpan = SIZE_MAX;
 
+// A type that references a range of contiguous items regardless of how they are stored.
+// This variant references static sized ranges
 template<class T, size_t S>
 class Span
 {
@@ -87,6 +89,8 @@ private:
 	T* m_data;
 };
 
+// A type that references a range of contiguous items regardless of how they are stored.
+// This variant references runtime sized ranges
 template<class T>
 class Span<T, DynamicSpan>
 {

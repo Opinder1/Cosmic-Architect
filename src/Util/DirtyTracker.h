@@ -4,7 +4,8 @@
 #include <map>
 #include <cstdint>
 
-// A tracker for telling which ranges of data have been modified aligned to chunks
+// A tracker for telling which ranges of data aligned to chunks have been modified. This tracker keeps the exact range of items in
+// each chunk that are dirty. If the range extends over chunk boundaries then they are treated as whole ranges
 class DirtyRangeTracker
 {
 	struct Chunk
@@ -16,10 +17,13 @@ class DirtyRangeTracker
 public:
 	DirtyRangeTracker(uint16_t chunk_size);
 
+    // Mark a single item as dirty
 	void AddItem(uint32_t pos);
 
+    // Add a range of items which will all be marked as dirty
 	void AddItems(uint32_t first, uint32_t last);
 
+    // Iterate over all dirty items in the tracker
 	template<class Callable>
     void ForEachRange(Callable&& callback);
 
@@ -30,16 +34,19 @@ private:
 	std::map<uint16_t, Chunk> m_chunks;
 };
 
-// A tracker for telling which chunks of data have been modified
+// A tracker for telling which chunks of data have been modified. This tracker treats entire chunks as dirty if just one item is marked
 class DirtyChunkTracker
 {
 public:
     DirtyChunkTracker(uint16_t chunk_size);
 
+    // Mark a single item as dirty
     void AddItem(uint32_t pos);
 
+    // Add a range of items which will all be marked as dirty
     void AddItems(uint32_t first, uint32_t last);
 
+    // Iterate over all dirty items in the tracker
     template<class Callable>
     void ForEachRange(Callable&& callback);
 
