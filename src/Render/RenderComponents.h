@@ -43,7 +43,7 @@ namespace voxel_game::rendering
 		ServerThreadContext main_thread;
 		PerThread<ServerThreadContext> threads;
 
-		Allocator allocator;
+		Allocator instance_allocator{ AllocatorType::Instance };
 	};
 
 	struct ModifyFlags

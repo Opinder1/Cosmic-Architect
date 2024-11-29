@@ -58,7 +58,7 @@ namespace voxel_game::rendering
             .immediate()
             .each([](ServerContext& context)
         {
-            context.allocator.Process();
+            context.instance_allocator.Process();
         });
 
         InitTree(world);
@@ -247,7 +247,7 @@ namespace voxel_game::rendering
         {
             EASY_BLOCK("AddUniqueInstance");
 
-            instance.id = context.allocator.CreateInstance();
+            instance.id = context.instance_allocator.RequestRID();
 
             it.entity(i).modified(it.pair(0));
         });
