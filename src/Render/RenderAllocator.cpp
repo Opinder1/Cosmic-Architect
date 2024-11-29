@@ -26,10 +26,7 @@ namespace voxel_game::rendering
         k_singleton.reset();
     }
 
-    AllocatorServer::AllocatorServer()
-    {
-
-    }
+    AllocatorServer::AllocatorServer() {}
 
     AllocatorServer::~AllocatorServer()
     {
@@ -79,14 +76,21 @@ namespace voxel_game::rendering
 
             if (allocate_more)
             {
-                godot::RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &AllocatorServer::AllocateRIDs));
+                AllocateRIDs();
             }
         }
     }
 
     void AllocatorServer::AllocateRIDs()
     {
+        godot::RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &AllocatorServer::AllocateRIDsInternal));
+    }
+
+    void AllocatorServer::AllocateRIDsInternal()
+    {
         godot::RenderingServer* rserver = godot::RenderingServer::get_singleton();
+
+        DEBUG_ASSERT(rserver->is_on_render_thread(), "This should be called when on the render thread as its entire existence is to be performant");
 
         std::lock_guard lock(m_mutex);
 

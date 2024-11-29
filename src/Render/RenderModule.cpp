@@ -26,6 +26,8 @@ namespace voxel_game::rendering
 
         world.add<ServerContext>();
 
+        AllocatorServer::get_singleton()->AllocateRIDs();
+
         // Flush each threads render commands to the command queue server which will run them on the rendering server thread
         world.system<ServerContext>(DEBUG_ONLY("FrameFlushCommands"))
             .immediate()

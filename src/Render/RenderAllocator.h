@@ -63,12 +63,14 @@ namespace voxel_game::rendering
 
 		void RequestRIDs(AllocatorType type, std::vector<godot::RID>& rids_out);
 
+		void AllocateRIDs();
+
 	public:
 		static void _bind_methods();
 		static void _cleanup_methods();
 
 	private:
-		void AllocateRIDs();
+		void AllocateRIDsInternal();
 
 	private:
 		static godot::OptObj<AllocatorServer> k_singleton;
