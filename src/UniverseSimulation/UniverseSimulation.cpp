@@ -15,6 +15,7 @@
 #include "Voxel/VoxelModule.h"
 
 #include "Render/RenderComponents.h"
+#include "Render/TreeComponents.h"
 #include "Render/RenderModule.h"
 
 #include "Physics3D/PhysicsComponents.h"

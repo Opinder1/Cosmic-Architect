@@ -3,13 +3,12 @@
 #include "RenderAllocator.h"
 #include "RenderInstancer.h"
 
-#include "Util/CommandQueue.h"
-#include "Util/Time.h"
+#include "Util/CommandBuffer.h"
+#include "Util/PerThread.h"
 #include "Util/Nocopy.h"
 
 #include <godot_cpp/variant/rid.hpp>
 #include <godot_cpp/variant/packed_byte_array.hpp>
-#include <godot_cpp/classes/rendering_server.hpp>
 
 #include <flecs/flecs.h>
 
@@ -19,11 +18,6 @@
 namespace flecs
 {
 	struct world;
-}
-
-namespace godot
-{
-	class RenderingServer;
 }
 
 namespace voxel_game::rendering
@@ -44,39 +38,6 @@ namespace voxel_game::rendering
 		PerThread<ServerThreadContext> threads;
 
 		Allocator instance_allocator{ AllocatorType::Instance };
-	};
-
-	struct ModifyFlags
-	{
-		enum : uint8_t
-		{
-			BlendShapeWeight,
-			CustomAABB,
-			ExtraVisibilityMargin,
-			IgnoreCulling,
-			LayerMask,
-			PivotData,
-			Scenario,
-			SurfaceOverrideMaterial,
-			Transform,
-			VisibilityParent,
-			Visible,
-			Count
-		};
-	};
-
-	// A node in the main render transform tree that follows node draw info from its parent
-	struct TreeNode : Nocopy
-	{
-		godot::Transform3D transform;
-		godot::Vector3 velocity;
-		godot::AABB aabb;
-		bool visible = false;
-
-		std::bitset<ModifyFlags::Count> modify_flags;
-
-		// Mesh type instancers for meshes that can be made into multimeshes
-		MeshInstancers mesh_instancers;
 	};
 
 	// This is the scenario that all the children instances of this entity will register to

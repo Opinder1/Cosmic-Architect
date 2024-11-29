@@ -1,7 +1,10 @@
 #include "RenderModule.h"
 #include "RenderComponents.h"
+#include "TreeComponents.h"
 
 #include "Physics3D/PhysicsComponents.h"
+
+#include "Util/CommandQueue.h"
 
 #include <godot_cpp/classes/rendering_server.hpp>
 
@@ -18,6 +21,7 @@ namespace voxel_game::rendering
 		world.module<Module>();
 
 		world.import<Components>();
+        world.import<TreeComponents>();
         world.import<physics3d::Components>();
 
         world.add<ServerContext>();
@@ -39,8 +43,9 @@ namespace voxel_game::rendering
             cqserver->AddCommands(rserver_id, std::move(context.main_thread.commands));
         });
 
-        world.component<ServerContext>()
-            .on_remove([](ServerContext& context)
+        world.observer<ServerContext>()
+            .event(flecs::OnRemove)
+            .each([](ServerContext& context)
         {
             CommandQueueServer* cqserver = CommandQueueServer::get_singleton();
             uint64_t rserver_id = godot::RenderingServer::get_singleton()->get_instance_id();

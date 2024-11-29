@@ -1,7 +1,5 @@
 #include "RenderComponents.h"
 
-#include <godot_cpp/classes/rendering_server.hpp>
-
 #include <flecs/flecs.h>
 
 namespace voxel_game::rendering
@@ -10,7 +8,7 @@ namespace voxel_game::rendering
 	{
 		world.module<Components>();
 
-        world.component<TreeNode>();
+        world.component<ServerContext>();
 
         world.component<Scenario>();
         world.component<OwnedScenario>();

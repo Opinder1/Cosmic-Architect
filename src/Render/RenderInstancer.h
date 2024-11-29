@@ -5,10 +5,13 @@
 #include "Util/DirtyTracker.h"
 
 #include <godot_cpp/variant/rid.hpp>
+#include <godot_cpp/variant/aabb.hpp>
 
 #include <robin_hood/robin_hood.h>
 
 #include <flecs/flecs.h>
+
+#include <vector>
 
 namespace voxel_game::rendering
 {
@@ -67,5 +70,9 @@ namespace voxel_game::rendering
 		GrowingSmallVector<MeshTypeInstancerBlock, 1> blocks;
 	};
 
-	using MeshInstancers = robin_hood::unordered_map<flecs::entity_t, MeshTypeInstancer>;
+	// Mesh type instancers for meshes that can be made into multimeshes
+	struct MeshInstancers : Nocopy
+	{
+		robin_hood::unordered_map<flecs::entity_t, MeshTypeInstancer> instances;
+	};
 }
