@@ -28,15 +28,30 @@ namespace voxel_game::rendering
             .each([](ServerContext& context)
         {
             CommandQueueServer* cqserver = CommandQueueServer::get_singleton();
-            uint64_t server_instance = godot::RenderingServer::get_singleton()->get_instance_id();
+            uint64_t rserver_id = godot::RenderingServer::get_singleton()->get_instance_id();
 
             for (ServerThreadContext& thread_context : context.threads)
             {
-                cqserver->AddCommands(server_instance, std::move(thread_context.commands));
+                cqserver->AddCommands(rserver_id, std::move(thread_context.commands));
             }
 
             // Do main thread commands last as they may include freeing of rids
-            cqserver->AddCommands(server_instance, std::move(context.main_thread.commands));
+            cqserver->AddCommands(rserver_id, std::move(context.main_thread.commands));
+        });
+
+        world.component<ServerContext>()
+            .on_remove([](ServerContext& context)
+        {
+            CommandQueueServer* cqserver = CommandQueueServer::get_singleton();
+            uint64_t rserver_id = godot::RenderingServer::get_singleton()->get_instance_id();
+
+            for (ServerThreadContext& thread_context : context.threads)
+            {
+                cqserver->AddCommands(rserver_id, std::move(thread_context.commands));
+            }
+
+            // Do main thread commands last as they may include freeing of rids
+            cqserver->AddCommands(rserver_id, std::move(context.main_thread.commands));
         });
 
         world.system<ServerContext>(DEBUG_ONLY("PreallocateObjects"))
@@ -85,11 +100,11 @@ namespace voxel_game::rendering
             {
                 transform *= parent_tree_node->transform;
 
-                tree_node.modify_flags.visible = tree_node.visible != parent_tree_node->visible;
+                tree_node.modify_flags[ModifyFlags::Visible] = tree_node.visible != parent_tree_node->visible;
                 tree_node.visible = tree_node.visible && parent_tree_node->visible;
             }
 
-            tree_node.modify_flags.transform = transform != tree_node.transform;
+            tree_node.modify_flags[ModifyFlags::Transform] = transform != tree_node.transform;
             tree_node.transform = transform;
         });
 
@@ -110,7 +125,7 @@ namespace voxel_game::rendering
 
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
 
-            if (tree_node.modify_flags.transform)
+            if (tree_node.modify_flags[ModifyFlags::Transform])
             {
                 thread_context.commands.AddCommand("instance_set_transform", instance.id, tree_node.transform);
             }
