@@ -59,11 +59,13 @@ namespace voxel_game
 	template<class T>
 	const std::byte* ReadVariantInternal(godot::Variant& argument, const std::byte* buffer_pos, const std::byte* buffer_end)
 	{
+#if defined(DEBUG_ENABLED)
 		if (buffer_pos + sizeof(T) > buffer_end)
 		{
 			DEBUG_PRINT_ERROR("Not enough space to read another encoded variant value");
 			return buffer_end;
 		}
+#endif
 
 		const T* value = reinterpret_cast<const T*>(buffer_pos);
 
@@ -77,11 +79,13 @@ namespace voxel_game
 	// Read an encoded variant in a byte stream. Copies the object to the variant and then destroys the object in the buffer
 	const std::byte* ReadVariant(godot::Variant& argument, const std::byte* buffer_pos, const std::byte* buffer_end)
 	{
+#if defined(DEBUG_ENABLED)
 		if (buffer_pos + sizeof(VariantType) > buffer_end)
 		{
 			DEBUG_PRINT_ERROR("Not enough space to read another encoded variant");
 			return buffer_end;
 		}
+#endif
 
 		const VariantType* type = reinterpret_cast<const VariantType*>(buffer_pos);
 		
@@ -457,39 +461,45 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(buffer_end >= buffer_pos, "The buffer position should not be beyond the end");
 
+#if defined(DEBUG_ENABLED)
 		if (buffer_pos + sizeof(Command) > buffer_end)
 		{
 			DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command)));
 			return buffer_end;
 		}
+#endif
 
-		const Command* command = reinterpret_cast<const Command*>(buffer_pos);
+		const Command* header = reinterpret_cast<const Command*>(buffer_pos);
 		buffer_pos += sizeof(Command);
 
-		DEBUG_ASSERT(!command->command.is_empty(), "The command should not be an empty string");
+		DEBUG_ASSERT(!header->command.is_empty(), "The command should not be an empty string");
 
-		if (command->argcount > 16)
+#if defined(DEBUG_ENABLED)
+		if (header->argcount > 16)
 		{
-			DEBUG_PRINT_ERROR(godot::vformat("Command buffers support up to 16 arguments per command (%d out of range)", command->argcount));
+			DEBUG_PRINT_ERROR(godot::vformat("Command buffers support up to 16 arguments per command (%d out of range)", header->argcount));
 			return buffer_end;
 		}
+#endif
 
 		const size_t k_command_args_alloc_size = (sizeof(const godot::Variant*) * 16) + (sizeof(godot::Variant) * 16);
 		StackAllocator<k_command_args_alloc_size> variant_alloc;
 
 		// Read arguments and store them in temporary variants for call
-		godot::Variant* args = variant_alloc.NewArray<godot::Variant>(command->argcount);
-		const godot::Variant** argptrs = variant_alloc.NewArray<const godot::Variant*>(command->argcount);
+		godot::Variant* args = variant_alloc.NewArray<godot::Variant>(header->argcount);
+		const godot::Variant** argptrs = variant_alloc.NewArray<const godot::Variant*>(header->argcount);
 
-		for (size_t i = 0; i < command->argcount; i++)
+		for (size_t i = 0; i < header->argcount; i++)
 		{
 			buffer_pos = ReadVariant(args[i], buffer_pos, buffer_end);
 
+#if defined(DEBUG_ENABLED)
 			if (buffer_pos > buffer_end)
 			{
 				DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos));
 				return buffer_end;
 			}
+#endif
 
 			argptrs[i] = &args[i];
 		}
@@ -497,7 +507,7 @@ namespace voxel_game
 		// Do the call on the object and handle any error
 		godot::Variant ret;
 		GDExtensionCallError error;
-		object.callp(command->command, argptrs, command->argcount, ret, error);
+		object.callp(header->command, argptrs, header->argcount, ret, error);
 
 		if (error.error != GDExtensionCallErrorType::GDEXTENSION_CALL_OK)
 		{
@@ -515,43 +525,56 @@ namespace voxel_game
 			default: error_type_str = "GDEXTENSION_UNKNOWN_ERROR"; break;
 			}
 
-			DEBUG_PRINT_ERROR(godot::vformat("Failed to call %s: %s. Error at argument %d. Expected %d arguments. Actual %d arguments", command->command, error_type_str, error.argument, error.expected, command->argcount));
+			DEBUG_PRINT_ERROR(godot::vformat("Failed to call %s: %s. Error at argument %d. Expected %d arguments. Actual %d arguments", header->command, error_type_str, error.argument, error.expected, header->argcount));
 		}
 
-		variant_alloc.DeleteArray<godot::Variant>(args, command->argcount);
+		variant_alloc.DeleteArray<godot::Variant>(args, header->argcount);
 
-		variant_alloc.DeleteArray<const godot::Variant*>(argptrs, command->argcount);
+		variant_alloc.DeleteArray<const godot::Variant*>(argptrs, header->argcount);
 
-		command->~Command();
+		header->~Command();
 
 		return buffer_pos;
 	}
 
 	const std::byte* SkipCommand(const std::byte* buffer_pos, const std::byte* buffer_end)
 	{
-
+#if defined(DEBUG_ENABLED)
 		if (buffer_pos + sizeof(Command) > buffer_end)
 		{
 			DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command)));
 			return buffer_end;
 		}
+#endif
 
-		const Command& command = reinterpret_cast<const Command&>(*buffer_pos);
+		const Command* header = reinterpret_cast<const Command*>(buffer_pos);
 		buffer_pos += sizeof(Command);
 
-		for (size_t i = 0; i < command.argcount; i++)
+		DEBUG_ASSERT(!header->command.is_empty(), "The command should not be an empty string");
+
+#if defined(DEBUG_ENABLED)
+		if (header->argcount > 16)
+		{
+			DEBUG_PRINT_ERROR(godot::vformat("Command buffers support up to 16 arguments per command (%d out of range)", header->argcount));
+			return buffer_end;
+		}
+#endif
+
+		for (size_t i = 0; i < header->argcount; i++)
 		{
 			godot::Variant var;
 			buffer_pos = ReadVariant(var, buffer_pos, buffer_end);
 
+#if defined(DEBUG_ENABLED)
 			if (buffer_pos > buffer_end)
 			{
 				DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos));
 				return buffer_end;
 			}
+#endif
 		}
 
-		command.~Command();
+		header->~Command();
 
 		return buffer_pos;
 	}
