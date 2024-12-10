@@ -143,6 +143,7 @@ namespace voxel_game
 			else if (commands_processed == 0) // We have commands but didn't process any so the buffer is broken
 			{
 				state.current_buffer.command_buffer.Clear();
+				state.current_buffer.command_buffer.ShrinkToFit();
 				state.buffer_in_progress = false;
 			}
 

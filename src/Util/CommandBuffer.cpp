@@ -527,6 +527,35 @@ namespace voxel_game
 		return buffer_pos;
 	}
 
+	const std::byte* SkipCommand(const std::byte* buffer_pos, const std::byte* buffer_end)
+	{
+
+		if (buffer_pos + sizeof(Command) > buffer_end)
+		{
+			DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command)));
+			return buffer_end;
+		}
+
+		const Command& command = reinterpret_cast<const Command&>(*buffer_pos);
+		buffer_pos += sizeof(Command);
+
+		for (size_t i = 0; i < command.argcount; i++)
+		{
+			godot::Variant var;
+			buffer_pos = ReadVariant(var, buffer_pos, buffer_end);
+
+			if (buffer_pos > buffer_end)
+			{
+				DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos));
+				return buffer_end;
+			}
+		}
+
+		command.~Command();
+
+		return buffer_pos;
+	}
+
 	CommandBuffer::CommandBuffer()
 	{
 		m_data.reserve(k_starting_buffer_size);
@@ -539,6 +568,8 @@ namespace voxel_game
 
 	CommandBuffer& CommandBuffer::operator=(CommandBuffer&& other) noexcept
 	{
+		Clear();
+
 		m_data = std::move(other.m_data);
 		m_num_commands = other.m_num_commands;
 		m_start = other.m_start;
@@ -626,7 +657,7 @@ namespace voxel_game
 		return m_num_commands;
 	}
 
-	void CommandBuffer::Clear(bool reallocate)
+	void CommandBuffer::Clear()
 	{
 		// Go through the buffer and read command data as if we were processing the commands but only destroy the data
 
@@ -634,39 +665,16 @@ namespace voxel_game
 		const std::byte* buffer_end = m_data.data() + m_data.size();
 		while (buffer_pos != buffer_end)
 		{
-			if (buffer_pos + sizeof(Command) > buffer_end)
-			{
-				DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos - sizeof(Command)));
-				break;
-			}
-
-			const Command& command = reinterpret_cast<const Command&>(*buffer_pos);
-			buffer_pos += sizeof(Command);
-
-			for (size_t i = 0; i < command.argcount; i++)
-			{
-				godot::Variant var;
-				buffer_pos = ReadVariant(var, buffer_pos, buffer_end);
-
-				if (buffer_pos > buffer_end)
-				{
-					DEBUG_PRINT_ERROR(godot::vformat("Command buffer doesn't fit the command and its arguments (%d out of range)", buffer_end - buffer_pos));
-					break;
-				}
-			}
-
-			command.~Command();
+			buffer_pos = SkipCommand(buffer_pos, buffer_end);
 		}
 
-		if (reallocate)
-		{
-			m_data = Storage{}; // Get a brand buffer to save memory if our current one was huge
-		}
-		else
-		{
-			m_data.clear();
-		}
+		m_data.clear();
 		m_start = 0;
 		m_num_commands = 0;
+	}
+
+	void CommandBuffer::ShrinkToFit()
+	{
+		m_data.shrink_to_fit();
 	}
 }

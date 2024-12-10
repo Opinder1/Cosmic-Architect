@@ -100,8 +100,10 @@ namespace voxel_game
 
 		size_t NumCommands() const;
 
-		// Destroy all remaining commands and arguments. Optionally reallocate to free memory if we just had a huge buffer
-		void Clear(bool reallocate = true);
+		// Destroy all remaining commands and arguments
+		void Clear();
+
+		void ShrinkToFit();
 
 	private:
 		Storage m_data;
