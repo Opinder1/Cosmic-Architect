@@ -16,8 +16,6 @@
 
 namespace voxel_game
 {
-	using CommandProcessCB = size_t (*)(CommandBuffer& buffer, uint64_t object_id, size_t max);
-
 	// Server which command buffers can be flushed to and processed frame by frame on the main thread or render thread
 	// 
 	// This class is thread safe but will complain if the wrong thread calls certain methods
