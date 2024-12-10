@@ -27,7 +27,7 @@
 #include "Loading/LoadingComponents.h"
 #include "Loading/LoadingModule.h"
 
-#include "Util/CommandQueue.h"
+#include "Util/CommandServer.h"
 #include "Util/Debug.h"
 
 #include <godot_cpp/classes/os.hpp>

@@ -15908,11 +15908,15 @@ int32_t flecs_poly_claim_(
     ecs_header_t *hdr = poly;
     ecs_assert(hdr->magic == ECS_OBJECT_MAGIC, ECS_INVALID_PARAMETER,
         "invalid/freed pointer to flecs object detected");
+#if 1
+    return ++hdr->refcount;
+#else
     if (ecs_os_has_threading()) {
         return ecs_os_ainc(&hdr->refcount);
     } else {
         return ++hdr->refcount;
     }
+#endif
 }
 
 int32_t flecs_poly_release_(
@@ -15922,11 +15926,15 @@ int32_t flecs_poly_release_(
     ecs_header_t *hdr = poly;
     ecs_assert(hdr->magic == ECS_OBJECT_MAGIC, ECS_INVALID_PARAMETER,
         "invalid/freed pointer to flecs object detected");
+#if 1
+    return --hdr->refcount;
+#else
     if (ecs_os_has_threading()) {
         return ecs_os_adec(&hdr->refcount);
     } else {
         return --hdr->refcount;
     }
+#endif
 }
 
 int32_t flecs_poly_refcount(

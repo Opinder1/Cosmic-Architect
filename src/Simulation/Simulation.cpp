@@ -1,6 +1,6 @@
 #include "Simulation.h"
 
-#include "Util/CommandQueue.h"
+#include "Util/CommandServer.h"
 #include "Util/Debug.h"
 #include "Util/PropertyMacros.h"
 
@@ -128,7 +128,7 @@ namespace voxel_game
 			DoSimulationThreadProgress();
 
 			// Flush signals to be executed on main thread
-			CommandQueueServer::get_singleton()->AddCommands(get_instance_id(), std::move(m_deferred_signals));
+			CommandServer::get_singleton()->AddCommands(get_instance_id(), std::move(m_deferred_signals));
 		}
 
 		DoSimulationUnload();

@@ -4,7 +4,7 @@
 
 #include "Physics3D/PhysicsComponents.h"
 
-#include "Util/CommandQueue.h"
+#include "Util/CommandServer.h"
 
 #include <godot_cpp/classes/rendering_server.hpp>
 
@@ -33,7 +33,7 @@ namespace voxel_game::rendering
             .immediate()
             .each([](ServerContext& context)
         {
-            CommandQueueServer* cqserver = CommandQueueServer::get_singleton();
+            CommandServer* cqserver = CommandServer::get_singleton();
             uint64_t rserver_id = godot::RenderingServer::get_singleton()->get_instance_id();
 
             for (ServerThreadContext& thread_context : context.threads)
@@ -49,7 +49,7 @@ namespace voxel_game::rendering
             .event(flecs::OnRemove)
             .each([](ServerContext& context)
         {
-            CommandQueueServer* cqserver = CommandQueueServer::get_singleton();
+            CommandServer* cqserver = CommandServer::get_singleton();
             uint64_t rserver_id = godot::RenderingServer::get_singleton()->get_instance_id();
 
             for (ServerThreadContext& thread_context : context.threads)
