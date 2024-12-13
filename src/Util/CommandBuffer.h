@@ -118,37 +118,37 @@ namespace voxel_game
 	VariantType GetVariantType();
 
 	// Write a variant to a buffer
-	void WriteGenericVariant(const godot::Variant& argument, CommandBuffer::Storage& buffer);
+	void WriteGenericVariant(CommandBuffer::Storage& buffer, const godot::Variant& argument);
 
 	// Write a type interpreted as a variant to a buffer
 	template<class T>
-	void WriteVariant(T&& argument, CommandBuffer::Storage& buffer)
+	void WriteVariant(CommandBuffer::Storage& buffer, T&& argument)
 	{
 		// Get the plain type
 		using PlainT = std::remove_pointer_t<std::remove_cv_t<std::remove_reference_t<T>>>;
 
 		if constexpr (std::is_same_v<PlainT, bool>) // Efficiently write booleans in just the type enum
 		{
-			WriteType<VariantType>(argument ? VariantType::TRUE : VariantType::FALSE, buffer);
+			WriteType<VariantType>(buffer, argument ? VariantType::TRUE : VariantType::FALSE);
 		}
 		else if constexpr (std::is_same_v<PlainT, godot::Variant>) // We were given an actual variant
 		{
-			WriteGenericVariant(argument, buffer);
+			WriteGenericVariant(buffer, argument);
 		}
 		else if constexpr (std::is_base_of_v<godot::RefCounted, PlainT>) // Specific handle for classes that inherit from refcounted
 		{
-			WriteType<VariantType>(VariantType::REFCOUNTED, buffer);
-			WriteType<godot::Ref<PlainT>>(argument, buffer);
+			WriteType<VariantType>(buffer, VariantType::REFCOUNTED);
+			WriteType<godot::Ref<PlainT>>(buffer, argument);
 		}
 		else if constexpr (std::is_base_of_v<godot::Object, PlainT> && std::is_pointer_v<T>) // Specific handle for classes that inherit from object
 		{
-			WriteType<VariantType>(VariantType::OBJECT, buffer);
-			WriteType<PlainT*>(std::forward<T>(argument), buffer);
+			WriteType<VariantType>(buffer, VariantType::OBJECT);
+			WriteType<PlainT*>(buffer, std::forward<T>(argument));
 		}
 		else // Write a C++ type that can be stored in a variant
 		{
-			WriteType<VariantType>(GetVariantType<PlainT>(), buffer);
-			WriteType<PlainT>(std::forward<T>(argument), buffer);
+			WriteType<VariantType>(buffer, GetVariantType<PlainT>());
+			WriteType<PlainT>(buffer, std::forward<T>(argument));
 		}
 	}
 
@@ -163,7 +163,7 @@ namespace voxel_game
 
 		new(m_data.data() + command_pos) Command{ command, sizeof...(args) };
 
-		(WriteVariant<Args>(std::forward<Args>(args), m_data), ...);
+		(WriteVariant<Args>(m_data, std::forward<Args>(args)), ...);
 
 		m_num_commands++;
 	}

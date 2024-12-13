@@ -53,7 +53,7 @@ namespace voxel_game
 
 	// Read an encoded type in a byte stream. Copies the object to the variant and then destroys the object in the buffer
 	template<class T>
-	const std::byte* ReadVariantInternal(godot::Variant& argument, const std::byte* buffer_pos, const std::byte* buffer_end)
+	const std::byte* ReadVariantInternal(const std::byte* buffer_pos, const std::byte* buffer_end, godot::Variant& argument)
 	{
 #if defined(DEBUG_ENABLED)
 		if (buffer_pos + sizeof(T) > buffer_end)
@@ -73,7 +73,7 @@ namespace voxel_game
 	}
 
 	// Read an encoded variant in a byte stream. Copies the object to the variant and then destroys the object in the buffer
-	const std::byte* ReadVariant(godot::Variant& argument, const std::byte* buffer_pos, const std::byte* buffer_end)
+	const std::byte* ReadVariant(const std::byte* buffer_pos, const std::byte* buffer_end, godot::Variant& argument)
 	{
 #if defined(DEBUG_ENABLED)
 		if (buffer_pos + sizeof(VariantType) > buffer_end)
@@ -102,142 +102,142 @@ namespace voxel_game
 			return buffer_pos;
 
 		case VariantType::UINT8:
-			return ReadVariantInternal<uint8_t>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<uint8_t>(buffer_pos, buffer_end, argument);
 
 		case VariantType::UINT16:
-			return ReadVariantInternal<uint16_t>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<uint16_t>(buffer_pos, buffer_end, argument);
 
 		case VariantType::UINT32:
-			return ReadVariantInternal<uint32_t>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<uint32_t>(buffer_pos, buffer_end, argument);
 
 		case VariantType::UINT64:
-			return ReadVariantInternal<uint64_t>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<uint64_t>(buffer_pos, buffer_end, argument);
 
 		case VariantType::INT8:
-			return ReadVariantInternal<int8_t>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<int8_t>(buffer_pos, buffer_end, argument);
 
 		case VariantType::INT16:
-			return ReadVariantInternal<int16_t>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<int16_t>(buffer_pos, buffer_end, argument);
 
 		case VariantType::INT32:
-			return ReadVariantInternal<int32_t>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<int32_t>(buffer_pos, buffer_end, argument);
 
 		case VariantType::INT64:
-			return ReadVariantInternal<int64_t>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<int64_t>(buffer_pos, buffer_end, argument);
 
 		case VariantType::FLOAT32:
-			return ReadVariantInternal<float>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<float>(buffer_pos, buffer_end, argument);
 
 		case VariantType::FLOAT64:
-			return ReadVariantInternal<double>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<double>(buffer_pos, buffer_end, argument);
 
 		case VariantType::STRING:
-			return ReadVariantInternal<godot::String>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::String>(buffer_pos, buffer_end, argument);
 
 		case VariantType::VECTOR2:
-			return ReadVariantInternal<godot::Vector2>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Vector2>(buffer_pos, buffer_end, argument);
 
 		case VariantType::VECTOR2I:
-			return ReadVariantInternal<godot::Vector2i>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Vector2i>(buffer_pos, buffer_end, argument);
 
 		case VariantType::RECT2:
-			return ReadVariantInternal<godot::Rect2>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Rect2>(buffer_pos, buffer_end, argument);
 
 		case VariantType::RECT2I:
-			return ReadVariantInternal<godot::Rect2i>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Rect2i>(buffer_pos, buffer_end, argument);
 
 		case VariantType::VECTOR3:
-			return ReadVariantInternal<godot::Vector3>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Vector3>(buffer_pos, buffer_end, argument);
 
 		case VariantType::VECTOR3I:
-			return ReadVariantInternal<godot::Vector3i>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Vector3i>(buffer_pos, buffer_end, argument);
 
 		case VariantType::TRANSFORM2D:
-			return ReadVariantInternal<godot::Transform2D>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Transform2D>(buffer_pos, buffer_end, argument);
 
 		case VariantType::VECTOR4:
-			return ReadVariantInternal<godot::Vector4>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Vector4>(buffer_pos, buffer_end, argument);
 
 		case VariantType::VECTOR4I:
-			return ReadVariantInternal<godot::Vector4i>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Vector4i>(buffer_pos, buffer_end, argument);
 
 		case VariantType::PLANE:
-			return ReadVariantInternal<godot::Plane>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Plane>(buffer_pos, buffer_end, argument);
 
 		case VariantType::QUATERNION:
-			return ReadVariantInternal<godot::Quaternion>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Quaternion>(buffer_pos, buffer_end, argument);
 
 		case VariantType::AABB:
-			return ReadVariantInternal<godot::AABB>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::AABB>(buffer_pos, buffer_end, argument);
 
 		case VariantType::BASIS:
-			return ReadVariantInternal<godot::Basis>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Basis>(buffer_pos, buffer_end, argument);
 
 		case VariantType::TRANSFORM3D:
-			return ReadVariantInternal<godot::Transform3D>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Transform3D>(buffer_pos, buffer_end, argument);
 
 		case VariantType::PROJECTION:
-			return ReadVariantInternal<godot::Projection>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Projection>(buffer_pos, buffer_end, argument);
 
 		case VariantType::COLOR:
-			return ReadVariantInternal<godot::Color>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Color>(buffer_pos, buffer_end, argument);
 
 		case VariantType::STRING_NAME:
-			return ReadVariantInternal<godot::StringName>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::StringName>(buffer_pos, buffer_end, argument);
 
 		case VariantType::NODE_PATH:
-			return ReadVariantInternal<godot::NodePath>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::NodePath>(buffer_pos, buffer_end, argument);
 
 		case VariantType::RID:
-			return ReadVariantInternal<godot::RID>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::RID>(buffer_pos, buffer_end, argument);
 
 		case VariantType::OBJECT:
-			return ReadVariantInternal<godot::Object*>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Object*>(buffer_pos, buffer_end, argument);
 
 		case VariantType::REFCOUNTED:
-			return ReadVariantInternal<godot::Ref<godot::RefCounted>>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Ref<godot::RefCounted>>(buffer_pos, buffer_end, argument);
 
 		case VariantType::CALLABLE:
-			return ReadVariantInternal<godot::Callable>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Callable>(buffer_pos, buffer_end, argument);
 
 		case VariantType::SIGNAL:
-			return ReadVariantInternal<godot::Signal>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Signal>(buffer_pos, buffer_end, argument);
 
 		case VariantType::DICTIONARY:
-			return ReadVariantInternal<godot::Dictionary>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Dictionary>(buffer_pos, buffer_end, argument);
 
 		case VariantType::ARRAY:
-			return ReadVariantInternal<godot::Array>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::Array>(buffer_pos, buffer_end, argument);
 
 		case VariantType::PACKED_BYTE_ARRAY:
-			return ReadVariantInternal<godot::PackedByteArray>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::PackedByteArray>(buffer_pos, buffer_end, argument);
 
 		case VariantType::PACKED_INT32_ARRAY:
-			return ReadVariantInternal<godot::PackedInt32Array>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::PackedInt32Array>(buffer_pos, buffer_end, argument);
 
 		case VariantType::PACKED_INT64_ARRAY:
-			return ReadVariantInternal<godot::PackedInt64Array>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::PackedInt64Array>(buffer_pos, buffer_end, argument);
 
 		case VariantType::PACKED_FLOAT32_ARRAY:
-			return ReadVariantInternal<godot::PackedFloat32Array>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::PackedFloat32Array>(buffer_pos, buffer_end, argument);
 
 		case VariantType::PACKED_FLOAT64_ARRAY:
-			return ReadVariantInternal<godot::PackedFloat64Array>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::PackedFloat64Array>(buffer_pos, buffer_end, argument);
 
 		case VariantType::PACKED_STRING_ARRAY:
-			return ReadVariantInternal<godot::PackedStringArray>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::PackedStringArray>(buffer_pos, buffer_end, argument);
 
 		case VariantType::PACKED_VECTOR2_ARRAY:
-			return ReadVariantInternal<godot::PackedVector2Array>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::PackedVector2Array>(buffer_pos, buffer_end, argument);
 
 		case VariantType::PACKED_VECTOR3_ARRAY:
-			return ReadVariantInternal<godot::PackedVector3Array>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::PackedVector3Array>(buffer_pos, buffer_end, argument);
 
 		case VariantType::PACKED_COLOR_ARRAY:
-			return ReadVariantInternal<godot::PackedColorArray>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::PackedColorArray>(buffer_pos, buffer_end, argument);
 
 		case VariantType::PACKED_VECTOR4_ARRAY:
-			return ReadVariantInternal<godot::PackedVector4Array>(argument, buffer_pos, buffer_end);
+			return ReadVariantInternal<godot::PackedVector4Array>(buffer_pos, buffer_end, argument);
 
 		default:
 			DEBUG_PRINT_ERROR("Invalid encoded variant type");
@@ -245,16 +245,16 @@ namespace voxel_game
 		}
 	}
 
-	void WriteGenericVariant(const godot::Variant& argument, CommandBuffer::Storage& buffer)
+	void WriteGenericVariant(CommandBuffer::Storage& buffer, const godot::Variant& argument)
 	{
 		switch (argument.get_type())
 		{
 		case godot::Variant::NIL:
-			WriteType<VariantType>(VariantType::NIL, buffer);
+			WriteType<VariantType>(buffer, VariantType::NIL);
 			break;
 
 		case godot::Variant::BOOL:
-			WriteVariant<bool>(argument, buffer);
+			WriteVariant<bool>(buffer, argument);
 			break;
 
 		case godot::Variant::INT:
@@ -265,190 +265,190 @@ namespace voxel_game
 			{
 				if (value >= INT8_MIN)
 				{
-					WriteVariant<int8_t>(std::move(value), buffer);
+					WriteVariant<int8_t>(buffer, std::move(value));
 				}
 				else if (value >= INT16_MIN)
 				{
-					WriteVariant<int16_t>(std::move(value), buffer);
+					WriteVariant<int16_t>(buffer, std::move(value));
 				}
 				else if (value >= INT32_MIN)
 				{
-					WriteVariant<int32_t>(std::move(value), buffer);
+					WriteVariant<int32_t>(buffer, std::move(value));
 				}
 				else
 				{
-					WriteVariant<int64_t>(std::move(value), buffer);
+					WriteVariant<int64_t>(buffer, std::move(value));
 				}
 			}
 			else
 			{
 				if (value <= UINT8_MAX)
 				{
-					WriteVariant<uint8_t>(std::move(value), buffer);
+					WriteVariant<uint8_t>(buffer, std::move(value));
 				}
 				else if (value <= UINT16_MAX)
 				{
-					WriteVariant<uint16_t>(std::move(value), buffer);
+					WriteVariant<uint16_t>(buffer, std::move(value));
 				}
 				else if (value <= UINT32_MAX)
 				{
-					WriteVariant<uint32_t>(std::move(value), buffer);
+					WriteVariant<uint32_t>(buffer, std::move(value));
 				}
 				else
 				{
-					WriteVariant<uint64_t>(std::move(value), buffer);
+					WriteVariant<uint64_t>(buffer, std::move(value));
 				}
 			}
 			break;
 		}
 
 		case godot::Variant::FLOAT:
-			WriteVariant<double>(argument, buffer);
+			WriteVariant<double>(buffer, argument);
 			break;
 
 		case godot::Variant::STRING:
-			WriteVariant<godot::String>(argument, buffer);
+			WriteVariant<godot::String>(buffer, argument);
 			break;
 
 		case godot::Variant::VECTOR2:
-			WriteVariant<godot::Vector2>(argument, buffer);
+			WriteVariant<godot::Vector2>(buffer, argument);
 			break;
 
 		case godot::Variant::VECTOR2I:
-			WriteVariant<godot::Vector2i>(argument, buffer);
+			WriteVariant<godot::Vector2i>(buffer, argument);
 			break;
 
 		case godot::Variant::RECT2:
-			WriteVariant<godot::Rect2>(argument, buffer);
+			WriteVariant<godot::Rect2>(buffer, argument);
 			break;
 
 		case godot::Variant::RECT2I:
-			WriteVariant<godot::Rect2i>(argument, buffer);
+			WriteVariant<godot::Rect2i>(buffer, argument);
 			break;
 
 		case godot::Variant::VECTOR3:
-			WriteVariant<godot::Vector3>(argument, buffer);
+			WriteVariant<godot::Vector3>(buffer, argument);
 			break;
 
 		case godot::Variant::VECTOR3I:
-			WriteVariant<godot::Vector3i>(argument, buffer);
+			WriteVariant<godot::Vector3i>(buffer, argument);
 			break;
 
 		case godot::Variant::TRANSFORM2D:
-			WriteVariant<godot::Transform2D>(argument, buffer);
+			WriteVariant<godot::Transform2D>(buffer, argument);
 			break;
 
 		case godot::Variant::VECTOR4:
-			WriteVariant<godot::Vector4>(argument, buffer);
+			WriteVariant<godot::Vector4>(buffer, argument);
 			break;
 
 		case godot::Variant::VECTOR4I:
-			WriteVariant<godot::Vector4i>(argument, buffer);
+			WriteVariant<godot::Vector4i>(buffer, argument);
 			break;
 
 		case godot::Variant::PLANE:
-			WriteVariant<godot::Plane>(argument, buffer);
+			WriteVariant<godot::Plane>(buffer, argument);
 			break;
 
 		case godot::Variant::QUATERNION:
-			WriteVariant<godot::Quaternion>(argument, buffer);
+			WriteVariant<godot::Quaternion>(buffer, argument);
 			break;
 
 		case godot::Variant::AABB:
-			WriteVariant<godot::AABB>(argument, buffer);
+			WriteVariant<godot::AABB>(buffer, argument);
 			break;
 
 		case godot::Variant::BASIS:
-			WriteVariant<godot::Basis>(argument, buffer);
+			WriteVariant<godot::Basis>(buffer, argument);
 			break;
 
 		case godot::Variant::TRANSFORM3D:
-			WriteVariant<godot::Transform3D>(argument, buffer);
+			WriteVariant<godot::Transform3D>(buffer, argument);
 			break;
 
 		case godot::Variant::PROJECTION:
-			WriteVariant<godot::Projection>(argument, buffer);
+			WriteVariant<godot::Projection>(buffer, argument);
 			break;
 
 		case godot::Variant::COLOR:
-			WriteVariant<godot::Color>(argument, buffer);
+			WriteVariant<godot::Color>(buffer, argument);
 			break;
 
 		case godot::Variant::STRING_NAME:
-			WriteVariant<godot::StringName>(argument, buffer);
+			WriteVariant<godot::StringName>(buffer, argument);
 			break;
 
 		case godot::Variant::NODE_PATH:
-			WriteVariant<godot::NodePath>(argument, buffer);
+			WriteVariant<godot::NodePath>(buffer, argument);
 			break;
 
 		case godot::Variant::RID:
-			WriteVariant<godot::RID>(argument, buffer);
+			WriteVariant<godot::RID>(buffer, argument);
 			break;
 
 		case godot::Variant::OBJECT:
-			WriteVariant<godot::Object*>(argument, buffer);
+			WriteVariant<godot::Object*>(buffer, argument);
 			break;
 
 		case godot::Variant::CALLABLE:
-			WriteVariant<godot::Callable>(argument, buffer);
+			WriteVariant<godot::Callable>(buffer, argument);
 			break;
 
 		case godot::Variant::SIGNAL:
-			WriteVariant<godot::Signal>(argument, buffer);
+			WriteVariant<godot::Signal>(buffer, argument);
 			break;
 
 		case godot::Variant::DICTIONARY:
-			WriteVariant<godot::Dictionary>(argument, buffer);
+			WriteVariant<godot::Dictionary>(buffer, argument);
 			break;
 
 		case godot::Variant::ARRAY:
-			WriteVariant<godot::Array>(argument, buffer);
+			WriteVariant<godot::Array>(buffer, argument);
 			break;
 
 		case godot::Variant::PACKED_BYTE_ARRAY:
-			WriteVariant<godot::PackedByteArray>(argument, buffer);
+			WriteVariant<godot::PackedByteArray>(buffer, argument);
 			break;
 
 		case godot::Variant::PACKED_INT32_ARRAY:
-			WriteVariant<godot::PackedInt32Array>(argument, buffer);
+			WriteVariant<godot::PackedInt32Array>(buffer, argument);
 			break;
 
 		case godot::Variant::PACKED_INT64_ARRAY:
-			WriteVariant<godot::PackedInt64Array>(argument, buffer);
+			WriteVariant<godot::PackedInt64Array>(buffer, argument);
 			break;
 
 		case godot::Variant::PACKED_FLOAT32_ARRAY:
-			WriteVariant<godot::PackedFloat32Array>(argument, buffer);
+			WriteVariant<godot::PackedFloat32Array>(buffer, argument);
 			break;
 
 		case godot::Variant::PACKED_FLOAT64_ARRAY:
-			WriteVariant<godot::PackedFloat64Array>(argument, buffer);
+			WriteVariant<godot::PackedFloat64Array>(buffer, argument);
 			break;
 
 		case godot::Variant::PACKED_STRING_ARRAY:
-			WriteVariant<godot::PackedStringArray>(argument, buffer);
+			WriteVariant<godot::PackedStringArray>(buffer, argument);
 			break;
 
 		case godot::Variant::PACKED_VECTOR2_ARRAY:
-			WriteVariant<godot::PackedVector2Array>(argument, buffer);
+			WriteVariant<godot::PackedVector2Array>(buffer, argument);
 			break;
 
 		case godot::Variant::PACKED_VECTOR3_ARRAY:
-			WriteVariant<godot::PackedVector3Array>(argument, buffer);
+			WriteVariant<godot::PackedVector3Array>(buffer, argument);
 			break;
 
 		case godot::Variant::PACKED_COLOR_ARRAY:
-			WriteVariant<godot::PackedColorArray>(argument, buffer);
+			WriteVariant<godot::PackedColorArray>(buffer, argument);
 			break;
 
 		case godot::Variant::PACKED_VECTOR4_ARRAY:
-			WriteVariant<godot::PackedVector4Array>(argument, buffer);
+			WriteVariant<godot::PackedVector4Array>(buffer, argument);
 			break;
 
 		default:
 			DEBUG_PRINT_ERROR("Invalid variant type");
-			WriteType<VariantType>(VariantType::NIL, buffer);
+			WriteType<VariantType>(buffer, VariantType::NIL);
 			break;
 		}
 	}
@@ -487,7 +487,7 @@ namespace voxel_game
 
 		for (size_t i = 0; i < header->argcount; i++)
 		{
-			buffer_pos = ReadVariant(args[i], buffer_pos, buffer_end);
+			buffer_pos = ReadVariant(buffer_pos, buffer_end, args[i]);
 
 #if defined(DEBUG_ENABLED)
 			if (buffer_pos > buffer_end)
@@ -559,7 +559,7 @@ namespace voxel_game
 		for (size_t i = 0; i < header->argcount; i++)
 		{
 			godot::Variant var;
-			buffer_pos = ReadVariant(var, buffer_pos, buffer_end);
+			buffer_pos = ReadVariant(buffer_pos, buffer_end, var);
 
 #if defined(DEBUG_ENABLED)
 			if (buffer_pos > buffer_end)
@@ -619,7 +619,7 @@ namespace voxel_game
 
 		for (uint8_t arg = 0; arg < argcount; arg++)
 		{
-			WriteVariant(*args[arg], m_data);
+			WriteVariant(m_data, *args[arg]);
 		}
 
 		m_num_commands++;

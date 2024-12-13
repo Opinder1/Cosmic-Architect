@@ -80,7 +80,7 @@ namespace voxel_game
 
 	// Write a type to a buffer. We write the plain type while allowing pointers
 	template<class T, class ArgT>
-	void WriteType(ArgT&& data, TypedCommandBuffer::Storage& buffer)
+	void WriteType(TypedCommandBuffer::Storage& buffer, ArgT&& data)
 	{
 		size_t pos = buffer.size();
 		buffer.resize(pos + sizeof(T));
@@ -116,9 +116,9 @@ namespace voxel_game
 
 		static void Write(TypedCommandBuffer::Storage& storage, Args&&... args)
 		{
-			WriteType<TypedCommand>(&DefaultCommand::Read, storage);
+			WriteType<TypedCommand>(storage, &DefaultCommand::Read);
 
-			WriteType<ArgStorage>(ArgStorage(std::forward<Args>(args)...), storage);
+			WriteType<ArgStorage>(storage, ArgStorage(std::forward<Args>(args)...));
 		}
 	};
 
