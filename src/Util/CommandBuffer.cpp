@@ -3,10 +3,6 @@
 #include "Util/Debug.h"
 #include "Util/StackAllocator.h"
 
-#include <godot_cpp/core/class_db.hpp>
-
-#include <array>
-
 namespace voxel_game
 {
 	template<> VariantType GetVariantType<uint8_t>() { return VariantType::UINT8; }
@@ -589,6 +585,11 @@ namespace voxel_game
 		Clear();
 	}
 
+	CommandBuffer::CommandBuffer(CommandBuffer&& other) noexcept
+	{
+		*this = std::move(other);
+	}
+
 	CommandBuffer& CommandBuffer::operator=(CommandBuffer&& other) noexcept
 	{
 		Clear();
@@ -624,29 +625,14 @@ namespace voxel_game
 		m_num_commands++;
 	}
 
-	size_t CommandBuffer::ProcessCommands(uint64_t object_id, size_t max)
+	size_t CommandBuffer::ProcessCommands(godot::Object* object, size_t max)
 	{
+		DEBUG_ASSERT(object != nullptr, "The object we are trying to process on should be valid");
+
 		if (m_num_commands == 0)
 		{
 			return 0;
 		}
-
-		DEBUG_ASSERT(godot::ObjectID(object_id).is_valid(), "The command should be run on a valid object");
-
-		godot::Object* object = godot::ObjectDB::get_instance(object_id);
-
-		if (object == nullptr)
-		{
-			DEBUG_PRINT_ERROR("The object that the command queue was queueing for was deleted");
-			return 0;
-		}
-
-		return ProcessCommands(object, max);
-	}
-
-	size_t CommandBuffer::ProcessCommands(godot::Object* object, size_t max)
-	{
-		DEBUG_ASSERT(object != nullptr, "The object we are trying to process on should be valid");
 
 		godot::Variant object_var = object;
 

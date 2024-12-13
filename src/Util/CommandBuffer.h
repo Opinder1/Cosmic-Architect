@@ -1,5 +1,6 @@
 #pragma once
 
+#include "TypedCommandBuffer.h"
 #include "Nocopy.h"
 #include "Debug.h"
 
@@ -86,6 +87,8 @@ namespace voxel_game
 		CommandBuffer();
 		~CommandBuffer();
 
+		CommandBuffer(CommandBuffer&& other) noexcept;
+
 		CommandBuffer& operator=(CommandBuffer&& other) noexcept;
 
 		// Register a new command for the queue
@@ -95,7 +98,6 @@ namespace voxel_game
 		void AddCommandVararg(const godot::StringName& command, const godot::Variant** args, uint8_t argcount);
 
 		// Process only up to a certain number of commands and return how many were processed (0 for max to process all)
-		size_t ProcessCommands(uint64_t object_id, size_t max = 0);
 		size_t ProcessCommands(godot::Object* object, size_t max = 0);
 
 		size_t NumCommands() const;
@@ -117,19 +119,6 @@ namespace voxel_game
 
 	// Write a variant to a buffer
 	void WriteGenericVariant(const godot::Variant& argument, CommandBuffer::Storage& buffer);
-
-	// Write a type to a buffer
-	template<class T>
-	void WriteType(T&& data, CommandBuffer::Storage& buffer)
-	{
-		// Get the plain type while allowing pointers
-		using PlainT = std::remove_cv_t<std::remove_reference_t<T>>;
-
-		size_t pos = buffer.size();
-		buffer.resize(pos + sizeof(PlainT));
-
-		new (buffer.data() + pos) PlainT(std::forward<T>(data));
-	}
 
 	// Write a type interpreted as a variant to a buffer
 	template<class T>
@@ -154,12 +143,12 @@ namespace voxel_game
 		else if constexpr (std::is_base_of_v<godot::Object, PlainT> && std::is_pointer_v<T>) // Specific handle for classes that inherit from object
 		{
 			WriteType<VariantType>(VariantType::OBJECT, buffer);
-			WriteType<T>(std::forward<T>(argument), buffer);
+			WriteType<PlainT*>(std::forward<T>(argument), buffer);
 		}
 		else // Write a C++ type that can be stored in a variant
 		{
 			WriteType<VariantType>(GetVariantType<PlainT>(), buffer);
-			WriteType<T>(std::forward<T>(argument), buffer);
+			WriteType<PlainT>(std::forward<T>(argument), buffer);
 		}
 	}
 
