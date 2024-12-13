@@ -3,6 +3,7 @@
 #include "Nocopy.h"
 #include "Debug.h"
 
+#include <utility>
 #include <vector>
 #include <tuple>
 
@@ -87,121 +88,37 @@ namespace voxel_game
 		new (buffer.data() + pos) T(std::forward<ArgT>(data));
 	}
 
-	// Storage type for arguments being stored in memory. A tuple is used to make sure alignment of members is correct
-	template<class... Args>
-	using PlainArgs = std::tuple<std::remove_cv_t<std::remove_reference_t<Args>>...>;
-
-	// A templated method wrapper that reads all arguments needed to call the method. Each number of arguments is defined explicitly
-	// because the order of argument evaluation is undefined.
+	// A templated method wrapper that reads all arguments needed to call the method.
 	template<auto Method, class Class, class... Args>
-	struct DefaultCommand;
-
-	template<auto Method, class Class>
-	struct DefaultCommand<Method, Class>
+	struct DefaultCommand
 	{
-		static const std::byte* Execute(void* object, const std::byte* buffer_pos, const std::byte* buffer_end, bool execute)
-		{
-			if (execute)
-			{
-				(static_cast<Class*>(object)->*Method)();
-			}
+		// Storage type for arguments being stored in memory. A tuple is used to make sure alignment of members is correct
+		using ArgStorage = std::tuple<std::remove_cv_t<std::remove_reference_t<Args>>...>;
 
-			return buffer_pos;
+		template<size_t... Indexes>
+		static void Call(Class& object, const ArgStorage& args, std::index_sequence<Indexes...>)
+		{
+			(object.*Method)(std::get<Indexes>(args)...);
 		}
-	};
 
-	template<auto Method, class Class, class Arg1>
-	struct DefaultCommand<Method, Class, Arg1>
-	{
-		using Args = PlainArgs<Arg1>;
-
-		static const std::byte* Execute(void* object, const std::byte* buffer_pos, const std::byte* buffer_end, bool execute)
+		static const std::byte* Read(void* object, const std::byte* buffer_pos, const std::byte* buffer_end, bool execute)
 		{
 			if (execute)
 			{
-				const Args* args;
-				ReadType<Args>(buffer_pos, buffer_end, args);
+				const ArgStorage* args;
+				ReadType<ArgStorage>(buffer_pos, buffer_end, args);
 
-				(static_cast<Class*>(object)->*Method)(std::get<0>(*args));
+				Call(*static_cast<Class*>(object), *args, std::index_sequence_for<Args...>{});
 			}
 
-			return DestroyType<Args>(buffer_pos, buffer_end);
+			return DestroyType<ArgStorage>(buffer_pos, buffer_end);
 		}
-	};
 
-	template<auto Method, class Class, class Arg1, class Arg2>
-	struct DefaultCommand<Method, Class, Arg1, Arg2>
-	{
-		using Args = PlainArgs<Arg1, Arg2>;
-
-		static const std::byte* Execute(void* object, const std::byte* buffer_pos, const std::byte* buffer_end, bool execute)
+		static void Write(TypedCommandBuffer::Storage& storage, Args&&... args)
 		{
-			if (execute)
-			{
-				const Args* args;
-				ReadType<Args>(buffer_pos, buffer_end, args);
+			WriteType<TypedCommand>(&DefaultCommand::Read, storage);
 
-				(static_cast<Class*>(object)->*Method)(std::get<0>(*args), std::get<1>(*args));
-			}
-
-			return DestroyType<Args>(buffer_pos, buffer_end);
-		}
-	};
-
-	template<auto Method, class Class, class Arg1, class Arg2, class Arg3>
-	struct DefaultCommand<Method, Class, Arg1, Arg2, Arg3>
-	{
-		using Args = PlainArgs<Arg1, Arg2, Arg3>;
-
-		static const std::byte* Execute(void* object, const std::byte* buffer_pos, const std::byte* buffer_end, bool execute)
-		{
-			if (execute)
-			{
-				const Args* args;
-				ReadType<Args>(buffer_pos, buffer_end, args);
-
-				(static_cast<Class*>(object)->*Method)(std::get<0>(*args), std::get<1>(*args), std::get<2>(*args));
-			}
-
-			return DestroyType<Args>(buffer_pos, buffer_end);
-		}
-	};
-
-	template<auto Method, class Class, class Arg1, class Arg2, class Arg3, class Arg4>
-	struct DefaultCommand<Method, Class, Arg1, Arg2, Arg3, Arg4>
-	{
-		using Args = PlainArgs<Arg1, Arg2, Arg3, Arg4>;
-
-		static const std::byte* Execute(void* object, const std::byte* buffer_pos, const std::byte* buffer_end, bool execute)
-		{
-			if (execute)
-			{
-				const Args* args;
-				ReadType<Args>(buffer_pos, buffer_end, args);
-
-				(static_cast<Class*>(object)->*Method)(std::get<0>(*args), std::get<1>(*args), std::get<2>(*args), std::get<3>(*args));
-			}
-
-			return DestroyType<Args>(buffer_pos, buffer_end);
-		}
-	};
-
-	template<auto Method, class Class, class Arg1, class Arg2, class Arg3, class Arg4, class Arg5>
-	struct DefaultCommand<Method, Class, Arg1, Arg2, Arg3, Arg4, Arg5>
-	{
-		using Args = PlainArgs<Arg1, Arg2, Arg3, Arg4, Arg5>;
-
-		static const std::byte* Execute(void* object, const std::byte* buffer_pos, const std::byte* buffer_end, bool execute)
-		{
-			if (execute)
-			{
-				const Args* args;
-				ReadType<Args>(buffer_pos, buffer_end, args);
-
-				(static_cast<Class*>(object)->*Method)(std::get<0>(*args), std::get<1>(*args), std::get<2>(*args), std::get<3>(*args), std::get<4>(*args));
-			}
-
-			return DestroyType<Args>(buffer_pos, buffer_end);
+			WriteType<ArgStorage>(ArgStorage(std::forward<Args>(args)...), storage);
 		}
 	};
 
@@ -212,9 +129,7 @@ namespace voxel_game
 
 		using Class = typename get_method_class<decltype(Method)>::type;
 
-		WriteType<TypedCommand>(&DefaultCommand<Method, Class, Args...>::Execute, m_data);
-
-		WriteType<PlainArgs<Args...>>(PlainArgs<Args...>(std::forward<Args>(args)...), m_data);
+		DefaultCommand<Method, Class, Args...>::Write(m_data, std::forward<Args>(args)...);
 
 		m_num_commands++;
 	}
