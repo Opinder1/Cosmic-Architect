@@ -21,7 +21,7 @@ namespace voxel_game
 
 	void UniverseSimulation::GetLanguageTranslation(const UUID& language_id, const godot::StringName& string)
 	{
-		if (DeferCommand(k_commands->get_language_translation, language_id, string))
+		if (DeferCommand<&UniverseSimulation::GetLanguageTranslation>(language_id, string))
 		{
 			return;
 		}
@@ -29,7 +29,7 @@ namespace voxel_game
 
 	void UniverseSimulation::GetLanguageString(const UUID& language_id, uint64_t string_id)
 	{
-		if (DeferCommand(k_commands->get_language_string, language_id, string_id))
+		if (DeferCommand<&UniverseSimulation::GetLanguageString>(language_id, string_id))
 		{
 			return;
 		}

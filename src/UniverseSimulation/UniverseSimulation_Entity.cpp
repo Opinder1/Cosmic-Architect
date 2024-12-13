@@ -21,7 +21,7 @@ namespace voxel_game
 
 	void UniverseSimulation::RequestEntityInfo(const UUID& entity_id)
 	{
-		if (DeferCommand(k_commands->request_entity_info, entity_id))
+		if (DeferCommand<&UniverseSimulation::RequestEntityInfo>(entity_id))
 		{
 			return;
 		}

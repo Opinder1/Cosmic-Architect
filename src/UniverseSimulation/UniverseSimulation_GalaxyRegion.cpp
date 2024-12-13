@@ -34,7 +34,7 @@ namespace voxel_game
 
 	void UniverseSimulation::RequestGalaxyRegionInfo(const UUID& entity_id)
 	{
-		if (DeferCommand(k_commands->request_galaxy_region_info, entity_id))
+		if (DeferCommand<&UniverseSimulation::RequestGalaxyRegionInfo>(entity_id))
 		{
 			return;
 		}

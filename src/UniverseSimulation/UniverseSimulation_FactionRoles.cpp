@@ -56,7 +56,7 @@ namespace voxel_game
 
 	void UniverseSimulation::AddFactionRole(const UUID& faction_id, const UUID& role_id, const godot::Dictionary& role_info)
 	{
-		if (DeferCommand(k_commands->add_faction_role, faction_id, role_id, role_info))
+		if (DeferCommand<&UniverseSimulation::AddFactionRole>(faction_id, role_id, role_info))
 		{
 			return;
 		}
@@ -64,7 +64,7 @@ namespace voxel_game
 
 	void UniverseSimulation::RemoveFactionRole(const UUID& faction_id, const UUID& role_id)
 	{
-		if (DeferCommand(k_commands->remove_faction_role, faction_id, role_id))
+		if (DeferCommand<&UniverseSimulation::RemoveFactionRole>(faction_id, role_id))
 		{
 			return;
 		}
@@ -72,7 +72,7 @@ namespace voxel_game
 
 	void UniverseSimulation::ModifyFactionRole(const UUID& faction_id, const UUID& role_id, const godot::Dictionary& role_info)
 	{
-		if (DeferCommand(k_commands->modify_faction_role, faction_id, role_id, role_info))
+		if (DeferCommand<&UniverseSimulation::ModifyFactionRole>(faction_id, role_id, role_info))
 		{
 			return;
 		}
@@ -80,7 +80,7 @@ namespace voxel_game
 
 	void UniverseSimulation::AddPermissionToRole(const UUID& faction_id, const UUID& role_id, const UUID& permission_id)
 	{
-		if (DeferCommand(k_commands->add_permission_to_role, faction_id, role_id, permission_id))
+		if (DeferCommand<&UniverseSimulation::AddPermissionToRole>(faction_id, role_id, permission_id))
 		{
 			return;
 		}
@@ -88,7 +88,7 @@ namespace voxel_game
 
 	void UniverseSimulation::RemovePermissionFromRole(const UUID& faction_id, const UUID& role_id, const UUID& permission_id)
 	{
-		if (DeferCommand(k_commands->remove_permission_from_role, faction_id, role_id, permission_id))
+		if (DeferCommand<&UniverseSimulation::RemovePermissionFromRole>(faction_id, role_id, permission_id))
 		{
 			return;
 		}
@@ -96,7 +96,7 @@ namespace voxel_game
 
 	void UniverseSimulation::SetEntityRole(const UUID& faction_id, const UUID& entity_id, const UUID& role_id)
 	{
-		if (DeferCommand(k_commands->set_entity_role, faction_id, entity_id, role_id))
+		if (DeferCommand<&UniverseSimulation::SetEntityRole>(faction_id, entity_id, role_id))
 		{
 			return;
 		}

@@ -116,7 +116,7 @@ namespace voxel_game
 
 		while (m_running.load(std::memory_order_acquire))
 		{
-			CommandBuffer command_buffer;
+			TypedCommandBuffer command_buffer;
 			{
 				std::lock_guard lock(m_commands_mutex);
 				command_buffer = std::move(m_deferred_commands);

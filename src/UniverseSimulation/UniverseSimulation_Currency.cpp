@@ -103,7 +103,7 @@ namespace voxel_game
 
 	void UniverseSimulation::Withdraw(const UUID& currency_id, real_t amount, const UUID& bank_interface_id)
 	{
-		if (DeferCommand(k_commands->withdraw, currency_id, amount, bank_interface_id))
+		if (DeferCommand<&UniverseSimulation::Withdraw>(currency_id, amount, bank_interface_id))
 		{
 			return;
 		}
@@ -111,7 +111,7 @@ namespace voxel_game
 
 	void UniverseSimulation::Deposit(const UUID& currency_id, real_t amount, const UUID& bank_interface_id)
 	{
-		if (DeferCommand(k_commands->deposit, currency_id, amount, bank_interface_id))
+		if (DeferCommand<&UniverseSimulation::Deposit>(currency_id, amount, bank_interface_id))
 		{
 			return;
 		}
@@ -119,7 +119,7 @@ namespace voxel_game
 
 	void UniverseSimulation::Convert(const UUID& from_currency_id, const UUID& to_currency_id, real_t amount, const UUID& bank_interface_id)
 	{
-		if (DeferCommand(k_commands->convert, from_currency_id, to_currency_id, amount, bank_interface_id))
+		if (DeferCommand<&UniverseSimulation::Convert>(from_currency_id, to_currency_id, amount, bank_interface_id))
 		{
 			return;
 		}
@@ -127,7 +127,7 @@ namespace voxel_game
 
 	void UniverseSimulation::PayEntity(const UUID& currency_id, const UUID& entity_id, real_t amount, const UUID& bank_interface_id)
 	{
-		if (DeferCommand(k_commands->pay_entity, currency_id, entity_id, amount, bank_interface_id))
+		if (DeferCommand<&UniverseSimulation::PayEntity>(currency_id, entity_id, amount, bank_interface_id))
 		{
 			return;
 		}
@@ -135,7 +135,7 @@ namespace voxel_game
 
 	void UniverseSimulation::BuyGoodWithCurrency(const UUID& good_id, const UUID& currency_id)
 	{
-		if (DeferCommand(k_commands->buy_good_with_currency, good_id, currency_id))
+		if (DeferCommand<&UniverseSimulation::BuyGoodWithCurrency>(good_id, currency_id))
 		{
 			return;
 		}

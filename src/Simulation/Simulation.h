@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Util/CommandBuffer.h"
+#include "Util/TypedCommandBuffer.h"
 #include "Util/Debug.h"
 #include "Util/PerThread.h"
 
@@ -69,8 +69,8 @@ namespace voxel_game
 		void QueueSignal(const godot::StringName& signal, Args&&... p_args);
 
 		// Send a command to the simulation. Call on any thread that is not the simulation thread
-		template<class... Args>
-		bool DeferCommand(const godot::StringName& command, Args&&... p_args);
+		template<auto Method, class... Args>
+		bool DeferCommand(Args&&... p_args);
 
 	private:
 		void ThreadLoop();
@@ -93,10 +93,10 @@ namespace voxel_game
 
 		// Commands to be deferred and processed by the internal thread
 		tkrzw::SpinMutex m_commands_mutex;
-		alignas(k_cache_line) CommandBuffer m_deferred_commands;
+		alignas(k_cache_line) TypedCommandBuffer m_deferred_commands;
 
 		// Signals sent by the internal thread and deferred to be run by the main thread
-		alignas(k_cache_line) CommandBuffer m_deferred_signals;
+		alignas(k_cache_line) TypedCommandBuffer m_deferred_signals;
 
 #if defined(DEBUG_ENABLED)
 	protected:
@@ -109,16 +109,16 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(!IsThreaded() || std::this_thread::get_id() == m_thread.get_id(), "When in threaded mode this should only be called by the worker");
 
-		m_deferred_signals.AddCommand(*k_emit_signal, signal, std::forward<Args>(args)...);
+		m_deferred_signals.AddCommand<&Simulation::emit_signal>(signal, std::forward<Args>(args)...);
 	}
 
-	template<class... Args>
-	bool Simulation::DeferCommand(const godot::StringName& command, Args&&... args)
+	template<auto Method, class... Args>
+	bool Simulation::DeferCommand(Args&&... args)
 	{
 		if (IsThreaded() && std::this_thread::get_id() != m_thread.get_id())
 		{
 			std::lock_guard lock(m_commands_mutex);
-			m_deferred_commands.AddCommand(command, std::forward<Args>(args)...);
+			m_deferred_commands.AddCommand<Method>(std::forward<Args>(args)...);
 			return true;
 		}
 		else

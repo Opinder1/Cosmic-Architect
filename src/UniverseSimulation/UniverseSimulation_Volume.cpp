@@ -40,7 +40,7 @@ namespace voxel_game
 
 	void UniverseSimulation::PlaceBlock(const UUID& volume_id, const godot::Vector4i& position, const UUID& block_id, const godot::Dictionary& block_data)
 	{
-		if (DeferCommand(k_commands->place_block, volume_id, position, block_id, block_data))
+		if (DeferCommand<&UniverseSimulation::PlaceBlock>(volume_id, position, block_id, block_data))
 		{
 			return;
 		}
@@ -48,7 +48,7 @@ namespace voxel_game
 
 	void UniverseSimulation::FillBlocks(const UUID& volume_id, const godot::Vector4i& position_first, const godot::Vector4i& position_second, const UUID& block_id, uint32_t block_data)
 	{
-		if (DeferCommand(k_commands->fill_blocks, volume_id, position_first, position_second, block_id, block_data))
+		if (DeferCommand<&UniverseSimulation::FillBlocks>(volume_id, position_first, position_second, block_id, block_data))
 		{
 			return;
 		}
@@ -56,7 +56,7 @@ namespace voxel_game
 
 	void UniverseSimulation::PlaceBlockInNewVolume(const godot::Vector4& fragment_position, const UUID& block_id, const godot::Dictionary& block_data)
 	{
-		if (DeferCommand(k_commands->place_block_in_new_volume, fragment_position, block_id, block_data))
+		if (DeferCommand<&UniverseSimulation::PlaceBlockInNewVolume>(fragment_position, block_id, block_data))
 		{
 			return;
 		}
@@ -64,7 +64,7 @@ namespace voxel_game
 
 	void UniverseSimulation::InteractBlock(const UUID& volume_id, const godot::Vector4i& position, const godot::Dictionary& interaction)
 	{
-		if (DeferCommand(k_commands->interact_block, volume_id, position, interaction))
+		if (DeferCommand<&UniverseSimulation::InteractBlock>(volume_id, position, interaction))
 		{
 			return;
 		}

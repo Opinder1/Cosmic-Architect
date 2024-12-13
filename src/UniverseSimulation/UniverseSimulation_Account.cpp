@@ -11,7 +11,7 @@ namespace voxel_game
 
 	void UniverseSimulation::CreateAccount(const godot::String& username, const godot::String& password_hash)
 	{
-		if (DeferCommand(k_commands->create_account, username, password_hash))
+		if (DeferCommand<&UniverseSimulation::CreateAccount>(username, password_hash))
 		{
 			return;
 		}
@@ -19,7 +19,7 @@ namespace voxel_game
 
 	void UniverseSimulation::AccountLogin(const godot::String& username, const godot::String& password_hash)
 	{
-		if (DeferCommand(k_commands->account_login, username, password_hash))
+		if (DeferCommand<&UniverseSimulation::AccountLogin>(username, password_hash))
 		{
 			return;
 		}
@@ -27,7 +27,7 @@ namespace voxel_game
 
 	void UniverseSimulation::SavedSessionLogin()
 	{
-		if (DeferCommand(k_commands->saved_session_login))
+		if (DeferCommand<&UniverseSimulation::SavedSessionLogin>())
 		{
 			return;
 		}
@@ -35,7 +35,7 @@ namespace voxel_game
 
 	void UniverseSimulation::ClearSavedSession()
 	{
-		if (DeferCommand(k_commands->clear_saved_session))
+		if (DeferCommand<&UniverseSimulation::ClearSavedSession>())
 		{
 			return;
 		}
@@ -43,7 +43,7 @@ namespace voxel_game
 
 	void UniverseSimulation::DeleteAccount()
 	{
-		if (DeferCommand(k_commands->delete_account))
+		if (DeferCommand<&UniverseSimulation::DeleteAccount>())
 		{
 			return;
 		}
@@ -51,7 +51,7 @@ namespace voxel_game
 
 	void UniverseSimulation::LogoutAccount()
 	{
-		if (DeferCommand(k_commands->logout_account))
+		if (DeferCommand<&UniverseSimulation::LogoutAccount>())
 		{
 			return;
 		}

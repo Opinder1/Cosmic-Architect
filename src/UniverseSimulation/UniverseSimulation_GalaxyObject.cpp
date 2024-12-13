@@ -21,7 +21,7 @@ namespace voxel_game
 
 	void UniverseSimulation::RequestGalaxyObjectInfo(const UUID& entity_id)
 	{
-		if (DeferCommand(k_commands->request_galaxy_object_info, entity_id))
+		if (DeferCommand<&UniverseSimulation::RequestGalaxyObjectInfo>(entity_id))
 		{
 			return;
 		}

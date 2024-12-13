@@ -17,7 +17,7 @@ namespace voxel_game
 
 	void UniverseSimulation::CompleteLevelUp(const godot::Dictionary& levelup_choices)
 	{
-		if (DeferCommand(k_commands->complete_level_up, levelup_choices))
+		if (DeferCommand<&UniverseSimulation::CompleteLevelUp>(levelup_choices))
 		{
 			return;
 		}

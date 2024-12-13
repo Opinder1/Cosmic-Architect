@@ -227,7 +227,7 @@ namespace voxel_game
 #if defined(DEBUG_ENABLED)
 	void UniverseSimulation::DebugCommand(const godot::StringName& command, const godot::Array& args)
 	{
-		if (DeferCommand(k_commands->debug_command, command, args))
+		if (DeferCommand<&UniverseSimulation::DebugCommand>(command, args))
 		{
 			return;
 		}

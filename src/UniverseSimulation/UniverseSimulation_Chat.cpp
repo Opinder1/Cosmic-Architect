@@ -21,7 +21,7 @@ namespace voxel_game
 
 	void UniverseSimulation::SendMessageToChannel(const godot::String& message, const UUID& channel_id)
 	{
-		if (DeferCommand(k_commands->send_message_to_channel, message, channel_id))
+		if (DeferCommand<&UniverseSimulation::SendMessageToChannel>(message, channel_id))
 		{
 			return;
 		}
@@ -29,7 +29,7 @@ namespace voxel_game
 
 	void UniverseSimulation::SendMessageToPlayer(const godot::String& message, const UUID& account_id)
 	{
-		if (DeferCommand(k_commands->send_message_to_player, message, account_id))
+		if (DeferCommand<&UniverseSimulation::SendMessageToPlayer>(message, account_id))
 		{
 			return;
 		}

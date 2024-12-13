@@ -27,7 +27,7 @@ namespace voxel_game
 
 	void UniverseSimulation::JoinFaction(const UUID& faction_id, const godot::Dictionary& request_info)
 	{
-		if (DeferCommand(k_commands->join_faction, faction_id, request_info))
+		if (DeferCommand<&UniverseSimulation::JoinFaction>(faction_id, request_info))
 		{
 			return;
 		}
@@ -35,7 +35,7 @@ namespace voxel_game
 
 	void UniverseSimulation::LeaveFaction(const UUID& faction_id)
 	{
-		if (DeferCommand(k_commands->leave_faction, faction_id))
+		if (DeferCommand<&UniverseSimulation::LeaveFaction>(faction_id))
 		{
 			return;
 		}
@@ -43,7 +43,7 @@ namespace voxel_game
 
 	void UniverseSimulation::InviteEntityToFaction(const UUID& faction_id, const UUID& entity_id)
 	{
-		if (DeferCommand(k_commands->invite_entity_to_faction, faction_id, entity_id))
+		if (DeferCommand<&UniverseSimulation::InviteEntityToFaction>(faction_id, entity_id))
 		{
 			return;
 		}
@@ -51,7 +51,7 @@ namespace voxel_game
 
 	void UniverseSimulation::KickEntityFromFaction(const UUID& faction_id, const UUID& entity_id)
 	{
-		if (DeferCommand(k_commands->kick_entity_from_faction, faction_id, entity_id))
+		if (DeferCommand<&UniverseSimulation::KickEntityFromFaction>(faction_id, entity_id))
 		{
 			return;
 		}
@@ -59,7 +59,7 @@ namespace voxel_game
 
 	void UniverseSimulation::AddChildFaction(const UUID& parent_faction_id, const UUID& child_faction_id)
 	{
-		if (DeferCommand(k_commands->add_child_faction, parent_faction_id, child_faction_id))
+		if (DeferCommand<&UniverseSimulation::AddChildFaction>(parent_faction_id, child_faction_id))
 		{
 			return;
 		}
@@ -67,7 +67,7 @@ namespace voxel_game
 
 	void UniverseSimulation::RemoveChildFaction(const UUID& faction_id)
 	{
-		if (DeferCommand(k_commands->remove_child_faction, faction_id))
+		if (DeferCommand<&UniverseSimulation::RemoveChildFaction>(faction_id))
 		{
 			return;
 		}
@@ -75,7 +75,7 @@ namespace voxel_game
 
 	void UniverseSimulation::InviteChildFaction(const UUID& parent_faction_id, const UUID& child_faction_id)
 	{
-		if (DeferCommand(k_commands->invite_child_faction, parent_faction_id, child_faction_id))
+		if (DeferCommand<&UniverseSimulation::InviteChildFaction>(parent_faction_id, child_faction_id))
 		{
 			return;
 		}
@@ -83,7 +83,7 @@ namespace voxel_game
 
 	void UniverseSimulation::KickChildFaction(const UUID& faction_id)
 	{
-		if (DeferCommand(k_commands->kick_child_faction, faction_id))
+		if (DeferCommand<&UniverseSimulation::KickChildFaction>(faction_id))
 		{
 			return;
 		}

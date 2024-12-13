@@ -29,7 +29,7 @@ namespace voxel_game
 
 	void UniverseSimulation::EnterFragment(const UUID& fragment_id, const godot::Dictionary& method)
 	{
-		if (DeferCommand(k_commands->enter_fragment, fragment_id, method))
+		if (DeferCommand<&UniverseSimulation::EnterFragment>(fragment_id, method))
 		{
 			return;
 		}

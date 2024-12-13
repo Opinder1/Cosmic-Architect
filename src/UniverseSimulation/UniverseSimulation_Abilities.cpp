@@ -21,7 +21,7 @@ namespace voxel_game
 
 	void UniverseSimulation::ActivateAbility(const UUID& ability_id)
 	{
-		if (DeferCommand(k_commands->activate_ability, ability_id))
+		if (DeferCommand<&UniverseSimulation::ActivateAbility>(ability_id))
 		{
 			return;
 		}
@@ -30,7 +30,7 @@ namespace voxel_game
 
 	void UniverseSimulation::ToggleAbility(const UUID& ability_id, bool toggled)
 	{
-		if (DeferCommand(k_commands->toggle_ability, ability_id, toggled))
+		if (DeferCommand<&UniverseSimulation::ToggleAbility>(ability_id, toggled))
 		{
 			return;
 		}
@@ -38,7 +38,7 @@ namespace voxel_game
 
 	void UniverseSimulation::SetPlayerSetting(const UUID& setting_id, const godot::Variant& value)
 	{
-		if (DeferCommand(k_commands->set_player_setting, setting_id, value))
+		if (DeferCommand<&UniverseSimulation::SetPlayerSetting>(setting_id, value))
 		{
 			return;
 		}

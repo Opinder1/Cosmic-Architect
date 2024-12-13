@@ -21,7 +21,7 @@ namespace voxel_game
 
 	void UniverseSimulation::CreateParty()
 	{
-		if (DeferCommand(k_commands->create_party))
+		if (DeferCommand<&UniverseSimulation::CreateParty>())
 		{
 			return;
 		}
@@ -29,7 +29,7 @@ namespace voxel_game
 
 	void UniverseSimulation::InviteToParty(const UUID& player_id)
 	{
-		if (DeferCommand(k_commands->invite_to_party, player_id))
+		if (DeferCommand<&UniverseSimulation::InviteToParty>(player_id))
 		{
 			return;
 		}
@@ -37,7 +37,7 @@ namespace voxel_game
 
 	void UniverseSimulation::AcceptInvite(const UUID& player_id)
 	{
-		if (DeferCommand(k_commands->accept_invite, player_id))
+		if (DeferCommand<&UniverseSimulation::AcceptInvite>(player_id))
 		{
 			return;
 		}
@@ -45,7 +45,7 @@ namespace voxel_game
 
 	void UniverseSimulation::KickFromParty()
 	{
-		if (DeferCommand(k_commands->kick_from_party))
+		if (DeferCommand<&UniverseSimulation::KickFromParty>())
 		{
 			return;
 		}
@@ -53,7 +53,7 @@ namespace voxel_game
 
 	void UniverseSimulation::LeaveParty()
 	{
-		if (DeferCommand(k_commands->leave_party))
+		if (DeferCommand<&UniverseSimulation::LeaveParty>())
 		{
 			return;
 		}
