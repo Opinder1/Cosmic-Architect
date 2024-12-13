@@ -24,11 +24,11 @@ namespace voxel_game
 		DEBUG_ASSERT(!HasCommandsLeft(), "Commands left over when exiting the application");
 	}
 
-	void CommandServer::AddCommands(uint64_t object_id, CommandBuffer&& command_buffer)
+	void CommandServer::AddCommandBuffer(uint64_t object_id, std::unique_ptr<CommandBufferEntryBase>&& command_buffer)
 	{
 		DEBUG_ASSERT(godot::ObjectID(object_id).is_valid(), "Should be adding commands for an object");
 
-		if (command_buffer.NumCommands() == 0)
+		if (command_buffer->NumCommands() == 0)
 		{
 			return;
 		}
@@ -37,18 +37,18 @@ namespace voxel_game
 		{
 			std::lock_guard lock(m_rendering_state.buffers_mutex);
 
-			Commands& commands = m_rendering_state.command_buffers.emplace_back();
+			Entry& commands = m_rendering_state.command_buffers.emplace_back();
 
-			commands.command_buffer = std::move(command_buffer);
+			commands.buffer = std::move(command_buffer);
 		}
 		else
 		{
 			std::lock_guard lock(m_state.buffers_mutex);
 
-			Commands& commands = m_state.command_buffers.emplace_back();
+			Entry& commands = m_state.command_buffers.emplace_back();
 
 			commands.object_id = object_id;
-			commands.command_buffer = std::move(command_buffer);
+			commands.buffer = std::move(command_buffer);
 		}
 	}
 
@@ -94,7 +94,7 @@ namespace voxel_game
 		FlushState(cqserver->m_rendering_state, rserver, k_max_time_per_render_flush);
 	}
 
-	void CommandServer::FlushState(State& state, godot::Object* object, Clock::duration max_flush_time)
+	void CommandServer::FlushState(State& state, godot::Object* object_override, Clock::duration max_flush_time)
 	{
 		if (state.flushing_in_progress)
 		{
@@ -126,24 +126,34 @@ namespace voxel_game
 			size_t commands_processed;
 
 			// Use the provided object if given else use the buffers object
-			if (object != nullptr)
+			if (object_override != nullptr)
 			{
-				commands_processed = state.current_buffer.command_buffer.ProcessCommands(object, k_max_commands_per_iter);
+				commands_processed = state.current_buffer.buffer->ProcessCommands(object_override, k_max_commands_per_iter);
 			}
 			else
 			{
-				commands_processed = state.current_buffer.command_buffer.ProcessCommands(state.current_buffer.object_id, k_max_commands_per_iter);
+				DEBUG_ASSERT(godot::ObjectID(state.current_buffer.object_id).is_valid(), "The command should be run on a valid object");
+
+				godot::Object* object = godot::ObjectDB::get_instance(state.current_buffer.object_id);
+
+				if (object == nullptr)
+				{
+					DEBUG_PRINT_ERROR("The object that the command queue was queueing for was deleted");
+					return;
+				}
+
+				commands_processed = state.current_buffer.buffer->ProcessCommands(object, k_max_commands_per_iter);
 			}
 
 			// We finished the current buffer
-			if (state.current_buffer.command_buffer.NumCommands() == 0)
+			if (state.current_buffer.buffer->NumCommands() == 0)
 			{
 				state.buffer_in_progress = false;
 			}
 			else if (commands_processed == 0) // We have commands but didn't process any so the buffer is broken
 			{
-				state.current_buffer.command_buffer.Clear();
-				state.current_buffer.command_buffer.ShrinkToFit();
+				state.current_buffer.buffer->Clear();
+				state.current_buffer.buffer->ShrinkToFit();
 				state.buffer_in_progress = false;
 			}
 

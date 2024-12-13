@@ -1,6 +1,5 @@
 #pragma once
 
-#include "CommandBuffer.h"
 #include "Debug.h"
 #include "GodotMemory.h"
 #include "Time.h"
@@ -13,9 +12,56 @@
 #include <vector>
 #include <deque>
 #include <memory>
+#include <variant>
 
 namespace voxel_game
 {
+	class CommandBufferEntryBase : Nocopy
+	{
+	public:
+		CommandBufferEntryBase() {}
+
+		virtual size_t ProcessCommands(godot::Object* object, size_t max = 0) = 0;
+
+		virtual size_t NumCommands() const = 0;
+
+		virtual void Clear() = 0;
+
+		virtual void ShrinkToFit() = 0;
+	};
+
+	template<class T>
+	class CommandBufferEntry final : public CommandBufferEntryBase
+	{
+	public:
+		CommandBufferEntry(T&& buffer) :
+			m_buffer(std::move(buffer))
+		{}
+
+		size_t ProcessCommands(godot::Object* object, size_t max = 0) override
+		{
+			return m_buffer.ProcessCommands(object, max);
+		}
+
+		size_t NumCommands() const override
+		{
+			return m_buffer.NumCommands();
+		}
+
+		void Clear() override
+		{
+			m_buffer.Clear();
+		}
+
+		void ShrinkToFit() override
+		{
+			m_buffer.ShrinkToFit();
+		}
+
+	private:
+		T m_buffer;
+	};
+
 	// Server which command buffers can be flushed to and processed frame by frame on the main thread or render thread
 	// 
 	// This class is thread safe but will complain if the wrong thread calls certain methods
@@ -23,21 +69,21 @@ namespace voxel_game
 	{
 		GDCLASS(CommandServer, godot::Object);
 
-		struct Commands
+		struct Entry
 		{
 			godot::ObjectID object_id;
-			CommandBuffer command_buffer;
+			std::unique_ptr<CommandBufferEntryBase> buffer;
 		};
 
 		struct State
 		{
 			tkrzw::SpinSharedMutex buffers_mutex; // Protect command buffers
-			std::deque<Commands> command_buffers;
+			std::deque<Entry> command_buffers;
 
 			// These should always be accessed by same thread
 			bool flushing_in_progress = false;
 			bool buffer_in_progress = false;
-			Commands current_buffer;
+			Entry current_buffer;
 		};
 
 	public:
@@ -46,8 +92,11 @@ namespace voxel_game
 		CommandServer();
 		~CommandServer();
 
-		// Add commands and an object to run them on to be executed when flushing
-		void AddCommands(uint64_t object_id, CommandBuffer&& command_buffer);
+		template<class T>
+		void AddCommands(uint64_t object_id, T&& command_buffer)
+		{
+			AddCommandBuffer(object_id, std::make_unique<CommandBufferEntry<T>>(std::move(command_buffer)));
+		}
 
 		// Run all commands on the main thread and all rendering server commands on the render thread
 		void Flush();
@@ -60,9 +109,12 @@ namespace voxel_game
 		static void _cleanup_methods();
 
 	private:
+		// Add commands and an object to run them on to be executed when flushing
+		void AddCommandBuffer(uint64_t object_id, std::unique_ptr<CommandBufferEntryBase>&& command_buffer);
+
 		static void RenderingFlush();
 
-		static void FlushState(State& state, godot::Object* object, Clock::duration max_flush_time);
+		static void FlushState(State& state, godot::Object* object_override, Clock::duration max_flush_time);
 
 	private:
 		static godot::OptObj<CommandServer> k_singleton;
