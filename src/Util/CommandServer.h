@@ -79,6 +79,8 @@ namespace voxel_game
 		{
 			tkrzw::SpinSharedMutex buffers_mutex; // Protect command buffers
 			std::deque<Entry> command_buffers;
+			size_t num_commands = 0;
+			size_t lifetime_commands = 0;
 
 			// These should always be accessed by same thread
 			bool flushing_in_progress = false;

@@ -33,23 +33,16 @@ namespace voxel_game
 			return;
 		}
 
-		if (object_id == godot::RenderingServer::get_singleton()->get_instance_id())
-		{
-			std::lock_guard lock(m_rendering_state.buffers_mutex);
+		State& state = godot::RenderingServer::get_singleton()->get_instance_id() ? m_rendering_state : m_state;
 
-			Entry& commands = m_rendering_state.command_buffers.emplace_back();
+		std::lock_guard lock(state.buffers_mutex);
 
-			commands.buffer = std::move(command_buffer);
-		}
-		else
-		{
-			std::lock_guard lock(m_state.buffers_mutex);
+		Entry& commands = state.command_buffers.emplace_back();
+			
+		state.num_commands += command_buffer->NumCommands();
+		state.lifetime_commands += command_buffer->NumCommands();
 
-			Entry& commands = m_state.command_buffers.emplace_back();
-
-			commands.object_id = object_id;
-			commands.buffer = std::move(command_buffer);
-		}
+		commands.buffer = std::move(command_buffer);
 	}
 
 	void CommandServer::Flush()
@@ -101,9 +94,11 @@ namespace voxel_game
 			return;
 		}
 
+		state.flushing_in_progress = true;
+
 		Clock::time_point end_time = Clock::now() + max_flush_time;
 
-		state.flushing_in_progress = true;
+		size_t processed_commands = 0;
 
 		// Keep processing buffers until we run out of time
 		while (Clock::now() < end_time)
@@ -123,26 +118,32 @@ namespace voxel_game
 				state.buffer_in_progress = true;
 			}
 
-			size_t commands_processed;
+			godot::Object* object;
 
 			// Use the provided object if given else use the buffers object
 			if (object_override != nullptr)
 			{
-				commands_processed = state.current_buffer.buffer->ProcessCommands(object_override, k_max_commands_per_iter);
+				object = object_override;
 			}
 			else
 			{
 				DEBUG_ASSERT(godot::ObjectID(state.current_buffer.object_id).is_valid(), "The command should be run on a valid object");
 
-				godot::Object* object = godot::ObjectDB::get_instance(state.current_buffer.object_id);
+				object = godot::ObjectDB::get_instance(state.current_buffer.object_id);
+			}
 
-				if (object == nullptr)
-				{
-					DEBUG_PRINT_ERROR("The object that the command queue was queueing for was deleted");
-					return;
-				}
+			if (object != nullptr)
+			{
+				DEBUG_ASSERT(state.current_buffer.buffer->NumCommands() > 0, "We should have commands in the buffer else why did we add it");
 
-				commands_processed = state.current_buffer.buffer->ProcessCommands(object, k_max_commands_per_iter);
+				processed_commands += state.current_buffer.buffer->ProcessCommands(object, k_max_commands_per_iter);
+			}
+			else
+			{
+				DEBUG_PRINT_ERROR("The object that the command queue was queueing for was deleted");
+				state.current_buffer.buffer->Clear();
+				state.current_buffer.buffer->ShrinkToFit();
+				state.buffer_in_progress = false;
 			}
 
 			// We finished the current buffer
@@ -150,17 +151,19 @@ namespace voxel_game
 			{
 				state.buffer_in_progress = false;
 			}
-			else if (commands_processed == 0) // We have commands but didn't process any so the buffer is broken
-			{
-				state.current_buffer.buffer->Clear();
-				state.current_buffer.buffer->ShrinkToFit();
-				state.buffer_in_progress = false;
-			}
 
 			// If we exit the loop we will start on the current buffer in the next iteration
 		}
 
 		state.flushing_in_progress = false;
+
+		{
+			std::lock_guard lock(state.buffers_mutex);
+
+			DEBUG_ASSERT(state.num_commands - processed_commands >= 0, "We processed more commands than we have?");
+
+			state.num_commands -= processed_commands;
+		}
 	}
 
 	void CommandServer::_bind_methods()
