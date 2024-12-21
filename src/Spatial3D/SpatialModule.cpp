@@ -294,6 +294,16 @@ namespace voxel_game::spatial3d
 			{
 				Scale& scale = spatial_world.scales[scale_index];
 
+				// Finish the previous load commands
+				for (Poly node_poly : scale.load_commands)
+				{
+					Node& node = node_poly.GetEntry(spatial_world.node_entry);
+
+					DEBUG_ASSERT(node.state == NodeState::Loading, "Node should be in deleting state");
+
+					node.state = NodeState::Loaded;
+				}
+
 				// Clear previous commands. If you didn't handle them then too bad
 				scale.create_commands.clear();
 				scale.load_commands.clear();
