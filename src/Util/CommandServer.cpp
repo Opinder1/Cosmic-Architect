@@ -3,6 +3,8 @@
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 
+#include <easy/profiler.h>
+
 namespace voxel_game
 {
 	constexpr const size_t k_max_commands_per_iter = 64;
@@ -47,6 +49,8 @@ namespace voxel_game
 
 	void CommandServer::Flush()
 	{
+		EASY_BLOCK("MainFlush");
+
 		DEBUG_ASSERT(godot::OS::get_singleton()->get_thread_caller_id() == godot::OS::get_singleton()->get_main_thread_id(), "The processor should only be flushed on the main thread");
 
 		FlushState(m_state, nullptr, k_max_time_per_flush);
@@ -79,6 +83,8 @@ namespace voxel_game
 
 	void CommandServer::RenderingFlush()
 	{
+		EASY_BLOCK("RenderingFlush");
+
 		CommandServer* cqserver = CommandServer::get_singleton();
 		godot::RenderingServer* rserver = godot::RenderingServer::get_singleton();
 
