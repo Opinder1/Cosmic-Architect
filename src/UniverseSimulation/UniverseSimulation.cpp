@@ -15,7 +15,6 @@
 #include "Voxel/VoxelModule.h"
 
 #include "Render/RenderComponents.h"
-#include "Render/TreeComponents.h"
 #include "Render/RenderModule.h"
 
 #include "Physics3D/PhysicsComponents.h"
@@ -58,7 +57,7 @@ namespace voxel_game
 		{
 			universe_entity.ensure<rendering::Scenario>().id = scenario;
 
-			universe_entity.add<rendering::TreeNode>();
+			universe_entity.add<rendering::Transform>();
 		}
 
 		return universe_entity;
@@ -86,7 +85,7 @@ namespace voxel_game
 
 		if (scenario.is_valid())
 		{
-			galaxy_entity.add<rendering::TreeNode>();
+			galaxy_entity.add<rendering::Transform>();
 		}
 
 		return galaxy_entity;

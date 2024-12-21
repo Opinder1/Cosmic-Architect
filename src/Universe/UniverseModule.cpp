@@ -87,6 +87,7 @@ namespace voxel_game::universe
 						galaxy.set(physics3d::Position{ godot::Vector3(position_x, position_y, position_z) });
 						galaxy.set(physics3d::Scale{ godot::Vector3(box_size, box_size, box_size) });
 						galaxy.add<rendering::UniqueInstance>(galaxy_schematic);
+						galaxy.add<rendering::Transform>();
 
 						universe_node.entities.push_back(galaxy);
 					}

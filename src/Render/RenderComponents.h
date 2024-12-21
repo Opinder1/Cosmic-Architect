@@ -27,6 +27,27 @@ namespace voxel_game::rendering
 		Components(flecs::world& world);
 	};
 
+	struct ModifyFlag
+	{
+		enum : uint8_t
+		{
+			BlendShapeWeight,
+			CustomAABB,
+			ExtraVisibilityMargin,
+			IgnoreCulling,
+			LayerMask,
+			PivotData,
+			Scenario,
+			SurfaceOverrideMaterial,
+			Transform,
+			VisibilityParent,
+			Visible,
+			Count
+		};
+	};
+
+	using ModifyFlags = std::bitset<ModifyFlag::Count>;
+
 	struct ServerThreadContext
 	{
 		CommandBuffer commands;
@@ -38,6 +59,12 @@ namespace voxel_game::rendering
 		PerThread<ServerThreadContext> threads;
 
 		Allocator instance_allocator{ AllocatorType::Instance };
+	};
+
+	struct Transform
+	{
+		godot::Transform3D transform;
+		bool modified = false;
 	};
 
 	// This is the scenario that all the children instances of this entity will register to

@@ -11,9 +11,7 @@ namespace voxel_game::rendering
 	{
 		Module(flecs::world& world);
 
-		void InitTree(flecs::world& world);
-
-		void InitTreeTransform(flecs::world& world);
+		void InitTransform(flecs::world& world);
 
 		void InitScenario(flecs::world& world);
 

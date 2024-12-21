@@ -1,6 +1,5 @@
 #include "RenderModule.h"
 #include "RenderComponents.h"
-#include "TreeComponents.h"
 
 #include "Physics3D/PhysicsComponents.h"
 
@@ -21,7 +20,6 @@ namespace voxel_game::rendering
 		world.module<Module>();
 
 		world.import<Components>();
-        world.import<TreeComponents>();
         world.import<physics3d::Components>();
 
         world.add<ServerContext>();
@@ -68,112 +66,66 @@ namespace voxel_game::rendering
             context.instance_allocator.Process();
         });
 
-        InitTree(world);
+        InitTransform(world);
         InitScenario(world);
         InitUniqueInstance(world);
         InitBase(world);
 	}
 
-    void Module::InitTree(flecs::world& world)
+    void Module::InitTransform(flecs::world& world)
     {
         // Update the render tree nodes transform based on the current nodes position, rotation, scale and parents transform
-        world.system<TreeNode, const physics3d::Position*, const physics3d::Rotation*, const physics3d::Scale*, const TreeNode*>(DEBUG_ONLY("UpdateTreeNodeTransforms"))
+        world.system<Transform, const physics3d::Position*, const physics3d::Rotation*, const physics3d::Scale*, const Transform*>(DEBUG_ONLY("UpdateTreeNodeTransforms"))
             .multi_threaded()
             .term_at(0).self()
             .term_at(1).self()
             .term_at(2).self()
             .term_at(3).self()
             .term_at(4).cascade(flecs::ChildOf)
-            .each([](TreeNode& tree_node, const physics3d::Position* position, const physics3d::Rotation* rotation, const physics3d::Scale* scale, const TreeNode* parent_tree_node)
+            .each([](Transform& transform, const physics3d::Position* position, const physics3d::Rotation* rotation, const physics3d::Scale* scale, const Transform* parent_transform)
         {
-            godot::Transform3D transform;
+            godot::Transform3D new_transform;
 
             if (scale != nullptr)
             {
-                transform.scale(scale->scale);
+                new_transform.scale(scale->scale);
             }
 
             if (rotation != nullptr)
             {
-                transform.rotate(rotation->rotation.get_axis(), rotation->rotation.get_angle());
+                new_transform.rotate(rotation->rotation.get_axis(), rotation->rotation.get_angle());
             }
 
             if (position != nullptr)
             {
-                transform.set_origin(position->position);
+                new_transform.set_origin(position->position);
             }
 
-            if (parent_tree_node != nullptr)
+            if (parent_transform != nullptr)
             {
-                transform *= parent_tree_node->transform;
-
-                tree_node.modify_flags[ModifyFlags::Visible] = tree_node.visible != parent_tree_node->visible;
-                tree_node.visible = tree_node.visible && parent_tree_node->visible;
+                new_transform *= parent_transform->transform;
             }
 
-            tree_node.modify_flags[ModifyFlags::Transform] = transform != tree_node.transform;
-            tree_node.transform = transform;
-        });
-
-        InitTreeTransform(world);
-    }
-
-    void Module::InitTreeTransform(flecs::world& world)
-    {
-        // Update the render instances transform based on the tree node transform given the entity is a tree node
-        world.system<UniqueInstance, const TreeNode, ServerContext>(DEBUG_ONLY("UpdateInstanceTransformSelf"))
-            .multi_threaded()
-            .term_at(0).self().second(flecs::Any)
-            .term_at(1).self()
-            .term_at(2).singleton()
-            .each([](flecs::entity entity, UniqueInstance& instance, const TreeNode& tree_node, ServerContext& context)
-        {
-            ServerThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
-
-            DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
-
-            if (tree_node.modify_flags[ModifyFlags::Transform])
-            {
-                thread_context.commands.AddCommand("instance_set_transform", instance.id, tree_node.transform);
-            }
+            transform.modified = transform.transform != new_transform;
+            transform.transform = new_transform;
         });
 
         // Update the render instances transform based on the entities position, rotation, scale and parents transform given the entity is not a tree node
-        world.system<UniqueInstance, const physics3d::Position*, const physics3d::Rotation*, const physics3d::Scale*, const TreeNode, ServerContext>(DEBUG_ONLY("UpdateInstanceTransformUp"))
+        world.system<UniqueInstance, const Transform, ServerContext>(DEBUG_ONLY("UpdateInstanceTransform"))
             .multi_threaded()
             .term_at(0).self().second(flecs::Any)
-            .term_at(1).self()
-            .term_at(2).self()
-            .term_at(3).self()
-            .term_at(4).up(flecs::ChildOf)
-            .term_at(5).singleton()
-            .without<const TreeNode>().self()
-            .each([](flecs::entity entity, UniqueInstance& instance, const physics3d::Position* position, const physics3d::Rotation* rotation, const physics3d::Scale* scale, const TreeNode& parent_tree_node, ServerContext& context)
+            .term_at(1).self().up(flecs::ChildOf)
+            .term_at(2).singleton()
+            .each([](flecs::entity entity, UniqueInstance& instance, const Transform& transform, ServerContext& context)
         {
-            godot::Transform3D transform;
-
-            if (scale != nullptr)
-            {
-                transform.scale(scale->scale);
-            }
-
-            if (rotation != nullptr)
-            {
-                transform.rotate(rotation->rotation.get_axis(), rotation->rotation.get_angle());
-            }
-
-            if (position != nullptr)
-            {
-                transform.set_origin(position->position);
-            }
-
-            transform *= parent_tree_node.transform;
-
             ServerThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
 
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
 
-            thread_context.commands.AddCommand("instance_set_transform", instance.id, transform);
+            if (transform.modified)
+            {
+                thread_context.commands.AddCommand("instance_set_transform", instance.id, transform.transform);
+            }
         });
     }
     

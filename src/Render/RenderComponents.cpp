@@ -9,7 +9,7 @@ namespace voxel_game::rendering
 		world.module<Components>();
 
         world.component<ServerContext>();
-
+        world.component<Transform>();
         world.component<Scenario>();
         world.component<OwnedScenario>();
 
