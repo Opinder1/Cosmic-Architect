@@ -56,9 +56,19 @@ namespace voxel_game::sim
 		godot::Dictionary values;
 	};
 
-	struct ThreadEntityPool
+	class ThreadEntityPool
 	{
-		SmallVector<flecs::entity_t, k_max_pool_entities> new_entities;
+	public:
+		ThreadEntityPool();
+
+		void AllocateEntities(flecs::world_t* world);
+
+		void ClearEntities(flecs::world_t* world);
+
+		flecs::entity_t CreateThreadEntity();
+
+	private:
+		SmallVector<flecs::entity_t, k_max_pool_entities> m_new_entities;
 	};
 
 	struct ThreadEntityPools : Nocopy
@@ -67,6 +77,4 @@ namespace voxel_game::sim
 	};
 
 	ThreadEntityPool& GetThreadEntityPool(ThreadEntityPools& pools, flecs::world_t* stage);
-
-	flecs::entity_t CreateThreadEntity(ThreadEntityPool& entity_pool);
 }
