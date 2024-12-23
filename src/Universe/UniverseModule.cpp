@@ -42,9 +42,11 @@ namespace voxel_game::universe
 		world.system<const World, spatial3d::World, sim::ThreadEntityPools>(DEBUG_ONLY("UniverseLoadSpatialNode"))
 			.multi_threaded()
 			.term_at(2).src<sim::ThreadEntityPools>()
-			.each([world = world.c_ptr()](flecs::entity entity, const World& universe_world, spatial3d::World& spatial_world, sim::ThreadEntityPools& entity_pools)
+			.each([](flecs::entity entity, const World& universe_world, spatial3d::World& spatial_world, sim::ThreadEntityPools& entity_pools)
 		{
-			sim::ThreadEntityPool& entity_pool = sim::GetThreadEntityPool(entity_pools, world);
+			flecs::world stage = entity.world();
+
+			sim::ThreadEntityPool& entity_pool = sim::GetThreadEntityPool(entity_pools, stage);
 
 			for (spatial3d::Scale& scale : spatial_world.scales)
 			{
@@ -52,7 +54,7 @@ namespace voxel_game::universe
 				
 				if (!scale.load_commands.empty())
 				{
-					galaxy_schematic = flecs::entity(world, entity_pool.CreateThreadEntity());
+					galaxy_schematic = flecs::entity(stage, entity_pool.CreateThreadEntity());
 
 					galaxy_schematic.add<rendering::PlaceholderCube>();
 				}
@@ -78,7 +80,7 @@ namespace voxel_game::universe
 						position_y += godot::UtilityFunctions::randf_range(0, scale_node_step);
 						position_z += godot::UtilityFunctions::randf_range(0, scale_node_step);
 
-						flecs::entity galaxy(world, entity_pool.CreateThreadEntity());
+						flecs::entity galaxy(stage, entity_pool.CreateThreadEntity());
 
 						galaxy.child_of(entity);
 						galaxy.add<galaxy::World>();
