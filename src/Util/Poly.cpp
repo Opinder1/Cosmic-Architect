@@ -3,31 +3,52 @@
 #include "Debug.h"
 
 Poly::Poly() :
-	ptr(nullptr)
+	m_ptr(nullptr)
 {}
 
 Poly::Poly(std::byte* ptr) :
-	ptr(ptr)
+	m_ptr(ptr)
 {}
+
+#if defined(POLY_DEBUG)
+Poly::Poly(std::byte* ptr, const std::shared_ptr<void>& type) :
+	m_ptr(ptr),
+	m_type(type)
+{}
+#endif
 
 bool Poly::operator==(Poly other) const
 {
-	return ptr == other.ptr;
+	return m_ptr == other.m_ptr;
 }
 
 bool Poly::operator!=(Poly other) const
 {
-	return ptr != other.ptr;
+	return m_ptr != other.m_ptr;
 }
 
 bool Poly::IsValid() const
 {
-	return ptr != nullptr;
+	return m_ptr != nullptr;
+}
+
+PolyType::PolyType()
+{}
+
+PolyType::~PolyType()
+{
+#if defined(POLY_DEBUG)
+	DEBUG_ASSERT(m_num_poly == 0, "All poly objects created from this type should have been destroyed first");
+#endif
 }
 
 uint16_t PolyType::AddEntry(FactoryCB construct, FactoryCB destruct, uint16_t size)
 {
 	DEBUG_ASSERT((uint32_t)m_total_size + size <= UINT16_MAX, "A poly can only support a size of up to 65535");
+
+#if defined(POLY_DEBUG)
+	DEBUG_ASSERT(m_num_poly == 0, "We should only be adding entries before we create any poly of this type");
+#endif
 
 	Entry& entry = m_entries.emplace_back();
 
@@ -51,19 +72,31 @@ Poly PolyType::CreatePoly()
 		entry.construct(ptr + entry.offset);
 	}
 
-	return Poly{ ptr };
+#if defined(POLY_DEBUG)
+	m_num_poly++;
+
+	return Poly(ptr, m_type);
+#else
+	return Poly(ptr);
+#endif
 }
 
 void PolyType::DestroyPoly(Poly poly)
 {
 	DEBUG_ASSERT(poly.IsValid(), "A valid poly should be provided for destruction");
 
+#if defined(POLY_DEBUG)
+	DEBUG_ASSERT(poly.m_type == m_type, "The poly should be created from this type");
+
+	m_num_poly--;
+#endif
+
 	for (Entry& entry : m_entries)
 	{
-		entry.destruct(poly.ptr + entry.offset);
+		entry.destruct(poly.m_ptr + entry.offset);
 	}
 
-	free(poly.ptr);
+	free(poly.m_ptr);
 }
 
 uint16_t PolyType::GetSize() const
