@@ -55,9 +55,6 @@ namespace voxel_game
 
 		loading::EntityLoader& loader = universe_entity.ensure<loading::EntityLoader>();
 		loader.Initialize(world);
-#if defined(DEBUG_ENABLED)
-		loader.SetProgressThread(std::this_thread::get_id());
-#endif
 
 		universe_entity.add<universe::World>();
 
@@ -93,9 +90,6 @@ namespace voxel_game
 
 		loading::EntityLoader& loader = galaxy_entity.ensure<loading::EntityLoader>();
 		loader.Initialize(world);
-#if defined(DEBUG_ENABLED)
-		loader.SetProgressThread(std::this_thread::get_id());
-#endif
 
 		galaxy_entity.add<galaxy::World>();
 
@@ -169,12 +163,12 @@ namespace voxel_game
 		m_world.import<galaxy::Module>();
 		m_world.import<universe::Module>();
 
-		if (server_type == ServerType::SERVER_TYPE_REMOTE)
+		if (m_server_type == ServerType::SERVER_TYPE_REMOTE)
 		{
 			// Import networking
 		}
 
-		if (scenario.is_valid())
+		if (m_scenario.is_valid())
 		{
 			m_world.import<rendering::Module>();
 		}
@@ -188,6 +182,12 @@ namespace voxel_game
 			return false;
 		}
 
+		if (m_path.is_empty())
+		{
+			DEBUG_PRINT_ERROR("This universe simulation should have a valid path");
+			return false;
+		}
+
 		return true;
 	}
 
@@ -195,9 +195,6 @@ namespace voxel_game
 	{
 		loading::EntityLoader& loader = m_world.ensure<loading::EntityLoader>();
 		loader.Initialize(m_world);
-#if defined(DEBUG_ENABLED)
-		loader.SetProgressThread(std::this_thread::get_id());
-#endif
 
 		// Create the universe and simulated galaxy
 
@@ -215,7 +212,7 @@ namespace voxel_game
 		DEBUG_ASSERT(m_universe.is_valid(), "The simulation should have been initialized");
 
 #if defined(DEBUG_ENABLED)
-		m_info_updater.SetThreads(std::thread::id{}, std::thread::id{});
+		m_info_updater.SetThreads(std::thread::id{}, std::thread::id{}); // We may not start in thread mode next time
 #endif
 
 		m_world.set_threads(0);

@@ -64,10 +64,6 @@ namespace voxel_game::loading
 		EntityLoader();
 		~EntityLoader();
 
-#if defined(DEBUG_ENABLED)
-		void SetProgressThread(std::thread::id thread_id);
-#endif
-
 		void Initialize(flecs::world& world);
 
 		void Progress();
@@ -77,7 +73,7 @@ namespace voxel_game::loading
 		void DeleteEntity(flecs::entity_t entity);
 
 	private:
-		void ThreadLoop();
+		void ThreadLoop(std::thread::id owner_id);
 
 		void ProcessLoadTasks();
 		void ProcessSaveTasks();

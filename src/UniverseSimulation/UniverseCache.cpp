@@ -53,8 +53,7 @@ namespace voxel_game
 #if defined(DEBUG_ENABLED)
 	void UniverseCacheUpdater::SetThreads(std::thread::id reader_id, std::thread::id writer_id)
 	{
-		m_updates.SetReadThread(reader_id);
-		m_updates.SetWriteThread(writer_id);
+		m_updates.SetThreads(reader_id, writer_id);
 	}
 #endif
 

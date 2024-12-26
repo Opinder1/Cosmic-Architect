@@ -30,14 +30,10 @@ public:
 	CommandSwapBuffer() {}
 
 #if defined(DEBUG_ENABLED)
-	void SetReadThread(std::thread::id thread_id)
+	void SetThreads(std::thread::id reader_id, std::thread::id writer_id)
 	{
-		m_reader_id = thread_id;
-	}
-
-	void SetWriteThread(std::thread::id thread_id)
-	{
-		m_writer_id = thread_id;
+		m_reader_id = reader_id;
+		m_writer_id = writer_id;
 	}
 #endif
 
@@ -101,14 +97,10 @@ public:
 	TripleBuffer() {}
 
 #if defined(DEBUG_ENABLED)
-	void SetReadThread(std::thread::id thread_id)
+	void SetThreads(std::thread::id reader_id, std::thread::id writer_id)
 	{
-		m_reader_id = thread_id;
-	}
-
-	void SetWriteThread(std::thread::id thread_id)
-	{
-		m_writer_id = thread_id;
+		m_reader_id = reader_id;
+		m_writer_id = writer_id;
 	}
 #endif
 
