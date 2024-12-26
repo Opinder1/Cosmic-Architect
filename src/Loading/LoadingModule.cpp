@@ -17,7 +17,7 @@ namespace voxel_game::loading
 		});
 	}
 
-	void SaveEntity(flecs::world& world, flecs::entity_t entity)
+	void SaveEntity(flecs::world& world, flecs::entity_t loader, flecs::entity_t entity)
 	{
 		SaveEvent event;
 
@@ -26,6 +26,6 @@ namespace voxel_game::loading
 			.entity(entity)
 			.emit();
 
-		world.get_mut<EntityLoader>()->SaveEntity(entity, std::move(event.data));
+		flecs::entity(world, loader).get_mut<EntityLoader>()->SaveEntity(entity, std::move(event.data));
 	}
 }
