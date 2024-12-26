@@ -42,20 +42,37 @@ namespace voxel_game
 {
 	const size_t k_simulation_ticks_per_second = 20;
 
-	flecs::entity CreateNewUniverse(flecs::world& world, const godot::String& path, godot::RID scenario)
+	flecs::entity CreateNewUniverse(flecs::world& world, const godot::String& path, godot::RID scenario_id)
 	{
 		// Create the universe
-		flecs::entity universe_entity(world, DEBUG_ONLY("Universe"));
+		flecs::entity universe_entity = world.entity();
+
+#if defined(DEBUG_ENABLED)
+		universe_entity.set_name("Universe");
+#endif
+
+		universe_entity.set(sim::Path{ path });
+
+		loading::EntityLoader& loader = universe_entity.ensure<loading::EntityLoader>();
+		loader.Initialize(world);
+#if defined(DEBUG_ENABLED)
+		loader.SetProgressThread(std::this_thread::get_id());
+#endif
 
 		universe_entity.add<universe::World>();
-		universe_entity.add<spatial3d::World>();
-		universe_entity.emplace<sim::Path>(path);
 
-		spatial3d::AddScaleMarkers(universe_entity);
+		spatial3d::World& spatial_world = universe_entity.ensure<spatial3d::World>();
+		spatial_world.max_scale = spatial3d::k_max_world_scale;
+		spatial_world.node_size = 16;
+		spatial_world.node_keepalive = 1s;
 
-		if (scenario.is_valid())
+		spatial3d::AddScaleMarkers(universe_entity, 0, spatial_world.max_scale);
+
+		if (scenario_id.is_valid())
 		{
-			universe_entity.ensure<rendering::Scenario>().id = scenario;
+			rendering::Scenario& scenario = universe_entity.ensure<rendering::Scenario>();
+
+			scenario.id = scenario_id;
 
 			universe_entity.add<rendering::Transform>();
 		}
@@ -63,27 +80,40 @@ namespace voxel_game
 		return universe_entity;
 	}
 
-	flecs::entity CreateNewSimulatedGalaxy(flecs::world& world, flecs::entity_t universe_entity, godot::RID scenario)
+	flecs::entity CreateNewSimulatedGalaxy(flecs::world& world, flecs::entity_t universe_entity, godot::RID scenario_id)
 	{
 		// Create the simulated galaxy
-		flecs::entity galaxy_entity(world, DEBUG_ONLY("SimulatedGalaxy"));
+		flecs::entity galaxy_entity = world.entity();
+
+#if defined(DEBUG_ENABLED)
+		galaxy_entity.set_name("SimulatedGalaxy");
+#endif
 
 		galaxy_entity.child_of(universe_entity);
+
+		loading::EntityLoader& loader = galaxy_entity.ensure<loading::EntityLoader>();
+		loader.Initialize(world);
+#if defined(DEBUG_ENABLED)
+		loader.SetProgressThread(std::this_thread::get_id());
+#endif
+
 		galaxy_entity.add<galaxy::World>();
-		galaxy_entity.add<spatial3d::World>();
+
+		spatial3d::World& spatial_world = galaxy_entity.ensure<spatial3d::World>();
+		spatial_world.max_scale = spatial3d::k_max_world_scale;
+
 		galaxy_entity.add<physics3d::Position>();
 		galaxy_entity.add<physics3d::Rotation>();
 
 		// We want the simulated galaxy to load all galaxies around it
 		spatial3d::Loader& spatial_loader = galaxy_entity.ensure<spatial3d::Loader>();
-
 		spatial_loader.dist_per_lod = 3;
 		spatial_loader.min_lod = 0;
 		spatial_loader.max_lod = spatial3d::k_max_world_scale;
 
-		spatial3d::AddScaleMarkers(galaxy_entity);
+		spatial3d::AddScaleMarkers(galaxy_entity, 0, spatial_world.max_scale);
 
-		if (scenario.is_valid())
+		if (scenario_id.is_valid())
 		{
 			galaxy_entity.add<rendering::Transform>();
 		}
@@ -114,8 +144,10 @@ namespace voxel_game
 		}
 
 		m_universe = universe;
-
+		m_path = path;
 		m_fragment_type = fragment_type;
+		m_server_type = server_type;
+		m_scenario = scenario;
 
 		m_world.reset();
 
@@ -146,14 +178,6 @@ namespace voxel_game
 		{
 			m_world.import<rendering::Module>();
 		}
-
-		m_world.emplace<loading::EntityLoader>(m_world);
-
-		// Create the universe and simulated galaxy
-
-		m_universe_entity = CreateNewUniverse(m_world, path, scenario);
-
-		m_galaxy_entity = CreateNewSimulatedGalaxy(m_world, m_universe_entity, scenario);
 	}
 
 	bool UniverseSimulation::CanSimulationStart()
@@ -169,10 +193,20 @@ namespace voxel_game
 
 	void UniverseSimulation::DoSimulationLoad()
 	{
+		loading::EntityLoader& loader = m_world.ensure<loading::EntityLoader>();
+		loader.Initialize(m_world);
+#if defined(DEBUG_ENABLED)
+		loader.SetProgressThread(std::this_thread::get_id());
+#endif
+
+		// Create the universe and simulated galaxy
+
+		m_universe_entity = CreateNewUniverse(m_world, m_path, m_scenario);
+
+		m_galaxy_entity = CreateNewSimulatedGalaxy(m_world, m_universe_entity, m_scenario);
+
 #if defined(DEBUG_ENABLED)
 		m_info_updater.SetThreads(m_owner_id, std::this_thread::get_id());
-
-		m_world.get_mut<loading::EntityLoader>()->SetProgressThread(std::this_thread::get_id());
 #endif
 	}
 
@@ -181,8 +215,6 @@ namespace voxel_game
 		DEBUG_ASSERT(m_universe.is_valid(), "The simulation should have been initialized");
 
 #if defined(DEBUG_ENABLED)
-		m_world.get_mut<loading::EntityLoader>()->SetProgressThread(std::thread::id{});
-
 		m_info_updater.SetThreads(std::thread::id{}, std::thread::id{});
 #endif
 

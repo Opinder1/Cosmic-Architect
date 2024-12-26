@@ -122,12 +122,6 @@ namespace voxel_game::voxel
 			.event(flecs::OnAdd)
 			.each([](World& voxel_world, spatial3d::World& spatial_world)
 		{
-			spatial_world.max_scale = spatial3d::k_max_world_scale;
-
-			spatial_world.node_size = 16;
-
-			spatial_world.node_keepalive = 1s;
-
 			voxel_world.node_entry = spatial_world.node_type.AddEntry<Node>();
 		});
 	}

@@ -29,8 +29,6 @@ namespace voxel_game::galaxy
 			.event(flecs::OnAdd)
 			.each([](World& galaxy_world, spatial3d::World& spatial_world)
 		{
-			spatial_world.max_scale = spatial3d::k_max_world_scale;
-
 			galaxy_world.node_entry = spatial_world.node_type.AddEntry<Node>();
 		});
 	}

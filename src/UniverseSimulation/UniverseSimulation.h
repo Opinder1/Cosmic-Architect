@@ -308,7 +308,10 @@ namespace voxel_game
 
 	private:
 		godot::Ref<Universe> m_universe;
+		godot::StringName m_path;
 		godot::StringName m_fragment_type;
+		ServerType m_server_type;
+		godot::RID m_scenario;
 		
 		// World
 		flecs::world m_world;

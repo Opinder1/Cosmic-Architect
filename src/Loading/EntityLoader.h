@@ -61,12 +61,14 @@ namespace voxel_game::loading
 		};
 
 	public:
-		EntityLoader(flecs::world& world);
+		EntityLoader();
 		~EntityLoader();
 
 #if defined(DEBUG_ENABLED)
 		void SetProgressThread(std::thread::id thread_id);
 #endif
+
+		void Initialize(flecs::world& world);
 
 		void Progress();
 
@@ -84,7 +86,7 @@ namespace voxel_game::loading
 	private:
 		std::thread m_thread;
 		std::atomic_bool m_running = false;
-		flecs::world_t* m_world;
+		flecs::world_t* m_world = nullptr;
 
 		// Commands requested to loader
 		CommandSwapBuffer<LoadTask> m_load_commands;

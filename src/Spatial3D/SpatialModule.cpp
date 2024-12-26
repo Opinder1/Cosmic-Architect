@@ -419,30 +419,26 @@ namespace voxel_game::spatial3d
 		});
 	}
 
-	void AddScaleMarkers(flecs::entity spatial_world_entity)
+	void AddScaleMarkers(flecs::entity world_entity, uint8_t first, uint8_t last)
 	{
-		flecs::scoped_world scope = spatial_world_entity.scope();
+		flecs::scoped_world scope = world_entity.scope();
 
-		const World* spatial_world = spatial_world_entity.get<World>();
-
-		DEBUG_ASSERT(spatial_world != nullptr, "The entity should have a spatial world to add spatial workers");
-
-		for (uint8_t scale_index = 0; scale_index < spatial_world->max_scale; scale_index++)
+		for (uint8_t scale_index = first; scale_index < last; scale_index++)
 		{
-			godot::String worker_name = godot::vformat("WorkerEntity%d", scale_index);
+			godot::String marker_name = godot::vformat("ScaleMarker%d", scale_index);
 
-			flecs::entity worker_entity(scope, DEBUG_ONLY(worker_name.utf8()));
+			flecs::entity marker_entity{ scope, DEBUG_ONLY(marker_name.utf8()) };
 
-			worker_entity.set(ScaleMarker{ scale_index });
+			marker_entity.set(ScaleMarker{ scale_index });
 		}
 	}
 
-	void RemoveScaleMarkers(flecs::entity spatial_world_entity)
+	void RemoveScaleMarkers(flecs::entity world_entity)
 	{
-		flecs::scoped_world scope = spatial_world_entity.scope();
+		flecs::scoped_world scope = world_entity.scope();
 
 		scope.query_builder<const ScaleMarker>()
-			.read(flecs::ChildOf, spatial_world_entity)
+			.read(flecs::ChildOf, world_entity)
 			.each([](flecs::entity entity, const ScaleMarker& scale_marker)
 		{
 			entity.destruct();

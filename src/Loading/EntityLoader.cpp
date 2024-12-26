@@ -13,16 +13,9 @@ namespace voxel_game::loading
 	const size_t k_num_database_workers = 4;
 	const size_t k_entity_pool_max = 1024;
 
-	EntityLoader::EntityLoader(flecs::world& world) :
-		m_world(world.c_ptr()),
+	EntityLoader::EntityLoader() :
 		m_database_async(&m_database, k_num_database_workers)
-	{
-		m_modification_stage.Reset(world.async_stage(), world.async_stage(), world.async_stage());
-
-		m_running.store(true, std::memory_order_release);
-
-		m_thread = std::thread(&EntityLoader::ThreadLoop, this);
-	}
+	{}
 
 	EntityLoader::~EntityLoader()
 	{
@@ -55,6 +48,17 @@ namespace voxel_game::loading
 		m_modification_stage.SetReadThread(thread_id);
 	}
 #endif
+
+	void EntityLoader::Initialize(flecs::world& world)
+	{
+		m_world = world.c_ptr();
+
+		m_modification_stage.Reset(world.async_stage(), world.async_stage(), world.async_stage());
+
+		m_running.store(true, std::memory_order_release);
+
+		m_thread = std::thread(&EntityLoader::ThreadLoop, this);
+	}
 
 	void EntityLoader::Progress()
 	{
