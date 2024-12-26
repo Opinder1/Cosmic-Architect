@@ -36,7 +36,9 @@ public:
 	{
 		DEBUG_ASSERT(IsValid(), "The poly should be valid");
 		DEBUG_ASSERT(entry.IsValid(), "The entry should be invalid");
+#if defined(POLY_DEBUG)
 		DEBUG_ASSERT(m_type == entry.m_type, "The poly entry should be from the same type");
+#endif
 
 		return *reinterpret_cast<const T*>(m_ptr + entry.m_offset);
 	}
@@ -47,7 +49,9 @@ public:
 	{
 		DEBUG_ASSERT(IsValid(), "The poly should be valid");
 		DEBUG_ASSERT(entry.IsValid(), "The entry should be invalid");
+#if defined(POLY_DEBUG)
 		DEBUG_ASSERT(m_type == entry.m_type, "The poly entry should be from the same type");
+#endif
 
 		return *reinterpret_cast<T*>(m_ptr + entry.m_offset);
 	}
