@@ -28,6 +28,14 @@ namespace voxel_game
 		GDCLASS(Simulation, godot::RefCounted);
 
 	public:
+		enum State
+		{
+			Unloaded,
+			Loading,
+			Loaded,
+			Unloading
+		};
+
 		enum ThreadMode
 		{
 			THREAD_MODE_SINGLE_THREADED,
@@ -89,7 +97,7 @@ namespace voxel_game
 		std::thread m_thread;
 
 		// The load state to control the initial loading and final unloading of the simulation
-		std::atomic_bool m_running = false;
+		std::atomic<State> m_state = State::Unloaded;
 
 		// Commands to be deferred and processed by the internal thread
 		tkrzw::SpinMutex m_commands_mutex;

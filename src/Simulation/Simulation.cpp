@@ -43,7 +43,7 @@ namespace voxel_game
 			return;
 		}
 
-		m_running.store(true, std::memory_order_release);
+		m_state.store(State::Loading, std::memory_order_release);
 
 		if (thread_mode == THREAD_MODE_MULTI_THREADED)
 		{
@@ -54,6 +54,8 @@ namespace voxel_game
 			EASY_MAIN_THREAD;
 
 			DoSimulationLoad();
+
+			m_state.store(State::Loaded, std::memory_order_release);
 		}
 	}
 
@@ -61,17 +63,19 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(m_owner_id == std::this_thread::get_id(), "StopSimulation() should be called by the thread that created the simulation");
 
-		if (!m_running.load(std::memory_order_acquire))
+		if (m_state.load(std::memory_order_acquire) != State::Loaded)
 		{
 			return;
 		}
 
+		m_state.store(State::Unloading);
+
 		if (!IsThreaded())
 		{
 			DoSimulationUnload();
-		}
 
-		m_running.store(false);
+			m_state.store(State::Unloaded);
+		}
 	}
 
 	void Simulation::WaitUntilStopped()
@@ -91,7 +95,10 @@ namespace voxel_game
 
 		if (IsThreaded())
 		{
-			DoSimulationProgress(delta);
+			if (m_state.load(std::memory_order_acquire) == State::Loaded)
+			{
+				DoSimulationProgress(delta);
+			}
 
 			return true; // We always keep running when threaded as the thread will stop at its own pace
 		}
@@ -114,7 +121,9 @@ namespace voxel_game
 
 		DoSimulationLoad();
 
-		while (m_running.load(std::memory_order_acquire))
+		m_state.store(State::Loaded, std::memory_order_release);
+
+		while (m_state.load(std::memory_order_acquire) == State::Loaded)
 		{
 			TypedCommandBuffer command_buffer;
 			{
@@ -132,6 +141,8 @@ namespace voxel_game
 		}
 
 		DoSimulationUnload();
+
+		m_state.store(State::Unloaded);
 	}
 
 	bool Simulation::CanSimulationStart()
