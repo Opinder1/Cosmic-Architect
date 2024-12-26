@@ -43,7 +43,7 @@ namespace voxel_game
 			return;
 		}
 
-		m_state.store(State::Loading, std::memory_order_release);
+		m_state.store(State::Loading, std::memory_order_release); // If in thread mode the thread will set to loaded
 
 		if (thread_mode == THREAD_MODE_MULTI_THREADED)
 		{
@@ -68,7 +68,7 @@ namespace voxel_game
 			return;
 		}
 
-		m_state.store(State::Unloading);
+		m_state.store(State::Unloading); // If in thread mode the thread will set to unloaded
 
 		if (!IsThreaded())
 		{
@@ -95,7 +95,7 @@ namespace voxel_game
 
 		if (IsThreaded())
 		{
-			if (m_state.load(std::memory_order_acquire) == State::Loaded)
+			if (m_state.load(std::memory_order_acquire) == State::Loaded) // Don't progress until loaded
 			{
 				DoSimulationProgress(delta);
 			}
@@ -104,10 +104,15 @@ namespace voxel_game
 		}
 		else
 		{
-			bool keep_running = DoSimulationProgress(delta);
+			bool keep_running = false;
 
-			// Process signals here as we don't need to defer them
-			m_deferred_signals.ProcessCommands(this);
+			if (m_state.load(std::memory_order_acquire) == State::Loaded) // Don't progress until loaded
+			{
+				keep_running = DoSimulationProgress(delta);
+
+				// Process signals here as we don't need to defer them
+				m_deferred_signals.ProcessCommands(this);
+			}
 
 			return keep_running;
 		}
