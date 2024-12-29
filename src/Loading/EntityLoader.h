@@ -27,7 +27,7 @@ namespace voxel_game::loading
 
 	// An asynchronous entity loader that manages generating and loading entities from disk. Entities can have dependenices on other entities
 	// that will be loaded or generated as needed. The entities added by this loader should only be removed by this loader.
-	class EntityLoader : Nomove
+	class EntityLoader : Nomove, Nocopy
 	{
 	private:
 		struct EntityData
@@ -75,8 +75,11 @@ namespace voxel_game::loading
 	private:
 		void ThreadLoop(std::thread::id owner_id);
 
+		void ProcessLoadCommands();
 		void ProcessLoadTasks();
+		void ProcessSaveCommands();
 		void ProcessSaveTasks();
+		void ProcessDeleteCommands();
 		void ProcessDeleteTasks();
 
 	private:

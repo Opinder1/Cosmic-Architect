@@ -84,8 +84,13 @@ namespace voxel_game::loading
 		{
 			m_modifications_added = false;
 
+			ProcessLoadCommands();
 			ProcessLoadTasks();
+
+			ProcessSaveCommands();
 			ProcessSaveTasks();
+
+			ProcessDeleteCommands();
 			ProcessDeleteTasks();
 
 			if (m_modifications_added)
@@ -119,7 +124,7 @@ namespace voxel_game::loading
 		m_delete_commands.AddCommand({ entity });
 	}
 
-	void EntityLoader::ProcessLoadTasks()
+	void EntityLoader::ProcessLoadCommands()
 	{
 		std::vector<LoadTask> load_commands;
 
@@ -131,9 +136,34 @@ namespace voxel_game::loading
 
 			m_load_tasks.emplace_back(std::move(task));
 		}
+	}
 
-		load_commands.clear();
+	void EntityLoader::ProcessSaveCommands()
+	{
+		std::vector<SaveTask> save_commands;
 
+		m_save_commands.RetrieveCommands(save_commands);
+
+		for (SaveTask& task : save_commands)
+		{
+			m_save_tasks.emplace_back(std::move(task));
+		}
+	}
+
+	void EntityLoader::ProcessDeleteCommands()
+	{
+		std::vector<DeleteTask> delete_commands;
+
+		m_delete_commands.RetrieveCommands(delete_commands);
+
+		for (DeleteTask& task : delete_commands)
+		{
+			m_delete_tasks.emplace_back(std::move(task));
+		}
+	}
+
+	void EntityLoader::ProcessLoadTasks()
+	{
 		auto task_end = m_load_tasks.end();
 		for (auto task_it = m_load_tasks.begin(); task_it != task_end;)
 		{
@@ -159,17 +189,6 @@ namespace voxel_game::loading
 
 	void EntityLoader::ProcessSaveTasks()
 	{
-		std::vector<SaveTask> save_commands;
-
-		m_save_commands.RetrieveCommands(save_commands);
-
-		for (SaveTask& task : save_commands)
-		{
-			m_save_tasks.emplace_back(std::move(task));
-		}
-
-		save_commands.clear();
-
 		auto task_end = m_save_tasks.end();
 		for (auto task_it = m_save_tasks.begin(); task_it != task_end;)
 		{
@@ -179,17 +198,6 @@ namespace voxel_game::loading
 
 	void EntityLoader::ProcessDeleteTasks()
 	{
-		std::vector<DeleteTask> delete_commands;
-
-		m_delete_commands.RetrieveCommands(delete_commands);
-
-		for (DeleteTask& task : delete_commands)
-		{
-			m_delete_tasks.emplace_back(std::move(task));
-		}
-
-		delete_commands.clear();
-
 		auto task_end = m_delete_tasks.end();
 		for (auto task_it = m_delete_tasks.begin(); task_it != task_end;)
 		{
