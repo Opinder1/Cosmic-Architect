@@ -92,6 +92,8 @@ namespace voxel_game::loading
 			{
 				m_modification_stage.Publish();
 			}
+			
+			std::this_thread::yield();
 		}
 
 #if defined(DEBUG_ENABLED)
