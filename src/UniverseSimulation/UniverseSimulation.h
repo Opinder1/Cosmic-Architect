@@ -310,7 +310,7 @@ namespace voxel_game
 		godot::Ref<Universe> m_universe;
 		godot::StringName m_path;
 		godot::StringName m_fragment_type;
-		ServerType m_server_type;
+		ServerType m_server_type = ServerType::SERVER_TYPE_LOCAL;
 		godot::RID m_scenario;
 		
 		// World
