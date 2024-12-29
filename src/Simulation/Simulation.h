@@ -66,10 +66,21 @@ namespace voxel_game
 		bool Progress(real_t delta);
 
 	protected:
+		// If the following methods are overridden then the script overrides will no longer work.
+
+		// Control if the simulation will start or not
 		virtual bool CanSimulationStart();
+
+		// Called when initializing the simulation. In threading mode will be called on the worker thread.
 		virtual void DoSimulationLoad();
+
+		// Called when initializing the simulation. In threading mode will be called on the worker thread.
 		virtual void DoSimulationUnload();
+
+		// Called on the thread that calls Progress()
 		virtual bool DoSimulationProgress(real_t delta);
+
+		// Called on the simulations worker thread if threading is enabled
 		virtual void DoSimulationThreadProgress();
 
 		// Queue a signal to be broadcast to the main thread. Call this on the simulation thread
