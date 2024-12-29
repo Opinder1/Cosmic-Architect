@@ -93,29 +93,20 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(m_owner_id == std::this_thread::get_id(), "Progress() should always be called by the thread that created the simulation");
 
-		if (IsThreaded())
+		bool keep_running = false;
+
+		if (m_state.load(std::memory_order_acquire) == State::Loaded) // Don't progress until loaded
 		{
-			if (m_state.load(std::memory_order_acquire) == State::Loaded) // Don't progress until loaded
+			keep_running = DoSimulationProgress(delta);
+
+			if (IsThreaded())
 			{
-				DoSimulationProgress(delta);
-			}
-
-			return true; // We always keep running when threaded as the thread will stop at its own pace
-		}
-		else
-		{
-			bool keep_running = false;
-
-			if (m_state.load(std::memory_order_acquire) == State::Loaded) // Don't progress until loaded
-			{
-				keep_running = DoSimulationProgress(delta);
-
 				// Process signals here as we don't need to defer them
 				m_deferred_signals.ProcessCommands(this);
 			}
-
-			return keep_running;
 		}
+
+		return keep_running;
 	}
 
 	void Simulation::ThreadLoop()
