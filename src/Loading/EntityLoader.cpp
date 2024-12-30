@@ -19,10 +19,10 @@ namespace voxel_game::loading
 
 	EntityLoader::~EntityLoader()
 	{
-		m_running.store(false, std::memory_order_release);
-
-		if (m_thread.joinable())
+		if (m_thread.joinable()) // The worker thread is using our memory so make sure its stopped before we are deleted
 		{
+			m_running.store(false, std::memory_order_release);
+
 			m_thread.join();
 		}
 
@@ -53,7 +53,15 @@ namespace voxel_game::loading
 
 		m_running.store(true, std::memory_order_release);
 
-		m_thread = std::thread(&EntityLoader::ThreadLoop, this, std::this_thread::get_id());
+		m_thread = std::thread(&EntityLoader::ThreadLoop, this);
+
+#if defined(DEBUG_ENABLED)
+		std::thread::id owner_id = std::this_thread::get_id();
+		m_load_commands.SetThreads(m_thread.get_id(), owner_id);
+		m_save_commands.SetThreads(m_thread.get_id(), owner_id);
+		m_delete_commands.SetThreads(m_thread.get_id(), owner_id);
+		m_modification_stage.SetThreads(owner_id, m_thread.get_id());
+#endif
 	}
 
 	void EntityLoader::Progress()
@@ -70,17 +78,30 @@ namespace voxel_game::loading
 		}
 	}
 
-	void EntityLoader::ThreadLoop(std::thread::id owner_id)
+	void EntityLoader::LoadEntity(flecs::entity_t entity, UUID uuid)
 	{
-#if defined(DEBUG_ENABLED)
-		std::thread::id thread_id = std::this_thread::get_id();
-		m_load_commands.SetThreads(thread_id, owner_id);
-		m_save_commands.SetThreads(thread_id, owner_id);
-		m_delete_commands.SetThreads(thread_id, owner_id);
-		m_modification_stage.SetThreads(owner_id, thread_id);
-#endif
+		DEBUG_ASSERT(m_thread.joinable() && m_running, "Our worker thread should be running");
 
-		while (m_running.load(std::memory_order_acquire))
+		m_load_commands.AddCommand({ entity, uuid });
+	}
+
+	void EntityLoader::SaveEntity(flecs::entity_t entity, EntitySaveData&& data)
+	{
+		DEBUG_ASSERT(m_thread.joinable() && m_running, "Our worker thread should be running");
+
+		m_save_commands.AddCommand({ entity, std::move(data) });
+	}
+
+	void EntityLoader::DeleteEntity(flecs::entity_t entity)
+	{
+		DEBUG_ASSERT(m_thread.joinable() && m_running, "Our worker thread should be running");
+
+		m_delete_commands.AddCommand({ entity });
+	}
+
+	void EntityLoader::ThreadLoop()
+	{
+		while (m_running.load(std::memory_order_acquire) && !HasTasks())
 		{
 			m_modifications_added = false;
 
@@ -100,28 +121,11 @@ namespace voxel_game::loading
 			
 			std::this_thread::yield();
 		}
-
-#if defined(DEBUG_ENABLED)
-		m_modification_stage.SetThreads(std::thread::id{}, std::thread::id{});
-		m_delete_commands.SetThreads(std::thread::id{}, std::thread::id{});
-		m_save_commands.SetThreads(std::thread::id{}, std::thread::id{});
-		m_load_commands.SetThreads(std::thread::id{}, std::thread::id{});
-#endif
 	}
 
-	void EntityLoader::LoadEntity(flecs::entity_t entity, UUID uuid)
+	bool EntityLoader::HasTasks()
 	{
-		m_load_commands.AddCommand({ entity, uuid });
-	}
-
-	void EntityLoader::SaveEntity(flecs::entity_t entity, EntitySaveData&& data)
-	{
-		m_save_commands.AddCommand({ entity, std::move(data) });
-	}
-
-	void EntityLoader::DeleteEntity(flecs::entity_t entity)
-	{
-		m_delete_commands.AddCommand({ entity });
+		return !m_load_tasks.empty() || !m_save_tasks.empty() || !m_delete_tasks.empty();
 	}
 
 	void EntityLoader::ProcessLoadCommands()

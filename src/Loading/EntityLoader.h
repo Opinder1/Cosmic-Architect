@@ -73,7 +73,9 @@ namespace voxel_game::loading
 		void DeleteEntity(flecs::entity_t entity);
 
 	private:
-		void ThreadLoop(std::thread::id owner_id);
+		void ThreadLoop();
+
+		bool HasTasks();
 
 		void ProcessLoadCommands();
 		void ProcessLoadTasks();
@@ -87,12 +89,12 @@ namespace voxel_game::loading
 		std::atomic_bool m_running = false;
 		flecs::world_t* m_world = nullptr;
 
-		// Commands requested to loader
+		// Commands requested to loader by owner thread
 		CommandSwapBuffer<LoadTask> m_load_commands;
 		CommandSwapBuffer<SaveTask> m_save_commands;
 		CommandSwapBuffer<DeleteTask> m_delete_commands;
 
-		// Modifications output by loader
+		// Modifications output by loader to owner thread
 		bool m_modifications_added = false; // Flag set when modifcations are made
 		TripleBuffer<flecs::world> m_modification_stage;
 

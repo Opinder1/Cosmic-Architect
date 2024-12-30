@@ -24,7 +24,7 @@ namespace voxel_game
 
 	Simulation::~Simulation()
 	{
-		WaitUntilStopped();
+		WaitUntilStopped(); // The worker thread is using our memory so make sure its stopped before we are deleted
 	}
 
 	bool Simulation::IsThreaded()
