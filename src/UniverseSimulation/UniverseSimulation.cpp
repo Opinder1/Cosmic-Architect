@@ -42,7 +42,7 @@ namespace voxel_game
 {
 	const size_t k_simulation_ticks_per_second = 20;
 
-	flecs::entity CreateNewUniverse(flecs::world& world, const godot::String& path, godot::RID scenario_id)
+	flecs::entity CreateNewUniverse(flecs::world& world, godot::RID scenario_id)
 	{
 		// Create the universe
 		flecs::entity universe_entity = world.entity();
@@ -50,9 +50,6 @@ namespace voxel_game
 #if defined(DEBUG_ENABLED)
 		universe_entity.set_name("Universe");
 #endif
-
-		loading::Database& database = universe_entity.ensure<loading::Database>();
-		database.path = path;
 
 		universe_entity.add<universe::World>();
 
@@ -195,7 +192,7 @@ namespace voxel_game
 
 		// Create the universe and simulated galaxy
 
-		m_universe_entity = CreateNewUniverse(m_world, m_path, m_scenario);
+		m_universe_entity = CreateNewUniverse(m_world, m_scenario);
 
 		m_galaxy_entity = CreateNewSimulatedGalaxy(m_world, m_path, m_universe_entity, m_scenario);
 
