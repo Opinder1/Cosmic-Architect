@@ -5,8 +5,10 @@
 #include "Util/PerThread.h"
 #include "Util/Nocopy.h"
 #include "Util/Debug.h"
+#include "Util/Hash.h"
 
 #include <godot_cpp/variant/string.hpp>
+#include <godot_cpp/variant/string_name.hpp>
 #include <godot_cpp/variant/variant.hpp>
 
 #include <flecs/flecs.h>
@@ -23,18 +25,28 @@
 
 namespace voxel_game::loading
 {
-	using EntitySaveData = robin_hood::unordered_flat_map<std::string, godot::Variant>;
+	const size_t k_num_database_workers = 2;
+
+	using EntitySaveData = std::string;
 
 	// An asynchronous entity loader that manages generating and loading entities from disk. Entities can have dependenices on other entities
 	// that will be loaded or generated as needed. The entities added by this loader should only be removed by this loader.
 	class EntityLoader : Nomove, Nocopy
 	{
-	private:
-		struct EntityData
-		{
-			flecs::entity_t entity;
+	public:
+		using DBHandle = size_t;
 
-			size_t refcount;
+		using ComponentRead = void(const std::string_view& buffer);
+		using ComponentWrite = void(std::vector<char>& buffer);
+
+	private:
+		// Cached info about an entity that is loaded and unloaded
+		struct Entity
+		{
+			flecs::entity_t entity = 0;
+			DBHandle database = 0;
+
+			size_t refcount = 0;
 
 			std::vector<UUID> dependencies;
 
@@ -42,22 +54,60 @@ namespace voxel_game::loading
 			Clock::time_point last_reference_time;
 		};
 
-		struct LoadTask
+		// Database that stores all entities on disk
+		struct Database
 		{
-			flecs::entity_t entity;
-			UUID uuid;
-			std::future<std::pair<tkrzw::Status, std::string>> future;
+			Database() :
+				database_async(&database, k_num_database_workers)
+			{}
+
+			godot::String path;
+
+			tkrzw::ShardDBM database;
+			tkrzw::AsyncDBM database_async;
+
+			bool closing = false;
+
+			std::vector<Entity*> entities;
 		};
 
-		struct SaveTask
+		struct OpenCommand
 		{
-			flecs::entity_t entity;
+			godot::StringName path;
+			DBHandle handle;
+		};
+
+		struct CloseCommand
+		{
+			DBHandle handle;
+		};
+
+		struct LoadCommand
+		{
+			UUID uuid;
+			flecs::entity_t entity = 0;
+			DBHandle database;
+		};
+
+		struct SaveCommand
+		{
+			UUID uuid;
+			flecs::entity_t entity = 0;
+			DBHandle database;
 			EntitySaveData data;
 		};
 
-		struct DeleteTask
+		struct DeleteCommand
 		{
-			flecs::entity_t entity;
+			UUID uuid;
+			flecs::entity_t entity = 0;
+			DBHandle database;
+		};
+
+		struct LoadTask
+		{
+			UUID uuid;
+			Entity* entity = 0;
 		};
 
 	public:
@@ -68,53 +118,70 @@ namespace voxel_game::loading
 
 		void Progress();
 
-		void LoadEntity(flecs::entity_t entity, UUID uuid);
-		void SaveEntity(flecs::entity_t entity, EntitySaveData&& data);
-		void DeleteEntity(flecs::entity_t entity);
+		DBHandle OpenArchive(const godot::StringName& path);
+		void CloseArchive(const godot::StringName& path);
+		bool IsArchiveOpen(const godot::StringName& path);
+
+		void AddComponent(uint16_t id, flecs::entity_t entity, ComponentRead read, ComponentWrite write);
+
+		void LoadEntity(UUID uuid, flecs::entity_t entity, DBHandle database);
+		void SaveEntity(UUID uuid, flecs::entity_t entity, DBHandle database, EntitySaveData&& data);
+		void DeleteEntity(UUID uuid, flecs::entity_t entity, DBHandle database);
 
 	private:
 		void ThreadLoop();
 
 		bool HasTasks();
 
-		void ProcessLoadCommands();
-		void ProcessLoadTasks();
-		void ProcessSaveCommands();
-		void ProcessSaveTasks();
-		void ProcessDeleteCommands();
-		void ProcessDeleteTasks();
+		void DoOpenCommand(OpenCommand& command);
+		void DoCloseCommand(CloseCommand& command);
+		void DoLoadCommand(LoadCommand& command);
+		void DoSaveCommand(SaveCommand& command);
+		void DoDeleteCommand(DeleteCommand& command);
+		void ProcessCommands();
+
+		bool ProcessLoadTask(Entity& entity);
+		bool ProcessSaveTask(Entity& entity);
+		bool ProcessDeleteTask(Entity& entity);
+		void ProcessTasks();
 
 	private:
 		std::thread m_thread;
 		std::atomic_bool m_running = false;
-		flecs::world_t* m_world = nullptr;
 
 		// Commands requested to loader by owner thread
-		CommandSwapBuffer<LoadTask> m_load_commands;
-		CommandSwapBuffer<SaveTask> m_save_commands;
-		CommandSwapBuffer<DeleteTask> m_delete_commands;
+		CommandSwapBuffer<OpenCommand> m_open_commands;
+		CommandSwapBuffer<CloseCommand> m_close_commands;
+		CommandSwapBuffer<LoadCommand> m_load_commands;
+		CommandSwapBuffer<SaveCommand> m_save_commands;
+		CommandSwapBuffer<DeleteCommand> m_delete_commands;
 
 		// Modifications output by loader to owner thread
-		bool m_modifications_added = false; // Flag set when modifcations are made
 		TripleBuffer<flecs::world> m_modification_stage;
 
-		// Alive entity handles that can be used in the stages
-		std::vector<flecs::entity_t> m_entity_pool; 
+		// List of open databases for use by 
+		robin_hood::unordered_flat_map<godot::StringName, DBHandle> m_open_databases;
 
-		// Cache of already loaded entities
-		robin_hood::unordered_map<flecs::entity_t, UUID> m_entity_to_uuid;
-		robin_hood::unordered_map<UUID, EntityData, UUIDHash> m_entity_cache;
+		// Counter for generating new database handles
+		DBHandle m_new_handle = 0;
 
-		// Database that stores all entities on disk
-		tkrzw::ShardDBM m_database;
-		tkrzw::AsyncDBM m_database_async;
+		struct
+		{
+			flecs::world_t* world = nullptr;
 
-		std::deque<LoadTask> m_load_tasks;
-		std::deque<SaveTask> m_save_tasks;
-		std::deque<DeleteTask> m_delete_tasks;
+			bool modifications_added = false; // Flag set when modifcations are made
 
-#if defined(DEBUG_ENABLED)
-		std::thread::id m_owner_id; // The thread that owns the loader and should call Progress() on it
-#endif
+			// Alive entity handles that can be used in the stages
+			std::vector<flecs::entity_t> entity_pool;
+
+			// Cache of already loaded entities
+			robin_hood::unordered_node_map<UUID, Entity, UUIDHash> entity_cache;
+
+			std::deque<LoadTask> load_tasks;
+			std::deque<Entity*> save_tasks;
+			std::deque<Entity*> delete_tasks;
+
+			robin_hood::unordered_node_map<DBHandle, Database> databases;
+		} m_worker;
 	};
 }

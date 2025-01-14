@@ -10,11 +10,9 @@ namespace
 
 namespace voxel_game::loading
 {
-	const size_t k_num_database_workers = 4;
 	const size_t k_entity_pool_max = 1024;
 
-	EntityLoader::EntityLoader() :
-		m_database_async(&m_database, k_num_database_workers)
+	EntityLoader::EntityLoader()
 	{}
 
 	EntityLoader::~EntityLoader()
@@ -47,7 +45,7 @@ namespace voxel_game::loading
 			return;
 		}
 
-		m_world = world.c_ptr();
+		m_worker.world = world.c_ptr();
 
 		m_modification_stage.Reset(world.async_stage(), world.async_stage(), world.async_stage());
 
@@ -57,6 +55,8 @@ namespace voxel_game::loading
 
 #if defined(DEBUG_ENABLED)
 		std::thread::id owner_id = std::this_thread::get_id();
+		m_open_commands.SetThreads(m_thread.get_id(), owner_id);
+		m_close_commands.SetThreads(m_thread.get_id(), owner_id);
 		m_load_commands.SetThreads(m_thread.get_id(), owner_id);
 		m_save_commands.SetThreads(m_thread.get_id(), owner_id);
 		m_delete_commands.SetThreads(m_thread.get_id(), owner_id);
@@ -66,146 +66,230 @@ namespace voxel_game::loading
 
 	void EntityLoader::Progress()
 	{
+		DEBUG_ASSERT(m_thread.joinable() && m_running, "Our worker thread should be running");
+
+		m_open_commands.PublishCommands();
+		m_close_commands.PublishCommands();
 		m_load_commands.PublishCommands();
 		m_save_commands.PublishCommands();
 		m_delete_commands.PublishCommands();
 
 		m_modification_stage.Retrieve().merge();
 
-		while (m_entity_pool.size() < k_entity_pool_max)
+		while (m_worker.entity_pool.size() < k_entity_pool_max)
 		{
-			m_entity_pool.push_back(flecs::entity(m_world));
+			m_worker.entity_pool.push_back(flecs::entity(m_worker.world));
 		}
 	}
 
-	void EntityLoader::LoadEntity(flecs::entity_t entity, UUID uuid)
+	EntityLoader::DBHandle EntityLoader::OpenArchive(const godot::StringName& path)
 	{
 		DEBUG_ASSERT(m_thread.joinable() && m_running, "Our worker thread should be running");
+		DEBUG_ASSERT(!IsArchiveOpen(path), "The database is already open");
 
-		m_load_commands.AddCommand({ entity, uuid });
+		m_open_commands.AddCommand({ path, m_new_handle });
+
+		m_open_databases.emplace(path, m_new_handle);
+
+		return m_new_handle++;
 	}
 
-	void EntityLoader::SaveEntity(flecs::entity_t entity, EntitySaveData&& data)
+	void EntityLoader::CloseArchive(const godot::StringName& path)
 	{
 		DEBUG_ASSERT(m_thread.joinable() && m_running, "Our worker thread should be running");
 
-		m_save_commands.AddCommand({ entity, std::move(data) });
+		auto it = m_open_databases.find(path);
+
+		DEBUG_ASSERT(it != m_open_databases.end(), "The database is already open");
+
+		m_close_commands.AddCommand({ it->second });
+
+		m_open_databases.erase(it);
 	}
 
-	void EntityLoader::DeleteEntity(flecs::entity_t entity)
+	bool EntityLoader::IsArchiveOpen(const godot::StringName& path)
+	{
+		return m_open_databases.find(path) != m_open_databases.end();
+	}
+
+	void EntityLoader::AddComponent(uint16_t id, flecs::entity_t entity, ComponentRead read, ComponentWrite write)
+	{
+
+	}
+
+	void EntityLoader::LoadEntity(UUID uuid, flecs::entity_t entity, DBHandle database)
 	{
 		DEBUG_ASSERT(m_thread.joinable() && m_running, "Our worker thread should be running");
 
-		m_delete_commands.AddCommand({ entity });
+		m_load_commands.AddCommand({ uuid, entity, database });
+	}
+
+	void EntityLoader::SaveEntity(UUID uuid, flecs::entity_t entity, DBHandle database, EntitySaveData&& data)
+	{
+		DEBUG_ASSERT(m_thread.joinable() && m_running, "Our worker thread should be running");
+
+		m_save_commands.AddCommand({ uuid, entity, database, std::move(data) });
+	}
+
+	void EntityLoader::DeleteEntity(UUID uuid, flecs::entity_t entity, DBHandle database)
+	{
+		DEBUG_ASSERT(m_thread.joinable() && m_running, "Our worker thread should be running");
+
+		m_delete_commands.AddCommand({ uuid, entity, database });
+	}
+
+	bool EntityLoader::HasTasks()
+	{
+		return !m_worker.load_tasks.empty() || !m_worker.save_tasks.empty() || !m_worker.delete_tasks.empty();
+	}
+
+	void EntityLoader::DoOpenCommand(OpenCommand& command)
+	{
+		auto&& [it, emplaced] = m_worker.databases.try_emplace(command.handle);
+
+		DEBUG_ASSERT(emplaced, "Database already open");
+
+		Database& database = it->second;
+
+		database.path = command.path;
+
+		database.database.Open(std::string(database.path.utf8()), true);
+	}
+
+	void EntityLoader::DoCloseCommand(CloseCommand& command)
+	{
+		auto it = m_worker.databases.find(command.handle);
+
+		DEBUG_ASSERT(it != m_worker.databases.end(), "Database handle was not found");
+
+		Database& database = it->second;
+
+		DEBUG_ASSERT(database.entities.size() == 0, "All entities should have been saved and deleted");
+		
+		m_worker.databases.erase(it);
+	}
+
+	void EntityLoader::DoLoadCommand(LoadCommand& command)
+	{
+		Entity& entity = m_worker.entity_cache[command.uuid];
+
+		if (entity.refcount > 0)
+		{
+			return;
+		}
+
+		entity.entity = command.entity;
+
+		m_worker.load_tasks.push_back(LoadTask{ command.uuid, &entity });
+	}
+
+	void EntityLoader::DoSaveCommand(SaveCommand& command)
+	{
+
+	}
+
+	void EntityLoader::DoDeleteCommand(DeleteCommand& command)
+	{
+
+	}
+
+	void EntityLoader::ProcessCommands()
+	{
+		{
+			std::vector<OpenCommand> commands;
+
+			m_open_commands.RetrieveCommands(commands);
+
+			for (OpenCommand& command : commands)
+			{
+				DoOpenCommand(command);
+			}
+		}
+
+		{
+			std::vector<CloseCommand> commands;
+
+			m_close_commands.RetrieveCommands(commands);
+
+			for (CloseCommand& command : commands)
+			{
+				DoCloseCommand(command);
+			}
+		}
+
+		{
+			std::vector<LoadCommand> commands;
+
+			m_load_commands.RetrieveCommands(commands);
+
+			for (LoadCommand& command : commands)
+			{
+				DoLoadCommand(command);
+			}
+		}
+		
+		{
+			std::vector<SaveCommand> commands;
+
+			m_save_commands.RetrieveCommands(commands);
+
+			for (SaveCommand& command : commands)
+			{
+				DoSaveCommand(command);
+			}
+		}
+
+		{
+			std::vector<DeleteCommand> commands;
+
+			m_delete_commands.RetrieveCommands(commands);
+
+			for (DeleteCommand& command : commands)
+			{
+				DoDeleteCommand(command);
+			}
+		}
+	}
+
+	bool EntityLoader::ProcessLoadTask(Entity& entity)
+	{
+		m_worker.modifications_added = true;
+
+		return true;
+	}
+
+	void EntityLoader::ProcessTasks()
+	{
+		for (auto task_it = m_worker.load_tasks.begin(); task_it != m_worker.load_tasks.end();)
+		{
+			if (ProcessLoadTask(*task_it->entity))
+			{
+				// Unordered erase
+				task_it = m_worker.load_tasks.erase(task_it);
+			}
+			else
+			{
+				task_it++;
+			}
+		}
 	}
 
 	void EntityLoader::ThreadLoop()
 	{
 		while (m_running.load(std::memory_order_acquire) && !HasTasks())
 		{
-			m_modifications_added = false;
+			m_worker.modifications_added = false;
 
-			ProcessLoadCommands();
-			ProcessLoadTasks();
+			ProcessCommands();
 
-			ProcessSaveCommands();
-			ProcessSaveTasks();
+			ProcessTasks();
 
-			ProcessDeleteCommands();
-			ProcessDeleteTasks();
-
-			if (m_modifications_added)
+			if (m_worker.modifications_added)
 			{
 				m_modification_stage.Publish();
 			}
-			
+
 			std::this_thread::yield();
-		}
-	}
-
-	bool EntityLoader::HasTasks()
-	{
-		return !m_load_tasks.empty() || !m_save_tasks.empty() || !m_delete_tasks.empty();
-	}
-
-	void EntityLoader::ProcessLoadCommands()
-	{
-		std::vector<LoadTask> load_commands;
-
-		m_load_commands.RetrieveCommands(load_commands);
-
-		for (LoadTask& task : load_commands)
-		{
-			task.future = m_database_async.Get(UUIDToData(task.uuid));
-
-			m_load_tasks.emplace_back(std::move(task));
-		}
-	}
-
-	void EntityLoader::ProcessSaveCommands()
-	{
-		std::vector<SaveTask> save_commands;
-
-		m_save_commands.RetrieveCommands(save_commands);
-
-		for (SaveTask& task : save_commands)
-		{
-			m_save_tasks.emplace_back(std::move(task));
-		}
-	}
-
-	void EntityLoader::ProcessDeleteCommands()
-	{
-		std::vector<DeleteTask> delete_commands;
-
-		m_delete_commands.RetrieveCommands(delete_commands);
-
-		for (DeleteTask& task : delete_commands)
-		{
-			m_delete_tasks.emplace_back(std::move(task));
-		}
-	}
-
-	void EntityLoader::ProcessLoadTasks()
-	{
-		auto task_end = m_load_tasks.end();
-		for (auto task_it = m_load_tasks.begin(); task_it != task_end;)
-		{
-			if (!task_it->future.valid())
-			{
-				task_it++;
-				continue;
-			}
-
-			tkrzw::Status status;
-			std::string data;
-			std::tie(status, data) = std::move(task_it->future.get());
-
-			flecs::entity e;
-			e.from_json(data.c_str());
-
-			m_modifications_added = true;
-
-			// Unordered erase
-			task_it = m_load_tasks.erase(task_it);
-		}
-	}
-
-	void EntityLoader::ProcessSaveTasks()
-	{
-		auto task_end = m_save_tasks.end();
-		for (auto task_it = m_save_tasks.begin(); task_it != task_end;)
-		{
-			task_it++;
-		}
-	}
-
-	void EntityLoader::ProcessDeleteTasks()
-	{
-		auto task_end = m_delete_tasks.end();
-		for (auto task_it = m_delete_tasks.begin(); task_it != task_end;)
-		{
-			task_it++;
 		}
 	}
 }

@@ -11,5 +11,10 @@ namespace voxel_game::loading
 		world.module<Components>();
 
 		world.component<EntityLoader>();
+		world.component<Identifier>();
+		world.component<Saveable>();
+		world.component<AutoLoad>();
+		world.component<AutoSave>();
+		world.component<Database>();
 	}
 }

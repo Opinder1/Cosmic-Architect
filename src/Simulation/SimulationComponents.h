@@ -9,7 +9,6 @@
 #include <godot_cpp/classes/dir_access.hpp>
 
 #include <godot_cpp/variant/vector3.hpp>
-#include <godot_cpp/variant/string_name.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 
 #include <flecs/flecs.h>
@@ -28,16 +27,6 @@ namespace voxel_game::sim
 	struct Components
 	{
 		Components(flecs::world& world);
-	};
-
-	struct Name
-	{
-		godot::StringName name;
-	};
-
-	struct Path
-	{
-		godot::StringName path;
 	};
 
 	struct GlobalTime

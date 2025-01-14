@@ -51,10 +51,8 @@ namespace voxel_game
 		universe_entity.set_name("Universe");
 #endif
 
-		universe_entity.set(sim::Path{ path });
-
-		loading::EntityLoader& loader = universe_entity.ensure<loading::EntityLoader>();
-		loader.Initialize(world);
+		loading::Database& database = universe_entity.ensure<loading::Database>();
+		database.path = path;
 
 		universe_entity.add<universe::World>();
 
@@ -77,7 +75,7 @@ namespace voxel_game
 		return universe_entity;
 	}
 
-	flecs::entity CreateNewSimulatedGalaxy(flecs::world& world, flecs::entity_t universe_entity, godot::RID scenario_id)
+	flecs::entity CreateNewSimulatedGalaxy(flecs::world& world, const godot::String& path, flecs::entity_t universe_entity, godot::RID scenario_id)
 	{
 		// Create the simulated galaxy
 		flecs::entity galaxy_entity = world.entity();
@@ -86,10 +84,10 @@ namespace voxel_game
 		galaxy_entity.set_name("SimulatedGalaxy");
 #endif
 
-		galaxy_entity.child_of(universe_entity);
+		loading::Database& database = galaxy_entity.ensure<loading::Database>();
+		database.path = path;
 
-		loading::EntityLoader& loader = galaxy_entity.ensure<loading::EntityLoader>();
-		loader.Initialize(world);
+		galaxy_entity.child_of(universe_entity);
 
 		galaxy_entity.add<galaxy::World>();
 
@@ -193,14 +191,13 @@ namespace voxel_game
 
 	void UniverseSimulation::DoSimulationLoad()
 	{
-		loading::EntityLoader& loader = m_world.ensure<loading::EntityLoader>();
-		loader.Initialize(m_world);
+		m_world.ensure<loading::EntityLoader>().Initialize(m_world);
 
 		// Create the universe and simulated galaxy
 
 		m_universe_entity = CreateNewUniverse(m_world, m_path, m_scenario);
 
-		m_galaxy_entity = CreateNewSimulatedGalaxy(m_world, m_universe_entity, m_scenario);
+		m_galaxy_entity = CreateNewSimulatedGalaxy(m_world, m_path, m_universe_entity, m_scenario);
 
 #if defined(DEBUG_ENABLED)
 		m_info_updater.SetThreads(m_owner_id, std::this_thread::get_id());

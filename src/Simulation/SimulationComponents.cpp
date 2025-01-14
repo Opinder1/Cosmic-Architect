@@ -10,8 +10,6 @@ namespace voxel_game::sim
 		
 		world.component<GlobalTime>();
 		world.component<LocalTime>();
-		world.component<Name>();
-		world.component<Path>();
 		world.component<Config>();
 		world.component<ThreadEntityPools>();
 

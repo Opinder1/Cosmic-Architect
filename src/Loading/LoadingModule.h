@@ -9,5 +9,7 @@ namespace voxel_game::loading
 		Module(flecs::world& world);
 	};
 
-	void SaveEntity(flecs::world& world, flecs::entity_t loader, flecs::entity_t entity);
+	void LoadEntity(flecs::world& world, flecs::entity_t entity);
+
+	void SaveEntity(flecs::world& world, flecs::entity_t entity);
 }
