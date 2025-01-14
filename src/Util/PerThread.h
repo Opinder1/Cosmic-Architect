@@ -54,8 +54,7 @@ public:
 	// Write the changes to the exchange buffer
 	void PublishCommands()
 	{
-		auto r = std::this_thread::get_id();
-		DEBUG_ASSERT(m_writer_id == r, "PublishCommands() should be called by the writer thread");
+		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "PublishCommands() should be called by the writer thread");
 
 		if (m_write.size() > 0 && !m_ready.load(std::memory_order_acquire))
 		{
@@ -141,6 +140,12 @@ public:
 
 			m_ready.store(true, std::memory_order_release);
 		}
+	}
+
+	// Check if the writer has made any changes
+	bool Published()
+	{
+		return m_ready.load(std::memory_order_acquire);
 	}
 
 	// Obtain the latest changes made by the writer if there are any
