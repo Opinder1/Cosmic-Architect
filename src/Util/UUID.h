@@ -6,8 +6,3 @@
 // A uuid that can be used in godot functions though will appear as a color
 using UUID = godot::Color;
 using UUIDVector = godot::PackedColorArray;
-
-struct UUIDHash
-{
-	size_t operator()(const UUID&) const;
-};

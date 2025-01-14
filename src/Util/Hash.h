@@ -1,5 +1,7 @@
 #pragma once
 
+#include "UUID.h"
+
 #include <godot_cpp/variant/color.hpp>
 #include <godot_cpp/variant/aabb.hpp>
 #include <godot_cpp/variant/basis.hpp>
@@ -17,6 +19,7 @@
 #include <godot_cpp/variant/projection.hpp>
 #include <godot_cpp/variant/quaternion.hpp>
 #include <godot_cpp/variant/rid.hpp>
+#include <godot_cpp/variant/string_name.hpp>
 
 #include <robin_hood/robin_hood.h>
 
@@ -27,6 +30,11 @@ struct ByteHash
     {
         return robin_hood::hash_bytes(&vec, sizeof(T));
     }
+};
+
+struct UUIDHash
+{
+    size_t operator()(const UUID&) const;
 };
 
 namespace robin_hood
@@ -131,5 +139,17 @@ namespace robin_hood
     struct hash<godot::RID>
     {
         size_t operator()(const godot::RID& rid) const noexcept;
+    };
+
+    template<>
+    struct hash<godot::String>
+    {
+        size_t operator()(const godot::String& string) const noexcept;
+    };
+
+    template<>
+    struct hash<godot::StringName>
+    {
+        size_t operator()(const godot::StringName& string) const noexcept;
     };
 }

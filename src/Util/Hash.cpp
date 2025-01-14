@@ -9,6 +9,15 @@ namespace
 	}
 }
 
+size_t UUIDHash::operator()(const UUID& uuid) const
+{
+    static_assert(sizeof(UUID) == sizeof(uint64_t) * 2);
+
+    uint64_t* arr = (uint64_t*)&uuid;
+
+    return arr[0] ^ arr[1];
+}
+
 namespace robin_hood
 {
     size_t hash<godot::Color>::operator()(const godot::Color& color) const noexcept
@@ -202,5 +211,15 @@ namespace robin_hood
     size_t hash<godot::RID>::operator()(const godot::RID& rid) const noexcept
     {
         return hash<int64_t>{}(rid.get_id());
+    }
+
+    size_t hash<godot::String>::operator()(const godot::String& string) const noexcept
+    {
+        return string.hash();
+    }
+
+    size_t hash<godot::StringName>::operator()(const godot::StringName& string) const noexcept
+    {
+        return string.hash();
     }
 }
