@@ -188,7 +188,7 @@ namespace voxel_game
 
 	void UniverseSimulation::DoSimulationLoad()
 	{
-		m_world.ensure<loading::EntityLoader>().Initialize(m_world);
+		m_world.ensure<loading::EntityLoader>().Initialize(m_world, loading::EntityLoader::MultiThreaded);
 
 		// Create the universe and simulated galaxy
 

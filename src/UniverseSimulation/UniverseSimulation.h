@@ -307,16 +307,15 @@ namespace voxel_game
 		static void _cleanup_methods();
 
 	private:
+		// Universe data. Not thread safe
 		godot::Ref<Universe> m_universe;
 		godot::StringName m_path;
 		godot::StringName m_fragment_type;
 		ServerType m_server_type = ServerType::SERVER_TYPE_LOCAL;
 		godot::RID m_scenario;
-		
-		// World
 		flecs::world m_world;
 
-		// Quick access entities
+		// Quick access entities. Not thread safe
 		flecs::entity_t m_universe_entity = 0;
 		flecs::entity_t m_galaxy_entity = 0;
 		flecs::entity_t m_player_entity = 0;
