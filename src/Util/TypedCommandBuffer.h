@@ -18,7 +18,7 @@ namespace voxel_game
 		using type = Class;
 	};
 
-	using TypedCommand = const std::byte* (*)(void*, const std::byte*, const std::byte*, bool);
+	using TypedCommand = std::byte* (*)(void*, std::byte*, std::byte*, bool);
 
 	class TypedCommandBuffer : Nocopy
 	{
@@ -56,22 +56,22 @@ namespace voxel_game
 
 	// Write a type to a buffer
 	template<class T>
-	const std::byte* ReadType(const std::byte* buffer_pos, const std::byte* buffer_end, const T*& value)
+	std::byte* ReadType(std::byte* buffer_pos, std::byte* buffer_end, T*& value)
 	{
 		DEBUG_ASSERT(buffer_pos + sizeof(T) <= buffer_end, "Not enough space to read another encoded variant value");
 
-		value = reinterpret_cast<const T*>(buffer_pos);
+		value = reinterpret_cast<T*>(buffer_pos);
 
 		return buffer_pos + sizeof(T);
 	}
 
 	// Write a type to a buffer
 	template<class T>
-	const std::byte* DestroyType(const std::byte* buffer_pos, const std::byte* buffer_end)
+	std::byte* DestroyType(std::byte* buffer_pos, std::byte* buffer_end)
 	{
 		DEBUG_ASSERT(buffer_pos + sizeof(T) <= buffer_end, "Not enough space to read another encoded variant value");
 
-		const T* value = reinterpret_cast<const T*>(buffer_pos);
+		T* value = reinterpret_cast<T*>(buffer_pos);
 
 		std::destroy_at(value);
 
@@ -96,16 +96,16 @@ namespace voxel_game
 		using ArgStorage = std::tuple<std::remove_cv_t<std::remove_reference_t<Args>>...>;
 
 		template<size_t... Indexes>
-		static void Call(Class& object, const ArgStorage& args, std::index_sequence<Indexes...>)
+		static void Call(Class& object, ArgStorage& args, std::index_sequence<Indexes...>)
 		{
-			(object.*Method)(std::get<Indexes>(args)...);
+			(object.*Method)(std::forward<Args>(std::get<Indexes>(args))...);
 		}
 
-		static const std::byte* Read(void* object, const std::byte* buffer_pos, const std::byte* buffer_end, bool execute)
+		static std::byte* Read(void* object, std::byte* buffer_pos, std::byte* buffer_end, bool execute)
 		{
 			if (execute)
 			{
-				const ArgStorage* args;
+				ArgStorage* args;
 				ReadType<ArgStorage>(buffer_pos, buffer_end, args);
 
 				Call(*static_cast<Class*>(object), *args, std::index_sequence_for<Args...>{});

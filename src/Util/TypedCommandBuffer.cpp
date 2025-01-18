@@ -5,9 +5,9 @@
 
 namespace voxel_game
 {
-	const std::byte* ProcessCommand(void* object, const std::byte* buffer_pos, const std::byte* buffer_end, bool execute)
+	std::byte* ProcessCommand(void* object, std::byte* buffer_pos, std::byte* buffer_end, bool execute)
 	{
-		const TypedCommand* command;
+		TypedCommand* command;
 		buffer_pos = ReadType<TypedCommand>(buffer_pos, buffer_end, command);
 
 		return (*command)(object, buffer_pos, buffer_end, execute);
@@ -54,9 +54,9 @@ namespace voxel_game
 
 		size_t num_processed = 0;
 
-		const std::byte* buffer_start = m_data.data() + m_start;
-		const std::byte* buffer_pos = buffer_start;
-		const std::byte* buffer_end = m_data.data() + m_data.size();
+		std::byte* buffer_start = m_data.data() + m_start;
+		std::byte* buffer_pos = buffer_start;
+		std::byte* buffer_end = m_data.data() + m_data.size();
 
 		while (buffer_pos != buffer_end)
 		{
@@ -86,8 +86,8 @@ namespace voxel_game
 	{
 		// Go through the buffer and read command data as if we were processing the commands but only destroy the data
 
-		const std::byte* buffer_pos = m_data.data() + m_start;
-		const std::byte* buffer_end = m_data.data() + m_data.size();
+		std::byte* buffer_pos = m_data.data() + m_start;
+		std::byte* buffer_end = m_data.data() + m_data.size();
 		while (buffer_pos != buffer_end)
 		{
 			buffer_pos = ProcessCommand(nullptr, buffer_pos, buffer_end, false);

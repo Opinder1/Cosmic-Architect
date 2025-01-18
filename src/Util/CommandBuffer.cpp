@@ -53,7 +53,7 @@ namespace voxel_game
 
 	// Read an encoded type in a byte stream. Copies the object to the variant and then destroys the object in the buffer
 	template<class T>
-	const std::byte* ReadVariantInternal(const std::byte* buffer_pos, const std::byte* buffer_end, godot::Variant& argument)
+	std::byte* ReadVariantInternal(std::byte* buffer_pos, std::byte* buffer_end, godot::Variant& argument)
 	{
 #if defined(DEBUG_ENABLED)
 		if (buffer_pos + sizeof(T) > buffer_end)
@@ -63,7 +63,7 @@ namespace voxel_game
 		}
 #endif
 
-		const T* value = reinterpret_cast<const T*>(buffer_pos);
+		T* value = reinterpret_cast<T*>(buffer_pos);
 
 		argument = godot::Variant(*value);
 
@@ -73,7 +73,7 @@ namespace voxel_game
 	}
 
 	// Read an encoded variant in a byte stream. Copies the object to the variant and then destroys the object in the buffer
-	const std::byte* ReadVariant(const std::byte* buffer_pos, const std::byte* buffer_end, godot::Variant& argument)
+	std::byte* ReadVariant(std::byte* buffer_pos, std::byte* buffer_end, godot::Variant& argument)
 	{
 #if defined(DEBUG_ENABLED)
 		if (buffer_pos + sizeof(VariantType) > buffer_end)
@@ -83,7 +83,7 @@ namespace voxel_game
 		}
 #endif
 
-		const VariantType* type = reinterpret_cast<const VariantType*>(buffer_pos);
+		VariantType* type = reinterpret_cast<VariantType*>(buffer_pos);
 		
 		buffer_pos += sizeof(VariantType);
 
@@ -453,7 +453,7 @@ namespace voxel_game
 		}
 	}
 
-	const std::byte* ProcessCommand(godot::Variant& object, const std::byte* buffer_pos, const std::byte* buffer_end)
+	std::byte* ProcessCommand(godot::Variant& object, std::byte* buffer_pos, std::byte* buffer_end)
 	{
 		DEBUG_ASSERT(buffer_end >= buffer_pos, "The buffer position should not be beyond the end");
 
@@ -465,7 +465,7 @@ namespace voxel_game
 		}
 #endif
 
-		const Command* header = reinterpret_cast<const Command*>(buffer_pos);
+		Command* header = reinterpret_cast<Command*>(buffer_pos);
 		buffer_pos += sizeof(Command);
 
 		DEBUG_ASSERT(!header->command.is_empty(), "The command should not be an empty string");
@@ -533,7 +533,7 @@ namespace voxel_game
 		return buffer_pos;
 	}
 
-	const std::byte* SkipCommand(const std::byte* buffer_pos, const std::byte* buffer_end)
+	std::byte* SkipCommand(std::byte* buffer_pos, std::byte* buffer_end)
 	{
 #if defined(DEBUG_ENABLED)
 		if (buffer_pos + sizeof(Command) > buffer_end)
@@ -543,7 +543,7 @@ namespace voxel_game
 		}
 #endif
 
-		const Command* header = reinterpret_cast<const Command*>(buffer_pos);
+		Command* header = reinterpret_cast<Command*>(buffer_pos);
 		buffer_pos += sizeof(Command);
 
 		DEBUG_ASSERT(!header->command.is_empty(), "The command should not be an empty string");
@@ -638,9 +638,9 @@ namespace voxel_game
 
 		size_t num_processed = 0;
 
-		const std::byte* buffer_start = m_data.data() + m_start;
-		const std::byte* buffer_pos = buffer_start;
-		const std::byte* buffer_end = m_data.data() + m_data.size();
+		std::byte* buffer_start = m_data.data() + m_start;
+		std::byte* buffer_pos = buffer_start;
+		std::byte* buffer_end = m_data.data() + m_data.size();
 
 		while (buffer_pos != buffer_end)
 		{
@@ -670,8 +670,8 @@ namespace voxel_game
 	{
 		// Go through the buffer and read command data as if we were processing the commands but only destroy the data
 
-		const std::byte* buffer_pos = m_data.data() + m_start;
-		const std::byte* buffer_end = m_data.data() + m_data.size();
+		std::byte* buffer_pos = m_data.data() + m_start;
+		std::byte* buffer_end = m_data.data() + m_data.size();
 		while (buffer_pos != buffer_end)
 		{
 			buffer_pos = SkipCommand(buffer_pos, buffer_end);
