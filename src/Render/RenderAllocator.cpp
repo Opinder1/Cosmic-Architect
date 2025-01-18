@@ -6,8 +6,83 @@
 
 namespace voxel_game::rendering
 {
-    const size_t k_max_preallocated_meshes = 128;
-    const size_t k_max_preallocated_instances = 512;
+    const size_t k_max_preallocated[k_num_alloc_types] =
+    {
+        0, // texture_2d
+        0, // texture_3d
+        0, // shader
+        0, // material
+        128, // mesh
+        0, // multimesh
+        0, // skeleton
+        0, // directional_light
+        0, // omni_light
+        0, // spot_light
+        0, // reflection_probe
+        0, // decal
+        0, // voxel_gi
+        0, // lightmap
+        0, // particles
+        0, // particles_collision
+        0, // fog_volume
+        0, // visibility_notifier
+        0, // occluder
+        0, // camera
+        0, // viewport
+        0, // sky
+        0, // compositor_effect
+        0, // compositor
+        0, // environment
+        0, // camera_attributes
+        0, // scenario
+        512, // instance
+        0, // canvas
+        0, // canvas_texture
+        0, // canvas_item
+        0, // canvas_light
+        0, // canvas_light_occluder
+        0, // canvas_occluder_polygon
+    };
+
+    using RIDGenerator = godot::RID(godot::RenderingServer::*)();
+
+    RIDGenerator k_rid_generators[k_num_alloc_types] =
+    {
+        &godot::RenderingServer::texture_2d_placeholder_create,
+        &godot::RenderingServer::texture_3d_placeholder_create,
+        &godot::RenderingServer::shader_create,
+        &godot::RenderingServer::material_create,
+        &godot::RenderingServer::mesh_create,
+        &godot::RenderingServer::multimesh_create,
+        &godot::RenderingServer::skeleton_create,
+        &godot::RenderingServer::directional_light_create,
+        &godot::RenderingServer::omni_light_create,
+        &godot::RenderingServer::spot_light_create,
+        &godot::RenderingServer::reflection_probe_create,
+        &godot::RenderingServer::decal_create,
+        &godot::RenderingServer::voxel_gi_create,
+        &godot::RenderingServer::lightmap_create,
+        &godot::RenderingServer::particles_create,
+        &godot::RenderingServer::particles_collision_create,
+        &godot::RenderingServer::fog_volume_create,
+        &godot::RenderingServer::visibility_notifier_create,
+        &godot::RenderingServer::occluder_create,
+        &godot::RenderingServer::camera_create,
+        &godot::RenderingServer::viewport_create,
+        &godot::RenderingServer::sky_create,
+        &godot::RenderingServer::compositor_effect_create,
+        &godot::RenderingServer::compositor_create,
+        &godot::RenderingServer::environment_create,
+        &godot::RenderingServer::camera_attributes_create,
+        &godot::RenderingServer::scenario_create,
+        &godot::RenderingServer::instance_create,
+        &godot::RenderingServer::canvas_create,
+        &godot::RenderingServer::canvas_texture_create,
+        &godot::RenderingServer::canvas_item_create,
+        &godot::RenderingServer::canvas_light_create,
+        &godot::RenderingServer::canvas_light_occluder_create,
+        &godot::RenderingServer::canvas_occluder_polygon_create,
+    };
 
     godot::OptObj<AllocatorServer> AllocatorServer::k_singleton;
 
@@ -32,44 +107,27 @@ namespace voxel_game::rendering
     {
         godot::RenderingServer* rserver = godot::RenderingServer::get_singleton();
 
-        for (godot::RID mesh : m_meshes)
+        for (TypeData& allocatable : m_types)
         {
-            rserver->free_rid(mesh);
-        }
-
-        for (godot::RID instance : m_instances)
-        {
-            rserver->free_rid(instance);
+            for (godot::RID rid : allocatable.rids)
+            {
+                rserver->free_rid(rid);
+            }
         }
     }
 
-    void AllocatorServer::RequestRIDs(AllocatorType type, std::vector<godot::RID>& rids_out)
+    void AllocatorServer::RequestRIDs(AllocateType type, std::vector<godot::RID>& rids_out)
     {
         if (m_mutex.try_lock()) // Don't bother if we are currently generating instances
         {
             bool allocate_more = false;
 
-            switch (type)
+            TypeData& type_data = m_types[to_underlying(type)];
+
+            if (rids_out.size() < type_data.rids.size())
             {
-            case AllocatorType::Mesh:
-                if (rids_out.size() < m_meshes.size())
-                {
-                    rids_out.swap(m_meshes);
-                    allocate_more = true;
-                }
-                break;
-
-            case AllocatorType::Instance:
-                if (rids_out.size() < m_instances.size())
-                {
-                    rids_out.swap(m_instances);
-                    allocate_more = true;
-                }
-                break;
-
-            default:
-                DEBUG_PRINT_ERROR("Preallocation for requested type is not implemented");
-                break;
+                rids_out.swap(type_data.rids);
+                allocate_more = true;
             }
 
             m_mutex.unlock();
@@ -94,18 +152,18 @@ namespace voxel_game::rendering
 
         std::lock_guard lock(m_mutex);
 
-        while (m_meshes.size() < k_max_preallocated_meshes)
+        for (size_t i = 0; i < k_num_alloc_types; i++)
         {
-            m_meshes.push_back(rserver->mesh_create());
-        }
+            RIDGenerator generator = k_rid_generators[i];
 
-        while (m_instances.size() < k_max_preallocated_instances)
-        {
-            m_instances.push_back(rserver->instance_create());
+            while (m_types[i].rids.size() < k_max_preallocated[i])
+            {
+                m_types[i].rids.push_back((rserver->*generator)());
+            }
         }
     }
 
-    Allocator::Allocator(AllocatorType type) :
+    Allocator::Allocator(AllocateType type) :
         m_type(type)
     {
         Process();
@@ -139,20 +197,10 @@ namespace voxel_game::rendering
         {
             DEBUG_PRINT_WARN("Enough rids were allocated this frame that we are using the slow path");
 
-            switch (m_type)
-            {
-            case AllocatorType::Mesh:
-                rid = godot::RenderingServer::get_singleton()->mesh_create();
-                break;
+            godot::RenderingServer* rserver = godot::RenderingServer::get_singleton();
+            RIDGenerator generator = k_rid_generators[to_underlying(m_type)];
 
-            case AllocatorType::Instance:
-                rid = godot::RenderingServer::get_singleton()->instance_create();
-                break;
-
-            default:
-                DEBUG_PRINT_ERROR("Preallocation for requested type is not implemented");
-                break;
-            }
+            (rserver->*generator)();
         }
 
         return rid;

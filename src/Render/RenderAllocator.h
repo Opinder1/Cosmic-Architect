@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Util/Util.h"
 #include "Util/GodotMemory.h"
 
 #include <godot_cpp/classes/object.hpp>
@@ -11,7 +12,7 @@
 
 namespace voxel_game::rendering
 {
-	enum class AllocatorType
+	enum class AllocateType : uint32_t
 	{
 		Texture2D,
 		Texture3D,
@@ -47,7 +48,10 @@ namespace voxel_game::rendering
 		CanvasLight,
 		CanvasLightOccluder,
 		CanvasOccluderPolygon,
+		Count,
 	};
+
+	constexpr const size_t k_num_alloc_types = to_underlying(AllocateType::Count);
 
 	// A server that keeps some pools of render objects preallocated for any allocators to take
 	// Any taken render objects will automatically be refilled
@@ -55,13 +59,19 @@ namespace voxel_game::rendering
 	{
 		GDCLASS(AllocatorServer, godot::Object);
 
+	private:
+		struct TypeData
+		{
+			std::vector<godot::RID> rids;
+		};
+
 	public:
 		static AllocatorServer* get_singleton();
 
 		AllocatorServer();
 		~AllocatorServer();
 
-		void RequestRIDs(AllocatorType type, std::vector<godot::RID>& rids_out);
+		void RequestRIDs(AllocateType type, std::vector<godot::RID>& rids_out);
 
 		void AllocateRIDs();
 
@@ -77,8 +87,7 @@ namespace voxel_game::rendering
 
 		tkrzw::SpinMutex m_mutex; // Mutex to protect the write lists
 
-		std::vector<godot::RID> m_meshes;
-		std::vector<godot::RID> m_instances;
+		TypeData m_types[k_num_alloc_types];
 	};
 
 	// An allocator that will get instances from the server so instances can be created without
@@ -86,7 +95,7 @@ namespace voxel_game::rendering
 	class Allocator
 	{
 	public:
-		Allocator(AllocatorType type);
+		Allocator(AllocateType type);
 		~Allocator();
 
 		void Process();
@@ -94,7 +103,7 @@ namespace voxel_game::rendering
 		godot::RID RequestRID();
 
 	private:
-		AllocatorType m_type;
+		AllocateType m_type;
 		std::vector<godot::RID> m_rids;
 	};
 }

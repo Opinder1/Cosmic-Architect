@@ -58,7 +58,7 @@ namespace voxel_game::rendering
 		ServerThreadContext main_thread;
 		PerThread<ServerThreadContext> threads;
 
-		Allocator instance_allocator{ AllocatorType::Instance };
+		Allocator instance_allocator{ AllocateType::Instance };
 	};
 
 	struct Transform
