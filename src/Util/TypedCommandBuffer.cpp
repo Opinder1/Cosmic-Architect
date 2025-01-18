@@ -5,7 +5,7 @@
 
 namespace voxel_game
 {
-	const std::byte* ProcessCommand(godot::Object* object, const std::byte* buffer_pos, const std::byte* buffer_end, bool execute)
+	const std::byte* ProcessCommand(void* object, const std::byte* buffer_pos, const std::byte* buffer_end, bool execute)
 	{
 		const TypedCommand* command;
 		buffer_pos = ReadType<TypedCommand>(buffer_pos, buffer_end, command);
@@ -43,7 +43,7 @@ namespace voxel_game
 		return *this;
 	}
 
-	size_t TypedCommandBuffer::ProcessCommands(godot::Object* object, size_t max)
+	size_t TypedCommandBuffer::ProcessCommands(void* object, size_t max)
 	{
 		DEBUG_ASSERT(object != nullptr, "The object we are trying to process on should be valid");
 

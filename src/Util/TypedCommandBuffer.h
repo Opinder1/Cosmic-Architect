@@ -39,7 +39,7 @@ namespace voxel_game
 		void AddCommand(Args&&... p_args);
 
 		// Process only up to a certain number of commands and return how many were processed (0 for max to process all)
-		size_t ProcessCommands(godot::Object* object, size_t max = 0);
+		size_t ProcessCommands(void* object, size_t max = 0);
 
 		size_t NumCommands() const;
 
