@@ -106,7 +106,7 @@ namespace voxel_game
 		UniverseCacheUpdater();
 
 #if defined(DEBUG_ENABLED)
-		void SetThreads(std::thread::id reader_id, std::thread::id writer_id);
+		void SetWriterThread(std::thread::id writer_id);
 #endif
 
 		// Update a info entry of a singleton type
@@ -125,6 +125,6 @@ namespace voxel_game
 		void AddInfoUpdate(InfoUpdate&& update);
 
 	private:
-		CommandSwapBuffer<InfoUpdate> m_updates;
+		SwapBuffer<std::vector<InfoUpdate>> m_updates;
 	};
 }

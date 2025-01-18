@@ -51,9 +51,9 @@ namespace voxel_game
 	UniverseCacheUpdater::UniverseCacheUpdater() {}
 
 #if defined(DEBUG_ENABLED)
-	void UniverseCacheUpdater::SetThreads(std::thread::id reader_id, std::thread::id writer_id)
+	void UniverseCacheUpdater::SetWriterThread(std::thread::id writer_id)
 	{
-		m_updates.SetThreads(reader_id, writer_id);
+		m_updates.SetWriterThread(writer_id);
 	}
 #endif
 
@@ -93,19 +93,19 @@ namespace voxel_game
 
 	void UniverseCacheUpdater::AddInfoUpdate(InfoUpdate&& update)
 	{
-		m_updates.AddCommand(std::move(update));
+		m_updates.GetWrite().emplace_back(std::move(update));
 	}
 
 	void UniverseCacheUpdater::PublishUpdates()
 	{
-		m_updates.PublishCommands();
+		m_updates.Publish();
 	}
 
 	void UniverseCacheUpdater::RetrieveUpdates(UniverseCache& out)
 	{
 		std::vector<InfoUpdate> updates;
 
-		m_updates.RetrieveCommands(updates);
+		m_updates.Retrieve(updates);
 
 		std::lock_guard lock(out.mutex);
 

@@ -197,7 +197,7 @@ namespace voxel_game
 		m_galaxy_entity = CreateNewSimulatedGalaxy(m_world, m_path, m_universe_entity, m_scenario);
 
 #if defined(DEBUG_ENABLED)
-		m_info_updater.SetThreads(m_owner_id, std::this_thread::get_id());
+		m_info_updater.SetWriterThread(std::this_thread::get_id());
 #endif
 	}
 
@@ -206,7 +206,7 @@ namespace voxel_game
 		DEBUG_ASSERT(m_universe.is_valid(), "The simulation should have been initialized");
 
 #if defined(DEBUG_ENABLED)
-		m_info_updater.SetThreads(std::thread::id{}, std::thread::id{}); // We may not start in thread mode next time
+		m_info_updater.SetWriterThread(std::thread::id{}); // We may not start in thread mode next time
 #endif
 
 		m_world.set_threads(0);

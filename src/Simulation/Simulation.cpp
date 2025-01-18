@@ -16,11 +16,7 @@ namespace voxel_game
 	const size_t k_simulation_ticks_per_second = 20;
 
 	Simulation::Simulation()
-	{
-#if defined(DEBUG_ENABLED)
-		m_owner_id = std::this_thread::get_id();
-#endif
-	}
+	{}
 
 	Simulation::~Simulation()
 	{
@@ -34,8 +30,6 @@ namespace voxel_game
 
 	void Simulation::StartSimulation(ThreadMode thread_mode)
 	{
-		DEBUG_ASSERT(m_owner_id == std::this_thread::get_id(), "StartSimulation() should be called by the thread that created the simulation");
-
 		WaitUntilStopped();
 
 		if (!CanSimulationStart())
@@ -61,8 +55,6 @@ namespace voxel_game
 
 	void Simulation::StopSimulation()
 	{
-		DEBUG_ASSERT(m_owner_id == std::this_thread::get_id(), "StopSimulation() should be called by the thread that created the simulation");
-
 		if (m_state.load(std::memory_order_acquire) != State::Loaded)
 		{
 			return;
@@ -91,8 +83,6 @@ namespace voxel_game
 
 	bool Simulation::Progress(real_t delta)
 	{
-		DEBUG_ASSERT(m_owner_id == std::this_thread::get_id(), "Progress() should always be called by the thread that created the simulation");
-
 		bool keep_running = false;
 
 		if (m_state.load(std::memory_order_acquire) == State::Loaded) // Don't progress until loaded

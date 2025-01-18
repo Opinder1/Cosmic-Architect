@@ -22,41 +22,33 @@ struct PerThread : std::array<AlignedData<DataT>, k_worker_thread_max>, Nocopy, 
 	using std::array<AlignedData<DataT>, k_worker_thread_max>::array;
 };
 
-// A buffer where one thread adds items and the other retrieves items while being lock free
-template<class CommandT>
-class CommandSwapBuffer : Nocopy, Nomove
+// A buffer where one thread writes and the other retrieves the whole item while being lock free
+template<class T>
+class SwapBuffer : Nocopy, Nomove
 {
 public:
-	CommandSwapBuffer() {}
+	SwapBuffer() {}
 
 #if defined(DEBUG_ENABLED)
-	void SetThreads(std::thread::id reader_id, std::thread::id writer_id)
+	void SetWriterThread(std::thread::id writer_id)
 	{
-		m_reader_id = reader_id;
 		m_writer_id = writer_id;
 	}
 #endif
 
-	void AddCommand(const CommandT& value)
+	T& GetWrite()
 	{
-		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "AddCommand() should be called by the writer thread");
+		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "GetWrite() should be called by the writer thread");
 
-		m_write.emplace_back(value);
-	}
-
-	void AddCommand(CommandT&& value)
-	{
-		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "AddCommand() should be called by the writer thread");
-
-		m_write.emplace_back(std::move(value));
+		return m_write;
 	}
 
 	// Write the changes to the exchange buffer
-	void PublishCommands()
+	void Publish()
 	{
-		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "PublishCommands() should be called by the writer thread");
+		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "Publish() should be called by the writer thread");
 
-		if (m_write.size() > 0 && !m_ready.load(std::memory_order_acquire))
+		if (!m_ready.load(std::memory_order_acquire))
 		{
 			m_read = std::move(m_write);
 
@@ -65,10 +57,8 @@ public:
 	}
 
 	// Obtain the latest changes made by the writer if there are any
-	void RetrieveCommands(std::vector<CommandT>& out)
+	void Retrieve(T& out)
 	{
-		DEBUG_ASSERT(m_reader_id == std::this_thread::get_id(), "RetrieveCommands() should be called by the owner thread");
-
 		if (m_ready.load(std::memory_order_acquire))
 		{
 			out = std::move(m_read);
@@ -79,16 +69,15 @@ public:
 
 private:
 	std::atomic_bool m_ready = false;
-	alignas(k_cache_line) std::vector<CommandT> m_write;
-	alignas(k_cache_line) std::vector<CommandT> m_read;
+	alignas(k_cache_line) T m_write;
+	alignas(k_cache_line) T m_read;
 
 #if defined(DEBUG_ENABLED)
-	std::thread::id m_reader_id; // The thread that reads the cache and should call RetrieveCommands() on it
 	std::thread::id m_writer_id; // The thread that does updates and calls AddCommand() and PublishCommands() on it
 #endif
 };
 
-// A triple buffer where a writer thread can write and a reader thread can read simultaneously while being lock free
+// A triple buffer where a writer thread can write and a reader thread can read simultaneously while being lock free.
 template<class T>
 class alignas(k_cache_line) TripleBuffer : Nocopy, Nomove
 {
@@ -165,9 +154,9 @@ public:
 
 private:
 	std::atomic_bool m_ready = false;
-	T m_write;
-	T m_swap;
-	T m_read;
+	alignas(k_cache_line) T m_write;
+	alignas(k_cache_line) T m_swap;
+	alignas(k_cache_line) T m_read;
 
 #if defined(DEBUG_ENABLED)
 	std::thread::id m_reader_id; // The thread that reads the cache and should call Retrieve() on it
