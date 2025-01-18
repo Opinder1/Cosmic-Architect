@@ -111,9 +111,9 @@ public:
 	}
 
 	// Write changes the write buffer. Calling Publish() with references still around is undefined
-	T& Write()
+	T& GetWrite()
 	{
-		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "Write() should be called by the writer thread");
+		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "GetWrite() should be called by the writer thread");
 
 		return m_write;
 	}
@@ -131,14 +131,8 @@ public:
 		}
 	}
 
-	// Check if the writer has made any changes
-	bool Published()
-	{
-		return m_ready.load(std::memory_order_acquire);
-	}
-
 	// Obtain the latest changes made by the writer if there are any
-	T& Retrieve()
+	void Retrieve()
 	{
 		DEBUG_ASSERT(m_reader_id == std::this_thread::get_id(), "Retrieve() should be called by the owner thread");
 
@@ -148,6 +142,12 @@ public:
 
 			m_ready.store(false, std::memory_order_release);
 		}
+	}
+
+	// Get the read buffer. Calling Retrieve with references still around is undefined
+	T& GetRead()
+	{
+		DEBUG_ASSERT(m_reader_id == std::this_thread::get_id(), "GetRead() should be called by the owner thread");
 
 		return m_read;
 	}

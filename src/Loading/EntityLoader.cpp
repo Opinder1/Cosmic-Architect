@@ -28,11 +28,13 @@ namespace voxel_game::loading
 #endif
 
 			// Merge remaining modifications that were already published
-			m_modification_stage.Retrieve().merge();
+			m_modification_stage.Retrieve();
+			m_modification_stage.GetRead().merge();
 
 			// Merge remaining modifications that were not published
 			m_modification_stage.Publish();
-			m_modification_stage.Retrieve().merge();
+			m_modification_stage.Retrieve();
+			m_modification_stage.GetRead().merge();
 		}
 
 	}
@@ -77,7 +79,8 @@ namespace voxel_game::loading
 		{
 			m_commands.Publish();
 
-			m_modification_stage.Retrieve().merge();
+			m_modification_stage.Retrieve();
+			m_modification_stage.GetRead().merge();
 
 			while (m_worker.entity_pool.size() < k_entity_pool_max)
 			{
