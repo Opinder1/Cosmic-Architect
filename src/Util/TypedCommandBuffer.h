@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Util.h"
 #include "Nocopy.h"
 #include "Debug.h"
 
@@ -9,15 +10,6 @@
 
 namespace voxel_game
 {
-	template<class Type>
-	struct get_method_class;
-
-	template<class Class, class Ret, class... Args>
-	struct get_method_class<Ret(Class::*)(Args...)>
-	{
-		using type = Class;
-	};
-
 	using TypedCommand = std::byte* (*)(void*, std::byte*, std::byte*, bool);
 
 	class TypedCommandBuffer : Nocopy
