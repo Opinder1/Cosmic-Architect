@@ -1,8 +1,8 @@
 #pragma once
 
-#include <godot_cpp/variant/color.hpp>
-#include <godot_cpp/variant/packed_color_array.hpp>
+#include <godot_cpp/variant/vector4i.hpp>
+#include <godot_cpp/variant/array.hpp>
 
 // A uuid that can be used in godot functions though will appear as a color
-using UUID = godot::Color;
-using UUIDVector = godot::PackedColorArray;
+using UUID = godot::Vector4i;
+using UUIDVector = godot::Array;
