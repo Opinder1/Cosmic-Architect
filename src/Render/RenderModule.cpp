@@ -124,7 +124,7 @@ namespace voxel_game::rendering
 
             if (transform.modified)
             {
-                thread_context.commands.AddCommand("instance_set_transform", instance.id, transform.transform);
+                thread_context.commands.AddCommand<&godot::RenderingServer::instance_set_transform>(instance.id, transform.transform);
             }
         });
     }
@@ -156,7 +156,7 @@ namespace voxel_game::rendering
 
             DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
 
-            thread_context.commands.AddCommand("free_rid", scenario.id);
+            thread_context.commands.AddCommand<&godot::RenderingServer::free_rid>(scenario.id);
         });
 
         world.observer<const UniqueInstance, const Scenario, ServerContext>(DEBUG_ONLY("InstanceSetScenario"))
@@ -171,8 +171,8 @@ namespace voxel_game::rendering
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
             DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
 
-            thread_context.commands.AddCommand("instance_set_transform", instance.id, k_invisible_transform); // Fake invisibility until we set transform
-            thread_context.commands.AddCommand("instance_set_scenario", instance.id, scenario.id);
+            thread_context.commands.AddCommand<&godot::RenderingServer::instance_set_transform>(instance.id, k_invisible_transform); // Fake invisibility until we set transform
+            thread_context.commands.AddCommand<&godot::RenderingServer::instance_set_scenario>(instance.id, scenario.id);
         });
 
 #if defined(DEBUG_ENABLED)
@@ -190,7 +190,7 @@ namespace voxel_game::rendering
 
             if (scenario.id != godot::RID())
             {
-                thread_context.commands.AddCommand("instance_set_scenario", instance.id, godot::RID());
+                thread_context.commands.AddCommand<&godot::RenderingServer::instance_set_scenario>(instance.id, godot::RID());
             }
         });
 #endif
@@ -221,7 +221,7 @@ namespace voxel_game::rendering
 
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
 
-            thread_context.commands.AddCommand("free_rid", instance.id);
+            thread_context.commands.AddCommand<&godot::RenderingServer::free_rid>(instance.id);
         });
     }
 
@@ -239,7 +239,7 @@ namespace voxel_game::rendering
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
             DEBUG_ASSERT(base.id != godot::RID(), "Base should be valid");
 
-            thread_context.commands.AddCommand("instance_set_base", instance.id, base.id);
+            thread_context.commands.AddCommand<&godot::RenderingServer::instance_set_base>(instance.id, base.id);
         });
 
         world.observer<const Base, ServerContext>(DEBUG_ONLY("RemoveBase"))
@@ -252,7 +252,7 @@ namespace voxel_game::rendering
 
             DEBUG_ASSERT(base.id != godot::RID(), "Base should be valid");
 
-            thread_context.commands.AddCommand("free_rid", base.id);
+            thread_context.commands.AddCommand<&godot::RenderingServer::free_rid>(base.id);
         });
 
 #if defined(DEBUG_ENABLED)
@@ -270,7 +270,7 @@ namespace voxel_game::rendering
 
             if (base.id != godot::RID())
             {
-                thread_context.commands.AddCommand("instance_set_base", instance.id, godot::RID());
+                thread_context.commands.AddCommand<&godot::RenderingServer::instance_set_base>(instance.id, godot::RID());
             }
         });
 #endif

@@ -3,7 +3,7 @@
 #include "RenderAllocator.h"
 #include "RenderInstancer.h"
 
-#include "Util/CommandBuffer.h"
+#include "Util/TypedCommandBuffer.h"
 #include "Util/PerThread.h"
 #include "Util/Nocopy.h"
 
@@ -50,7 +50,7 @@ namespace voxel_game::rendering
 
 	struct ServerThreadContext
 	{
-		CommandBuffer commands;
+		TypedCommandBuffer commands;
 	};
 
 	struct ServerContext : Nocopy
