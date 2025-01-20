@@ -1,4 +1,4 @@
-#include "Simulation.h"
+#include "SimulationServer.h"
 
 #include "Util/CommandServer.h"
 #include "Util/Debug.h"
@@ -13,22 +13,22 @@
 
 namespace voxel_game
 {
-	const size_t k_simulation_ticks_per_second = 20;
+	const size_t k_SimulationServer_ticks_per_second = 20;
 
-	Simulation::Simulation()
+	SimulationServer::SimulationServer()
 	{}
 
-	Simulation::~Simulation()
+	SimulationServer::~SimulationServer()
 	{
 		WaitUntilStopped(); // The worker thread is using our memory so make sure its stopped before we are deleted
 	}
 
-	bool Simulation::IsThreaded()
+	bool SimulationServer::IsThreaded()
 	{
 		return m_thread.joinable();
 	}
 
-	void Simulation::StartSimulation(ThreadMode thread_mode)
+	void SimulationServer::StartSimulation(ThreadMode thread_mode)
 	{
 		WaitUntilStopped();
 
@@ -41,7 +41,7 @@ namespace voxel_game
 
 		if (thread_mode == THREAD_MODE_MULTI_THREADED)
 		{
-			m_thread = std::thread(&Simulation::ThreadLoop, this);
+			m_thread = std::thread(&SimulationServer::ThreadLoop, this);
 		}
 		else
 		{
@@ -53,7 +53,7 @@ namespace voxel_game
 		}
 	}
 
-	void Simulation::StopSimulation()
+	void SimulationServer::StopSimulation()
 	{
 		if (m_state.load(std::memory_order_acquire) != State::Loaded)
 		{
@@ -70,7 +70,7 @@ namespace voxel_game
 		}
 	}
 
-	void Simulation::WaitUntilStopped()
+	void SimulationServer::WaitUntilStopped()
 	{
 		StopSimulation();
 
@@ -81,7 +81,7 @@ namespace voxel_game
 		}
 	}
 
-	bool Simulation::Progress(real_t delta)
+	bool SimulationServer::Progress(real_t delta)
 	{
 		bool keep_running = false;
 
@@ -99,11 +99,11 @@ namespace voxel_game
 		return keep_running;
 	}
 
-	void Simulation::ThreadLoop()
+	void SimulationServer::ThreadLoop()
 	{
 		EASY_MAIN_THREAD;
 
-		DEBUG_ASSERT(m_thread.get_id() == std::this_thread::get_id(), "FinishedLoading() should be called by the simulations thread");
+		DEBUG_ASSERT(m_thread.get_id() == std::this_thread::get_id(), "FinishedLoading() should be called by the SimulationServers thread");
 
 		DoSimulationLoad();
 
@@ -131,31 +131,31 @@ namespace voxel_game
 		m_state.store(State::Unloaded);
 	}
 
-	bool Simulation::CanSimulationStart()
+	bool SimulationServer::CanSimulationStart()
 	{
 		bool should_load = false;
 		GDVIRTUAL_CALL(_can_simulation_start, should_load);
 		return should_load;
 	}
 
-	void Simulation::DoSimulationLoad()
+	void SimulationServer::DoSimulationLoad()
 	{
 		GDVIRTUAL_CALL(_do_simulation_load);
 	}
 
-	void Simulation::DoSimulationUnload()
+	void SimulationServer::DoSimulationUnload()
 	{
 		GDVIRTUAL_CALL(_do_simulation_unload);
 	}
 
-	bool Simulation::DoSimulationProgress(real_t delta)
+	bool SimulationServer::DoSimulationProgress(real_t delta)
 	{
 		bool keep_running = false;
 		GDVIRTUAL_CALL(_simulation_progress, delta, keep_running);
 		return keep_running;
 	}
 
-	void Simulation::DoSimulationThreadProgress()
+	void SimulationServer::DoSimulationThreadProgress()
 	{
 		if (!GDVIRTUAL_CALL(_simulation_thread_progress))
 		{
@@ -163,15 +163,15 @@ namespace voxel_game
 		}
 	}
 
-	void Simulation::_bind_methods()
+	void SimulationServer::_bind_methods()
 	{
 		BIND_ENUM_CONSTANT(THREAD_MODE_SINGLE_THREADED);
 		BIND_ENUM_CONSTANT(THREAD_MODE_MULTI_THREADED);
 
-		BIND_METHOD(godot::D_METHOD("start_simulation", "thread_mode"), &Simulation::StartSimulation);
-		BIND_METHOD(godot::D_METHOD("stop_simulation"), &Simulation::StopSimulation);
-		BIND_METHOD(godot::D_METHOD("is_threaded"), &Simulation::IsThreaded);
-		BIND_METHOD(godot::D_METHOD("progress", "delta"), &Simulation::Progress);
+		BIND_METHOD(godot::D_METHOD("start_simulation", "thread_mode"), &SimulationServer::StartSimulation);
+		BIND_METHOD(godot::D_METHOD("stop_simulation"), &SimulationServer::StopSimulation);
+		BIND_METHOD(godot::D_METHOD("is_threaded"), &SimulationServer::IsThreaded);
+		BIND_METHOD(godot::D_METHOD("progress", "delta"), &SimulationServer::Progress);
 
 		GDVIRTUAL_BIND(_can_simulation_start, "thread_mode");
 		GDVIRTUAL_BIND(_do_simulation_load);
@@ -179,6 +179,6 @@ namespace voxel_game
 		GDVIRTUAL_BIND(_simulation_progress, "delta");
 		GDVIRTUAL_BIND(_simulation_thread_progress);
 
-		ADD_SIGNAL(godot::MethodInfo("load_state_changed", ENUM_PROPERTY("state", Simulation::LoadState)));
+		ADD_SIGNAL(godot::MethodInfo("load_state_changed", ENUM_PROPERTY("state", SimulationServer::LoadState)));
 	}
 }

@@ -2,15 +2,10 @@
 
 #include "UniverseCache.h"
 
-#include "Simulation/Simulation.h"
+#include "Simulation/SimulationServer.h"
 
 #include "Util/Debug.h"
 #include "Util/UUID.h"
-
-#include <godot_cpp/classes/ref.hpp>
-#include <godot_cpp/classes/ref_counted.hpp>
-#include <godot_cpp/classes/weak_ref.hpp>
-#include <godot_cpp/classes/dir_access.hpp>
 
 #include <godot_cpp/variant/rid.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
@@ -28,12 +23,10 @@
 
 namespace voxel_game
 {
-	class Universe;
-
 	// Simulation of a section of the universe
-	class UniverseSimulation : public Simulation
+	class UniverseSimulation : public SimulationServer
 	{
-		GDCLASS(UniverseSimulation, Simulation);
+		GDCLASS(UniverseSimulation, SimulationServer);
 
 		struct CommandStrings;
 		struct SignalStrings;
@@ -54,13 +47,13 @@ namespace voxel_game
 		UniverseSimulation();
 		~UniverseSimulation();
 
-		void Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario);
+		void Initialize(const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario);
 
-		bool CanSimulationStart() override;
-		void DoSimulationLoad() override;
-		void DoSimulationUnload() override;
-		bool DoSimulationProgress(real_t delta) override;
-		void DoSimulationThreadProgress() override;
+		bool CanSimulationStart() final;
+		void DoSimulationLoad() final;
+		void DoSimulationUnload() final;
+		bool DoSimulationProgress(real_t delta) final;
+		void DoSimulationThreadProgress() final;
 
 #if defined(DEBUG_ENABLED)
 		void DebugCommand(const godot::StringName& command, const godot::Array& args);
@@ -68,7 +61,11 @@ namespace voxel_game
 
 		// ####### Universe #######
 
-		godot::Ref<Universe> GetUniverse();
+		godot::Dictionary GetUniverseInfo();
+		void ConnectToGalaxyList(const godot::String& ip);
+		void DisconnectFromGalaxyList();
+		void QueryGalaxyList(const godot::Dictionary& query);
+		void PingRemoteGalaxy(const godot::String& ip);
 
 		// ####### Fragments (admin only) #######
 
@@ -308,7 +305,6 @@ namespace voxel_game
 
 	private:
 		// Universe data. Not thread safe
-		godot::Ref<Universe> m_universe;
 		godot::StringName m_path;
 		godot::StringName m_fragment_type;
 		ServerType m_server_type = ServerType::SERVER_TYPE_LOCAL;

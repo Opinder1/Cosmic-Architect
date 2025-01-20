@@ -24,6 +24,7 @@ namespace voxel_game
 
 		enum class Type
 		{
+			Universe,
 			Galaxy,
 			Account,
 			Player,
@@ -53,6 +54,7 @@ namespace voxel_game
 
 		tkrzw::SpinSharedMutex mutex;
 
+		Info universe_info;
 		Info galaxy_info;
 		Info account_info;
 		Info player_info;

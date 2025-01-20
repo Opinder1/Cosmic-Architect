@@ -144,8 +144,7 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 		godot::ClassDB::register_class<voxel_game::CommandWriter>();
 		godot::ClassDB::register_class<voxel_game::CommandServer>();
 		godot::ClassDB::register_class<voxel_game::rendering::AllocatorServer>();
-		godot::ClassDB::register_class<voxel_game::Simulation>(true);
-		godot::ClassDB::register_class<voxel_game::Universe>();
+		godot::ClassDB::register_class<voxel_game::SimulationServer>();
 		godot::ClassDB::register_class<voxel_game::UniverseSimulation>();
 
 		godot::Engine::get_singleton()->register_singleton("CommandServer", voxel_game::CommandServer::get_singleton());
@@ -169,7 +168,6 @@ void uninitialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 		godot::Engine::get_singleton()->unregister_singleton("CommandServer");
 
 		voxel_game::UniverseSimulation::_cleanup_methods();
-		voxel_game::Universe::_cleanup_methods();
 		voxel_game::rendering::AllocatorServer::_cleanup_methods();
 		voxel_game::CommandServer::_cleanup_methods();
 

@@ -11,7 +11,11 @@ namespace voxel_game
 
 		// ####### Universe #######
 
-		godot::StringName get_universe;
+		godot::StringName get_universe_info;
+		godot::StringName connect_to_galaxy_list;
+		godot::StringName disconnect_from_galaxy_list;
+		godot::StringName query_galaxy_list;
+		godot::StringName ping_remote_galaxy;
 
 		// ####### Fragments (admin only) #######
 
@@ -234,6 +238,15 @@ namespace voxel_game
 	struct UniverseSimulation::SignalStrings
 	{
 		SignalStrings();
+
+		// ####### Universe #######
+
+		godot::StringName connected_to_galaxy_list;
+		godot::StringName disconnected_from_galaxy_list;
+		godot::StringName galaxy_list_query_response;
+		godot::StringName galaxy_ping_response;
+
+		// ####### Galaxy #######
 
 		godot::StringName connected_to_remote;
 		godot::StringName disonnected_from_remote;

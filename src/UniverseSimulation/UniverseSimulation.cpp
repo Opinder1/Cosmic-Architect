@@ -1,6 +1,5 @@
 #include "UniverseSimulation.h"
 #include "UniverseSimulation_StringNames.h"
-#include "Universe.h"
 
 #include "Universe/UniverseComponents.h"
 #include "Universe/UniverseModule.h"
@@ -122,17 +121,11 @@ namespace voxel_game
 		WaitUntilStopped();
 	}
 
-	void UniverseSimulation::Initialize(const godot::Ref<Universe>& universe, const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario)
+	void UniverseSimulation::Initialize(const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario)
 	{
-		DEBUG_ASSERT(m_universe.is_null(), "We can't initialize a simulation twice");
+		DEBUG_ASSERT(m_path.is_empty(), "We can't initialize a simulation twice");
+		DEBUG_ASSERT(!path.is_empty(), "The path must be valid");
 
-		if (universe.is_null())
-		{
-			DEBUG_PRINT_ERROR("The universe must be valid");
-			return;
-		}
-
-		m_universe = universe;
 		m_path = path;
 		m_fragment_type = fragment_type;
 		m_server_type = server_type;
@@ -171,12 +164,6 @@ namespace voxel_game
 
 	bool UniverseSimulation::CanSimulationStart()
 	{
-		if (m_universe.is_null())
-		{
-			DEBUG_PRINT_ERROR("This universe simulation should have been instantiated by a universe");
-			return false;
-		}
-
 		if (m_path.is_empty())
 		{
 			DEBUG_PRINT_ERROR("This universe simulation should have a valid path");
@@ -203,7 +190,7 @@ namespace voxel_game
 
 	void UniverseSimulation::DoSimulationUnload()
 	{
-		DEBUG_ASSERT(m_universe.is_valid(), "The simulation should have been initialized");
+		DEBUG_ASSERT(!m_path.is_empty(), "The simulation should have been initialized");
 
 #if defined(DEBUG_ENABLED)
 		m_info_updater.SetWriterThread(std::thread::id{}); // We may not start in thread mode next time
@@ -239,11 +226,6 @@ namespace voxel_game
 
 		// Publish updates to the info caches to be read on the main thread
 		m_info_updater.PublishUpdates();
-	}
-
-	godot::Ref<Universe> UniverseSimulation::GetUniverse()
-	{
-		return m_universe;
 	}
 
 #if defined(DEBUG_ENABLED)
@@ -282,14 +264,19 @@ namespace voxel_game
 		BIND_ENUM_CONSTANT(SERVER_TYPE_LOCAL);
 		BIND_ENUM_CONSTANT(SERVER_TYPE_REMOTE);
 
-		BIND_METHOD(godot::D_METHOD(k_commands->initialize, "universe", "path", "fragment_type", "server_type", "scenario"), &UniverseSimulation::Initialize);
+		BIND_METHOD(godot::D_METHOD(k_commands->initialize, "path", "fragment_type", "server_type", "scenario"), &UniverseSimulation::Initialize);
 
-		// ####### Universe #######
-
-		BIND_METHOD(godot::D_METHOD(k_commands->get_universe), &UniverseSimulation::GetUniverse);
 #if defined(DEBUG_ENABLED)
 		BIND_METHOD(godot::D_METHOD(k_commands->debug_command, "command", "arguments"), &UniverseSimulation::DebugCommand);
 #endif
+
+		// ####### Universe #######
+
+		BIND_METHOD(godot::D_METHOD(k_commands->get_universe_info), &UniverseSimulation::GetUniverseInfo);
+		BIND_METHOD(godot::D_METHOD(k_commands->connect_to_galaxy_list, "ip"), &UniverseSimulation::ConnectToGalaxyList);
+		BIND_METHOD(godot::D_METHOD(k_commands->disconnect_from_galaxy_list), &UniverseSimulation::DisconnectFromGalaxyList);
+		BIND_METHOD(godot::D_METHOD(k_commands->query_galaxy_list, "query"), &UniverseSimulation::QueryGalaxyList);
+		BIND_METHOD(godot::D_METHOD(k_commands->ping_remote_galaxy, "ip"), &UniverseSimulation::PingRemoteGalaxy);
 
 		// ####### Fragments (admin only) #######
 

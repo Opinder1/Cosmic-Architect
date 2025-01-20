@@ -12,7 +12,11 @@ namespace voxel_game
 
 		// ####### Universe #######
 
-		INITIALIZE_STRINGNAME(get_universe);
+		INITIALIZE_STRINGNAME(get_universe_info);
+		INITIALIZE_STRINGNAME(connect_to_galaxy_list);
+		INITIALIZE_STRINGNAME(disconnect_from_galaxy_list);
+		INITIALIZE_STRINGNAME(query_galaxy_list);
+		INITIALIZE_STRINGNAME(ping_remote_galaxy);
 
 		// ####### Fragments (admin only) #######
 
@@ -234,6 +238,15 @@ namespace voxel_game
 
 	UniverseSimulation::SignalStrings::SignalStrings()
 	{
+		// ####### Universe #######
+
+		INITIALIZE_STRINGNAME(connected_to_galaxy_list);
+		INITIALIZE_STRINGNAME(disconnected_from_galaxy_list);
+		INITIALIZE_STRINGNAME(galaxy_list_query_response);
+		INITIALIZE_STRINGNAME(galaxy_ping_response);
+
+		// ####### Galaxy #######
+
 		INITIALIZE_STRINGNAME(connected_to_remote);
 		INITIALIZE_STRINGNAME(disonnected_from_remote);
 

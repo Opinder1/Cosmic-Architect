@@ -4,10 +4,7 @@
 #include "Util/Debug.h"
 #include "Util/PerThread.h"
 
-#include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/classes/ref_counted.hpp>
-#include <godot_cpp/classes/weak_ref.hpp>
-#include <godot_cpp/classes/dir_access.hpp>
 
 #include <godot_cpp/core/gdvirtual.gen.inc>
 
@@ -23,9 +20,9 @@ namespace voxel_game
 	// are efficiently buffered and sent between threads with minimal blocking
 	// 
 	// The simulations methods should only be called by the thread that creates the simulation
-	class Simulation : public godot::RefCounted
+	class SimulationServer : public godot::RefCounted
 	{
-		GDCLASS(Simulation, godot::RefCounted);
+		GDCLASS(SimulationServer, godot::RefCounted);
 
 	public:
 		enum State
@@ -43,8 +40,8 @@ namespace voxel_game
 		};
 
 	public:
-		Simulation();
-		~Simulation();
+		SimulationServer();
+		~SimulationServer();
 
 		// Start the simulation. Make sure to call FinishedLoading() on the thread when done loading
 		void StartSimulation(ThreadMode thread_mode);
@@ -115,7 +112,7 @@ namespace voxel_game
 	};
 
 	template<class... Args>
-	void Simulation::QueueSignal(const godot::StringName& signal, Args&&... args)
+	void SimulationServer::QueueSignal(const godot::StringName& signal, Args&&... args)
 	{
 		DEBUG_ASSERT(!IsThreaded() || std::this_thread::get_id() == m_thread.get_id(), "When in threaded mode this should only be called by the worker");
 
@@ -123,7 +120,7 @@ namespace voxel_game
 	}
 
 	template<auto Method, class... Args>
-	bool Simulation::DeferCommand(Args&&... args)
+	bool SimulationServer::DeferCommand(Args&&... args)
 	{
 		if (IsThreaded() && std::this_thread::get_id() != m_thread.get_id())
 		{
@@ -138,4 +135,4 @@ namespace voxel_game
 	}
 }
 
-VARIANT_ENUM_CAST(voxel_game::Simulation::ThreadMode);
+VARIANT_ENUM_CAST(voxel_game::SimulationServer::ThreadMode);
