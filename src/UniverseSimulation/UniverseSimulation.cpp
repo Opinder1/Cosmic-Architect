@@ -131,8 +131,6 @@ namespace voxel_game
 		m_server_type = server_type;
 		m_scenario = scenario;
 
-		m_world.reset();
-
 		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
 
 		m_world.set_target_fps(k_simulation_ticks_per_second);
@@ -198,7 +196,7 @@ namespace voxel_game
 
 		m_world.set_threads(0);
 
-		m_world.reset();
+		m_world = flecs::world();
 	}
 
 	bool UniverseSimulation::DoSimulationProgress(real_t delta)
