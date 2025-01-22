@@ -12702,6 +12702,10 @@ bool ecs_worker_next(
         /* Copy everything up to the private iterator data */
         ecs_os_memcpy(it, chain_it, offsetof(ecs_iter_t, priv_));
 
+#if FLECS_HASH_CYCLE_MODIFICATION || 1
+        res_index = (iter->index + it->table->_->hash) % iter->count;
+#endif
+
         int32_t count = it->count;
         per_worker = count / res_count;
         first = per_worker * res_index;
