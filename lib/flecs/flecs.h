@@ -21147,7 +21147,6 @@ struct world {
     }
 
     world& operator=(world&& obj) noexcept {
-        release();
         world_ = obj.world_;
         obj.world_ = nullptr;
         return *this;
