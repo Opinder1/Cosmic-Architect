@@ -1,7 +1,6 @@
 #include "UniverseSimulation/UniverseSimulation.h"
-#include "UniverseSimulation/Universe.h"
 
-#include "Simulation/Simulation.h"
+#include "Simulation/SimulationServer.h"
 
 #include "Render/RenderAllocator.h"
 
