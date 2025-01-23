@@ -46,8 +46,6 @@ namespace voxel_game::loading
 
 		m_worker.world = world.c_ptr();
 
-		m_modification_stage.Reset(world.async_stage(), world.async_stage(), world.async_stage());
-
 		m_running.store(true, std::memory_order_release);
 
 		if (thread_mode == ThreadMode::MultiThreaded)
@@ -58,11 +56,6 @@ namespace voxel_game::loading
 
 			m_thread = std::thread(&EntityLoader::ThreadLoop, this);
 
-#if defined(DEBUG_ENABLED)
-			std::thread::id owner_id = std::this_thread::get_id();
-			m_commands.SetWriterThread(owner_id);
-			m_modification_stage.SetThreads(owner_id, m_thread.get_id());
-#endif
 		}
 	}
 
@@ -247,7 +240,7 @@ namespace voxel_game::loading
 
 		m_commands_swap.Retrieve(commands_read);
 
-		commands.ProcessCommands(this);
+		commands_read.ProcessCommands(this);
 	}
 
 	bool EntityLoader::ProcessLoadTask(LoadTask& task)
