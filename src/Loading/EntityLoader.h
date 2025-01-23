@@ -156,10 +156,13 @@ namespace voxel_game::loading
 		std::atomic_bool m_running = false;
 
 		// Commands requested to loader by owner thread
-		SwapBuffer<TypedCommandBuffer> m_commands;
+		alignas(k_cache_line) TypedCommandBuffer m_commands_write;
+		alignas(k_cache_line) SwapBuffer<TypedCommandBuffer> m_commands_swap;
 
 		// Modifications output by loader to owner thread
-		TripleBuffer<flecs::world> m_modification_stage;
+		alignas(k_cache_line) flecs::world m_modifications_write;
+		alignas(k_cache_line) flecs::world m_modifications_read;
+		alignas(k_cache_line) SwapBuffer<flecs::world> m_modifications_swap;
 
 		// List of open databases for use by. Not thread safe
 		robin_hood::unordered_flat_map<godot::StringName, DBHandle> m_open_databases;
@@ -169,5 +172,9 @@ namespace voxel_game::loading
 
 		// Worker thread only members
 		Worker m_worker;
+
+#if defined(DEBUG_ENABLED)
+		std::thread::id m_owner_id; // The thread that owns the loader and calls Process() on it
+#endif
 	};
 }

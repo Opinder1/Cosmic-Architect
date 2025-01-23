@@ -29,137 +29,45 @@ class SwapBuffer : Nocopy, Nomove
 public:
 	SwapBuffer() {}
 
-#if defined(DEBUG_ENABLED)
-	void SetWriterThread(std::thread::id writer_id)
+	void Reset(const T& value)
 	{
-		m_writer_id = writer_id;
-	}
-#endif
-
-	T& GetWrite()
-	{
-		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "GetWrite() should be called by the writer thread");
-
-		return m_write;
+		m_value = value;
+		m_ready.store(false, std::memory_order_release);
 	}
 
 	// Write the changes to the exchange buffer
-	void Publish()
+	bool Publish(T& value)
 	{
-		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "Publish() should be called by the writer thread");
-
 		if (!m_ready.load(std::memory_order_acquire))
 		{
-			m_read = std::move(m_write);
+			std::swap(value, m_value);
 
 			m_ready.store(true, std::memory_order_release);
+			return true;
+		}
+		else
+		{
+			return false;
 		}
 	}
 
 	// Obtain the latest changes made by the writer if there are any
-	void Retrieve(T& out)
+	bool Retrieve(T& value)
 	{
 		if (m_ready.load(std::memory_order_acquire))
 		{
-			out = std::move(m_read);
+			std::swap(value, m_value);
 
 			m_ready.store(false, std::memory_order_release);
+			return true;
+		}
+		else
+		{
+			return false;
 		}
 	}
 
 private:
+	T m_value;
 	std::atomic_bool m_ready = false;
-	alignas(k_cache_line) T m_write;
-	alignas(k_cache_line) T m_read;
-
-#if defined(DEBUG_ENABLED)
-	std::thread::id m_writer_id; // The thread that does updates and calls AddCommand() and PublishCommands() on it
-#endif
-};
-
-// A triple buffer where a writer thread can write and a reader thread can read simultaneously while being lock free.
-template<class T>
-class alignas(k_cache_line) TripleBuffer : Nocopy, Nomove
-{
-public:
-	TripleBuffer() {}
-
-#if defined(DEBUG_ENABLED)
-	void SetThreads(std::thread::id reader_id, std::thread::id writer_id)
-	{
-		m_reader_id = reader_id;
-		m_writer_id = writer_id;
-	}
-#endif
-
-	void Reset(const T& write, const T& swap, const T& read)
-	{
-		DEBUG_ASSERT(m_reader_id == std::thread::id{} && m_writer_id == std::thread::id{}, "Threads should not be set when resetting");
-
-		m_write = write;
-		m_swap = swap;
-		m_read = read;
-	}
-
-	void Reset(T&& write, T&& swap, T&& read)
-	{
-		DEBUG_ASSERT(m_reader_id == std::thread::id{} && m_writer_id == std::thread::id{}, "Threads should not be set when resetting");
-
-		m_write = std::move(write);
-		m_swap = std::move(swap);
-		m_read = std::move(read);
-	}
-
-	// Write changes the write buffer. Calling Publish() with references still around is undefined
-	T& GetWrite()
-	{
-		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "GetWrite() should be called by the writer thread");
-
-		return m_write;
-	}
-
-	// Write the changes to the exchange buffer
-	void Publish()
-	{
-		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "Publish() should be called by the writer thread");
-
-		if (!m_ready.load(std::memory_order_acquire))
-		{
-			std::swap(m_swap, m_write);
-
-			m_ready.store(true, std::memory_order_release);
-		}
-	}
-
-	// Obtain the latest changes made by the writer if there are any
-	void Retrieve()
-	{
-		DEBUG_ASSERT(m_reader_id == std::this_thread::get_id(), "Retrieve() should be called by the owner thread");
-
-		if (m_ready.load(std::memory_order_acquire))
-		{
-			std::swap(m_read, m_swap);
-
-			m_ready.store(false, std::memory_order_release);
-		}
-	}
-
-	// Get the read buffer. Calling Retrieve with references still around is undefined
-	T& GetRead()
-	{
-		DEBUG_ASSERT(m_reader_id == std::this_thread::get_id(), "GetRead() should be called by the owner thread");
-
-		return m_read;
-	}
-
-private:
-	std::atomic_bool m_ready = false;
-	alignas(k_cache_line) T m_write;
-	alignas(k_cache_line) T m_swap;
-	alignas(k_cache_line) T m_read;
-
-#if defined(DEBUG_ENABLED)
-	std::thread::id m_reader_id; // The thread that reads the cache and should call Retrieve() on it
-	std::thread::id m_writer_id; // The thread that does updates and calls Write() and Publish() on it
-#endif
 };

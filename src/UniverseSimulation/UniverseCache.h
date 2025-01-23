@@ -127,6 +127,11 @@ namespace voxel_game
 		void AddInfoUpdate(InfoUpdate&& update);
 
 	private:
-		SwapBuffer<std::vector<InfoUpdate>> m_updates;
+		alignas(k_cache_line) std::vector<InfoUpdate> m_updates_write;
+		alignas(k_cache_line) SwapBuffer<std::vector<InfoUpdate>> m_updates_swap;
+
+#if defined(DEBUG_ENABLED)
+		std::thread::id m_writer_id; // The thread that does updates and calls Write() and Publish() on it
+#endif
 	};
 }

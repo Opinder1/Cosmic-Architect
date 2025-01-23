@@ -54,7 +54,7 @@ namespace voxel_game
 #if defined(DEBUG_ENABLED)
 	void UniverseCacheUpdater::SetWriterThread(std::thread::id writer_id)
 	{
-		m_updates.SetWriterThread(writer_id);
+		m_writer_id = writer_id;
 	}
 #endif
 
@@ -94,23 +94,27 @@ namespace voxel_game
 
 	void UniverseCacheUpdater::AddInfoUpdate(InfoUpdate&& update)
 	{
-		m_updates.GetWrite().emplace_back(std::move(update));
+		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "Publish() should be called by the writer thread");
+
+		m_updates_write.emplace_back(std::move(update));
 	}
 
 	void UniverseCacheUpdater::PublishUpdates()
 	{
-		m_updates.Publish();
+		DEBUG_ASSERT(m_writer_id == std::this_thread::get_id(), "Publish() should be called by the writer thread");
+
+		m_updates_swap.Publish(m_updates_write);
 	}
 
 	void UniverseCacheUpdater::RetrieveUpdates(UniverseCache& out)
 	{
-		std::vector<InfoUpdate> updates;
+		std::vector<InfoUpdate> updates_read;
 
-		m_updates.Retrieve(updates);
+		m_updates_swap.Retrieve(updates_read);
 
 		std::lock_guard lock(out.mutex);
 
-		for (const InfoUpdate& update : updates)
+		for (const InfoUpdate& update : updates_read)
 		{
 			if (update.key == UUID())
 			{

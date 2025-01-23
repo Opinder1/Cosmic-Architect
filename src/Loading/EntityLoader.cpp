@@ -23,18 +23,10 @@ namespace voxel_game::loading
 		{
 			m_thread.join();
 
-#if defined(DEBUG_ENABLED)
-			m_modification_stage.SetThreads(std::this_thread::get_id(), std::this_thread::get_id());
-#endif
-
-			// Merge remaining modifications that were already published
-			m_modification_stage.Retrieve();
-			m_modification_stage.GetRead().merge();
-
-			// Merge remaining modifications that were not published
-			m_modification_stage.Publish();
-			m_modification_stage.Retrieve();
-			m_modification_stage.GetRead().merge();
+			// Merge remaining modifications
+			m_modifications_swap.Retrieve(m_modifications_read);
+			m_modifications_read.merge();
+			m_modifications_write.merge();
 		}
 
 	}
@@ -48,6 +40,10 @@ namespace voxel_game::loading
 			return;
 		}
 
+#if defined(DEBUG_ENABLED)
+			m_owner_id = std::this_thread::get_id();
+#endif
+
 		m_worker.world = world.c_ptr();
 
 		m_modification_stage.Reset(world.async_stage(), world.async_stage(), world.async_stage());
@@ -56,6 +52,10 @@ namespace voxel_game::loading
 
 		if (thread_mode == ThreadMode::MultiThreaded)
 		{
+			m_modifications_write = world.async_stage();
+			m_modifications_swap.Reset(m_modifications_read.async_stage());
+			m_modifications_read = world.async_stage();
+
 			m_thread = std::thread(&EntityLoader::ThreadLoop, this);
 
 #if defined(DEBUG_ENABLED)
@@ -74,13 +74,14 @@ namespace voxel_game::loading
 	void EntityLoader::Progress()
 	{
 		DEBUG_ASSERT(m_running, "Our worker thread should be running");
+		DEBUG_ASSERT(m_owner_id == std::this_thread::get_id(), "Progress() should be called by the owner thread");
 
 		if (IsThreaded())
 		{
-			m_commands.Publish();
+			m_commands_swap.Publish(m_commands_write);
 
-			m_modification_stage.Retrieve();
-			m_modification_stage.GetRead().merge();
+			m_modifications_swap.Retrieve(m_modifications_read);
+			m_modifications_read.merge();
 
 			while (m_worker.entity_pool.size() < k_entity_pool_max)
 			{
@@ -100,7 +101,7 @@ namespace voxel_game::loading
 
 		if (IsThreaded())
 		{
-			m_commands.GetWrite().AddCommand<&EntityLoader::DoOpenCommand>(path, m_new_handle);
+			m_commands_write.AddCommand<&EntityLoader::DoOpenCommand>(path, m_new_handle);
 		}
 		else
 		{
@@ -122,7 +123,7 @@ namespace voxel_game::loading
 
 		if (IsThreaded())
 		{
-			m_commands.GetWrite().AddCommand<&EntityLoader::DoCloseCommand>(it->second);
+			m_commands_write.AddCommand<&EntityLoader::DoCloseCommand>(it->second);
 		}
 		else
 		{
@@ -149,7 +150,7 @@ namespace voxel_game::loading
 
 		if (IsThreaded())
 		{
-			m_commands.GetWrite().AddCommand<&EntityLoader::DoLoadCommand>(uuid, entity, db_handle);
+			m_commands_write.AddCommand<&EntityLoader::DoLoadCommand>(uuid, entity, db_handle);
 		}
 		else
 		{
@@ -163,7 +164,7 @@ namespace voxel_game::loading
 
 		if (IsThreaded())
 		{
-			m_commands.GetWrite().AddCommand<&EntityLoader::DoSaveCommand>(uuid, entity, db_handle, std::move(data));
+			m_commands_write.AddCommand<&EntityLoader::DoSaveCommand>(uuid, entity, db_handle, std::move(data));
 		}
 		else
 		{
@@ -177,7 +178,7 @@ namespace voxel_game::loading
 
 		if (IsThreaded())
 		{
-			m_commands.GetWrite().AddCommand<&EntityLoader::DoDeleteCommand>(uuid, entity, db_handle);
+			m_commands_write.AddCommand<&EntityLoader::DoDeleteCommand>(uuid, entity, db_handle);
 		}
 		else
 		{
@@ -242,9 +243,9 @@ namespace voxel_game::loading
 
 	void EntityLoader::ProcessCommands()
 	{
-		TypedCommandBuffer commands;
+		TypedCommandBuffer commands_read;
 
-		m_commands.Retrieve(commands);
+		m_commands_swap.Retrieve(commands_read);
 
 		commands.ProcessCommands(this);
 	}
@@ -320,7 +321,7 @@ namespace voxel_game::loading
 
 			if (m_worker.modifications_added)
 			{
-				m_modification_stage.Publish();
+				m_modifications_swap.Publish(m_modifications_write);
 			}
 
 			std::this_thread::yield();
