@@ -1,5 +1,6 @@
 #include "GalaxyModule.h"
 #include "GalaxyComponents.h"
+#include "GalaxyPrefabs.h"
 
 #include "Galaxy/GalaxyComponents.h"
 
@@ -19,8 +20,8 @@ namespace voxel_game::galaxy
 	{
 		world.module<Module>();
 
-		world.import<universe::Components>();
 		world.import<Components>();
+		world.import<Prefabs>();
 		world.import<spatial3d::Components>();
 		world.import<physics3d::Components>();
 
