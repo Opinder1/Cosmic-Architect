@@ -17,6 +17,9 @@ namespace voxel_game
 		INITIALIZE_STRINGNAME(disconnect_from_galaxy_list);
 		INITIALIZE_STRINGNAME(query_galaxy_list);
 		INITIALIZE_STRINGNAME(ping_remote_galaxy);
+		INITIALIZE_STRINGNAME(start_local_galaxy);
+		INITIALIZE_STRINGNAME(connect_to_galaxy);
+		INITIALIZE_STRINGNAME(disconnect_from_galaxy);
 
 		// ####### Fragments (admin only) #######
 
@@ -244,6 +247,8 @@ namespace voxel_game
 		INITIALIZE_STRINGNAME(disconnected_from_galaxy_list);
 		INITIALIZE_STRINGNAME(galaxy_list_query_response);
 		INITIALIZE_STRINGNAME(galaxy_ping_response);
+		INITIALIZE_STRINGNAME(connected_to_galaxy);
+		INITIALIZE_STRINGNAME(disconnected_from_galaxy);
 
 		// ####### Galaxy #######
 

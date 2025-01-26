@@ -41,7 +41,7 @@ namespace voxel_game
 {
 	const size_t k_simulation_ticks_per_second = 20;
 
-	flecs::entity CreateNewUniverse(flecs::world& world, godot::RID scenario_id)
+	flecs::entity CreateNewUniverse(flecs::world& world, const godot::StringName& path, godot::RID scenario_id)
 	{
 		// Create the universe
 		flecs::entity universe_entity = world.entity();
@@ -49,6 +49,8 @@ namespace voxel_game
 #if defined(DEBUG_ENABLED)
 		universe_entity.set_name("Universe");
 #endif
+
+		universe_entity.emplace<sim::Path>(path);
 
 		universe_entity.add<universe::World>();
 
@@ -71,44 +73,6 @@ namespace voxel_game
 		return universe_entity;
 	}
 
-	flecs::entity CreateNewSimulatedGalaxy(flecs::world& world, const godot::String& path, flecs::entity_t universe_entity, godot::RID scenario_id)
-	{
-		// Create the simulated galaxy
-		flecs::entity galaxy_entity = world.entity();
-
-#if defined(DEBUG_ENABLED)
-		galaxy_entity.set_name("SimulatedGalaxy");
-#endif
-
-		loading::Database& database = galaxy_entity.ensure<loading::Database>();
-		database.path = path;
-
-		galaxy_entity.child_of(universe_entity);
-
-		galaxy_entity.add<galaxy::World>();
-
-		spatial3d::World& spatial_world = galaxy_entity.ensure<spatial3d::World>();
-		spatial_world.max_scale = spatial3d::k_max_world_scale;
-
-		galaxy_entity.add<physics3d::Position>();
-		galaxy_entity.add<physics3d::Rotation>();
-
-		// We want the simulated galaxy to load all galaxies around it
-		spatial3d::Loader& spatial_loader = galaxy_entity.ensure<spatial3d::Loader>();
-		spatial_loader.dist_per_lod = 3;
-		spatial_loader.min_lod = 0;
-		spatial_loader.max_lod = spatial3d::k_max_world_scale;
-
-		spatial3d::AddScaleMarkers(galaxy_entity, 0, spatial_world.max_scale);
-
-		if (scenario_id.is_valid())
-		{
-			galaxy_entity.add<rendering::Transform>();
-		}
-
-		return galaxy_entity;
-	}
-
 	std::optional<godot::StringName> UniverseSimulation::k_emit_signal;
 	std::optional<const UniverseSimulation::CommandStrings> UniverseSimulation::k_commands;
 	std::optional<const UniverseSimulation::SignalStrings> UniverseSimulation::k_signals;
@@ -121,15 +85,22 @@ namespace voxel_game
 		WaitUntilStopped();
 	}
 
-	void UniverseSimulation::Initialize(const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario)
+	void UniverseSimulation::Initialize(const godot::String& path, godot::RID scenario)
 	{
-		DEBUG_ASSERT(m_path.is_empty(), "We can't initialize a simulation twice");
 		DEBUG_ASSERT(!path.is_empty(), "The path must be valid");
 
 		m_path = path;
-		m_fragment_type = fragment_type;
-		m_server_type = server_type;
 		m_scenario = scenario;
+	}
+
+	bool UniverseSimulation::CanSimulationStart()
+	{
+		return true;
+	}
+
+	void UniverseSimulation::DoSimulationLoad()
+	{
+		m_world = flecs::world();
 
 		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
 
@@ -149,37 +120,16 @@ namespace voxel_game
 		m_world.import<galaxy::Module>();
 		m_world.import<universe::Module>();
 
-		if (m_server_type == ServerType::SERVER_TYPE_REMOTE)
-		{
-			// Import networking
-		}
-
 		if (m_scenario.is_valid())
 		{
 			m_world.import<rendering::Module>();
 		}
-	}
 
-	bool UniverseSimulation::CanSimulationStart()
-	{
-		if (m_path.is_empty())
-		{
-			DEBUG_PRINT_ERROR("This universe simulation should have a valid path");
-			return false;
-		}
-
-		return true;
-	}
-
-	void UniverseSimulation::DoSimulationLoad()
-	{
 		m_world.ensure<loading::EntityLoader>().Initialize(m_world, loading::EntityLoader::MultiThreaded);
 
-		// Create the universe and simulated galaxy
+		// Create the universe
 
-		m_universe_entity = CreateNewUniverse(m_world, m_scenario);
-
-		m_galaxy_entity = CreateNewSimulatedGalaxy(m_world, m_path, m_universe_entity, m_scenario);
+		m_universe_entity = CreateNewUniverse(m_world, m_path, m_scenario);
 
 #if defined(DEBUG_ENABLED)
 		m_info_updater.SetWriterThread(std::this_thread::get_id());
@@ -188,8 +138,6 @@ namespace voxel_game
 
 	void UniverseSimulation::DoSimulationUnload()
 	{
-		DEBUG_ASSERT(!m_path.is_empty(), "The simulation should have been initialized");
-
 #if defined(DEBUG_ENABLED)
 		m_info_updater.SetWriterThread(std::thread::id{}); // We may not start in thread mode next time
 #endif
@@ -262,7 +210,7 @@ namespace voxel_game
 		BIND_ENUM_CONSTANT(SERVER_TYPE_LOCAL);
 		BIND_ENUM_CONSTANT(SERVER_TYPE_REMOTE);
 
-		BIND_METHOD(godot::D_METHOD(k_commands->initialize, "path", "fragment_type", "server_type", "scenario"), &UniverseSimulation::Initialize);
+		BIND_METHOD(godot::D_METHOD(k_commands->initialize, "path", "scenario"), &UniverseSimulation::Initialize);
 
 #if defined(DEBUG_ENABLED)
 		BIND_METHOD(godot::D_METHOD(k_commands->debug_command, "command", "arguments"), &UniverseSimulation::DebugCommand);
@@ -275,6 +223,9 @@ namespace voxel_game
 		BIND_METHOD(godot::D_METHOD(k_commands->disconnect_from_galaxy_list), &UniverseSimulation::DisconnectFromGalaxyList);
 		BIND_METHOD(godot::D_METHOD(k_commands->query_galaxy_list, "query"), &UniverseSimulation::QueryGalaxyList);
 		BIND_METHOD(godot::D_METHOD(k_commands->ping_remote_galaxy, "ip"), &UniverseSimulation::PingRemoteGalaxy);
+		BIND_METHOD(godot::D_METHOD(k_commands->start_local_galaxy, "path", "fragment_type", "server_type"), &UniverseSimulation::StartLocalGalaxy);
+		BIND_METHOD(godot::D_METHOD(k_commands->connect_to_galaxy, "path", "ip"), &UniverseSimulation::ConnectToGalaxy);
+		BIND_METHOD(godot::D_METHOD(k_commands->disconnect_from_galaxy), &UniverseSimulation::DisconnectFromGalaxy);
 
 		// ####### Fragments (admin only) #######
 
@@ -494,6 +445,15 @@ namespace voxel_game
 		BIND_METHOD(godot::D_METHOD(k_commands->use_spell, "spell_index", "params"), &UniverseSimulation::UseSpell);
 
 		// ####### Universe #######
+
+		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_galaxy_list));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->disconnected_from_galaxy_list));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_list_query_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_ping_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_galaxy));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->disconnected_from_galaxy));
+
+		// ####### Galaxy #######
 
 		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_remote));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->disonnected_from_remote));

@@ -47,7 +47,7 @@ namespace voxel_game
 		UniverseSimulation();
 		~UniverseSimulation();
 
-		void Initialize(const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario);
+		void Initialize(const godot::String& path, godot::RID scenario);
 
 		bool CanSimulationStart() final;
 		void DoSimulationLoad() final;
@@ -66,6 +66,9 @@ namespace voxel_game
 		void DisconnectFromGalaxyList();
 		void QueryGalaxyList(const godot::Dictionary& query);
 		void PingRemoteGalaxy(const godot::String& ip);
+		void StartLocalGalaxy(const godot::String& path, const godot::String& fragment_type, ServerType server_type);
+		void ConnectToGalaxy(const godot::String& path, const godot::String& ip);
+		void DisconnectFromGalaxy();
 
 		// ####### Fragments (admin only) #######
 
@@ -304,14 +307,12 @@ namespace voxel_game
 		static void _cleanup_methods();
 
 	private:
-		// Universe data. Not thread safe
-		godot::StringName m_path;
-		godot::StringName m_fragment_type;
-		ServerType m_server_type = ServerType::SERVER_TYPE_LOCAL;
+		// Initialization variables
+		godot::String m_path;
 		godot::RID m_scenario;
-		flecs::world m_world;
 
-		// Quick access entities. Not thread safe
+		// World and quick access entities. Not thread safe
+		flecs::world m_world;
 		flecs::entity_t m_universe_entity = 0;
 		flecs::entity_t m_galaxy_entity = 0;
 		flecs::entity_t m_player_entity = 0;

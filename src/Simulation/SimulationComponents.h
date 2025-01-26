@@ -40,6 +40,11 @@ namespace voxel_game::sim
 		Clock::time_point epoch;
 	};
 
+	struct Path
+	{
+		godot::StringName path;
+	};
+
 	struct Config
 	{
 		godot::Dictionary values;

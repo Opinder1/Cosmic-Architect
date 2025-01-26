@@ -16,6 +16,9 @@ namespace voxel_game
 		godot::StringName disconnect_from_galaxy_list;
 		godot::StringName query_galaxy_list;
 		godot::StringName ping_remote_galaxy;
+		godot::StringName start_local_galaxy;
+		godot::StringName connect_to_galaxy;
+		godot::StringName disconnect_from_galaxy;
 
 		// ####### Fragments (admin only) #######
 
@@ -245,6 +248,8 @@ namespace voxel_game
 		godot::StringName disconnected_from_galaxy_list;
 		godot::StringName galaxy_list_query_response;
 		godot::StringName galaxy_ping_response;
+		godot::StringName connected_to_galaxy;
+		godot::StringName disconnected_from_galaxy;
 
 		// ####### Galaxy #######
 
