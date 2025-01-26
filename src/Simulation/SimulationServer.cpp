@@ -88,12 +88,6 @@ namespace voxel_game
 		if (m_state.load(std::memory_order_acquire) == State::Loaded) // Don't progress until loaded
 		{
 			keep_running = DoSimulationProgress(delta);
-
-			if (IsThreaded())
-			{
-				// Process signals here as we don't need to defer them
-				m_deferred_signals.ProcessCommands(this);
-			}
 		}
 
 		return keep_running;
@@ -122,8 +116,11 @@ namespace voxel_game
 
 			DoSimulationThreadProgress();
 
-			// Flush signals to be executed on main thread
-			CommandServer::get_singleton()->AddCommands(get_instance_id(), std::move(m_deferred_signals));
+			if (m_deferred_signals.NumCommands() > 0)
+			{
+				// Flush signals to be executed on main thread
+				CommandServer::get_singleton()->AddCommands(get_instance_id(), std::move(m_deferred_signals));
+			}
 		}
 
 		DoSimulationUnload();
@@ -173,7 +170,7 @@ namespace voxel_game
 		BIND_METHOD(godot::D_METHOD("is_threaded"), &SimulationServer::IsThreaded);
 		BIND_METHOD(godot::D_METHOD("progress", "delta"), &SimulationServer::Progress);
 
-		GDVIRTUAL_BIND(_can_simulation_start, "thread_mode");
+		GDVIRTUAL_BIND(_can_simulation_start);
 		GDVIRTUAL_BIND(_do_simulation_load);
 		GDVIRTUAL_BIND(_do_simulation_unload);
 		GDVIRTUAL_BIND(_simulation_progress, "delta");

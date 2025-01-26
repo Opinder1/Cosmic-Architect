@@ -116,7 +116,14 @@ namespace voxel_game
 	{
 		DEBUG_ASSERT(!IsThreaded() || std::this_thread::get_id() == m_thread.get_id(), "When in threaded mode this should only be called by the worker");
 
-		m_deferred_signals.AddCommand<&Simulation::emit_signal>(signal, std::forward<Args>(args)...);
+		if (IsThreaded())
+		{
+			m_deferred_signals.AddCommand<&SimulationServer::emit_signal<Args...>>(signal, std::forward<Args>(args)...);
+		}
+		else
+		{
+			emit_signal(signal, std::forward<Args>(args)...);
+		}
 	}
 
 	template<auto Method, class... Args>
