@@ -35,15 +35,16 @@ namespace voxel_game
 			return;
 		}
 
-		State& state = godot::RenderingServer::get_singleton()->get_instance_id() ? m_rendering_state : m_state;
+		State& state = godot::RenderingServer::get_singleton()->get_instance_id() == object_id ? m_rendering_state : m_state;
 
 		std::lock_guard lock(state.buffers_mutex);
 
 		Entry& commands = state.command_buffers.emplace_back();
-			
+
 		state.num_commands += command_buffer->NumCommands();
 		state.lifetime_commands += command_buffer->NumCommands();
 
+		commands.object_id = object_id;
 		commands.buffer = std::move(command_buffer);
 	}
 
