@@ -115,5 +115,9 @@ namespace voxel_game
 		{
 			return;
 		}
+
+		ecs_delete(m_world, m_galaxy_entity);
+
+		QueueSignal(k_signals->disconnected_from_galaxy);
 	}
 }
