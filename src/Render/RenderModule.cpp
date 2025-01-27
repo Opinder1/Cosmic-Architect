@@ -122,7 +122,10 @@ namespace voxel_game::rendering
 
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
 
-            thread_context.commands.AddCommand<&godot::RenderingServer::instance_set_transform>(instance.id, transform.transform);
+            if (transform.modified)
+            {
+                thread_context.commands.AddCommand<&godot::RenderingServer::instance_set_transform>(instance.id, transform.transform);
+            }
         });
     }
     
