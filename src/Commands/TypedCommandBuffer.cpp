@@ -1,4 +1,4 @@
-#include "CommandBuffer.h"
+#include "TypedCommandBuffer.h"
 
 #include "Util/Debug.h"
 #include "Util/StackAllocator.h"

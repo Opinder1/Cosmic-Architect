@@ -1,6 +1,7 @@
 #include "SimulationServer.h"
 
-#include "Util/CommandServer.h"
+#include "Commands/CommandServer.h"
+
 #include "Util/Debug.h"
 #include "Util/PropertyMacros.h"
 

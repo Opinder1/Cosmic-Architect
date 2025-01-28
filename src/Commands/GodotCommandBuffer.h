@@ -1,8 +1,9 @@
 #pragma once
 
-#include "TypedCommandBuffer.h"
-#include "Nocopy.h"
-#include "Debug.h"
+#include "CommandBufferEntry.h"
+
+#include "Util/Nocopy.h"
+#include "Util/Debug.h"
 
 #include <godot_cpp/variant/variant.hpp>
 #include <godot_cpp/classes/object.hpp>
@@ -12,8 +13,6 @@
 
 namespace voxel_game
 {
-	constexpr const size_t k_starting_buffer_size = 4096;
-
 	// Command header
 	struct alignas(1) Command
 	{
@@ -78,18 +77,18 @@ namespace voxel_game
 	// Buffer which commands can be added to and processed in the order they are added.
 	// We pay a cost for expensive types when writing the command name StringName and expensive arguments.
 	// We also pay a cost when moving expensive types into variants for execution but not inexpensive types nor the command name StringName
-	class CommandBuffer : Nocopy
+	class GodotCommandBuffer : Nocopy
 	{
 	public:
 		using Storage = std::vector<std::byte>;
 
 	public:
-		CommandBuffer();
-		~CommandBuffer();
+		GodotCommandBuffer();
+		~GodotCommandBuffer();
 
-		CommandBuffer(CommandBuffer&& other) noexcept;
+		GodotCommandBuffer(GodotCommandBuffer&& other) noexcept;
 
-		CommandBuffer& operator=(CommandBuffer&& other) noexcept;
+		GodotCommandBuffer& operator=(GodotCommandBuffer&& other) noexcept;
 
 		// Register a new command for the queue
 		template<class... Args>
@@ -98,7 +97,7 @@ namespace voxel_game
 		void AddCommandVararg(const godot::StringName& command, const godot::Variant** args, uint8_t argcount);
 
 		// Process only up to a certain number of commands and return how many were processed (0 for max to process all)
-		size_t ProcessCommands(godot::Object* object, size_t max = 0);
+		size_t ProcessCommands(godot::Object* object, size_t max = k_process_all_commands);
 
 		size_t NumCommands() const;
 
@@ -118,11 +117,11 @@ namespace voxel_game
 	VariantType GetVariantType();
 
 	// Write a variant to a buffer
-	void WriteGenericVariant(CommandBuffer::Storage& buffer, const godot::Variant& argument);
+	void WriteGenericVariant(GodotCommandBuffer::Storage& buffer, const godot::Variant& argument);
 
 	// Write a type interpreted as a variant to a buffer
 	template<class T>
-	void WriteVariant(CommandBuffer::Storage& buffer, T&& argument)
+	void WriteVariant(GodotCommandBuffer::Storage& buffer, T&& argument)
 	{
 		// Get the plain type
 		using PlainT = std::remove_pointer_t<std::remove_cv_t<std::remove_reference_t<T>>>;
@@ -153,7 +152,7 @@ namespace voxel_game
 	}
 
 	template<class... Args>
-	void CommandBuffer::AddCommand(const godot::StringName& command, Args&&... args)
+	void GodotCommandBuffer::AddCommand(const godot::StringName& command, Args&&... args)
 	{
 		DEBUG_ASSERT(!command.is_empty(), "The command should not be an empty string");
 		DEBUG_ASSERT(m_start == 0, "We shouldn't be adding commands when we are already processing the buffer");

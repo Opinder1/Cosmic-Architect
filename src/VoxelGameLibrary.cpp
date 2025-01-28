@@ -4,8 +4,8 @@
 
 #include "Render/RenderAllocator.h"
 
-#include "Util/CommandWriter.h"
-#include "Util/CommandServer.h"
+#include "Commands/CommandWriter.h"
+#include "Commands/CommandServer.h"
 
 #include "Util/Debug.h"
 

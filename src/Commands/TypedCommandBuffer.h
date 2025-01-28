@@ -1,8 +1,10 @@
 #pragma once
 
-#include "Util.h"
-#include "Nocopy.h"
-#include "Debug.h"
+#include "CommandBufferEntry.h"
+
+#include "Util/Util.h"
+#include "Util/Nocopy.h"
+#include "Util/Debug.h"
 
 #include <utility>
 #include <vector>
@@ -31,7 +33,7 @@ namespace voxel_game
 		void AddCommand(Args&&... p_args);
 
 		// Process only up to a certain number of commands and return how many were processed (0 for max to process all)
-		size_t ProcessCommands(void* object, size_t max = 0);
+		size_t ProcessCommands(void* object, size_t max = k_process_all_commands);
 
 		size_t NumCommands() const;
 

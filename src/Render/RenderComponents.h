@@ -3,7 +3,8 @@
 #include "RenderAllocator.h"
 #include "RenderInstancer.h"
 
-#include "Util/TypedCommandBuffer.h"
+#include "Commands/TypedCommandBuffer.h"
+
 #include "Util/PerThread.h"
 #include "Util/Nocopy.h"
 

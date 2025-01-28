@@ -45,6 +45,7 @@ namespace voxel_game
 		state.lifetime_commands += command_buffer->NumCommands();
 
 		commands.object_id = object_id;
+		commands.added_time = Clock::now();
 		commands.buffer = std::move(command_buffer);
 	}
 
@@ -108,8 +109,15 @@ namespace voxel_game
 		size_t processed_commands = 0;
 
 		// Keep processing buffers until we run out of time
-		while (Clock::now() < end_time)
+		while (1)
 		{
+			Clock::time_point current_time = Clock::now();
+
+			if (current_time < end_time)
+			{
+				break;
+			}
+
 			if (!state.buffer_in_progress)
 			{
 				// Try to get a new buffer to process as we don't have one
@@ -120,37 +128,42 @@ namespace voxel_game
 					break; // No new buffers
 				}
 
-				state.current_buffer = std::move(state.command_buffers.front()); // command_buffers guaranteed to be empty() after
+				state.current_buffer = std::move(state.command_buffers.front()); // command_buffers front guaranteed to be empty() after
 				state.command_buffers.pop_front();
 				state.buffer_in_progress = true;
 			}
 
-			godot::Object* object;
+			// If its been more than 5 seconds since the buffer was added then we are delayed so speed up
+			bool force_commands = current_time - state.current_buffer.added_time > 5s;
+
+			size_t iter_commands = force_commands ? k_process_all_commands : k_max_commands_per_iter;
 
 			// Use the provided object if given else use the buffers object
 			if (object_override != nullptr)
 			{
-				object = object_override;
+				DEBUG_ASSERT(state.current_buffer.buffer->NumCommands() > 0, "We should have commands in the buffer else why did we add it");
+
+				processed_commands += state.current_buffer.buffer->ProcessCommands(object_override, iter_commands);
 			}
 			else
 			{
 				DEBUG_ASSERT(godot::ObjectID(state.current_buffer.object_id).is_valid(), "The command should be run on a valid object");
 
-				object = godot::ObjectDB::get_instance(state.current_buffer.object_id);
-			}
+				godot::Object* object = godot::ObjectDB::get_instance(state.current_buffer.object_id);
 
-			if (object != nullptr)
-			{
-				DEBUG_ASSERT(state.current_buffer.buffer->NumCommands() > 0, "We should have commands in the buffer else why did we add it");
+				if (object != nullptr)
+				{
+					DEBUG_ASSERT(state.current_buffer.buffer->NumCommands() > 0, "We should have commands in the buffer else why did we add it");
 
-				processed_commands += state.current_buffer.buffer->ProcessCommands(object, k_max_commands_per_iter);
-			}
-			else
-			{
-				DEBUG_PRINT_ERROR("The object that the command queue was queueing for was deleted");
-				state.current_buffer.buffer->Clear();
-				state.current_buffer.buffer->ShrinkToFit();
-				state.buffer_in_progress = false;
+					processed_commands += state.current_buffer.buffer->ProcessCommands(object, iter_commands);
+				}
+				else
+				{
+					DEBUG_PRINT_ERROR("The object that the command queue was queueing for was deleted");
+					state.current_buffer.buffer->Clear();
+					state.current_buffer.buffer->ShrinkToFit();
+					state.buffer_in_progress = false;
+				}
 			}
 
 			// We finished the current buffer
@@ -167,7 +180,7 @@ namespace voxel_game
 		{
 			std::lock_guard lock(state.buffers_mutex);
 
-			DEBUG_ASSERT(state.num_commands - processed_commands >= 0, "We processed more commands than we have?");
+			DEBUG_ASSERT(state.num_commands >= processed_commands, "We processed more commands than we have?");
 
 			state.num_commands -= processed_commands;
 		}

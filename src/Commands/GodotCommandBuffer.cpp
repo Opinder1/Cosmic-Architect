@@ -1,4 +1,4 @@
-#include "CommandBuffer.h"
+#include "GodotCommandBuffer.h"
 
 #include "Util/Debug.h"
 #include "Util/StackAllocator.h"
@@ -245,7 +245,17 @@ namespace voxel_game
 		}
 	}
 
-	void WriteGenericVariant(CommandBuffer::Storage& buffer, const godot::Variant& argument)
+	// Write a type to a buffer. We write the plain type while allowing pointers
+	template<class T, class ArgT>
+	void WriteType(GodotCommandBuffer::Storage& buffer, ArgT&& data)
+	{
+		size_t pos = buffer.size();
+		buffer.resize(pos + sizeof(T));
+
+		new (buffer.data() + pos) T(std::forward<ArgT>(data));
+	}
+
+	void WriteGenericVariant(GodotCommandBuffer::Storage& buffer, const godot::Variant& argument)
 	{
 		switch (argument.get_type())
 		{
@@ -575,22 +585,22 @@ namespace voxel_game
 		return buffer_pos;
 	}
 
-	CommandBuffer::CommandBuffer()
+	GodotCommandBuffer::GodotCommandBuffer()
 	{
 		m_data.reserve(k_starting_buffer_size);
 	}
 
-	CommandBuffer::~CommandBuffer()
+	GodotCommandBuffer::~GodotCommandBuffer()
 	{
 		Clear();
 	}
 
-	CommandBuffer::CommandBuffer(CommandBuffer&& other) noexcept
+	GodotCommandBuffer::GodotCommandBuffer(GodotCommandBuffer&& other) noexcept
 	{
 		*this = std::move(other);
 	}
 
-	CommandBuffer& CommandBuffer::operator=(CommandBuffer&& other) noexcept
+	GodotCommandBuffer& GodotCommandBuffer::operator=(GodotCommandBuffer&& other) noexcept
 	{
 		Clear();
 
@@ -605,7 +615,7 @@ namespace voxel_game
 		return *this;
 	}
 
-	void CommandBuffer::AddCommandVararg(const godot::StringName& command, const godot::Variant** args, uint8_t argcount)
+	void GodotCommandBuffer::AddCommandVararg(const godot::StringName& command, const godot::Variant** args, uint8_t argcount)
 	{
 		DEBUG_ASSERT(!command.is_empty(), "The command should not be an empty string");
 		DEBUG_ASSERT(m_start == 0, "We shouldn't be adding commands when we are already processing the buffer");
@@ -625,7 +635,7 @@ namespace voxel_game
 		m_num_commands++;
 	}
 
-	size_t CommandBuffer::ProcessCommands(godot::Object* object, size_t max)
+	size_t GodotCommandBuffer::ProcessCommands(godot::Object* object, size_t max)
 	{
 		DEBUG_ASSERT(object != nullptr, "The object we are trying to process on should be valid");
 
@@ -661,12 +671,12 @@ namespace voxel_game
 		return num_processed;
 	}
 
-	size_t CommandBuffer::NumCommands() const
+	size_t GodotCommandBuffer::NumCommands() const
 	{
 		return m_num_commands;
 	}
 
-	void CommandBuffer::Clear()
+	void GodotCommandBuffer::Clear()
 	{
 		// Go through the buffer and read command data as if we were processing the commands but only destroy the data
 
@@ -682,7 +692,7 @@ namespace voxel_game
 		m_num_commands = 0;
 	}
 
-	void CommandBuffer::ShrinkToFit()
+	void GodotCommandBuffer::ShrinkToFit()
 	{
 		m_data.shrink_to_fit();
 	}

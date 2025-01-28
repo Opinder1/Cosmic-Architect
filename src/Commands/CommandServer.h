@@ -1,9 +1,11 @@
 #pragma once
 
-#include "Util.h"
-#include "Debug.h"
-#include "GodotMemory.h"
-#include "PerThread.h"
+#include "CommandBufferEntry.h"
+
+#include "Util/Util.h"
+#include "Util/Debug.h"
+#include "Util/GodotMemory.h"
+#include "Util/PerThread.h"
 
 #include <godot_cpp/classes/object.hpp>
 
@@ -16,52 +18,6 @@
 
 namespace voxel_game
 {
-	class CommandBufferEntryBase : Nocopy
-	{
-	public:
-		CommandBufferEntryBase() {}
-
-		virtual size_t ProcessCommands(godot::Object* object, size_t max = 0) = 0;
-
-		virtual size_t NumCommands() const = 0;
-
-		virtual void Clear() = 0;
-
-		virtual void ShrinkToFit() = 0;
-	};
-
-	template<class T>
-	class CommandBufferEntry final : public CommandBufferEntryBase
-	{
-	public:
-		CommandBufferEntry(T&& buffer) :
-			m_buffer(std::move(buffer))
-		{}
-
-		size_t ProcessCommands(godot::Object* object, size_t max = 0) override
-		{
-			return m_buffer.ProcessCommands(object, max);
-		}
-
-		size_t NumCommands() const override
-		{
-			return m_buffer.NumCommands();
-		}
-
-		void Clear() override
-		{
-			m_buffer.Clear();
-		}
-
-		void ShrinkToFit() override
-		{
-			m_buffer.ShrinkToFit();
-		}
-
-	private:
-		T m_buffer;
-	};
-
 	// Server which command buffers can be flushed to and processed frame by frame on the main thread or render thread
 	// 
 	// This class is thread safe but will complain if the wrong thread calls certain methods
@@ -72,6 +28,7 @@ namespace voxel_game
 		struct Entry
 		{
 			godot::ObjectID object_id;
+			Clock::time_point added_time;
 			std::unique_ptr<CommandBufferEntryBase> buffer;
 		};
 
@@ -116,6 +73,7 @@ namespace voxel_game
 
 		static void RenderingFlush();
 
+		static void ProcessBuffer(State& state, godot::Object* object);
 		static void FlushState(State& state, godot::Object* object_override, Clock::duration max_flush_time);
 
 	private:

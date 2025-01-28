@@ -1,8 +1,9 @@
 #pragma once
 
-#include "CommandBuffer.h"
-#include "Debug.h"
-#include "GodotMemory.h"
+#include "GodotCommandBuffer.h"
+
+#include "Util/Debug.h"
+#include "Util/GodotMemory.h"
 
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/classes/ref.hpp>
@@ -55,7 +56,7 @@ namespace voxel_game
 	private:
 		uint64_t m_owner_id = 0;
 		uint64_t m_object_id = 0;
-		CommandBuffer m_command_buffer;
+		GodotCommandBuffer m_command_buffer;
 	};
 
 	template<class... Args>

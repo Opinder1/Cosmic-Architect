@@ -3,7 +3,7 @@
 
 #include "Physics3D/PhysicsComponents.h"
 
-#include "Util/CommandServer.h"
+#include "Commands/CommandServer.h"
 
 #include <godot_cpp/classes/rendering_server.hpp>
 

@@ -1,8 +1,9 @@
 #pragma once
 
+#include "Commands/TypedCommandBuffer.h"
+
 #include "Util/Util.h"
 #include "Util/PerThread.h"
-#include "Util/TypedCommandBuffer.h"
 #include "Util/Debug.h"
 #include "Util/Hash.h"
 
