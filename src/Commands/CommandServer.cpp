@@ -111,16 +111,9 @@ namespace voxel_game
 		// Keep processing buffers until we run out of time
 		while (1)
 		{
-			Clock::time_point current_time = Clock::now();
-
-			if (current_time < end_time)
-			{
-				break;
-			}
-
+			// Try to get a new buffer to process if we don't have one in progress
 			if (!state.buffer_in_progress)
 			{
-				// Try to get a new buffer to process as we don't have one
 				std::lock_guard lock(state.buffers_mutex);
 
 				if (state.command_buffers.size() == 0)
@@ -133,8 +126,15 @@ namespace voxel_game
 				state.buffer_in_progress = true;
 			}
 
-			// If its been more than 5 seconds since the buffer was added then we are delayed so speed up
+			Clock::time_point current_time = Clock::now();
+
+			// If we are too far behind we will process commands regardless of performance loss
 			bool force_commands = current_time - state.current_buffer.added_time > 5s;
+
+			if (!force_commands && current_time >= end_time)
+			{
+				break;
+			}
 
 			size_t iter_commands = force_commands ? k_process_all_commands : k_max_commands_per_iter;
 
