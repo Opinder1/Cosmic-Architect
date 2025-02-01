@@ -52,6 +52,9 @@ namespace voxel_game::voxel
 	struct World
 	{
 		PolyEntry<Node> node_entry;
+		PolyEntry<Scale> scale_entry;
+
+		std::array<Scale, spatial3d::k_max_world_scale> scales;
 	};
 
 	struct VoxelTypeCache

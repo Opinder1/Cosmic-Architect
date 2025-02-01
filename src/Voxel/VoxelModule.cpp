@@ -115,14 +115,15 @@ namespace voxel_game::voxel
 		world.add<Context>();
 
 		world.singleton<World>()
-			.add_second<spatial3d::World>(flecs::With);
+			.add_second<spatial3d::WorldMarker>(flecs::With);
 
 		// Initialise the spatial world of a universe
-		world.observer<World, spatial3d::World>(DEBUG_ONLY("UniverseInitializeSpatialWorld"))
+		world.observer<World, spatial3d::WorldMarker>(DEBUG_ONLY("UniverseInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
-			.each([](World& voxel_world, spatial3d::World& spatial_world)
+			.each([](World& voxel_world, spatial3d::WorldMarker& spatial_world)
 		{
-			voxel_world.node_entry = spatial_world.node_type.AddEntry<Node>();
+			voxel_world.node_entry = spatial_world.world.node_type.AddEntry<Node>();
+			voxel_world.scale_entry = spatial_world.world.scale_type.AddEntry<Scale>();
 		});
 	}
 
@@ -193,14 +194,14 @@ namespace voxel_game::voxel
 
 		while (1)
 		{
-			spatial3d::Node* child_node = node->children[node_pos.x & 0x1][node_pos.y & 0x1][node_pos.z & 0x1];
+			Poly child_node_poly = node->children[node_pos.x & 0x1][node_pos.y & 0x1][node_pos.z & 0x1];
 
-			if (child_node == nullptr)
+			if (!child_node_poly.IsValid())
 			{
 				break;
 			}
 
-			node = child_node;
+			node = &child_node_poly.GetEntry(spatial_world.node_entry);
 
 			node_pos.x >>= 2; node_pos.y >>= 2; node_pos.z >>= 2;
 		}

@@ -26,11 +26,12 @@ namespace voxel_game::galaxy
 		world.import<physics3d::Components>();
 
 		// Initialise the spatial world of a galaxy
-		world.observer<World, spatial3d::World>(DEBUG_ONLY("GalaxyInitializeSpatialWorld"))
+		world.observer<World, spatial3d::WorldMarker>(DEBUG_ONLY("GalaxyInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
-			.each([](World& galaxy_world, spatial3d::World& spatial_world)
+			.each([](World& galaxy_world, spatial3d::WorldMarker& spatial_world)
 		{
-			galaxy_world.node_entry = spatial_world.node_type.AddEntry<Node>();
+			galaxy_world.node_entry = spatial_world.world.node_type.AddEntry<Node>();
+			galaxy_world.scale_entry = spatial_world.world.scale_type.AddEntry<Scale>();
 		});
 	}
 }

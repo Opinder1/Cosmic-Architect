@@ -17,18 +17,19 @@ namespace voxel_game::galaxy
 	};
 
 	// This is a specialised node for a galaxy
-	struct Node : spatial3d::Node
+	struct Node
 	{
-		std::vector<flecs::entity_t> entities;
+		std::vector<flecs::entity_t> stars;
 	};
 
 	// This is a specialised scale for a galaxy
-	struct Scale : spatial3d::Scale {};
+	struct Scale {};
 
 	// This entity is a galaxy
 	struct World
 	{
 		PolyEntry<Node> node_entry;
+		PolyEntry<Scale> scale_entry;
 	};
 
 	// This entity is a star

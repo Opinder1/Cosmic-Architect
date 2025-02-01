@@ -55,12 +55,12 @@ namespace voxel_game
 
 		universe_entity.add<universe::World>();
 
-		spatial3d::World& spatial_world = universe_entity.ensure<spatial3d::World>();
-		spatial_world.max_scale = spatial3d::k_max_world_scale;
-		spatial_world.node_size = 16;
-		spatial_world.node_keepalive = 1s;
+		spatial3d::WorldMarker& spatial_world = universe_entity.ensure<spatial3d::WorldMarker>();
+		spatial_world.world.max_scale = spatial3d::k_max_world_scale;
+		spatial_world.world.node_size = 16;
+		spatial_world.world.node_keepalive = 1s;
 
-		spatial3d::AddScaleMarkers(universe_entity, 0, spatial_world.max_scale);
+		spatial3d::InitializeWorldScales(universe_entity, spatial_world);
 
 		if (scenario_id.is_valid())
 		{
