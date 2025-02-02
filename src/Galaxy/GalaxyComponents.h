@@ -2,12 +2,13 @@
 
 #include "Spatial3D/SpatialComponents.h"
 
+#include "Util/Poly.h"
+
+#include <godot_cpp/variant/color.hpp>
+
 #include <flecs/flecs.h>
 
-namespace flecs
-{
-	struct world;
-}
+#include <vector>
 
 namespace voxel_game::galaxy
 {

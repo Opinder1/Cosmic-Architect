@@ -1,16 +1,12 @@
 #pragma once
 
+#include <flecs/flecs.h>
+
 #include <cstdint>
 
 namespace godot
 {
 	struct Vector3i;
-}
-
-namespace flecs
-{
-	struct world;
-	struct entity;
 }
 
 namespace voxel_game::spatial3d

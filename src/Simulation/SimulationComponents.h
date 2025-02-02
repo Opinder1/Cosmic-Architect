@@ -15,11 +15,6 @@
 
 #include <vector>
 
-namespace flecs
-{
-	struct world;
-}
-
 namespace voxel_game::sim
 {
 	constexpr const size_t k_max_pool_entities = 1024;

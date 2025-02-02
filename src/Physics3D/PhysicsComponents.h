@@ -4,10 +4,7 @@
 #include <godot_cpp/variant/Quaternion.hpp>
 #include <godot_cpp/variant/AABB.hpp>
 
-namespace flecs
-{
-	struct world;
-}
+#include <flecs/flecs.h>
 
 namespace voxel_game::physics3d
 {

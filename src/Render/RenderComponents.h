@@ -16,11 +16,6 @@
 #include <array>
 #include <bitset>
 
-namespace flecs
-{
-	struct world;
-}
-
 namespace voxel_game::rendering
 {
 	struct Components

@@ -6,10 +6,7 @@
 
 #include <godot_cpp/variant/string_name.hpp>
 
-namespace flecs
-{
-	class world;
-}
+#include <flecs/flecs.h>
 
 namespace voxel_game::loading
 {

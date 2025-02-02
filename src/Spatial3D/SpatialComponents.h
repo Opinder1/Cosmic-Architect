@@ -17,11 +17,6 @@
 #include <array>
 #include <vector>
 
-namespace flecs
-{
-	struct world;
-}
-
 namespace voxel_game::spatial3d
 {
 	struct Components
