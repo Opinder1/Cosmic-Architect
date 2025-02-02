@@ -1,8 +1,11 @@
 #pragma once
 
-namespace flecs
+#include <flecs/flecs.h>
+
+namespace godot
 {
-	struct world;
+	class StringName;
+	class RID;
 }
 
 namespace voxel_game::universe
@@ -11,4 +14,6 @@ namespace voxel_game::universe
 	{
 		Module(flecs::world& world);
 	};
+
+	flecs::entity CreateNewUniverse(flecs::world& world, const godot::StringName& path, godot::RID scenario_id);
 }

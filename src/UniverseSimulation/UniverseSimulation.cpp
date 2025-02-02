@@ -42,38 +42,6 @@ namespace voxel_game
 {
 	const size_t k_simulation_ticks_per_second = 20;
 
-	flecs::entity CreateNewUniverse(flecs::world& world, const godot::StringName& path, godot::RID scenario_id)
-	{
-		// Create the universe
-		flecs::entity universe_entity = world.entity();
-
-#if defined(DEBUG_ENABLED)
-		universe_entity.set_name("Universe");
-#endif
-
-		universe_entity.emplace<sim::Path>(path);
-
-		universe_entity.add<universe::World>();
-
-		spatial3d::WorldMarker& spatial_world = universe_entity.ensure<spatial3d::WorldMarker>();
-		spatial_world.world.max_scale = spatial3d::k_max_world_scale;
-		spatial_world.world.node_size = 16;
-		spatial_world.world.node_keepalive = 1s;
-
-		spatial3d::InitializeWorldScales(universe_entity, spatial_world);
-
-		if (scenario_id.is_valid())
-		{
-			rendering::Scenario& scenario = universe_entity.ensure<rendering::Scenario>();
-
-			scenario.id = scenario_id;
-
-			universe_entity.add<rendering::Transform>();
-		}
-
-		return universe_entity;
-	}
-
 	std::optional<godot::StringName> UniverseSimulation::k_emit_signal;
 	std::optional<const UniverseSimulation::CommandStrings> UniverseSimulation::k_commands;
 	std::optional<const UniverseSimulation::SignalStrings> UniverseSimulation::k_signals;
@@ -130,7 +98,7 @@ namespace voxel_game
 
 		// Create the universe
 
-		m_universe_entity = CreateNewUniverse(m_world, m_path, m_scenario);
+		m_universe_entity = universe::CreateNewUniverse(m_world, m_path, m_scenario);
 
 #if defined(DEBUG_ENABLED)
 		m_info_updater.SetWriterThread(std::this_thread::get_id());

@@ -1,8 +1,10 @@
 #pragma once
 
-namespace flecs
+#include <flecs/flecs.h>
+
+namespace godot
 {
-	struct world;
+	class String;
 }
 
 namespace voxel_game::galaxy
@@ -11,4 +13,6 @@ namespace voxel_game::galaxy
 	{
 		Module(flecs::world& world);
 	};
+
+	flecs::entity CreateNewSimulatedGalaxy(flecs::world& world, const godot::String& path, flecs::entity_t universe_entity);
 }
