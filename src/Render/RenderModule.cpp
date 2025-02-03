@@ -176,26 +176,6 @@ namespace voxel_game::rendering
             thread_context.commands.AddCommand<&godot::RenderingServer::instance_set_transform>(instance.id, k_invisible_transform); // Fake invisibility until we set transform
             thread_context.commands.AddCommand<&godot::RenderingServer::instance_set_scenario>(instance.id, scenario.id);
         });
-
-#if defined(DEBUG_ENABLED)
-        // When a render instance or scenario is destroyed unset the scenario. This should happen automatically in the render server
-        world.observer<const UniqueInstance, const Scenario, ServerContext>(DEBUG_ONLY("InstanceRemoveScenario"))
-            .event(flecs::OnRemove)
-            .term_at(0).second(flecs::Any)
-            .term_at(1).up(flecs::ChildOf)
-            .term_at(2).singleton().filter()
-            .each([](const UniqueInstance& instance, const Scenario& scenario, ServerContext& context)
-        {
-            ServerThreadContext& thread_context = context.main_thread;
-
-            DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
-
-            if (scenario.id != godot::RID())
-            {
-                thread_context.commands.AddCommand<&godot::RenderingServer::instance_set_scenario>(instance.id, godot::RID());
-            }
-        });
-#endif
     }
 
     void Module::InitUniqueInstance(flecs::world& world)
@@ -258,26 +238,6 @@ namespace voxel_game::rendering
 
             thread_context.commands.AddCommand<&godot::RenderingServer::free_rid>(base.id);
         });
-
-#if defined(DEBUG_ENABLED)
-        // When a render instance or base is destroyed unset the base. This should happen automatically in the render server
-        world.observer<const UniqueInstance, const Base, ServerContext>(DEBUG_ONLY("RenderInstanceRemoveBase"))
-            .event(flecs::OnRemove)
-            .term_at(0).second("$Base")
-            .term_at(1).src("$Base")
-            .term_at(2).singleton().filter()
-            .each([](const UniqueInstance& instance, const Base& base, ServerContext& context)
-        {
-            ServerThreadContext& thread_context = context.main_thread;
-
-            DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
-
-            if (base.id != godot::RID())
-            {
-                thread_context.commands.AddCommand<&godot::RenderingServer::instance_set_base>(instance.id, godot::RID());
-            }
-        });
-#endif
 
         InitPlaceholderCube(world);
         InitMesh(world);
