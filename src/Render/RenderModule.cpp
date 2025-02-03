@@ -111,12 +111,12 @@ namespace voxel_game::rendering
         });
 
         // Update the render instances transform based on the entities position, rotation, scale and parents transform given the entity is not a tree node
-        world.system<UniqueInstance, const Transform, ServerContext>(DEBUG_ONLY("UpdateInstanceTransform"))
+        world.system<Instance, const Transform, ServerContext>(DEBUG_ONLY("UpdateInstanceTransform"))
             .multi_threaded()
             .term_at(0).second(flecs::Any)
             .term_at(1).self().up(flecs::ChildOf)
             .term_at(2).singleton()
-            .each([](flecs::entity entity, UniqueInstance& instance, const Transform& transform, ServerContext& context)
+            .each([](flecs::entity entity, Instance& instance, const Transform& transform, ServerContext& context)
         {
             ServerThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
 
@@ -160,13 +160,13 @@ namespace voxel_game::rendering
             thread_context.commands.AddCommand<&godot::RenderingServer::free_rid>(scenario.id);
         });
 
-        world.observer<const UniqueInstance, const Scenario, ServerContext>(DEBUG_ONLY("InstanceSetScenario"))
+        world.observer<const Instance, const Scenario, ServerContext>(DEBUG_ONLY("InstanceSetScenario"))
             .event(flecs::OnSet)
             .yield_existing()
             .term_at(0).second(flecs::Any)
             .term_at(1).up(flecs::ChildOf).filter()
             .term_at(2).singleton().filter()
-            .each([](const UniqueInstance& instance, const Scenario& scenario, ServerContext& context)
+            .each([](const Instance& instance, const Scenario& scenario, ServerContext& context)
         {
             ServerThreadContext& thread_context = context.main_thread;
 
@@ -180,12 +180,12 @@ namespace voxel_game::rendering
 
     void Module::InitUniqueInstance(flecs::world& world)
     {
-        world.observer<UniqueInstance, ServerContext>(DEBUG_ONLY("AddUniqueInstance"))
+        world.observer<Instance, ServerContext>(DEBUG_ONLY("AddUniqueInstance"))
             .event(flecs::OnAdd)
             .yield_existing()
             .term_at(0).second(flecs::Any)
             .term_at(1).singleton().filter()
-            .each([](flecs::iter& it, size_t i, UniqueInstance& instance, ServerContext& context)
+            .each([](flecs::iter& it, size_t i, Instance& instance, ServerContext& context)
         {
             EASY_BLOCK("AddUniqueInstance");
 
@@ -194,11 +194,11 @@ namespace voxel_game::rendering
             it.entity(i).modified(it.pair(0));
         });
 
-        world.observer<const UniqueInstance, ServerContext>(DEBUG_ONLY("RemoveUniqueInstance"))
+        world.observer<const Instance, ServerContext>(DEBUG_ONLY("RemoveUniqueInstance"))
             .event(flecs::OnRemove)
             .term_at(0).second(flecs::Any)
             .term_at(1).singleton().filter()
-            .each([](const UniqueInstance& instance, ServerContext& context)
+            .each([](const Instance& instance, ServerContext& context)
         {
             ServerThreadContext& thread_context = context.main_thread;
 
@@ -210,13 +210,13 @@ namespace voxel_game::rendering
 
     void Module::InitBase(flecs::world& world)
     {
-        world.observer<const UniqueInstance, const Base, ServerContext>(DEBUG_ONLY("InstanceSetBase"))
+        world.observer<const Instance, const Base, ServerContext>(DEBUG_ONLY("InstanceSetBase"))
             .event(flecs::OnSet)
             .yield_existing()
             .term_at(0).second("$Base")
             .term_at(1).src("$Base").filter()
             .term_at(2).singleton().filter()
-            .each([](const UniqueInstance& instance, const Base& base, ServerContext& context)
+            .each([](const Instance& instance, const Base& base, ServerContext& context)
         {
             ServerThreadContext& thread_context = context.main_thread;
 

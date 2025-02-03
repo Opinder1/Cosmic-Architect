@@ -21,6 +21,6 @@ namespace voxel_game::galaxy
 
 		world.prefab<GalaxyPrefab>()
 			.add<galaxy::World>()
-			.add<rendering::UniqueInstance>(galaxy_schematic);
+			.add<rendering::Instance>(galaxy_schematic);
 	}
 }

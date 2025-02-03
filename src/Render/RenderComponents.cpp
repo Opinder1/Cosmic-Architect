@@ -17,10 +17,9 @@ namespace voxel_game::rendering
             .add(flecs::Relationship)
             .add(flecs::Exclusive);
 
-        world.component<UniqueInstance>()
+        world.component<MultiInstance>()
             .add(flecs::Relationship)
-            .add(flecs::Exclusive)
-            .add_second<Instance>(flecs::With);
+            .add(flecs::Exclusive);
 
         world.component<Base>();
 

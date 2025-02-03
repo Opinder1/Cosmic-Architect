@@ -72,14 +72,14 @@ namespace voxel_game::rendering
 	// This tag denotes that this entity creates the scenario itself
 	struct OwnedScenario {};
 
-	// Relationship tag for setting the base type of the entity
-	struct Instance {};
-
 	// Relationship tag for setting the base type of the entity with it being a unique instance
-	struct UniqueInstance
+	struct Instance
 	{
 		godot::RID id;
 	};
+
+	// Relationship tag for setting the base type of the entity to a batched type
+	struct MultiInstance {};
 
 	// This entity is a render base which instances will use to define what they render
 	struct Base
