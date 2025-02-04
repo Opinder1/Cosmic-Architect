@@ -194,7 +194,9 @@ namespace voxel_game::voxel
 
 		while (1)
 		{
-			Poly child_node_poly = node->children[node_pos.x & 0x1][node_pos.y & 0x1][node_pos.z & 0x1];
+			godot::Vector3i child_pos = { node_pos.x & 0x1, node_pos.y & 0x1, node_pos.z & 0x1 };
+
+			Poly child_node_poly = node->children[(child_pos.x * 4) + (child_pos.y * 2) + child_pos.z];
 
 			if (!child_node_poly.IsValid())
 			{

@@ -11,7 +11,7 @@ Poly::Poly(std::byte* ptr) :
 {}
 
 #if defined(POLY_DEBUG)
-Poly::Poly(std::byte* ptr, const std::shared_ptr<void>& type) :
+Poly::Poly(std::byte* ptr, const std::shared_ptr<void*>& type) :
 	m_ptr(ptr),
 	m_type(type)
 {}
@@ -33,7 +33,11 @@ bool Poly::IsValid() const
 }
 
 PolyType::PolyType()
-{}
+{
+#if defined(POLY_DEBUG)
+	m_type = std::make_shared<void*>(this);
+#endif
+}
 
 PolyType::~PolyType()
 {

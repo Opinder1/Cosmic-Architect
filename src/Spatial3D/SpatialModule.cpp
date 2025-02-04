@@ -98,7 +98,7 @@ namespace voxel_game::spatial3d
 
 				DEBUG_ASSERT(node.parent_index < 8, "The parent index is out of range");
 
-				parent_node.children_array[node.parent_index] = node_poly;
+				parent_node.children[node.parent_index] = node_poly;
 				parent_node.children_mask |= 1 << node.parent_index;
 			}
 		}
@@ -122,7 +122,7 @@ namespace voxel_game::spatial3d
 					child_node.parent = node_poly;
 					child_node.parent_index = child_index;
 
-					node.children_array[child_index] = child_node_poly;
+					node.children[child_index] = child_node_poly;
 					node.children_mask |= 1 << child_index;
 				}
 			}
@@ -154,7 +154,7 @@ namespace voxel_game::spatial3d
 			{
 				Node& parent_node = GetNode(spatial_world, parent_node_poly);
 
-				parent_node.children_array[node.parent_index] = nullptr;
+				parent_node.children[node.parent_index] = nullptr;
 				parent_node.children_mask &= ~(1 << node.parent_index);
 			}
 		}
@@ -163,7 +163,7 @@ namespace voxel_game::spatial3d
 		{
 			for (uint8_t child_index = 0; child_index < 8; child_index++)
 			{
-				Poly child_node_poly = node.children_array[child_index];
+				Poly child_node_poly = node.children[child_index];
 
 				if (child_node_poly.IsValid())
 				{

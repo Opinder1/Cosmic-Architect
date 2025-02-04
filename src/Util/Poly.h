@@ -21,7 +21,7 @@ public:
 	Poly();
 	Poly(std::byte* ptr);
 #if defined(POLY_DEBUG)
-	Poly(std::byte* ptr, const std::shared_ptr<void>& type);
+	Poly(std::byte* ptr, const std::shared_ptr<void*>& type);
 #endif
 
 	bool operator==(Poly other) const;
@@ -60,7 +60,7 @@ private:
 	std::byte* m_ptr;
 
 #if defined(POLY_DEBUG)
-	std::shared_ptr<void> m_type = nullptr;
+	std::shared_ptr<void*> m_type = nullptr;
 #endif
 };
 
@@ -74,7 +74,7 @@ public:
 	PolyEntry() : m_offset(k_invalid_poly_offset) {}
 	PolyEntry(uint16_t offset) : m_offset(offset) {}
 #if defined(POLY_DEBUG)
-	PolyEntry(uint16_t offset, const std::shared_ptr<void>& type) : m_offset(offset), m_type(type) {}
+	PolyEntry(uint16_t offset, const std::shared_ptr<void*>& type) : m_offset(offset), m_type(type) {}
 #endif
 
 	bool IsValid() const
@@ -86,7 +86,7 @@ private:
 	uint16_t m_offset;
 
 #if defined(POLY_DEBUG)
-	std::shared_ptr<void> m_type = nullptr;
+	std::shared_ptr<void*> m_type = nullptr;
 #endif
 };
 
@@ -155,6 +155,6 @@ private:
 
 #if defined(POLY_DEBUG)
 	size_t m_num_poly = 0;
-	std::shared_ptr<void> m_type = nullptr;
+	std::shared_ptr<void*> m_type;
 #endif
 };
