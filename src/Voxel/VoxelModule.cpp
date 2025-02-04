@@ -4,106 +4,31 @@
 #include "Spatial3D/SpatialComponents.h"
 #include "Spatial3D/SpatialModule.h"
 
+#include "Simulation/SimulationComponents.h"
+
 #include <flecs/flecs.h>
 
 #include "Util/Debug.h"
 
 namespace voxel_game::voxel
 {
-	void AddSquare(godot::PackedVector3Array& array, godot::Vector3 origin, godot::Vector3 right, godot::Vector3 up, bool reverse)
+	// Spawns a bunch of flat squares around the camera on the xz plane
+	struct VoxelNodeLoader
 	{
-		godot::Vector3 bottom_left = origin;
-		godot::Vector3 bottom_right = origin + right;
-		godot::Vector3 top_left = origin + up;
-		godot::Vector3 top_right = origin + up + right;
+		flecs::entity entity;
+		flecs::world stage;
+		const World& voxel_world;
+		spatial3d::World& spatial_world;
+		sim::ThreadEntityPool& entity_pool;
 
-		if (reverse)
+		void LoadNode(Poly node_poly)
 		{
-			array.push_back(bottom_left);
-			array.push_back(bottom_right);
-			array.push_back(top_right);
+			spatial3d::Node& node = node_poly.GetEntry(spatial_world.node_entry);
+			Node& voxel_node = node_poly.GetEntry(voxel_world.node_entry);
 
-			array.push_back(top_right);
-			array.push_back(top_left);
-			array.push_back(bottom_left);
+
 		}
-		else
-		{
-			array.push_back(bottom_left);
-			array.push_back(top_left);
-			array.push_back(top_right);
-
-			array.push_back(top_right);
-			array.push_back(bottom_right);
-			array.push_back(bottom_left);
-		}
-	}
-
-	void GenerateVertexesForNode(Context& context, const Node& node, godot::PackedVector3Array& array, godot::PackedColorArray& voxel_colours)
-	{
-		for (size_t x = 0; x < 16; x++)
-		for (size_t y = 0; y < 16; y++)
-		for (size_t z = 0; z < 16; z++)
-		{
-			Voxel voxel = node.voxels[x][y][z];
-			const VoxelType& voxel_type = context.types[voxel.type];
-			bool voxel_invisible = voxel_type.cache.is_invisible;
-
-			{
-				Voxel posx = node.voxels[x + 1][y][z];
-				const VoxelType& posx_type = context.types[posx.type];
-				bool posx_invisible = posx_type.cache.is_invisible;
-
-				if (voxel_invisible != posx_invisible)
-				{
-					AddSquare(array, godot::Vector3(x, y, z), godot::Vector3(0, 1, 0), godot::Vector3(0, 0, 1), voxel_invisible > posx_invisible);
-
-					godot::Color color = voxel_invisible > posx_invisible ? voxel_type.cache.color(voxel.data) : posx_type.cache.color(posx.data);
-
-					for (size_t i = 0; i < 6; i++)
-					{
-						voxel_colours.push_back(color);
-					}
-				}
-			}
-
-			{
-				Voxel posy = node.voxels[x][y + 1][z];
-				const VoxelType& posy_type = context.types[posy.type];
-				bool posy_invisible = posy_type.cache.is_invisible;
-
-				if (voxel_invisible != posy_invisible)
-				{
-					AddSquare(array, godot::Vector3(x, y, z), godot::Vector3(1, 0, 0), godot::Vector3(0, 0, 1), voxel_invisible > posy_invisible);
-
-					godot::Color color = voxel_invisible > posy_invisible ? voxel_type.cache.color(voxel.data) : posy_type.cache.color(posy.data);
-
-					for (size_t i = 0; i < 6; i++)
-					{
-						voxel_colours.push_back(color);
-					}
-				}
-			}
-
-			{
-				Voxel posz = node.voxels[x][y][z + 1];
-				const VoxelType& posz_type = context.types[posz.type];
-				bool posz_invisible = posz_type.cache.is_invisible;
-
-				if (voxel_invisible != posz_invisible)
-				{
-					AddSquare(array, godot::Vector3(x, y, z), godot::Vector3(1, 0, 0), godot::Vector3(0, 1, 0), voxel_invisible > posz_invisible);
-
-					godot::Color color = voxel_invisible > posz_invisible ? voxel_type.cache.color(voxel.data) : posz_type.cache.color(posz.data);
-
-					for (size_t i = 0; i < 6; i++)
-					{
-						voxel_colours.push_back(color);
-					}
-				}
-			}
-		}
-	}
+	};
 
 	Module::Module(flecs::world& world)
 	{
@@ -124,6 +49,26 @@ namespace voxel_game::voxel
 		{
 			voxel_world.node_entry = spatial_world.world.node_type.AddEntry<Node>();
 			voxel_world.scale_entry = spatial_world.world.scale_type.AddEntry<Scale>();
+		});
+
+		world.system<const World, spatial3d::WorldMarker, sim::ThreadEntityPools>(DEBUG_ONLY("LoadVoxelNode"))
+			.multi_threaded()
+			.term_at(2).src<sim::ThreadEntityPools>()
+			.each([](flecs::entity entity, const World& voxel_world, spatial3d::WorldMarker& spatial_world, sim::ThreadEntityPools& entity_pools)
+		{
+			flecs::world stage = entity.world();
+
+			VoxelNodeLoader loader{ entity, stage, voxel_world, spatial_world.world, sim::GetThreadEntityPool(entity_pools, stage) };
+
+			for (Poly scale_poly : spatial_world.world.scales)
+			{
+				spatial3d::Scale& scale = spatial3d::GetScale(spatial_world.world, scale_poly);
+
+				for (Poly node_poly : scale.load_commands)
+				{
+					loader.LoadNode(node_poly);
+				}
+			}
 		});
 	}
 

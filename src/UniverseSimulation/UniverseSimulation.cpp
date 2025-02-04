@@ -1,29 +1,19 @@
 #include "UniverseSimulation.h"
 #include "UniverseSimulation_StringNames.h"
 
-#include "Universe/UniverseComponents.h"
 #include "Universe/UniverseModule.h"
-
-#include "Galaxy/GalaxyComponents.h"
 #include "Galaxy/GalaxyModule.h"
-
-#include "Spatial3D/SpatialComponents.h"
 #include "Spatial3D/SpatialModule.h"
-
-#include "Voxel/VoxelComponents.h"
 #include "Voxel/VoxelModule.h"
-
-#include "Render/RenderComponents.h"
+#include "VoxelRender/VoxelRenderModule.h"
 #include "Render/RenderModule.h"
-
-#include "Physics3D/PhysicsComponents.h"
-#include "Physics3D/PhysicsModule.h"
-
-#include "Simulation/SimulationComponents.h"
 #include "Simulation/SimulationModule.h"
 
-#include "Loading/LoadingComponents.h"
+#include "Physics3D/PhysicsModule.h"
+#include "Physics3D/PhysicsComponents.h"
+
 #include "Loading/LoadingModule.h"
+#include "Loading/LoadingComponents.h"
 
 #include "Commands/CommandServer.h"
 
@@ -86,6 +76,7 @@ namespace voxel_game
 		m_world.import<physics3d::Module>();
 		m_world.import<spatial3d::Module>();
 		m_world.import<voxel::Module>();
+		m_world.import<voxelrender::Module>();
 		m_world.import<galaxy::Module>();
 		m_world.import<universe::Module>();
 

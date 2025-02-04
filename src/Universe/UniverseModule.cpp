@@ -51,7 +51,8 @@ namespace voxel_game::universe
 		return universe_entity;
 	}
 
-	struct UniverseNodeLoader
+	// Spawns a bunch of random cubes around the camera
+	struct UniverseNodeLoaderTest1
 	{
 		flecs::entity entity;
 		flecs::world stage;
@@ -59,14 +60,14 @@ namespace voxel_game::universe
 		spatial3d::World& spatial_world;
 		sim::ThreadEntityPool& entity_pool;
 
-		void LoadSpatialNode(Poly node_poly)
+		void LoadNode(Poly node_poly)
 		{
 			spatial3d::Node& node = node_poly.GetEntry(spatial_world.node_entry);
 			Node& universe_node = node_poly.GetEntry(universe_world.node_entry);
 
 			const uint32_t entities_per_node = 4;
 			const uint32_t scale_step = 1 << node.coord.scale;
-			const double scale_node_step = scale_step * spatial_world.node_size;
+			const uint32_t scale_node_step = scale_step * spatial_world.node_size;
 			const double box_size = double(scale_step) / 2.0;
 
 			for (size_t i = 0; i < entities_per_node; i++)
@@ -90,6 +91,46 @@ namespace voxel_game::universe
 				node.entities.push_back(galaxy);
 				universe_node.galaxies.push_back(galaxy);
 			}
+		}
+	};
+
+	// Spawns a bunch of flat squares around the camera on the xz plane
+	struct UniverseNodeLoaderTest2
+	{
+		flecs::entity entity;
+		flecs::world stage;
+		const World& universe_world;
+		spatial3d::World& spatial_world;
+		sim::ThreadEntityPool& entity_pool;
+
+		void LoadNode(Poly node_poly)
+		{
+			spatial3d::Node& node = node_poly.GetEntry(spatial_world.node_entry);
+			Node& universe_node = node_poly.GetEntry(universe_world.node_entry);
+
+			if (node.coord.pos.y != 0)
+			{
+				return;
+			}
+
+			const uint32_t scale_step = 1 << node.coord.scale;
+			const uint32_t scale_node_step = scale_step * spatial_world.node_size;
+			const uint8_t box_shrink = 2;
+
+			double position_x = node.coord.pos.x * scale_node_step;
+			double position_y = node.coord.pos.y * scale_node_step;
+			double position_z = node.coord.pos.z * scale_node_step;
+
+			flecs::entity galaxy(stage, entity_pool.CreateThreadEntity());
+
+			galaxy.child_of(entity);
+			galaxy.is_a<galaxy::GalaxyPrefab>();
+			galaxy.set(physics3d::Position{ godot::Vector3(position_x, position_y, position_z) });
+			galaxy.set(physics3d::Scale{ godot::Vector3(scale_node_step / 4, 1, scale_node_step / 4) });
+			galaxy.add<rendering::Transform>();
+
+			node.entities.push_back(galaxy);
+			universe_node.galaxies.push_back(galaxy);
 		}
 	};
 
@@ -118,7 +159,7 @@ namespace voxel_game::universe
 		{
 			flecs::world stage = entity.world();
 
-			UniverseNodeLoader loader { entity, stage, universe_world, spatial_world.world, sim::GetThreadEntityPool(entity_pools, stage) };
+			UniverseNodeLoaderTest2 loader{ entity, stage, universe_world, spatial_world.world, sim::GetThreadEntityPool(entity_pools, stage) };
 
 			for (Poly scale_poly : spatial_world.world.scales)
 			{
@@ -126,7 +167,7 @@ namespace voxel_game::universe
 
 				for (Poly node_poly : scale.load_commands)
 				{
-					loader.LoadSpatialNode(node_poly);
+					loader.LoadNode(node_poly);
 				}
 			}
 		});
