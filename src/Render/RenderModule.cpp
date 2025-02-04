@@ -34,7 +34,7 @@ namespace voxel_game::rendering
             CommandServer* cqserver = CommandServer::get_singleton();
             uint64_t rserver_id = godot::RenderingServer::get_singleton()->get_instance_id();
 
-            for (ServerThreadContext& thread_context : context.threads)
+            for (ThreadContext& thread_context : context.threads)
             {
                 cqserver->AddCommands(rserver_id, std::move(thread_context.commands));
             }
@@ -50,7 +50,7 @@ namespace voxel_game::rendering
             CommandServer* cqserver = CommandServer::get_singleton();
             uint64_t rserver_id = godot::RenderingServer::get_singleton()->get_instance_id();
 
-            for (ServerThreadContext& thread_context : context.threads)
+            for (ThreadContext& thread_context : context.threads)
             {
                 cqserver->AddCommands(rserver_id, std::move(thread_context.commands));
             }
@@ -63,7 +63,14 @@ namespace voxel_game::rendering
             .immediate()
             .each([](ServerContext& context)
         {
-            context.instance_allocator.Process();
+            context.main_thread.mesh_allocator.Process();
+            context.main_thread.instance_allocator.Process();
+
+            for (ThreadContext& thread_context : context.threads)
+            {
+                thread_context.mesh_allocator.Process();
+                thread_context.instance_allocator.Process();
+            }
         });
 
         InitTransform(world);
@@ -118,7 +125,7 @@ namespace voxel_game::rendering
             .term_at(2).singleton()
             .each([](flecs::entity entity, Instance& instance, const Transform& transform, ServerContext& context)
         {
-            ServerThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
+            ThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
 
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
 
@@ -153,7 +160,7 @@ namespace voxel_game::rendering
             .with<const OwnedScenario>()
             .each([](const Scenario& scenario, ServerContext& context)
         {
-            ServerThreadContext& thread_context = context.main_thread;
+            ThreadContext& thread_context = context.main_thread;
 
             DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
 
@@ -168,7 +175,7 @@ namespace voxel_game::rendering
             .term_at(2).singleton().filter()
             .each([](const Instance& instance, const Scenario& scenario, ServerContext& context)
         {
-            ServerThreadContext& thread_context = context.main_thread;
+            ThreadContext& thread_context = context.main_thread;
 
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
             DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
@@ -189,7 +196,9 @@ namespace voxel_game::rendering
         {
             EASY_BLOCK("AddUniqueInstance");
 
-            instance.id = context.instance_allocator.RequestRID();
+            ThreadContext& thread_context = context.main_thread;
+
+            instance.id = thread_context.instance_allocator.RequestRID();
 
             flecs::entity entity = it.entity(i);
 
@@ -203,7 +212,7 @@ namespace voxel_game::rendering
             .term_at(1).singleton().filter()
             .each([](const Instance& instance, ServerContext& context)
         {
-            ServerThreadContext& thread_context = context.main_thread;
+            ThreadContext& thread_context = context.main_thread;
 
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
 
@@ -221,7 +230,7 @@ namespace voxel_game::rendering
             .term_at(2).singleton().filter()
             .each([](const Instance& instance, const Base& base, ServerContext& context)
         {
-            ServerThreadContext& thread_context = context.main_thread;
+            ThreadContext& thread_context = context.main_thread;
 
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
             DEBUG_ASSERT(base.id != godot::RID(), "Base should be valid");
@@ -235,7 +244,7 @@ namespace voxel_game::rendering
             .term_at(1).singleton().filter()
             .each([](const Base& base, ServerContext& context)
         {
-            ServerThreadContext& thread_context = context.main_thread;
+            ThreadContext& thread_context = context.main_thread;
 
             DEBUG_ASSERT(base.id != godot::RID(), "Base should be valid");
 

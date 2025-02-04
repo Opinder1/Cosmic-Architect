@@ -45,17 +45,19 @@ namespace voxel_game::rendering
 
 	using ModifyFlags = std::bitset<ModifyFlag::Count>;
 
-	struct ServerThreadContext
+	struct ThreadContext
 	{
+		// TODO Make into template with <godot::RenderingServer>
 		TypedCommandBuffer commands;
+
+		Allocator mesh_allocator{ AllocateType::Mesh };
+		Allocator instance_allocator{ AllocateType::Instance };
 	};
 
 	struct ServerContext : Nocopy
 	{
-		ServerThreadContext main_thread;
-		PerThread<ServerThreadContext> threads;
-
-		Allocator instance_allocator{ AllocateType::Instance };
+		ThreadContext main_thread;
+		PerThread<ThreadContext> threads;
 	};
 
 	struct Transform
