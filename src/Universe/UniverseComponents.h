@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Spatial3D/SpatialComponents.h"
+#include "Util/Poly.h"
 
 #include <godot_cpp/variant/vector3i.hpp>
 

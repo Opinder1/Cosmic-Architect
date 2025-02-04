@@ -37,7 +37,7 @@ namespace voxel_game::galaxy
 
 		galaxy_entity.child_of(universe_entity);
 
-		galaxy_entity.add<galaxy::World>();
+		galaxy_entity.add<World>();
 
 		spatial3d::WorldMarker& spatial_world = galaxy_entity.ensure<spatial3d::WorldMarker>();
 		spatial_world.world.max_scale = spatial3d::k_max_world_scale;

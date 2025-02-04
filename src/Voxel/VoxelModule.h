@@ -17,7 +17,6 @@ namespace voxel_game::spatial3d
 namespace voxel_game::voxel
 {
 	struct Voxel;
-	struct Node;
 	struct World;
 
 	struct Module

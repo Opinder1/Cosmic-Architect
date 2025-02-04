@@ -91,7 +91,7 @@ private:
 };
 
 // A system for creating runtime defined structs which are efficently allocated in memory
-class PolyType : Nocopy
+class PolyType : Nocopy, Nomove
 {
 private:
 	using FactoryCB = void (*)(std::byte*);

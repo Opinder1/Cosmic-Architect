@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Spatial3D/SpatialComponents.h"
-
+#include "Util/Poly.h"
 #include "Util/TinyOctree.h"
 #include "Util/SmallVector.h"
 
@@ -53,8 +52,6 @@ namespace voxel_game::voxel
 	{
 		PolyEntry<Node> node_entry;
 		PolyEntry<Scale> scale_entry;
-
-		std::array<Scale, spatial3d::k_max_world_scale> scales;
 	};
 
 	struct VoxelTypeCache

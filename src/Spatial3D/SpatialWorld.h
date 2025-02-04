@@ -33,7 +33,7 @@ namespace voxel_game::spatial3d
 	};
 
 	// A single node in a spatial world. This is meant to be inherited from for custom data
-	struct Node : Nocopy, Nomove
+	struct Node
 	{
 		Coord coord;
 
@@ -49,11 +49,7 @@ namespace voxel_game::spatial3d
 
 		Poly parent = nullptr; // Octree parent
 
-		union
-		{
-			Poly children[2][2][2] = { nullptr }; // Octree children
-			Poly children_array[8];
-		};
+		Poly children[8] = { nullptr }; // Octree children
 
 		Poly neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
 
@@ -63,7 +59,7 @@ namespace voxel_game::spatial3d
 	using NodeMap = robin_hood::unordered_flat_map<godot::Vector3i, Poly>;
 
 	// A level of detail map for a world. The world will have multiple of these
-	struct Scale : Nocopy, Nomove
+	struct Scale
 	{
 		uint8_t scale = 0;
 

@@ -191,7 +191,10 @@ namespace voxel_game::rendering
 
             instance.id = context.instance_allocator.RequestRID();
 
-            it.entity(i).modified(it.pair(0));
+            flecs::entity entity = it.entity(i);
+
+            // Mark the Instance pair as modified
+            entity.modified(it.pair(0));
         });
 
         world.observer<const Instance, ServerContext>(DEBUG_ONLY("RemoveUniqueInstance"))
