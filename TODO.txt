@@ -1,0 +1,7 @@
+TODO:
+
+- Prefix all components with C
+- Add functions for getting and calling render context stuff for less typing
+- Make the TypedCommandBuffer a template that enforces the methods are of the type or a derived
+- Have galaxy generate a world instance which has the voxel and voxel render world components
+- Continue with creating voxel mesh generator
