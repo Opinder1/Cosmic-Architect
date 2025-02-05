@@ -24,5 +24,7 @@ namespace voxel_game::voxelrender
 	struct World
 	{
 		PolyEntry<Node> node_entry;
+
+		godot::RID voxel_material;
 	};
 }
