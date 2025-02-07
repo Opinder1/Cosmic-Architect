@@ -50,6 +50,7 @@ namespace voxel_game::rendering
 		// TODO Make into template with <godot::RenderingServer>
 		TypedCommandBuffer commands;
 
+		Allocator material_allocator{ AllocateType::Material };
 		Allocator mesh_allocator{ AllocateType::Mesh };
 		Allocator instance_allocator{ AllocateType::Instance };
 	};
@@ -70,6 +71,7 @@ namespace voxel_game::rendering
 	struct Scenario
 	{
 		godot::RID id;
+		godot::Vector3i camera_pos; // Updated to the currently enabled cameras position
 	};
 
 	// This tag denotes that this entity creates the scenario itself
@@ -126,4 +128,8 @@ namespace voxel_game::rendering
 	struct VisibilityNotifier {};
 
 	struct FogVolume {};
+
+	// Used by various lod systems to know where to load visual elements around
+	// Is related to the scenario that its in
+	struct Camera {};
 }

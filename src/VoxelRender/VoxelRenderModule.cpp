@@ -204,11 +204,11 @@ namespace voxel_game::voxelrender
 			.multi_threaded()
 			.term_at(3).singleton()
 			.term_at(4).singleton()
-			.each([](flecs::entity entity, const World& voxel_render_world, const voxel::World& voxel_world, spatial3d::WorldMarker& spatial_world, voxel::Context& voxel_ctx, rendering::ServerContext& render_ctx)
+			.each([](flecs::entity entity, const World& render_world, const voxel::World& voxel_world, spatial3d::WorldMarker& spatial_world, voxel::Context& voxel_ctx, rendering::ServerContext& render_ctx)
 		{
 			flecs::world stage = entity.world();
 
-			VoxelRenderNodeLoader loader{ entity, stage, voxel_render_world, voxel_world, spatial_world.world, voxel_ctx, render_ctx };
+			VoxelRenderNodeLoader loader{ entity, stage, render_world, voxel_world, spatial_world.world, voxel_ctx, render_ctx };
 
 			for (Poly scale_poly : spatial_world.world.scales)
 			{

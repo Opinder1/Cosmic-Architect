@@ -73,7 +73,6 @@ namespace voxel_game
 
 		static void RenderingFlush();
 
-		static void ProcessBuffer(State& state, godot::Object* object);
 		static void FlushState(State& state, godot::Object* object_override, Clock::duration max_flush_time);
 
 	private:
