@@ -8,40 +8,40 @@ namespace voxel_game::rendering
 {
     const size_t k_max_preallocated[k_num_alloc_types] =
     {
-        0, // texture_2d
-        0, // texture_3d
-        0, // shader
-        0, // material
-        128, // mesh
-        0, // multimesh
-        0, // skeleton
-        0, // directional_light
-        0, // omni_light
-        0, // spot_light
-        0, // reflection_probe
-        0, // decal
-        0, // voxel_gi
-        0, // lightmap
-        0, // particles
-        0, // particles_collision
-        0, // fog_volume
-        0, // visibility_notifier
-        0, // occluder
-        0, // camera
-        0, // viewport
-        0, // sky
-        0, // compositor_effect
-        0, // compositor
-        0, // environment
-        0, // camera_attributes
-        0, // scenario
-        512, // instance
-        0, // canvas
-        0, // canvas_texture
-        0, // canvas_item
-        0, // canvas_light
-        0, // canvas_light_occluder
-        0, // canvas_occluder_polygon
+        0,      // texture_2d
+        0,      // texture_3d
+        0,      // shader
+        64,     // material
+        128,    // mesh
+        0,      // multimesh
+        0,      // skeleton
+        0,      // directional_light
+        0,      // omni_light
+        0,      // spot_light
+        0,      // reflection_probe
+        0,      // decal
+        0,      // voxel_gi
+        0,      // lightmap
+        0,      // particles
+        0,      // particles_collision
+        0,      // fog_volume
+        0,      // visibility_notifier
+        0,      // occluder
+        0,      // camera
+        0,      // viewport
+        0,      // sky
+        0,      // compositor_effect
+        0,      // compositor
+        0,      // environment
+        0,      // camera_attributes
+        0,      // scenario
+        512,    // instance
+        0,      // canvas
+        0,      // canvas_texture
+        0,      // canvas_item
+        0,      // canvas_light
+        0,      // canvas_light_occluder
+        0,      // canvas_occluder_polygon
     };
 
     using RIDGenerator = godot::RID(godot::RenderingServer::*)();
@@ -101,47 +101,81 @@ namespace voxel_game::rendering
         k_singleton.reset();
     }
 
-    AllocatorServer::AllocatorServer() {}
+    AllocatorServer::AllocatorServer()
+    {}
 
     AllocatorServer::~AllocatorServer()
     {
-        godot::RenderingServer* rserver = godot::RenderingServer::get_singleton();
+        godot::RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &AllocatorServer::DeallocateRIDsInternal));
+        m_requests++;
 
-        for (TypeData& allocatable : m_types)
+        while (m_requests.load(std::memory_order_relaxed))
         {
-            for (godot::RID rid : allocatable.rids)
+            std::this_thread::sleep_for(1s);
+        }
+    }
+
+    void AllocatorServer::RequestRIDs(bool sync)
+    {
+        if (m_requests.load(std::memory_order_relaxed) == 0)
+        {
+            godot::RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &AllocatorServer::AllocateRIDsInternal));
+            m_requests++;
+
+            if (sync)
             {
-                rserver->free_rid(rid);
+                godot::RenderingServer::get_singleton()->force_sync();
             }
         }
     }
 
-    void AllocatorServer::RequestRIDs(AllocateType type, std::vector<godot::RID>& rids_out)
+    void AllocatorServer::GetRIDs(AllocateType type, std::vector<godot::RID>& rids_out)
     {
+        const size_t required = k_max_preallocated[to_underlying(type)];
+        const size_t needed = required - rids_out.size();
+
+        if (needed == 0) // No rids are needed
+        {
+            return;
+        }
+
         if (m_mutex.try_lock()) // Don't bother if we are currently generating instances
         {
-            bool allocate_more = false;
-
             TypeData& type_data = m_types[to_underlying(type)];
 
-            if (rids_out.size() < type_data.rids.size())
+            const size_t have = type_data.rids.size();
+            const size_t max_per_request = k_max_preallocated[to_underlying(type)] / 16;
+
+            size_t request = have < needed ? have : needed;
+
+            request = std::min(request, max_per_request);
+
+            if (request > 0)
             {
-                rids_out.swap(type_data.rids);
-                allocate_more = true;
+                rids_out.insert(rids_out.end(), type_data.rids.end() - request, type_data.rids.end());
+                type_data.rids.erase(type_data.rids.end() - request, type_data.rids.end());
+
+                RequestRIDs(false);
             }
 
             m_mutex.unlock();
-
-            if (allocate_more)
-            {
-                AllocateRIDs();
-            }
         }
     }
 
-    void AllocatorServer::AllocateRIDs()
+    void AllocatorServer::FreeRIDs(AllocateType type, std::vector<godot::RID>& rids)
     {
-        godot::RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &AllocatorServer::AllocateRIDsInternal));
+        if (rids.size() == 0) // No rids to deallocate
+        {
+            return;
+        }
+
+        std::lock_guard lock(m_mutex);
+
+        TypeData& type_data = m_types[to_underlying(type)];
+
+        type_data.rids.insert(type_data.rids.end(), rids.begin(), rids.end());
+
+        rids.clear();
     }
 
     void AllocatorServer::AllocateRIDsInternal()
@@ -161,6 +195,27 @@ namespace voxel_game::rendering
                 m_types[i].rids.push_back((rserver->*generator)());
             }
         }
+
+        m_requests--;
+    }
+
+    void AllocatorServer::DeallocateRIDsInternal()
+    {
+        godot::RenderingServer* rserver = godot::RenderingServer::get_singleton();
+
+        DEBUG_ASSERT(rserver->is_on_render_thread(), "This should be called when on the render thread as its entire existence is to be performant");
+
+        std::lock_guard lock(m_mutex);
+
+        for (TypeData& allocatable : m_types)
+        {
+            for (godot::RID rid : allocatable.rids)
+            {
+                rserver->free_rid(rid);
+            }
+        }
+
+        m_requests--;
     }
 
     Allocator::Allocator(AllocateType type) :
@@ -171,20 +226,15 @@ namespace voxel_game::rendering
 
     Allocator::~Allocator()
     {
-        godot::RenderingServer* rserver = godot::RenderingServer::get_singleton();
-
-        for (godot::RID instance : m_rids)
-        {
-            rserver->free_rid(instance);
-        }
+        AllocatorServer::get_singleton()->FreeRIDs(m_type, m_rids);
     }
 
     void Allocator::Process()
     {
-        AllocatorServer::get_singleton()->RequestRIDs(m_type, m_rids);
+        AllocatorServer::get_singleton()->GetRIDs(m_type, m_rids);
     }
 
-    godot::RID Allocator::RequestRID()
+    godot::RID Allocator::GetRID()
     {
         godot::RID rid;
 
@@ -196,12 +246,15 @@ namespace voxel_game::rendering
         else
         {
             DEBUG_PRINT_WARN("Enough rids were allocated this frame that we are using the slow path");
+            DEBUG_ASSERT(false, "");
 
             godot::RenderingServer* rserver = godot::RenderingServer::get_singleton();
             RIDGenerator generator = k_rid_generators[to_underlying(m_type)];
 
-            (rserver->*generator)();
+            rid = (rserver->*generator)();
         }
+
+        DEBUG_ASSERT(rid.is_valid(), "The rid should be valid");
 
         return rid;
     }

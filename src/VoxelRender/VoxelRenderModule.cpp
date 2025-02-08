@@ -134,8 +134,8 @@ namespace voxel_game::voxelrender
 
 			rendering::ThreadContext& thread_context = render_ctx.threads[stage.get_stage_id()];
 
-			render_node.mesh = thread_context.mesh_allocator.RequestRID();
-			render_node.mesh_instance = thread_context.instance_allocator.RequestRID();
+			render_node.mesh = thread_context.mesh_allocator.GetRID();
+			render_node.mesh_instance = thread_context.instance_allocator.GetRID();
 
 			thread_context.commands.AddCommand<&godot::RenderingServer::instance_set_base>(render_node.mesh_instance, render_node.mesh);
 
@@ -188,7 +188,7 @@ namespace voxel_game::voxelrender
 		{
 			voxel_world.node_entry = spatial_world.world.node_type.AddEntry<Node>();
 
-			voxel_world.voxel_material = render_ctx.main_thread.material_allocator.RequestRID();
+			voxel_world.voxel_material = render_ctx.main_thread.material_allocator.GetRID();
 		});
 
 		// Initialise the spatial world of a universe

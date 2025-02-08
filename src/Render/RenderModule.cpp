@@ -22,9 +22,10 @@ namespace voxel_game::rendering
 		world.import<Components>();
         world.import<physics3d::Components>();
 
-        world.add<ServerContext>();
+        // Make sure we initially get some rids
+        AllocatorServer::get_singleton()->RequestRIDs(true);
 
-        AllocatorServer::get_singleton()->AllocateRIDs();
+        world.add<ServerContext>();
 
         // Flush each threads render commands to the command queue server which will run them on the rendering server thread
         world.system<ServerContext>(DEBUG_ONLY("FrameFlushCommands"))
@@ -63,14 +64,18 @@ namespace voxel_game::rendering
             .immediate()
             .each([](ServerContext& context)
         {
+            context.main_thread.material_allocator.Process();
             context.main_thread.mesh_allocator.Process();
             context.main_thread.instance_allocator.Process();
 
             for (ThreadContext& thread_context : context.threads)
             {
+                thread_context.material_allocator.Process();
                 thread_context.mesh_allocator.Process();
                 thread_context.instance_allocator.Process();
             }
+            
+            AllocatorServer::get_singleton()->RequestRIDs(false);
         });
 
         InitTransform(world);
@@ -123,9 +128,9 @@ namespace voxel_game::rendering
             .term_at(0).second(flecs::Any)
             .term_at(1).self().up(flecs::ChildOf)
             .term_at(2).singleton()
-            .each([](flecs::entity entity, Instance& instance, const Transform& transform, ServerContext& context)
+            .each([](flecs::iter& it, size_t i, Instance& instance, const Transform& transform, ServerContext& context)
         {
-            ThreadContext& thread_context = context.threads[entity.world().get_stage_id()];
+            ThreadContext& thread_context = context.threads[it.world().get_stage_id()];
 
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
 
@@ -198,7 +203,7 @@ namespace voxel_game::rendering
 
             ThreadContext& thread_context = context.main_thread;
 
-            instance.id = thread_context.instance_allocator.RequestRID();
+            instance.id = thread_context.instance_allocator.GetRID();
 
             flecs::entity entity = it.entity(i);
 

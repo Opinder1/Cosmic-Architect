@@ -57,7 +57,7 @@ namespace voxel_game::rendering
 	// Any taken render objects will automatically be refilled
 	class AllocatorServer : public godot::Object
 	{
-		GDCLASS(AllocatorServer, godot::Object);
+		GDCLASS(AllocatorServer, godot::Object); // Is an object to be used with call_on_render_thread
 
 	private:
 		struct TypeData
@@ -71,9 +71,11 @@ namespace voxel_game::rendering
 		AllocatorServer();
 		~AllocatorServer();
 
-		void RequestRIDs(AllocateType type, std::vector<godot::RID>& rids_out);
+		void RequestRIDs(bool sync);
 
-		void AllocateRIDs();
+		void GetRIDs(AllocateType type, std::vector<godot::RID>& rids_out);
+
+		void FreeRIDs(AllocateType type, std::vector<godot::RID>& rids_in);
 
 	public:
 		static void _bind_methods();
@@ -81,9 +83,12 @@ namespace voxel_game::rendering
 
 	private:
 		void AllocateRIDsInternal();
+		void DeallocateRIDsInternal();
 
 	private:
 		static godot::OptObj<AllocatorServer> k_singleton;
+
+		std::atomic_size_t m_requests = 0;
 
 		tkrzw::SpinMutex m_mutex; // Mutex to protect the write lists
 
@@ -100,7 +105,7 @@ namespace voxel_game::rendering
 
 		void Process();
 
-		godot::RID RequestRID();
+		godot::RID GetRID();
 
 	private:
 		AllocateType m_type;
