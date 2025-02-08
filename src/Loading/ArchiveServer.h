@@ -27,17 +27,14 @@ namespace voxel_game::loading
 {
 	const size_t k_num_database_workers = 2;
 
-	using EntitySaveData = std::string;
+	using EntitySaveData = std::vector<char>;
 
 	// An asynchronous entity loader that manages generating and loading entities from disk. Entities can have dependenices on other entities
 	// that will be loaded or generated as needed. The entities added by this loader should only be removed by this loader.
-	class EntityLoader : Nomove, Nocopy
+	class ArchiveServer : Nomove, Nocopy
 	{
 	public:
 		using DBHandle = size_t;
-
-		using ComponentRead = void(const std::string_view& buffer);
-		using ComponentWrite = void(std::vector<char>& buffer);
 
 		enum ThreadMode
 		{
@@ -116,8 +113,8 @@ namespace voxel_game::loading
 		};
 
 	public:
-		EntityLoader();
-		~EntityLoader();
+		ArchiveServer();
+		~ArchiveServer();
 
 		void Initialize(flecs::world& world, ThreadMode thread_mode);
 
@@ -128,8 +125,6 @@ namespace voxel_game::loading
 		DBHandle OpenArchive(const godot::StringName& path);
 		void CloseArchive(const godot::StringName& path);
 		bool IsArchiveOpen(const godot::StringName& path);
-
-		void AddComponent(uint16_t id, flecs::entity_t entity, ComponentRead read, ComponentWrite write);
 
 		void LoadEntity(UUID uuid, flecs::entity_t entity, DBHandle db_handle);
 		void SaveEntity(UUID uuid, flecs::entity_t entity, DBHandle db_handle, EntitySaveData&& data);

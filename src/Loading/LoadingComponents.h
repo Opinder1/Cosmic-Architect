@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EntityLoader.h"
+#include "ArchiveServer.h"
 
 #include "Util/UUID.h"
 
@@ -10,11 +10,6 @@
 
 namespace voxel_game::loading
 {
-	struct SaveEvent
-	{
-		std::string data;
-	};
-
 	struct Identifier
 	{
 		UUID uuid;
@@ -26,17 +21,10 @@ namespace voxel_game::loading
 		uint64_t last_save_frame = 0;
 	};
 
-	struct AutoLoad {};
-
-	struct AutoSave
-	{
-		uint64_t frequency = 0;
-	};
-
 	struct Database
 	{
 		godot::StringName path;
-		EntityLoader::DBHandle handle;
+		ArchiveServer::DBHandle handle;
 	};
 
 	struct Components

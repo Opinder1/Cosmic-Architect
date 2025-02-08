@@ -85,8 +85,6 @@ namespace voxel_game
 			m_world.import<rendering::Module>();
 		}
 
-		m_world.ensure<loading::EntityLoader>().Initialize(m_world, loading::EntityLoader::MultiThreaded);
-
 		// Create the universe
 
 		m_universe_entity = universe::CreateNewUniverse(m_world, m_path, m_scenario);
