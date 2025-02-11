@@ -5,6 +5,21 @@
 
 #include <easy/profiler.h>
 
+namespace
+{
+	bool CheckRenderingServerThread(godot::RenderingServer* rserver)
+	{
+		if (rserver->has_feature(godot::RenderingServer::FEATURE_MULTITHREADED))
+		{
+			return rserver->is_on_render_thread();
+		}
+		else
+		{
+			return true;
+		}
+	}
+}
+
 namespace voxel_game
 {
 	constexpr const size_t k_max_commands_per_iter = 64;
@@ -90,7 +105,7 @@ namespace voxel_game
 		CommandServer* cqserver = CommandServer::get_singleton();
 		godot::RenderingServer* rserver = godot::RenderingServer::get_singleton();
 
-		DEBUG_ASSERT(rserver->is_on_render_thread(), "The rendering flush should only be done on the rendering thread");
+		DEBUG_ASSERT(CheckRenderingServerThread(rserver), "The rendering flush should only be done on the rendering thread");
 
 		FlushState(cqserver->m_rendering_state, rserver, k_max_time_per_render_flush);
 	}

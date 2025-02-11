@@ -4,6 +4,21 @@
 
 #include "Util/Debug.h"
 
+namespace
+{
+    bool CheckRenderingServerThread(godot::RenderingServer* rserver)
+    {
+        if (rserver->has_feature(godot::RenderingServer::FEATURE_MULTITHREADED))
+        {
+            return rserver->is_on_render_thread();
+        }
+        else
+        {
+            return true;
+        }
+    }
+}
+
 namespace voxel_game::rendering
 {
     const size_t k_max_preallocated[k_num_alloc_types] =
@@ -12,7 +27,7 @@ namespace voxel_game::rendering
         0,      // texture_3d
         0,      // shader
         64,     // material
-        128,    // mesh
+        256,    // mesh
         0,      // multimesh
         0,      // skeleton
         0,      // directional_light
@@ -117,7 +132,7 @@ namespace voxel_game::rendering
 
     void AllocatorServer::RequestRIDs(bool sync)
     {
-        if (m_requests.load(std::memory_order_relaxed) == 0)
+        if (m_requests.load(std::memory_order_relaxed) == 0) // Only request if no other requests are in progress
         {
             godot::RenderingServer::get_singleton()->call_on_render_thread(callable_mp(this, &AllocatorServer::AllocateRIDsInternal));
             m_requests++;
@@ -155,10 +170,14 @@ namespace voxel_game::rendering
                 rids_out.insert(rids_out.end(), type_data.rids.end() - request, type_data.rids.end());
                 type_data.rids.erase(type_data.rids.end() - request, type_data.rids.end());
 
-                RequestRIDs(false);
             }
 
             m_mutex.unlock();
+
+            if (request > 0)
+            {
+                RequestRIDs(false);
+            }
         }
     }
 
@@ -182,7 +201,7 @@ namespace voxel_game::rendering
     {
         godot::RenderingServer* rserver = godot::RenderingServer::get_singleton();
 
-        DEBUG_ASSERT(rserver->is_on_render_thread(), "This should be called when on the render thread as its entire existence is to be performant");
+        DEBUG_ASSERT(CheckRenderingServerThread(rserver), "This should be called when on the render thread as its entire existence is to be performant");
 
         std::lock_guard lock(m_mutex);
 
@@ -203,7 +222,7 @@ namespace voxel_game::rendering
     {
         godot::RenderingServer* rserver = godot::RenderingServer::get_singleton();
 
-        DEBUG_ASSERT(rserver->is_on_render_thread(), "This should be called when on the render thread as its entire existence is to be performant");
+        DEBUG_ASSERT(CheckRenderingServerThread(rserver), "This should be called when on the render thread as its entire existence is to be performant");
 
         std::lock_guard lock(m_mutex);
 
@@ -246,7 +265,7 @@ namespace voxel_game::rendering
         else
         {
             DEBUG_PRINT_WARN("Enough rids were allocated this frame that we are using the slow path");
-            DEBUG_ASSERT(false, "");
+            DEBUG_CRASH();
 
             godot::RenderingServer* rserver = godot::RenderingServer::get_singleton();
             RIDGenerator generator = k_rid_generators[to_underlying(m_type)];
