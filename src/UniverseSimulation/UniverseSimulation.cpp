@@ -32,7 +32,6 @@ namespace voxel_game
 {
 	const size_t k_simulation_ticks_per_second = 20;
 
-	std::optional<godot::StringName> UniverseSimulation::k_emit_signal;
 	std::optional<const UniverseSimulation::CommandStrings> UniverseSimulation::k_commands;
 	std::optional<const UniverseSimulation::SignalStrings> UniverseSimulation::k_signals;
 
@@ -161,7 +160,6 @@ namespace voxel_game
 
 	void UniverseSimulation::_bind_methods()
 	{
-		k_emit_signal = godot::StringName("emit_signal", true);
 		k_commands.emplace();
 		k_signals.emplace();
 

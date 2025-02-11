@@ -39,7 +39,6 @@ namespace voxel_game
 		};
 
 		// Cached string names for optimization
-		static std::optional<godot::StringName> k_emit_signal;
 		static std::optional<const CommandStrings> k_commands;
 		static std::optional<const SignalStrings> k_signals;
 
