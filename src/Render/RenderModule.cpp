@@ -74,8 +74,6 @@ namespace voxel_game::rendering
                 thread_context.mesh_allocator.Process();
                 thread_context.instance_allocator.Process();
             }
-            
-            AllocatorServer::get_singleton()->RequestRIDs(false);
         });
 
         InitTransform(world);

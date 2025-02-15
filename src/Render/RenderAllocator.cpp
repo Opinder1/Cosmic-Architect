@@ -27,7 +27,7 @@ namespace voxel_game::rendering
         0,      // texture_3d
         0,      // shader
         64,     // material
-        256,    // mesh
+        128,    // mesh
         0,      // multimesh
         0,      // skeleton
         0,      // directional_light
@@ -148,6 +148,7 @@ namespace voxel_game::rendering
     {
         const size_t required = k_max_preallocated[to_underlying(type)];
         const size_t needed = required - rids_out.size();
+        const size_t max_per_request = k_max_preallocated[to_underlying(type)];
 
         if (needed == 0) // No rids are needed
         {
@@ -159,7 +160,6 @@ namespace voxel_game::rendering
             TypeData& type_data = m_types[to_underlying(type)];
 
             const size_t have = type_data.rids.size();
-            const size_t max_per_request = k_max_preallocated[to_underlying(type)] / 16;
 
             size_t request = have < needed ? have : needed;
 
@@ -169,7 +169,6 @@ namespace voxel_game::rendering
             {
                 rids_out.insert(rids_out.end(), type_data.rids.end() - request, type_data.rids.end());
                 type_data.rids.erase(type_data.rids.end() - request, type_data.rids.end());
-
             }
 
             m_mutex.unlock();
