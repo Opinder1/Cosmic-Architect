@@ -14,6 +14,22 @@ namespace voxel_game::sim
 		world.component<CConfig>();
 		world.component<CThreadWorker>();
 		world.component<CEntityPools>();
+
+		world.component<CEntityPools>()
+			.on_add([world = world.c_ptr()](CEntityPools& pools)
+		{
+			for (ThreadEntityPool& pool : pools.threads)
+			{
+				pool.SetWorld(world);
+			}
+		})
+			.on_remove([world = world.c_ptr()](CEntityPools& pools)
+		{
+			for (ThreadEntityPool& pool : pools.threads)
+			{
+				pool.ClearEntities();
+			}
+		});
 	}
 
 	ThreadEntityPool::ThreadEntityPool()

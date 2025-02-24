@@ -168,16 +168,20 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void InitializeWorld(World& world)
+	World* CreateWorld(Types& types, uint8_t max_scale)
 	{
+		World* world = types.world_type.CreatePoly();
 
+		WorldSetMaxScale(types, *world, max_scale);
+
+		return world;
 	}
 
-	void ShutdownWorld(World& world)
+	void DestroyWorld(Types& types, World* world)
 	{
-		for (size_t scale_index = 0; scale_index < world.max_scale; scale_index++)
+		for (size_t scale_index = 0; scale_index < world->max_scale; scale_index++)
 		{
-			Scale& scale = GetScale(world, scale_index);
+			Scale& scale = GetScale(*world, scale_index);
 
 			DEBUG_ASSERT(scale.create_commands.empty(), "All commands should have been destroyed before destroying the world");
 			DEBUG_ASSERT(scale.load_commands.empty(), "All commands should have been destroyed before destroying the world");
@@ -185,6 +189,8 @@ namespace voxel_game::spatial3d
 			DEBUG_ASSERT(scale.destroy_commands.empty(), "All commands should have been destroyed before destroying the world");
 			DEBUG_ASSERT(scale.nodes.empty(), "All nodes should have been destroyed before destroying the world");
 		}
+
+		types.world_type.DestroyPoly(world);
 	}
 
 	void WorldSetMaxScale(Types& types, World& world, size_t max_scale)
@@ -230,7 +236,6 @@ namespace voxel_game::spatial3d
 		}
 
 		world.max_scale = max_scale;
-
 	}
 
 	void WorldCreateNodes(Types& types, World& world, const sim::CFrame& frame)

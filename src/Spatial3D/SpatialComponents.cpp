@@ -8,6 +8,9 @@ namespace voxel_game::spatial3d
 
 		// Components
 		world.component<CLoader>();
+		world.component<CRegion>();
+		world.component<CEntity>();
+		world.component<CScale>();
 		world.component<CWorld>();
 
 		world.component<PNodeCreate>();
@@ -17,5 +20,11 @@ namespace voxel_game::spatial3d
 
 		world.component<EWorldCreate>();
 		world.component<EWorldDestroy>();
+
+		world.component<CWorld>()
+			.on_remove([](CWorld& world)
+		{
+			world.types.world_type.DestroyPoly(world.world);
+		});
 	}
 }

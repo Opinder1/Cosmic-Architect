@@ -16,6 +16,7 @@
 #include "Simulation/SimulationModule.h"
 
 #include "Render/RenderComponents.h"
+#include "Render/RenderModule.h"
 
 #include "Util/Debug.h"
 
@@ -35,10 +36,16 @@ namespace voxel_game::universe
 		universe_entity.emplace<sim::CPath>(path);
 		universe_entity.add<universe::CWorld>();
 		universe_entity.add<voxel::CWorld>(); // Testing
-		universe_entity.add<voxelrender::CWorld>(); // Testing
+		if (scenario_id.is_valid())
+		{
+			universe_entity.add<voxelrender::CWorld>(); // Testing
+		}
 
 		spatial3d::CWorld& spatial_world = universe_entity.ensure<spatial3d::CWorld>();
-		spatial_world.world->max_scale = spatial3d::k_max_world_scale;
+
+		DEBUG_ASSERT(!world.is_deferred(), "Observers need to be invoked to initialize poly types");
+
+		spatial_world.world = spatial3d::CreateWorld(spatial_world.types, spatial3d::k_max_world_scale);
 		spatial_world.world->node_size = 16;
 		spatial_world.world->node_keepalive = 1s;
 
@@ -51,6 +58,10 @@ namespace voxel_game::universe
 			scenario.id = scenario_id;
 
 			universe_entity.add<rendering::CTransform>();
+
+			spatial3d::Types& types = spatial_world.types;
+
+			WORLD_TO(spatial_world.world, voxelrender::World)->voxel_material = ALLOC_RENDER_RID(Material);
 		}
 
 		return universe_entity;

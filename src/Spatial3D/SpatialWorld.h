@@ -105,7 +105,7 @@ namespace voxel_game::spatial3d
 	struct World : Nocopy, Nomove
 	{
 		godot::AABB bounds;
-		uint8_t max_scale = 1;
+		uint8_t max_scale = 0;
 		uint8_t node_size = 1;
 
 		Clock::duration node_keepalive = 10s;
@@ -140,9 +140,9 @@ namespace voxel_game::spatial3d
 
 	Node* GetNode(World& world, Coord coord);
 
-	void InitializeWorld(World& world);
+	World* CreateWorld(Types& types, uint8_t max_scale);
 
-	void ShutdownWorld(World& world);
+	void DestroyWorld(Types& types, World* world);
 
 	void WorldSetMaxScale(Types& types, World& world, size_t max_scale);
 

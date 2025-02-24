@@ -126,8 +126,8 @@ namespace voxel_game::voxelrender
 
 		void LoadNode(spatial3d::Node* node)
 		{
-			NODE_TO(node, Node)->mesh = rendering::GetContext().allocator.GetRID(rendering::AllocateType::Mesh);
-			NODE_TO(node, Node)->mesh_instance = rendering::GetContext().allocator.GetRID(rendering::AllocateType::Instance);
+			NODE_TO(node, Node)->mesh = ALLOC_RENDER_RID(Mesh);
+			NODE_TO(node, Node)->mesh_instance = ALLOC_RENDER_RID(Instance);
 
 			ADD_RENDER_CMD(instance_set_base, NODE_TO(node, Node)->mesh_instance, NODE_TO(node, Node)->mesh);
 
@@ -168,25 +168,21 @@ namespace voxel_game::voxelrender
 		spatial3d::WorldType::RegisterType<World>();
 
 		// Initialise the spatial world of a universe
-		world.observer<spatial3d::CWorld, CWorld>(DEBUG_ONLY("InitializeVoxelRenderWorld"))
+		world.observer<spatial3d::CWorld>(DEBUG_ONLY("InitializeVoxelRenderWorld"))
 			.event(flecs::OnAdd)
-			.term_at(2).singleton().filter()
-			.each([](spatial3d::CWorld& spatial_world, CWorld& voxel_world)
+			.with<const CWorld>()
+			.each([](spatial3d::CWorld& spatial_world)
 		{
 			spatial_world.types.node_type.AddType<Node>();
 			spatial_world.types.scale_type.AddType<Scale>();
 			spatial_world.types.world_type.AddType<World>();
-
-			spatial3d::Types& types = spatial_world.types;
-
-			WORLD_TO(spatial_world.world, World)->voxel_material = rendering::GetContext().allocator.GetRID(rendering::AllocateType::Material);
 		});
 
 		// Initialise the spatial world of a universe
-		world.observer<spatial3d::CWorld, CWorld>(DEBUG_ONLY("UninitializeVoxelRenderWorld"))
+		world.observer<spatial3d::CWorld>(DEBUG_ONLY("UninitializeVoxelRenderWorld"))
 			.event(flecs::OnRemove)
-			.term_at(1).singleton().filter()
-			.each([](spatial3d::CWorld& spatial_world, CWorld& voxel_world)
+			.with<const CWorld>()
+			.each([](spatial3d::CWorld& spatial_world)
 		{
 			spatial3d::Types& types = spatial_world.types;
 
@@ -195,7 +191,7 @@ namespace voxel_game::voxelrender
 
 		world.system<spatial3d::CScale, const spatial3d::CWorld, voxel::CContext>(DEBUG_ONLY("VoxelRenderNodeModify"))
 			.multi_threaded()
-			.term_at(3).singleton()
+			.term_at(2).singleton()
 			.with<const voxel::CWorld>()
 			.with<const CWorld>()
 			.each([](flecs::entity entity, spatial3d::CScale& spatial_scale, const spatial3d::CWorld& spatial_world, voxel::CContext& voxel_ctx)

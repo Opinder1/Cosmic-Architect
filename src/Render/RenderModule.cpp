@@ -35,7 +35,9 @@ namespace voxel_game::rendering
         // Make sure we initially get some rids
         AllocatorServer::get_singleton()->RequestRIDs(true);
 
-        world.add<CContext>();
+        CContext& context = world.ensure<CContext>();
+
+        thread_context = &context.threads[0];
 
         // Flush each threads render commands to the command queue server which will run them on the rendering server thread
         world.system<CContext>(DEBUG_ONLY("FrameFlushCommands"))
@@ -93,10 +95,6 @@ namespace voxel_game::rendering
         // Update the render tree nodes transform based on the current nodes position, rotation, scale and parents transform
         world.system<CTransform, const physics3d::CPosition*, const physics3d::CRotation*, const physics3d::CScale*, const CTransform*>(DEBUG_ONLY("UpdateTreeNodeTransforms"))
             .multi_threaded()
-            .term_at(0)
-            .term_at(1)
-            .term_at(2)
-            .term_at(3)
             .term_at(4).cascade(flecs::ChildOf)
             .each([](CTransform& transform, const physics3d::CPosition* position, const physics3d::CRotation* rotation, const physics3d::CScale* scale, const CTransform* parent_transform)
         {
@@ -131,7 +129,6 @@ namespace voxel_game::rendering
             .multi_threaded()
             .term_at(0).second(flecs::Any)
             .term_at(1).self().up(flecs::ChildOf)
-            .term_at(2).singleton()
             .each([](CInstance& instance, const CTransform& transform)
         {
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
@@ -148,8 +145,6 @@ namespace voxel_game::rendering
         world.observer<CScenario>(DEBUG_ONLY("AddScenario"))
             .event(flecs::OnAdd)
             .yield_existing()
-            .term_at(0)
-            .term_at(1).singleton().filter()
             .with<const COwnedScenario>()
             .each([](flecs::entity entity, CScenario& scenario)
         {
@@ -162,14 +157,12 @@ namespace voxel_game::rendering
 
         world.observer<const CScenario>(DEBUG_ONLY("RemoveScenario"))
             .event(flecs::OnRemove)
-            .term_at(0)
-            .term_at(1).singleton().filter()
             .with<const COwnedScenario>()
             .each([](const CScenario& scenario)
         {
             DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
 
-            GetContext().commands.AddCommand<&godot::RenderingServer::free_rid>(scenario.id);
+            ADD_RENDER_CMD(free_rid, scenario.id);
         });
 
         world.observer<const CInstance, const CScenario>(DEBUG_ONLY("InstanceSetScenario"))
@@ -177,7 +170,6 @@ namespace voxel_game::rendering
             .yield_existing()
             .term_at(0).second(flecs::Any)
             .term_at(1).up(flecs::ChildOf).filter()
-            .term_at(2).singleton().filter()
             .each([](const CInstance& instance, const CScenario& scenario)
         {
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
@@ -194,12 +186,11 @@ namespace voxel_game::rendering
             .event(flecs::OnAdd)
             .yield_existing()
             .term_at(0).second(flecs::Any)
-            .term_at(1).singleton().filter()
             .each([](flecs::iter& it, size_t i, CInstance& instance)
         {
             EASY_BLOCK("AddUniqueInstance");
 
-            instance.id = GetContext().allocator.GetRID(AllocateType::Instance);
+            instance.id = ALLOC_RENDER_RID(Instance);
 
             flecs::entity entity = it.entity(i);
 
@@ -210,7 +201,6 @@ namespace voxel_game::rendering
         world.observer<const CInstance>(DEBUG_ONLY("RemoveUniqueInstance"))
             .event(flecs::OnRemove)
             .term_at(0).second(flecs::Any)
-            .term_at(1).singleton().filter()
             .each([](const CInstance& instance)
         {
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
@@ -226,7 +216,6 @@ namespace voxel_game::rendering
             .yield_existing()
             .term_at(0).second("$Base")
             .term_at(1).src("$Base").filter()
-            .term_at(2).singleton().filter()
             .each([](const CInstance& instance, const CBase& base)
         {
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
@@ -238,7 +227,6 @@ namespace voxel_game::rendering
         world.observer<const CBase>(DEBUG_ONLY("RemoveBase"))
             .event(flecs::OnRemove)
             .term_at(0)
-            .term_at(1).singleton().filter()
             .each([](const CBase& base)
         {
             DEBUG_ASSERT(base.id != godot::RID(), "Base should be valid");
@@ -255,9 +243,6 @@ namespace voxel_game::rendering
         world.observer<const CPlaceholderCube, CBase>(DEBUG_ONLY("AddPlaceholderCube"))
             .event(flecs::OnAdd)
             .yield_existing()
-            .term_at(0)
-            .term_at(1)
-            .term_at(2).singleton().filter()
             .each([](flecs::entity entity, const CPlaceholderCube& mesh, CBase& base)
         {
             EASY_BLOCK("AddPlaceholderCube");
@@ -273,9 +258,6 @@ namespace voxel_game::rendering
         world.observer<const CMesh, CBase>(DEBUG_ONLY("AddMesh"))
             .event(flecs::OnAdd)
             .yield_existing()
-            .term_at(0)
-            .term_at(1)
-            .term_at(2).singleton().filter()
             .each([](flecs::entity entity, const CMesh& mesh, CBase& base)
         {
             EASY_BLOCK("AddMesh");

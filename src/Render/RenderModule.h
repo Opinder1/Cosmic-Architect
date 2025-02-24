@@ -27,3 +27,5 @@ namespace voxel_game::rendering
 }
 
 #define ADD_RENDER_CMD(command, ...) rendering::GetContext().commands.AddCommand<&godot::RenderingServer::command>(__VA_ARGS__)
+
+#define ALLOC_RENDER_RID(type) rendering::GetContext().allocator.GetRID(rendering::AllocateType::type)

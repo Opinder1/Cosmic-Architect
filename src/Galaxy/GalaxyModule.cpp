@@ -40,7 +40,10 @@ namespace voxel_game::galaxy
 		galaxy_entity.add<CWorld>();
 
 		spatial3d::CWorld& spatial_world = galaxy_entity.ensure<spatial3d::CWorld>();
-		spatial_world.world->max_scale = spatial3d::k_max_world_scale;
+
+		DEBUG_ASSERT(!world.is_deferred(), "Observers need to be invoked to initialize poly types");
+
+		spatial_world.world = spatial3d::CreateWorld(spatial_world.types, spatial3d::k_max_world_scale);
 
 		galaxy_entity.add<physics3d::CPosition>();
 		galaxy_entity.add<physics3d::CRotation>();

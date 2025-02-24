@@ -34,22 +34,6 @@ namespace voxel_game::sim
 			world_time.frame_start_time = Clock::now();
 		});
 
-		world.component<CEntityPools>()
-			.on_add([world = world.c_ptr()](CEntityPools& pools)
-		{
-			for (ThreadEntityPool& pool : pools.threads)
-			{
-				pool.SetWorld(world);
-			}
-		})
-			.on_remove([world = world.c_ptr()](CEntityPools& pools)
-		{
-			for (ThreadEntityPool& pool : pools.threads)
-			{
-				pool.ClearEntities();
-			}
-		});
-
 		world.system<CEntityPools>("ProcessEntityThreadCommands")
 			.kind(flecs::OnUpdate)
 			.term_at(0).src<CEntityPools>()
