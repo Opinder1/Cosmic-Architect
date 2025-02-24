@@ -36,6 +36,10 @@ namespace voxel_game::spatial3d
 		world.import<sim::Components>();
 		world.import<physics3d::Components>();
 
+		NodeType::RegisterType<Node>();
+		ScaleType::RegisterType<Scale>();
+		WorldType::RegisterType<World>();
+
 		// Phases
 
 		world.singleton<PNodeCreate>()
