@@ -4,7 +4,7 @@
 
 namespace voxel_game
 {
-    struct SoulComponent
+    struct CSoul
     {
         uint8_t soul_level;
         uint8_t soul_rank;
@@ -12,35 +12,35 @@ namespace voxel_game
         uint16_t soul_energy;
     };
 
-    struct AuraRelationship
+    struct RAura
     {
         uint8_t aura_strength;
     };
 
-    struct DivinityRelationship
+    struct RDivinity
     {
         uint16_t divinity_power;
         bool has_godhood;
     };
 
-    struct ChaoticComponent
+    struct CChaotic
     {
         uint16_t chaos_amount;
     };
 
-    struct MagicComponent
+    struct CMagic
     {
         uint16_t magic_strength;
         uint16_t mana;
     };
 
-    struct CultivationRelationship
+    struct RCultivation
     {
         uint16_t internal_energy;
         uint16_t external_energy;
     };
 
-    struct AbilityRelationship
+    struct RAbility
     {
         uint8_t ability_proficiency;
     };

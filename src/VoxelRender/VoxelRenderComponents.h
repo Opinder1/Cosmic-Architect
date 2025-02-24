@@ -21,10 +21,12 @@ namespace voxel_game::voxelrender
 		godot::RID mesh_instance;
 	};
 
+	struct Scale {};
+
 	struct World
 	{
-		PolyEntry<Node> node_entry;
-
 		godot::RID voxel_material;
 	};
+
+	struct CWorld {};
 }

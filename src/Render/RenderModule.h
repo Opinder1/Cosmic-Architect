@@ -4,6 +4,10 @@
 
 namespace voxel_game::rendering
 {
+	struct ThreadContext;
+
+	ThreadContext& GetContext();
+
 	struct Module
 	{
 		Module(flecs::world& world);
@@ -21,3 +25,5 @@ namespace voxel_game::rendering
 		void InitMesh(flecs::world& world);
 	};
 }
+
+#define ADD_RENDER_CMD(command, ...) rendering::GetContext().commands.AddCommand<&godot::RenderingServer::command>(__VA_ARGS__)

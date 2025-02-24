@@ -4,7 +4,7 @@
 
 namespace voxel_game
 {
-	struct BodyComponent
+	struct CBody
 	{
 		uint8_t fitness;
 		uint8_t sight_distance;
@@ -12,7 +12,7 @@ namespace voxel_game
 		uint16_t body_size;
 	};
 
-	struct HumanoidComponent
+	struct CHumanoid
 	{
 		uint32_t skin_colour;
 		uint32_t facial_features;
@@ -22,77 +22,77 @@ namespace voxel_game
 		uint8_t gender;
 	};
 
-	struct VirtualBodyComponent
+	struct CVirtualBody
 	{
 		uint16_t virtual_presence;
 	};
 
-	struct SpecialEyesRelationship
+	struct RSpecialEyes
 	{
 
 	};
 
-	struct CyborgImplantRelationship
+	struct RCyborgImplant
 	{
 
 	};
 
-	struct EquipmentRelationship
+	struct REquipment
 	{
 
 	};
 
-	struct BeastComponent
+	struct CBeast
 	{
 
 	};
 
-	struct AquaticComponent
+	struct CAquatic
 	{
 
 	};
 
-	struct DraconicComponent
+	struct CDraconic
 	{
 
 	};
 
-	struct DemonicComponent
+	struct CDemonic
 	{
 
 	};
 
-	struct UndeadComponent
+	struct CUndead
 	{
 
 	};
 
-	struct VampyricComponent
+	struct CVampyric
 	{
 
 	};
 
-	struct MechanicalLifeformComponent
+	struct CMechanicalLifeform
 	{
 
 	};
 
-	struct BioechanicalLifeformComponent
+	struct CBioechanicalLifeform
 	{
 
 	};
 
-	struct GaseousLifeformComponent
+	struct CGaseousLifeform
 	{
 
 	};
 
-	struct EnergyLifeformComponent
+	struct CEnergyLifeform
 	{
 
 	};
 
-	struct VirtualLifeformComponent
+	struct CVirtualLifeform
 	{
 
 	};

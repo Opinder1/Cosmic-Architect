@@ -149,7 +149,7 @@ namespace voxel_game
 
 			godot::Transform3D transform = args[0];
 
-			flecs::entity(m_world, m_galaxy_entity).set<physics3d::Position>({ transform.origin });
+			flecs::entity(m_world, m_galaxy_entity).set<physics3d::CPosition>({ transform.origin });
 		}
 		else
 		{

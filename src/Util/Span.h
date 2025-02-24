@@ -10,7 +10,7 @@ constexpr const size_t DynamicSpan = SIZE_MAX;
 
 // A type that references a range of contiguous items regardless of how they are stored.
 // This variant references static sized ranges
-template<class T, size_t S>
+template<class T, size_t S = DynamicSpan>
 class Span
 {
 public:
@@ -52,12 +52,12 @@ public:
 		return false;
 	}
 
-	T* First() const
+	T* begin() const
 	{
 		return Data();
 	}
 
-	T* Last() const
+	T* end() const
 	{
 		return Data() + Size();
 	}
@@ -167,12 +167,12 @@ public:
 		return m_size != 0;
 	}
 
-	T* First() const
+	T* begin() const
 	{
 		return Data();
 	}
 
-	T* Last() const
+	T* end() const
 	{
 		return Data() + Size();
 	}

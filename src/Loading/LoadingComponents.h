@@ -10,18 +10,18 @@
 
 namespace voxel_game::loading
 {
-	struct Identifier
+	struct CIdentifier
 	{
 		UUID uuid;
 	};
 
-	struct Saveable
+	struct CSaveable
 	{
 		uint64_t last_load_frame = 0;
 		uint64_t last_save_frame = 0;
 	};
 
-	struct Database
+	struct CDatabase
 	{
 		godot::StringName path;
 		ArchiveServer::DBHandle handle;

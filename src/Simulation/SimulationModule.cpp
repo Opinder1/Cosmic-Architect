@@ -5,36 +5,68 @@
 
 namespace voxel_game::sim
 {
+	thread_local ThreadEntityPool* thread_pool = nullptr;
+
+	ThreadEntityPool& GetPool()
+	{
+		DEBUG_ASSERT(thread_pool != nullptr, "This thread doesn't have a pool set");
+		return *thread_pool;
+	}
+
 	Module::Module(flecs::world& world)
 	{
 		world.module<Module>();
 
 		world.import<Components>();
 
-		world.add<GlobalTime>();
+		world.add<CFrame>();
 
-		world.add<Config>();
+		world.add<CConfig>();
 
-		world.add<ThreadEntityPools>();
+		world.add<CEntityPools>();
 
-		world.system<GlobalTime>("WorldUpdateTime")
+		world.system<CFrame>("WorldUpdateTime")
 			.kind(flecs::OnUpdate)
-			.term_at(0).src<GlobalTime>()
-			.each([](GlobalTime& world_time)
+			.term_at(0).src<CFrame>()
+			.each([](CFrame& world_time)
 		{
 			world_time.frame_index++;
-			world_time.frame_start = Clock::now();
+			world_time.frame_start_time = Clock::now();
 		});
 
-		world.system<ThreadEntityPools>("ProcessEntityThreadCommands")
+		world.component<CEntityPools>()
+			.on_add([world = world.c_ptr()](CEntityPools& pools)
+		{
+			for (ThreadEntityPool& pool : pools.threads)
+			{
+				pool.SetWorld(world);
+			}
+		})
+			.on_remove([world = world.c_ptr()](CEntityPools& pools)
+		{
+			for (ThreadEntityPool& pool : pools.threads)
+			{
+				pool.ClearEntities();
+			}
+		});
+
+		world.system<CEntityPools>("ProcessEntityThreadCommands")
 			.kind(flecs::OnUpdate)
-			.term_at(0).src<ThreadEntityPools>()
-			.each([world = world.c_ptr()](ThreadEntityPools& thread_pools)
+			.term_at(0).src<CEntityPools>()
+			.each([](CEntityPools& thread_pools)
 		{
 			for (ThreadEntityPool& thread : thread_pools.threads)
 			{
-				thread.AllocateEntities(world);
+				thread.AllocateEntities();
 			}
+		});
+
+		world.system<const sim::CThreadWorker, CEntityPools>(DEBUG_ONLY("SetThreadContexts"))
+			.multi_threaded()
+			.term_at(1).src<CEntityPools>()
+			.each([](flecs::iter& it, size_t i, const sim::CThreadWorker& worker, CEntityPools& pools)
+		{
+			thread_pool = &pools.threads[it.world().get_stage_id()];
 		});
 	}
 }

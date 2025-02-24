@@ -30,22 +30,22 @@ namespace voxel_game::galaxy
 		galaxy_entity.set_name("SimulatedGalaxy");
 #endif
 
-		galaxy_entity.emplace<sim::Path>(path);
+		galaxy_entity.emplace<sim::CPath>(path);
 
-		loading::Database& database = galaxy_entity.ensure<loading::Database>();
+		loading::CDatabase& database = galaxy_entity.ensure<loading::CDatabase>();
 		database.path = path.path_join("entities.db");
 
 		galaxy_entity.child_of(universe_entity);
 
-		galaxy_entity.add<World>();
+		galaxy_entity.add<CWorld>();
 
-		spatial3d::WorldMarker& spatial_world = galaxy_entity.ensure<spatial3d::WorldMarker>();
-		spatial_world.world.max_scale = spatial3d::k_max_world_scale;
+		spatial3d::CWorld& spatial_world = galaxy_entity.ensure<spatial3d::CWorld>();
+		spatial_world.world->max_scale = spatial3d::k_max_world_scale;
 
-		galaxy_entity.add<physics3d::Position>();
-		galaxy_entity.add<physics3d::Rotation>();
+		galaxy_entity.add<physics3d::CPosition>();
+		galaxy_entity.add<physics3d::CRotation>();
 
-		spatial3d::InitializeWorldScales(galaxy_entity, spatial_world);
+		spatial3d::InitializeWorldScaleEntities(galaxy_entity, *spatial_world.world);
 
 		// We want the simulated galaxy to load all galaxies around it
 		spatial3d::Loader& spatial_loader = galaxy_entity.ensure<spatial3d::Loader>();
@@ -53,7 +53,7 @@ namespace voxel_game::galaxy
 		spatial_loader.min_lod = 0;
 		spatial_loader.max_lod = spatial3d::k_max_world_scale;
 
-		galaxy_entity.add<rendering::Transform>();
+		galaxy_entity.add<rendering::CTransform>();
 
 		return galaxy_entity;
 	}
@@ -67,13 +67,17 @@ namespace voxel_game::galaxy
 		world.import<spatial3d::Components>();
 		world.import<physics3d::Components>();
 
+		spatial3d::NodeType::RegisterType<Node>();
+		spatial3d::ScaleType::RegisterType<Scale>();
+
 		// Initialise the spatial world of a galaxy
-		world.observer<World, spatial3d::WorldMarker>(DEBUG_ONLY("GalaxyInitializeSpatialWorld"))
+		world.observer<spatial3d::CWorld>(DEBUG_ONLY("GalaxyInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
-			.each([](World& galaxy_world, spatial3d::WorldMarker& spatial_world)
+			.with<const CWorld>()
+			.each([](spatial3d::CWorld& spatial_world)
 		{
-			galaxy_world.node_entry = spatial_world.world.node_type.AddEntry<Node>();
-			galaxy_world.scale_entry = spatial_world.world.scale_type.AddEntry<Scale>();
+			spatial_world.types.node_type.AddType<Node>();
+			spatial_world.types.scale_type.AddType<Scale>();
 		});
 	}
 }

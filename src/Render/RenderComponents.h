@@ -50,86 +50,83 @@ namespace voxel_game::rendering
 		// TODO Make into template with <godot::RenderingServer>
 		TypedCommandBuffer commands;
 
-		Allocator material_allocator{ AllocateType::Material };
-		Allocator mesh_allocator{ AllocateType::Mesh };
-		Allocator instance_allocator{ AllocateType::Instance };
+		Allocator allocator;
 	};
 
-	struct ServerContext : Nocopy
+	struct CContext : Nocopy, Nomove
 	{
-		ThreadContext main_thread;
 		PerThread<ThreadContext> threads;
 	};
 
-	struct Transform
+	struct CTransform
 	{
 		godot::Transform3D transform;
 		bool modified = false;
 	};
 
 	// This is the scenario that all the children instances of this entity will register to
-	struct Scenario
+	struct CScenario
 	{
 		godot::RID id;
 		godot::Vector3i camera_pos; // Updated to the currently enabled cameras position
 	};
 
 	// This tag denotes that this entity creates the scenario itself
-	struct OwnedScenario {};
+	struct COwnedScenario {};
 
 	// Relationship tag for setting the base type of the entity with it being a unique instance
-	struct Instance
+	struct CInstance
 	{
 		godot::RID id;
 	};
 
 	// Relationship tag for setting the base type of the entity to a batched type
-	struct MultiInstance {};
+	struct CMultiInstance {};
 
 	// This entity is a render base which instances will use to define what they render
-	struct Base
+	struct CBase
 	{
 		godot::RID id;
 	};
 
 	// A tag that denotes that the base is a placeholder cube
-	struct PlaceholderCube {};
+	struct CPlaceholderCube {};
 
-	struct Mesh {};
+	struct CMesh {};
 
-	struct MeshFile
+	struct CMeshFile
 	{
 		godot::StringName path;
 	};
 
-	struct PointMesh : Nocopy
+	struct CPointMesh : Nocopy
 	{
 		godot::PackedVector3Array points;
 	};
 
-	struct Multimesh {};
+	struct CMultimesh {};
 
-	struct Particles {};
+	struct CParticles {};
 
-	struct ParticlesCollision {};
+	struct CParticlesCollision {};
 
-	struct Light {};
+	struct CLight {};
 
-	struct ReflectionProbe {};
+	struct CReflectionProbe {};
 
-	struct Decal {};
+	struct CDecal {};
 
-	struct VoxelGI {};
+	struct CVoxelGI {};
 
-	struct Lightmap {};
+	struct CLightmap {};
 
-	struct Occluder {};
+	struct COccluder {};
 
-	struct VisibilityNotifier {};
+	struct CVisibilityNotifier {};
 
-	struct FogVolume {};
+	struct CFogVolume {};
 
 	// Used by various lod systems to know where to load visual elements around
 	// Is related to the scenario that its in
-	struct Camera {};
+	struct CCamera {};
 }

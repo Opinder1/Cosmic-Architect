@@ -25,14 +25,10 @@ namespace voxel_game::galaxy
 	struct Scale {};
 
 	// This entity is a galaxy
-	struct World
-	{
-		PolyEntry<Node> node_entry;
-		PolyEntry<Scale> scale_entry;
-	};
+	struct CWorld {};
 
 	// This entity is a star
-	struct Star
+	struct CStar
 	{
 		godot::Color color;
 	};

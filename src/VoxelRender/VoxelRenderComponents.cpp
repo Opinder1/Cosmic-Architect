@@ -9,6 +9,6 @@ namespace voxel_game::voxelrender
 		world.module<Components>();
 
 		world.component<Node>();
-		world.component<World>();
+		world.component<CWorld>();
 	}
 }

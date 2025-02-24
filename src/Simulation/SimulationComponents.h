@@ -24,25 +24,30 @@ namespace voxel_game::sim
 		Components(flecs::world& world);
 	};
 
-	struct GlobalTime
+	struct CFrame
 	{
 		uint64_t frame_index = 0;
-		Clock::time_point frame_start;
+		Clock::time_point frame_start_time;
 	};
 
-	struct LocalTime
+	struct CLocalTime
 	{
 		Clock::time_point epoch;
 	};
 
-	struct Path
+	struct CPath
 	{
 		godot::StringName path;
 	};
 
-	struct Config
+	struct CConfig
 	{
 		godot::Dictionary values;
+	};
+
+	struct CThreadWorker
+	{
+		size_t index;
 	};
 
 	class ThreadEntityPool
@@ -50,20 +55,21 @@ namespace voxel_game::sim
 	public:
 		ThreadEntityPool();
 
-		void AllocateEntities(flecs::world_t* world);
+		void SetWorld(flecs::world_t* world);
 
-		void ClearEntities(flecs::world_t* world);
+		void AllocateEntities();
 
-		flecs::entity_t CreateThreadEntity();
+		void ClearEntities();
+
+		flecs::entity CreateEntity();
 
 	private:
+		flecs::world_t* m_world = nullptr;
 		SmallVector<flecs::entity_t, k_max_pool_entities> m_new_entities;
 	};
 
-	struct ThreadEntityPools : Nocopy
+	struct CEntityPools : Nocopy
 	{
 		PerThread<ThreadEntityPool> threads;
 	};
-
-	ThreadEntityPool& GetThreadEntityPool(ThreadEntityPools& pools, flecs::world_t* stage);
 }

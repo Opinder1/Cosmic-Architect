@@ -2,11 +2,14 @@
 
 #include "Util/Util.h"
 #include "Util/GodotMemory.h"
+#include "Util/Span.h"
 
 #include <godot_cpp/classes/object.hpp>
 #include <godot_cpp/variant/rid.hpp>
 
 #include <TKRZW/tkrzw_thread_util.h>
+
+#include <robin_hood/robin_hood.h>
 
 #include <optional>
 
@@ -73,15 +76,16 @@ namespace voxel_game::rendering
 
 		void RequestRIDs(bool sync);
 
-		void GetRIDs(AllocateType type, std::vector<godot::RID>& rids_out);
+		void GetRIDs(Span<uint16_t, k_num_alloc_types> requested, Span<std::vector<godot::RID>, k_num_alloc_types> rids_out);
 
-		void FreeRIDs(AllocateType type, std::vector<godot::RID>& rids_in);
+		void FreeRIDs(Span<std::vector<godot::RID>, k_num_alloc_types> rids_in);
 
 	public:
 		static void _bind_methods();
 		static void _cleanup_methods();
 
 	private:
+		bool AnyRequired();
 		void AllocateRIDsInternal();
 		void DeallocateRIDsInternal();
 
@@ -100,15 +104,16 @@ namespace voxel_game::rendering
 	class Allocator
 	{
 	public:
-		Allocator(AllocateType type);
+		Allocator();
 		~Allocator();
 
 		void Process();
 
-		godot::RID GetRID();
+		godot::RID GetRID(AllocateType type);
+
+		godot::RID EnsureRID(AllocateType type);
 
 	private:
-		AllocateType m_type;
-		std::vector<godot::RID> m_rids;
+		std::vector<godot::RID> m_rids[k_num_alloc_types];
 	};
 }

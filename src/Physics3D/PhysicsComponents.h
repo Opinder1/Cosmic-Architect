@@ -15,57 +15,57 @@ namespace voxel_game::physics3d
 
 	// Entities that are children of a world entity should have this component
 	// so that the system knows how to place them in the spatial world
-	struct Position
+	struct CPosition
 	{
 		godot::Vector3 position;
 	};
 
-	struct Velocity
+	struct CVelocity
 	{
 		godot::Vector3 velocity;
 	};
 
-	struct Rotation
+	struct CRotation
 	{
 		godot::Quaternion rotation;
 	};
 
-	struct Scale
+	struct CScale
 	{
 		godot::Vector3 scale;
 	};
 
-	struct Mass
+	struct CMass
 	{
 		real_t mass = 0.0;
 	};
 
-	struct Bounciness
+	struct CBounciness
 	{
 		real_t bounciness = 0.0;
 	};
 
-	struct Roughness
+	struct CRoughness
 	{
 		real_t roughness = 0.0;
 	};
 
-	struct Gravity
+	struct CGravity
 	{
 		godot::Vector3 force;
 	};
 
-	struct AABB
+	struct CAABB
 	{
 		godot::AABB aabb;
 	};
 
-	struct Box
+	struct CBox
 	{
 		godot::Vector3 size;
 	};
 
-	struct Sphere
+	struct CSphere
 	{
 		real_t radius = 0.0;
 	};

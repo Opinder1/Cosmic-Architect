@@ -4,38 +4,38 @@
 
 namespace voxel_game
 {
-	struct BirthTimeComponent
+	struct CBirthTime
 	{
 		Clock::time_point birth_time;
 	};
 
-	struct LifespanComponent
+	struct CLifespan
 	{
 		Clock::duration lifespan;
 	};
 
-	struct HungerComponent
+	struct CHunger
 	{
 		uint16_t stomach_size;
 		uint16_t hunger;
 		uint16_t hunger_loss_rate;
 	};
 
-	struct ThirstComponent
+	struct CThirst
 	{
 		uint8_t thirst_max;
 		uint8_t thirst;
 		uint8_t thirst_loss_rate;
 	};
 
-	struct StaminaComponent
+	struct CStamina
 	{
 		uint8_t stamina_max;
 		uint8_t stamina;
 		uint8_t stamina_loss_rate;
 	};
 
-	struct BreathComponent
+	struct CBreath
 	{
 		uint8_t breath;
 		bool breathe_underwater : 1;
@@ -44,18 +44,18 @@ namespace voxel_game
 		bool breathe_magma : 1;
 	};
 
-	struct HealthComponent
+	struct CHealth
 	{
 		uint16_t health_max;
 		uint16_t health;
 	};
 
-	struct StatusEffectRelationship
+	struct RStatusEffect
 	{
 		uint8_t effect_amount;
 	};
 
-	struct ResistanceComponent
+	struct CResistance
 	{
 		uint8_t physical_resistance;
 		uint8_t stab_resistance;

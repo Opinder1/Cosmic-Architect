@@ -7,6 +7,7 @@
 #include "Spatial3D/SpatialModule.h"
 
 #include "Render/RenderComponents.h"
+#include "Render/RenderModule.h"
 
 #include "Simulation/SimulationComponents.h"
 
@@ -49,7 +50,7 @@ namespace voxel_game::voxelrender
 		}
 	}
 
-	void GenerateVertexesForNode(voxel::Context& context, const voxel::Node& node, godot::PackedVector3Array& array, godot::PackedColorArray& voxel_colours)
+	void GenerateVertexesForNode(voxel::CContext& context, const voxel::Node& node, godot::PackedVector3Array& array, godot::PackedColorArray& voxel_colours)
 	{
 		for (size_t x = 0; x < 16; x++)
 		for (size_t y = 0; y < 16; y++)
@@ -119,25 +120,16 @@ namespace voxel_game::voxelrender
 	struct VoxelRenderNodeLoader
 	{
 		flecs::entity entity;
-		flecs::world stage;
-		const World& render_world;
-		const voxel::World& voxel_world;
-		spatial3d::World& spatial_world;
-		voxel::Context& voxel_ctx;
-		rendering::ServerContext& render_ctx;
+		const spatial3d::Types& types;
+		const spatial3d::World& spatial_world;
+		voxel::CContext& voxel_ctx;
 
-		void LoadNode(Poly node_poly)
+		void LoadNode(spatial3d::Node* node)
 		{
-			spatial3d::Node& node = node_poly.GetEntry(spatial_world.node_entry);
-			voxel::Node& voxel_node = node_poly.GetEntry(voxel_world.node_entry);
-			Node& render_node = node_poly.GetEntry(render_world.node_entry);
+			NODE_TO(node, Node)->mesh = rendering::GetContext().allocator.GetRID(rendering::AllocateType::Mesh);
+			NODE_TO(node, Node)->mesh_instance = rendering::GetContext().allocator.GetRID(rendering::AllocateType::Instance);
 
-			rendering::ThreadContext& thread_context = render_ctx.threads[stage.get_stage_id()];
-
-			render_node.mesh = thread_context.mesh_allocator.GetRID();
-			render_node.mesh_instance = thread_context.instance_allocator.GetRID();
-
-			thread_context.commands.AddCommand<&godot::RenderingServer::instance_set_base>(render_node.mesh_instance, render_node.mesh);
+			ADD_RENDER_CMD(instance_set_base, NODE_TO(node, Node)->mesh_instance, NODE_TO(node, Node)->mesh);
 
 			godot::PackedVector3Array vertexes;
 			godot::PackedColorArray colors;
@@ -151,20 +143,14 @@ namespace voxel_game::voxelrender
 			arrays[godot::RenderingServer::ARRAY_VERTEX] = vertexes;
 			arrays[godot::RenderingServer::ARRAY_COLOR] = colors;
 
-			thread_context.commands.AddCommand<&godot::RenderingServer::mesh_add_surface_from_arrays>(render_node.mesh, godot::RenderingServer::PRIMITIVE_TRIANGLES, arrays, godot::Array(), godot::Dictionary(), 0);
-			thread_context.commands.AddCommand<&godot::RenderingServer::mesh_surface_set_material>(render_node.mesh, 0, render_world.voxel_material);
+			ADD_RENDER_CMD(mesh_add_surface_from_arrays, NODE_TO(node, Node)->mesh, godot::RenderingServer::PRIMITIVE_TRIANGLES, arrays, godot::Array(), godot::Dictionary(), 0);
+			ADD_RENDER_CMD(mesh_surface_set_material, NODE_TO(node, Node)->mesh, 0, WORLD_TO(spatial_world, World).voxel_material);
 		}
 
-		void UnloadNode(Poly node_poly)
+		void UnloadNode(spatial3d::Node* node)
 		{
-			spatial3d::Node& node = node_poly.GetEntry(spatial_world.node_entry);
-			voxel::Node& voxel_node = node_poly.GetEntry(voxel_world.node_entry);
-			Node& render_node = node_poly.GetEntry(render_world.node_entry);
-
-			rendering::ThreadContext& thread_context = render_ctx.threads[stage.get_stage_id()];
-
-			thread_context.commands.AddCommand<&godot::RenderingServer::free_rid>(render_node.mesh_instance);
-			thread_context.commands.AddCommand<&godot::RenderingServer::free_rid>(render_node.mesh);
+			ADD_RENDER_CMD(free_rid, NODE_TO(node, Node)->mesh_instance);
+			ADD_RENDER_CMD(free_rid, NODE_TO(node, Node)->mesh);
 		}
 	};
 
@@ -177,52 +163,55 @@ namespace voxel_game::voxelrender
 		world.import<voxel::Components>();
 		world.import<spatial3d::Module>();
 
-		world.singleton<World>()
-			.add_second<spatial3d::WorldMarker>(flecs::With);
+		spatial3d::NodeType::RegisterType<Node>();
+		spatial3d::ScaleType::RegisterType<Scale>();
+		spatial3d::WorldType::RegisterType<World>();
 
 		// Initialise the spatial world of a universe
-		world.observer<World, spatial3d::WorldMarker, rendering::ServerContext>(DEBUG_ONLY("InitializeVoxelRenderWorld"))
+		world.observer<spatial3d::CWorld, CWorld>(DEBUG_ONLY("InitializeVoxelRenderWorld"))
 			.event(flecs::OnAdd)
 			.term_at(2).singleton().filter()
-			.each([](World& voxel_world, spatial3d::WorldMarker& spatial_world, rendering::ServerContext& render_ctx)
+			.each([](spatial3d::CWorld& spatial_world, CWorld& voxel_world)
 		{
-			voxel_world.node_entry = spatial_world.world.node_type.AddEntry<Node>();
+			spatial_world.types.node_type.AddType<Node>();
+			spatial_world.types.scale_type.AddType<Scale>();
+			spatial_world.types.world_type.AddType<World>();
 
-			voxel_world.voxel_material = render_ctx.main_thread.material_allocator.GetRID();
+			spatial3d::Types& types = spatial_world.types;
+
+			WORLD_TO(spatial_world.world, World)->voxel_material = rendering::GetContext().allocator.GetRID(rendering::AllocateType::Material);
 		});
 
 		// Initialise the spatial world of a universe
-		world.observer<World, rendering::ServerContext>(DEBUG_ONLY("UninitializeVoxelRenderWorld"))
+		world.observer<spatial3d::CWorld, CWorld>(DEBUG_ONLY("UninitializeVoxelRenderWorld"))
 			.event(flecs::OnRemove)
 			.term_at(1).singleton().filter()
-			.each([](World& voxel_world, rendering::ServerContext& render_ctx)
+			.each([](spatial3d::CWorld& spatial_world, CWorld& voxel_world)
 		{
-			render_ctx.main_thread.commands.AddCommand<&godot::RenderingServer::free_rid>(voxel_world.voxel_material);
+			spatial3d::Types& types = spatial_world.types;
+
+			ADD_RENDER_CMD(free_rid, WORLD_TO(spatial_world.world, World)->voxel_material);
 		});
 
-		world.system<const World, const voxel::World, spatial3d::WorldMarker, voxel::Context, rendering::ServerContext>(DEBUG_ONLY("VoxelRenderNodeModify"))
+		world.system<spatial3d::CScale, const spatial3d::CWorld, voxel::CContext>(DEBUG_ONLY("VoxelRenderNodeModify"))
 			.multi_threaded()
 			.term_at(3).singleton()
-			.term_at(4).singleton()
-			.each([](flecs::entity entity, const World& render_world, const voxel::World& voxel_world, spatial3d::WorldMarker& spatial_world, voxel::Context& voxel_ctx, rendering::ServerContext& render_ctx)
+			.with<const voxel::CWorld>()
+			.with<const CWorld>()
+			.each([](flecs::entity entity, spatial3d::CScale& spatial_scale, const spatial3d::CWorld& spatial_world, voxel::CContext& voxel_ctx)
 		{
 			flecs::world stage = entity.world();
 
-			VoxelRenderNodeLoader loader{ entity, stage, render_world, voxel_world, spatial_world.world, voxel_ctx, render_ctx };
+			VoxelRenderNodeLoader loader{ entity, spatial_world.types, *spatial_world.world, voxel_ctx };
 
-			for (Poly scale_poly : spatial_world.world.scales)
+			for (spatial3d::Node* node : spatial_scale.scale->load_commands)
 			{
-				spatial3d::Scale& scale = spatial3d::GetScale(spatial_world.world, scale_poly);
+				loader.LoadNode(node);
+			}
 
-				for (Poly node_poly : scale.load_commands)
-				{
-					loader.LoadNode(node_poly);
-				}
-
-				for (Poly node_poly : scale.unload_commands)
-				{
-					loader.UnloadNode(node_poly);
-				}
+			for (spatial3d::Node* node : spatial_scale.scale->unload_commands)
+			{
+				loader.UnloadNode(node);
 			}
 		});
 	}

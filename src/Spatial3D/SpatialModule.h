@@ -5,7 +5,7 @@
 
 namespace voxel_game::spatial3d
 {
-	struct WorldMarker;
+	struct World;
 
 	struct Module
 	{
@@ -13,5 +13,5 @@ namespace voxel_game::spatial3d
 	};
 
 	// Add scale workers to a world for each scale the world currently has
-	void InitializeWorldScales(flecs::entity world_entity, WorldMarker& spatial_world);
+	void InitializeWorldScaleEntities(flecs::entity world_entity, World& world);
 }

@@ -8,15 +8,15 @@ namespace voxel_game::physics3d
 	{
 		world.module<Components>();
 
-		world.component<Position>();
-		world.component<Velocity>();
-		world.component<Rotation>();
-		world.component<Scale>();
-		world.component<Mass>();
-		world.component<Bounciness>();
-		world.component<Roughness>();
-		world.component<AABB>();
-		world.component<Box>();
-		world.component<Sphere>();
+		world.component<CPosition>();
+		world.component<CVelocity>();
+		world.component<CRotation>();
+		world.component<CScale>();
+		world.component<CMass>();
+		world.component<CBounciness>();
+		world.component<CRoughness>();
+		world.component<CAABB>();
+		world.component<CBox>();
+		world.component<CSphere>();
 	}
 }

@@ -3,15 +3,19 @@
 #include "SpatialCoord.h"
 
 #include "Util/Nocopy.h"
-#include "Util/Poly.h"
 #include "Util/Util.h"
 #include "Util/Hash.h"
+#include "Util/Poly.h"
 
+#include "Simulation/SimulationComponents.h"
+
+#include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/variant/vector3i.hpp>
 
 #include <robin_hood/robin_hood.h>
 
-#include <flecs/flecs.h>
+#include <array>
+#include <vector>
 
 namespace voxel_game::spatial3d
 {
@@ -32,8 +36,28 @@ namespace voxel_game::spatial3d
 		Deleting, // Has a delete command
 	};
 
+	struct Entity
+	{
+		uint8_t scale = 0;
+		godot::Vector3 position;
+
+		uint8_t last_scale = 0;
+		godot::Vector3i last_node_pos;
+	};
+
+	// An object that tells a spatial world where to load nodes and at what lods
+	struct Loader
+	{
+		uint8_t dist_per_lod = 0; // The number of nodes there are until the next lod starts
+		uint8_t min_lod = 0; // The minimum lod this camera can see
+		uint8_t max_lod = 0; // The maximum lod this camera can see
+		uint8_t update_frequency = 0; // The frequency
+
+		godot::Vector3 position;
+	};
+
 	// A single node in a spatial world. This is meant to be inherited from for custom data
-	struct Node
+	struct Node : Nocopy, Nomove
 	{
 		Coord coord;
 
@@ -47,32 +71,35 @@ namespace voxel_game::spatial3d
 		uint32_t network_version = 0; // The version of this node. We use this to check if we should update to a newer version if there is one
 		Clock::time_point last_update_time; // Time since a loader last updated our unload timer
 
-		Poly parent = nullptr; // Octree parent
+		Node* parent = nullptr; // Octree parent
 
-		Poly children[8] = { nullptr }; // Octree children
+		Node* children[8] = { nullptr }; // Octree children
 
-		Poly neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
+		Node* neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
 
-		std::vector<flecs::entity_t> entities;
+		robin_hood::unordered_set<Entity*> entities;
 	};
 
-	using NodeMap = robin_hood::unordered_flat_map<godot::Vector3i, Poly>;
+	using NodeMap = robin_hood::unordered_map<godot::Vector3i, Node*>;
 
 	// A level of detail map for a world. The world will have multiple of these
-	struct Scale
+	struct Scale : Nocopy, Nomove
 	{
-		uint8_t scale = 0;
+		uint8_t index = 0;
+
+		Scale* parent = nullptr;
+		Scale* child = nullptr;
 
 		NodeMap nodes;
 
+		robin_hood::unordered_set<Entity*> entities;
+
 		// Commands
 		std::vector<godot::Vector3i> create_commands;
-		std::vector<Poly> load_commands;
-		std::vector<Poly> unload_commands;
-		std::vector<Poly> destroy_commands;
+		std::vector<Node*> load_commands;
+		std::vector<Node*> unload_commands;
+		std::vector<Node*> destroy_commands;
 	};
-
-	using ScaleArray = std::array<Poly, k_max_world_scale>;
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct World : Nocopy, Nomove
@@ -83,28 +110,51 @@ namespace voxel_game::spatial3d
 
 		Clock::duration node_keepalive = 10s;
 
-		// Scale and Node builder
-		PolyType node_type;
-		PolyType scale_type;
+		robin_hood::unordered_set<Loader*> loaders;
 
-		PolyEntry<Node> node_entry;
-		PolyEntry<Scale> scale_entry;
+		robin_hood::unordered_set<Entity*> entities;
 
-		// World data
-		ScaleArray scales;
+		std::array<Scale*, k_max_world_scale> scales;
 	};
 
-	Scale& GetScale(World& spatial_world, Poly scale_poly);
+	using NodeType = PolyType<Node>;
+	using ScaleType = PolyType<Scale>;
+	using WorldType = PolyType<World>;
 
-	const Scale& GetScale(const World& spatial_world, Poly scale_poly);
+	struct Types
+	{
+		NodeType node_type;
+		ScaleType scale_type;
+		WorldType world_type;
+	};
 
-	Scale& GetScale(World& spatial_world, uint8_t scale_index);
+#define NODE_TO(poly, type) types.node_type.Get<type>(poly)
+#define SCALE_TO(poly, type) types.scale_type.Get<type>(poly)
+#define WORLD_TO(poly, type) types.world_type.Get<type>(poly)
 
 	const Scale& GetScale(const World& spatial_world, uint8_t scale_index);
 
-	Node& GetNode(World& spatial_world, Poly node_poly);
+	Scale& GetScale(World& spatial_world, uint8_t scale_index);
 
-	const Node& GetNode(const World& spatial_world, Poly node_poly);
+	const Node* GetNode(const World& world, Coord coord);
 
-	Poly GetNode(const World& world, Coord coord);
+	Node* GetNode(World& world, Coord coord);
+
+	void InitializeWorld(World& world);
+
+	void ShutdownWorld(World& world);
+
+	void WorldSetMaxScale(Types& types, World& world, size_t max_scale);
+
+	void WorldCreateNodes(Types& types, World& world, const sim::CFrame& frame);
+
+	void WorldDestroyNodes(Types& types, World& world);
+
+	void ScaleLoadNodes(const World& world, Scale& scale, const sim::CFrame& frame);
+
+	void ScaleUnloadNodes(const World& world, Scale& scale, const sim::CFrame& frame);
+
+	void WorldUpdateEntityScales(World& world);
+
+	void ScaleUpdateEntityNodes(const World& world, Scale& scale);
 }

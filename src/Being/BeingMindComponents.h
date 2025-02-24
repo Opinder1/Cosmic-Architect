@@ -4,7 +4,7 @@
 
 namespace voxel_game
 {
-	struct SentienceComponent
+	struct CSentience
 	{
 		uint8_t personality_type;
 		uint8_t max_saneness;
@@ -13,33 +13,33 @@ namespace voxel_game
 		uint8_t pridefulness;
 	};
 
-	struct SentienceRelationship
+	struct RSentience
 	{
 		std::bitset<32> personality_traits;
 	};
 
-	struct LanguageRelationship
+	struct RLanguage
 	{
 		uint8_t proficiency;
 	};
 
-	struct SkillRelationship
+	struct RSkill
 	{
 		float skill_proficiency;
 	};
 
-	struct ReproductiveComponent
+	struct CReproductive
 	{
 		uint8_t gender;
 		uint8_t urge;
 	};
 
-	struct BeliefRelationship
+	struct RBelief
 	{
 		uint8_t belief;
 	};
 
-	struct BeingRelationship
+	struct RBeing
 	{
 		std::bitset<32> thoughts;
 	};

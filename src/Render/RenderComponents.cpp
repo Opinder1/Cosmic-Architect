@@ -1,5 +1,7 @@
 #include "RenderComponents.h"
 
+#include "Util/Debug.h"
+
 #include <flecs/flecs.h>
 
 namespace voxel_game::rendering
@@ -8,25 +10,25 @@ namespace voxel_game::rendering
 	{
 		world.module<Components>();
 
-        world.component<ServerContext>();
-        world.component<Transform>();
-        world.component<Scenario>();
-        world.component<OwnedScenario>();
+        world.component<CContext>();
+        world.component<CTransform>();
+        world.component<CScenario>();
+        world.component<COwnedScenario>();
 
-        world.component<Instance>()
+        world.component<CInstance>()
             .add(flecs::Relationship)
             .add(flecs::Exclusive);
 
-        world.component<MultiInstance>()
+        world.component<CMultiInstance>()
             .add(flecs::Relationship)
             .add(flecs::Exclusive);
 
-        world.component<Base>();
+        world.component<CBase>();
 
-        world.component<PlaceholderCube>()
-            .add_second<Base>(flecs::With);
+        world.component<CPlaceholderCube>()
+            .add_second<CBase>(flecs::With);
 
-        world.component<Mesh>()
-            .add_second<Base>(flecs::With);
+        world.component<CMesh>()
+            .add_second<CBase>(flecs::With);
 	}
 }

@@ -12,24 +12,6 @@
 
 namespace voxel_game::voxel
 {
-	// Spawns a bunch of flat squares around the camera on the xz plane
-	struct VoxelNodeLoader
-	{
-		flecs::entity entity;
-		flecs::world stage;
-		const World& voxel_world;
-		spatial3d::World& spatial_world;
-		sim::ThreadEntityPool& entity_pool;
-
-		void LoadNode(Poly node_poly)
-		{
-			spatial3d::Node& node = node_poly.GetEntry(spatial_world.node_entry);
-			Node& voxel_node = node_poly.GetEntry(voxel_world.node_entry);
-
-
-		}
-	};
-
 	Module::Module(flecs::world& world)
 	{
 		world.module<Module>();
@@ -37,124 +19,105 @@ namespace voxel_game::voxel
 		world.import<Components>();
 		world.import<spatial3d::Module>();
 
-		world.add<Context>();
+		world.add<CContext>();
 
-		world.singleton<World>()
-			.add_second<spatial3d::WorldMarker>(flecs::With);
+		spatial3d::NodeType::RegisterType<Node>();
+		spatial3d::ScaleType::RegisterType<Scale>();
+		spatial3d::WorldType::RegisterType<World>();
 
 		// Initialise the spatial world of a universe
-		world.observer<World, spatial3d::WorldMarker>(DEBUG_ONLY("UniverseInitializeSpatialWorld"))
+		world.observer<spatial3d::CWorld>(DEBUG_ONLY("VoxelInitializeSpatialWorld"))
 			.event(flecs::OnAdd)
-			.each([](World& voxel_world, spatial3d::WorldMarker& spatial_world)
+			.with<const CWorld>()
+			.each([](spatial3d::CWorld& spatial_world)
 		{
-			voxel_world.node_entry = spatial_world.world.node_type.AddEntry<Node>();
-			voxel_world.scale_entry = spatial_world.world.scale_type.AddEntry<Scale>();
+			spatial_world.types.node_type.AddType<Node>();
+			spatial_world.types.scale_type.AddType<Scale>();
+			spatial_world.types.world_type.AddType<World>();
 		});
 
-		world.system<const World, spatial3d::WorldMarker, sim::ThreadEntityPools>(DEBUG_ONLY("LoadVoxelNode"))
+		world.system<spatial3d::CWorld>(DEBUG_ONLY("LoadVoxelNode"))
 			.multi_threaded()
-			.term_at(2).src<sim::ThreadEntityPools>()
-			.each([](flecs::entity entity, const World& voxel_world, spatial3d::WorldMarker& spatial_world, sim::ThreadEntityPools& entity_pools)
+			.with<const CWorld>()
+			.each([](spatial3d::CWorld& spatial_world)
 		{
-			flecs::world stage = entity.world();
 
-			VoxelNodeLoader loader{ entity, stage, voxel_world, spatial_world.world, sim::GetThreadEntityPool(entity_pools, stage) };
-
-			for (Poly scale_poly : spatial_world.world.scales)
-			{
-				spatial3d::Scale& scale = spatial3d::GetScale(spatial_world.world, scale_poly);
-
-				for (Poly node_poly : scale.load_commands)
-				{
-					loader.LoadNode(node_poly);
-				}
-			}
 		});
 	}
 
-	Voxel GetVoxelAtScale(const spatial3d::World& spatial_world, const World& voxel_world, godot::Vector3i pos, uint32_t scale)
+	Voxel GetVoxelAtScale(spatial3d::Types& types, const spatial3d::World& world, godot::Vector3i pos, uint32_t scale)
 	{
-		Poly node_poly = spatial3d::GetNode(spatial_world, spatial3d::Coord(pos / 16, scale));
+		const spatial3d::Node* node = spatial3d::GetNode(world, spatial3d::Coord(pos / 16, scale));
 
-		if (!node_poly.IsValid())
+		if (node != nullptr)
 		{
 			return Voxel{};
 		}
 
-		Node& node = node_poly.GetEntry(voxel_world.node_entry);
-
-		return node.voxels[pos.x % 16][pos.y % 16][pos.z % 16];
+		return NODE_TO(node, Node)->voxels[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Voxel GetVoxelDepthFirst(const spatial3d::World& spatial_world, const World& voxel_world, godot::Vector3i pos, uint32_t start_scale)
+	Voxel GetVoxelDepthFirst(spatial3d::Types& types, const spatial3d::World& world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		if (start_scale == spatial3d::k_max_world_scale)
 		{
 			return Voxel{};
 		}
 
-		Poly node_poly = spatial3d::GetNode(spatial_world, spatial3d::Coord(pos / 16, start_scale));
+		const spatial3d::Node* node = spatial3d::GetNode(world, spatial3d::Coord(pos / 16, start_scale));
 
-		if (!node_poly.IsValid())
+		if (node == nullptr)
 		{
-			return GetVoxelDepthFirst(spatial_world, voxel_world, pos, start_scale + 1);
+			return GetVoxelDepthFirst(types, world, pos, start_scale + 1);
 		}
 
-		Node& node = node_poly.GetEntry(voxel_world.node_entry);
-
-		return node.voxels[pos.x % 16][pos.y % 16][pos.z % 16];
+		return NODE_TO(node, Node)->voxels[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Voxel GetVoxelBreadthFirst(const spatial3d::World& spatial_world, const World& voxel_world, godot::Vector3i pos, uint32_t start_scale)
+	Voxel GetVoxelBreadthFirst(spatial3d::Types& types, const spatial3d::World& world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		if (start_scale == 0)
 		{
 			return Voxel{};
 		}
 
-		Poly node_poly = spatial3d::GetNode(spatial_world, spatial3d::Coord(pos / 16, start_scale));
+		const spatial3d::Node* node = spatial3d::GetNode(world, spatial3d::Coord(pos / 16, start_scale));
 
-		if (!node_poly.IsValid())
+		if (node == nullptr)
 		{
-			return GetVoxelDepthFirst(spatial_world, voxel_world, pos, start_scale - 1);
+			return GetVoxelDepthFirst(types, world, pos, start_scale - 1);
 		}
 
-		Node& node = node_poly.GetEntry(voxel_world.node_entry);
-
-		return node.voxels[pos.x % 16][pos.y % 16][pos.z % 16];
+		return NODE_TO(node, Node)->voxels[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Voxel GetVoxelOctreeSearch(const spatial3d::World& spatial_world, const World& voxel_world, godot::Vector3i pos, uint32_t start_scale)
+	Voxel GetVoxelOctreeSearch(spatial3d::Types& types, const spatial3d::World& world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		godot::Vector3i node_pos = pos / 16;
 
-		Poly node_poly = spatial3d::GetNode(spatial_world, spatial3d::Coord(node_pos, start_scale));
+		const spatial3d::Node* node = spatial3d::GetNode(world, spatial3d::Coord(node_pos, start_scale));
 
-		if (!node_poly.IsValid())
+		if (node == nullptr)
 		{
 			return Voxel{};
 		}
-
-		spatial3d::Node* node = &node_poly.GetEntry(spatial_world.node_entry);
 
 		while (1)
 		{
 			godot::Vector3i child_pos = { node_pos.x & 0x1, node_pos.y & 0x1, node_pos.z & 0x1 };
 
-			Poly child_node_poly = node->children[(child_pos.x * 4) + (child_pos.y * 2) + child_pos.z];
+			const spatial3d::Node* child_node = node->children[(child_pos.x * 4) + (child_pos.y * 2) + child_pos.z];
 
-			if (!child_node_poly.IsValid())
+			if (child_node == nullptr)
 			{
 				break;
 			}
 
-			node = &child_node_poly.GetEntry(spatial_world.node_entry);
+			node = child_node;
 
 			node_pos.x >>= 2; node_pos.y >>= 2; node_pos.z >>= 2;
 		}
 
-		Node& voxel_node = node_poly.GetEntry(voxel_world.node_entry);
-
-		return voxel_node.voxels[pos.x % 16][pos.y % 16][pos.z % 16];
+		return NODE_TO(node, Node)->voxels[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 }

@@ -17,10 +17,10 @@ namespace voxel_game::galaxy
 
 		flecs::entity galaxy_schematic = world.entity();
 
-		galaxy_schematic.add<rendering::PlaceholderCube>();
+		galaxy_schematic.add<rendering::CPlaceholderCube>();
 
 		world.prefab<GalaxyPrefab>()
-			.add<galaxy::World>()
-			.add<rendering::Instance>(galaxy_schematic);
+			.add<galaxy::CWorld>()
+			.add<rendering::CInstance>(galaxy_schematic);
 	}
 }

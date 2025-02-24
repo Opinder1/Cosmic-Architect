@@ -8,9 +8,9 @@ namespace voxel_game::loading
 	{
 		world.module<Components>();
 
-		world.component<Identifier>();
-		world.component<Saveable>();
-		world.component<Database>();
+		world.component<CIdentifier>();
+		world.component<CSaveable>();
+		world.component<CDatabase>();
 		world.component<ArchiveServer>();
 	}
 }

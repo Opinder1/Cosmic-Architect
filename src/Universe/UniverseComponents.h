@@ -22,12 +22,11 @@ namespace voxel_game::universe
 	// This is a specialised scale for a universe
 	struct Scale {};
 
-	// This entitiy is a universe which has a specialised spatial world
 	struct World
 	{
 		size_t main_seed = 0;
-
-		PolyEntry<Node> node_entry;
-		PolyEntry<Scale> scale_entry;
 	};
+
+	// This entitiy is a universe which has a specialised spatial world
+	struct CWorld {};
 }

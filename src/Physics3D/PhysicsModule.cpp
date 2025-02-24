@@ -13,12 +13,12 @@ namespace voxel_game::physics3d
 
 		world.import<Components>();
 
-		world.singleton<Velocity>()
-			.add_second<Position>(flecs::With);
+		world.singleton<CVelocity>()
+			.add_second<CPosition>(flecs::With);
 
-		world.system<Position, Velocity>(DEBUG_ONLY("ApplyVelocity"))
+		world.system<CPosition, CVelocity>(DEBUG_ONLY("ApplyVelocity"))
 			.multi_threaded()
-			.each([](Position& position, Velocity& velocity)
+			.each([](CPosition& position, CVelocity& velocity)
 		{
 			position.position += velocity.velocity;
 		});

@@ -7,20 +7,15 @@ namespace voxel_game::spatial3d
 		world.module<Components>();
 
 		// Components
-		world.component<Entity>();
-		world.component<Loader>();
-		world.component<RScale>();
-		world.component<ScaleMarker>();
-		world.component<RegionMarker>();
-		world.component<NodeMarker>();
-		world.component<WorldMarker>();
+		world.component<CLoader>();
+		world.component<CWorld>();
 
-		world.component<NodeCreatePhase>();
-		world.component<NodeLoadPhase>();
-		world.component<NodeUnloadPhase>();
-		world.component<NodeDestroyPhase>();
+		world.component<PNodeCreate>();
+		world.component<PNodeLoad>();
+		world.component<PNodeUnload>();
+		world.component<PNodeDestroy>();
 
-		world.component<WorldCreateEvent>();
-		world.component<WorldDestroyEvent>();
+		world.component<EWorldCreate>();
+		world.component<EWorldDestroy>();
 	}
 }

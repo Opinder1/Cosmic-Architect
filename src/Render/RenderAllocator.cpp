@@ -144,56 +144,91 @@ namespace voxel_game::rendering
         }
     }
 
-    void AllocatorServer::GetRIDs(AllocateType type, std::vector<godot::RID>& rids_out)
+    void AllocatorServer::GetRIDs(Span<uint16_t, k_num_alloc_types> requested, Span<std::vector<godot::RID>, k_num_alloc_types> all_rids_out)
     {
-        const size_t required = k_max_preallocated[to_underlying(type)];
-        const size_t needed = required - rids_out.size();
-        const size_t max_per_request = k_max_preallocated[to_underlying(type)];
-
-        if (needed == 0) // No rids are needed
+        if (!std::any_of(requested.begin(), requested.end(), [](uint16_t request) { return request > 0; }))
         {
-            return;
+            return; // Avoid locking mutex
         }
 
-        if (m_mutex.try_lock()) // Don't bother if we are currently generating instances
+        std::unique_lock lock(m_mutex);
+
+        size_t total_given = 0;
+
+        for (size_t i = 0; i < all_rids_out.Size(); i++)
         {
+            AllocateType type = static_cast<AllocateType>(i);
+            std::vector<godot::RID>& rids_out = all_rids_out[i];
+
+            const size_t required = requested[i];
+            const size_t needed = required - rids_out.size();
+            const size_t max_per_request = k_max_preallocated[to_underlying(type)] / 16;
+
+            if (needed == 0) // No rids are needed
+            {
+                continue;
+            }
+
             TypeData& type_data = m_types[to_underlying(type)];
 
             const size_t have = type_data.rids.size();
 
-            size_t request = have < needed ? have : needed;
+            size_t giving = have < needed ? have : needed;
 
-            request = std::min(request, max_per_request);
+            giving = std::min(giving, max_per_request);
 
-            if (request > 0)
+            if (giving > 0)
             {
-                rids_out.insert(rids_out.end(), type_data.rids.end() - request, type_data.rids.end());
-                type_data.rids.erase(type_data.rids.end() - request, type_data.rids.end());
+                rids_out.insert(rids_out.end(), type_data.rids.end() - giving, type_data.rids.end());
+                type_data.rids.erase(type_data.rids.end() - giving, type_data.rids.end());
             }
 
-            m_mutex.unlock();
+            total_given += giving;
+        }
 
-            if (request > 0)
-            {
-                RequestRIDs(false);
-            }
+        lock.unlock();
+
+        if (total_given > 0)
+        {
+            RequestRIDs(false);
         }
     }
 
-    void AllocatorServer::FreeRIDs(AllocateType type, std::vector<godot::RID>& rids)
+    void AllocatorServer::FreeRIDs(Span<std::vector<godot::RID>, k_num_alloc_types> all_rids_in)
     {
-        if (rids.size() == 0) // No rids to deallocate
-        {
-            return;
-        }
-
         std::lock_guard lock(m_mutex);
 
-        TypeData& type_data = m_types[to_underlying(type)];
+        for (size_t i = 0; i < all_rids_in.Size(); i++)
+        {
+            AllocateType type = static_cast<AllocateType>(i);
+            std::vector<godot::RID>& rids_in = all_rids_in[i];
 
-        type_data.rids.insert(type_data.rids.end(), rids.begin(), rids.end());
+            if (rids_in.size() == 0) // No rids to deallocate
+            {
+                continue;
+            }
 
-        rids.clear();
+            TypeData& type_data = m_types[to_underlying(type)];
+
+            type_data.rids.insert(type_data.rids.end(), rids_in.begin(), rids_in.end());
+
+            rids_in.clear();
+        }
+    }
+
+    bool AllocatorServer::AnyRequired()
+    {
+        for (size_t i = 0; i < k_num_alloc_types; i++)
+        {
+            RIDGenerator generator = k_rid_generators[i];
+
+            if (m_types[i].rids.size() < k_max_preallocated[i])
+            {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     void AllocatorServer::AllocateRIDsInternal()
@@ -201,6 +236,11 @@ namespace voxel_game::rendering
         godot::RenderingServer* rserver = godot::RenderingServer::get_singleton();
 
         DEBUG_ASSERT(CheckRenderingServerThread(rserver), "This should be called when on the render thread as its entire existence is to be performant");
+
+        if (!AnyRequired())
+        {
+            return; // Avoid locking the mutex
+        }
 
         std::lock_guard lock(m_mutex);
 
@@ -236,38 +276,54 @@ namespace voxel_game::rendering
         m_requests--;
     }
 
-    Allocator::Allocator(AllocateType type) :
-        m_type(type)
+    Allocator::Allocator()
     {
         Process();
     }
 
     Allocator::~Allocator()
     {
-        AllocatorServer::get_singleton()->FreeRIDs(m_type, m_rids);
+        AllocatorServer::get_singleton()->FreeRIDs(m_rids);
     }
 
     void Allocator::Process()
     {
-        AllocatorServer::get_singleton()->GetRIDs(m_type, m_rids);
+        uint16_t requests[k_num_alloc_types];
+
+        for (size_t i = 0; i < k_num_alloc_types; i++)
+        {
+            requests[i] = k_max_preallocated[i] / 16;
+        }
+
+        AllocatorServer::get_singleton()->GetRIDs(requests, m_rids);
     }
 
-    godot::RID Allocator::GetRID()
+    godot::RID Allocator::GetRID(AllocateType type)
     {
         godot::RID rid;
 
-        if (m_rids.size() > 0)
+        std::vector<godot::RID>& rids = m_rids[to_underlying(type)];
+
+        if (rids.size() > 0)
         {
-            rid = m_rids.back();
-            m_rids.pop_back();
+            rid = rids.back();
+            rids.pop_back();
         }
-        else
+
+        return rid;
+    }
+
+    godot::RID Allocator::EnsureRID(AllocateType type)
+    {
+        godot::RID rid = GetRID(type);
+
+        if (!rid.is_valid())
         {
             DEBUG_PRINT_WARN("Enough rids were allocated this frame that we are using the slow path");
             DEBUG_CRASH();
 
             godot::RenderingServer* rserver = godot::RenderingServer::get_singleton();
-            RIDGenerator generator = k_rid_generators[to_underlying(m_type)];
+            RIDGenerator generator = k_rid_generators[to_underlying(type)];
 
             rid = (rserver->*generator)();
         }
