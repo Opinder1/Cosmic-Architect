@@ -21,6 +21,16 @@ namespace voxel_game::spatial3d
 		world.component<EWorldCreate>();
 		world.component<EWorldDestroy>();
 
+		world.component<CLoader>()
+			.on_add([](CLoader& loader)
+		{
+			loader.loader = new Loader();
+		})
+			.on_remove([](CLoader& loader)
+		{
+			delete loader.loader;
+		});
+
 		world.component<CWorld>()
 			.on_remove([](CWorld& world)
 		{

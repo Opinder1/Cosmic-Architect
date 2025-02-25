@@ -25,9 +25,20 @@ namespace voxel_game::sim
 
 		world.add<CEntityPools>();
 
+		for (size_t worker_index = 0; worker_index < world.get_stage_count(); worker_index++)
+		{
+			flecs::entity thread_worker = world.entity();
+
+#if defined(DEBUG_ENABLED)
+			thread_worker.set_name(godot::vformat("Worker%d", worker_index).utf8());
+#endif
+
+			thread_worker.add<CThreadWorker>();
+		}
+
 		world.system<CFrame>("WorldUpdateTime")
 			.kind(flecs::OnUpdate)
-			.term_at(0).src<CFrame>()
+			.term_at(0).singleton()
 			.each([](CFrame& world_time)
 		{
 			world_time.frame_index++;
@@ -36,7 +47,7 @@ namespace voxel_game::sim
 
 		world.system<CEntityPools>("ProcessEntityThreadCommands")
 			.kind(flecs::OnUpdate)
-			.term_at(0).src<CEntityPools>()
+			.term_at(0).singleton()
 			.each([](CEntityPools& thread_pools)
 		{
 			for (ThreadEntityPool& thread : thread_pools.threads)
@@ -45,10 +56,10 @@ namespace voxel_game::sim
 			}
 		});
 
-		world.system<const sim::CThreadWorker, CEntityPools>(DEBUG_ONLY("SetThreadContexts"))
+		world.system<const CThreadWorker, CEntityPools>(DEBUG_ONLY("SetThreadContexts"))
 			.multi_threaded()
-			.term_at(1).src<CEntityPools>()
-			.each([](flecs::iter& it, size_t i, const sim::CThreadWorker& worker, CEntityPools& pools)
+			.term_at(1).singleton()
+			.each([](flecs::iter& it, size_t i, const CThreadWorker& worker, CEntityPools& pools)
 		{
 			thread_pool = &pools.threads[it.world().get_stage_id()];
 		});

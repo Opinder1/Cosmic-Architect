@@ -71,8 +71,8 @@ namespace voxel_game::universe
 	struct UniverseNodeLoaderTest1
 	{
 		flecs::entity entity;
-		spatial3d::Types& types;
-		spatial3d::World& world;
+		const spatial3d::Types& types;
+		const spatial3d::World& world;
 
 		void LoadNode(spatial3d::Node* node)
 		{
@@ -110,8 +110,8 @@ namespace voxel_game::universe
 	struct UniverseNodeLoaderTest2
 	{
 		flecs::entity entity;
-		spatial3d::Types& types;
-		spatial3d::World* world;
+		const spatial3d::Types& types;
+		const spatial3d::World& world;
 
 		void LoadNode(spatial3d::Node* node)
 		{
@@ -121,7 +121,7 @@ namespace voxel_game::universe
 			}
 
 			const uint32_t scale_step = 1 << node->coord.scale;
-			const uint32_t scale_node_step = scale_step * world->node_size;
+			const uint32_t scale_node_step = scale_step * world.node_size;
 			const uint8_t box_shrink = 2;
 
 			double position_x = node->coord.pos.x * scale_node_step;
@@ -168,12 +168,13 @@ namespace voxel_game::universe
 			spatial_world.types.world_type.AddType<World>();
 		});
 
-		world.system<spatial3d::CScale, spatial3d::CWorld>(DEBUG_ONLY("UniverseLoadSpatialNode"))
+		world.system<spatial3d::CScale, const spatial3d::CWorld>(DEBUG_ONLY("UniverseLoadSpatialNode"))
 			.multi_threaded()
-			.with<const CWorld>()
-			.each([](flecs::entity entity, spatial3d::CScale& spatial_scale, spatial3d::CWorld& spatial_world)
+			.term_at(1).up(flecs::ChildOf)
+			.with<const CWorld>().up(flecs::ChildOf)
+			.each([](flecs::entity entity, spatial3d::CScale& spatial_scale, const spatial3d::CWorld& spatial_world)
 		{
-			UniverseNodeLoaderTest2 loader{ entity, spatial_world.types, spatial_world.world };
+			UniverseNodeLoaderTest2 loader{ entity, spatial_world.types, *spatial_world.world };
 
 			for (spatial3d::Node* node : spatial_scale.scale->load_commands)
 			{
@@ -181,12 +182,13 @@ namespace voxel_game::universe
 			}
 		});
 
-		world.system<spatial3d::CScale, spatial3d::CWorld>(DEBUG_ONLY("UniverseUnloadSpatialNode"))
+		world.system<spatial3d::CScale, const spatial3d::CWorld>(DEBUG_ONLY("UniverseUnloadSpatialNode"))
 			.multi_threaded()
-			.with<const CWorld>()
-			.each([world = world.c_ptr()](flecs::entity entity, spatial3d::CScale& spatial_scale, spatial3d::CWorld& spatial_world)
+			.term_at(1).up(flecs::ChildOf)
+			.with<const CWorld>().up(flecs::ChildOf)
+			.each([world = world.c_ptr()](spatial3d::CScale& spatial_scale, const spatial3d::CWorld& spatial_world)
 		{
-			spatial3d::Types& types = spatial_world.types;
+			const spatial3d::Types& types = spatial_world.types;
 
 			for (spatial3d::Node* node : spatial_scale.scale->unload_commands)
 			{

@@ -186,18 +186,22 @@ namespace voxel_game::voxelrender
 		{
 			spatial3d::Types& types = spatial_world.types;
 
-			ADD_RENDER_CMD(free_rid, WORLD_TO(spatial_world.world, World)->voxel_material);
+			godot::RID voxel_material = WORLD_TO(spatial_world.world, World)->voxel_material;
+
+			if (voxel_material.is_valid())
+			{
+				ADD_RENDER_CMD(free_rid, voxel_material);
+			}
 		});
 
 		world.system<spatial3d::CScale, const spatial3d::CWorld, voxel::CContext>(DEBUG_ONLY("VoxelRenderNodeModify"))
 			.multi_threaded()
+			.term_at(1).up(flecs::ChildOf)
 			.term_at(2).singleton()
-			.with<const voxel::CWorld>()
-			.with<const CWorld>()
+			.with<const voxel::CWorld>().up(flecs::ChildOf)
+			.with<const CWorld>().up(flecs::ChildOf)
 			.each([](flecs::entity entity, spatial3d::CScale& spatial_scale, const spatial3d::CWorld& spatial_world, voxel::CContext& voxel_ctx)
 		{
-			flecs::world stage = entity.world();
-
 			VoxelRenderNodeLoader loader{ entity, spatial_world.types, *spatial_world.world, voxel_ctx };
 
 			for (spatial3d::Node* node : spatial_scale.scale->load_commands)

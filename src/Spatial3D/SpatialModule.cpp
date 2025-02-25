@@ -58,12 +58,28 @@ namespace voxel_game::spatial3d
 			.add(flecs::Phase)
 			.depends_on(flecs::OnUpdate);
 
+		world.observer<CLoader, const CWorld>()
+			.event(flecs::OnAdd)
+			.term_at(1).up(flecs::ChildOf)
+			.each([](CLoader& loader, const CWorld& world)
+		{
+			world.world->loaders.insert(loader.loader);
+		});
+
+		world.observer<CLoader, const CWorld>()
+			.event(flecs::OnRemove)
+			.term_at(1).up(flecs::ChildOf)
+			.each([](CLoader& loader, const CWorld& world)
+		{
+			world.world->loaders.erase(loader.loader);
+		});
+
 		// Systems
 
 		// System to initialize spatial nodes that have been added
 		world.system<CWorld, const sim::CFrame>(DEBUG_ONLY("WorldCreateNodes"))
-			.multi_threaded()
-			.term_at(1).src<sim::CFrame>()
+			//.multi_threaded()
+			.term_at(1).singleton()
 			.each([](CWorld& spatial_world, const sim::CFrame& frame)
 		{
 			EASY_BLOCK("WorldCreateNodes");
@@ -73,7 +89,7 @@ namespace voxel_game::spatial3d
 
 		// System to delete spatial nodes that have been marked to unload
 		world.system<CWorld>(DEBUG_ONLY("WorldDestroyNodes"))
-			.multi_threaded()
+			//.multi_threaded()
 			.each([](CWorld& spatial_world)
 		{
 			EASY_BLOCK("WorldDestroyNodes");
@@ -84,7 +100,8 @@ namespace voxel_game::spatial3d
 		// Systen to create or update all nodes in the range of loaders
 		world.system<CScale, const CWorld, const sim::CFrame>(DEBUG_ONLY("LoaderTouchNodes"))
 			.multi_threaded()
-			.term_at(1).src<sim::CFrame>()
+			.term_at(1).up(flecs::ChildOf)
+			.term_at(2).singleton()
 			.each([](CScale& spatial_scale, const CWorld& spatial_world, const sim::CFrame& frame)
 		{
 			EASY_BLOCK("LoaderTouchNodes");
@@ -95,7 +112,8 @@ namespace voxel_game::spatial3d
 		// System to mark any nodes that are no longer being observed to be unloaded
 		world.system<CScale, const CWorld, const sim::CFrame>(DEBUG_ONLY("ScaleUnloadUnusedNodes"))
 			.multi_threaded()
-			.term_at(1).src<sim::CFrame>()
+			.term_at(1).up(flecs::ChildOf)
+			.term_at(2).singleton()
 			.each([](CScale& spatial_scale, const CWorld& spatial_world, const sim::CFrame& frame)
 		{
 			EASY_BLOCK("ScaleUnloadUnusedNodes");
@@ -121,7 +139,7 @@ namespace voxel_game::spatial3d
 			flecs::entity marker_entity = scope.entity();
 
 #if defined(DEBUG_ENABLED)
-			marker_entity.set_name(godot::vformat("ScaleMarker%d", scale_index).utf8());
+			marker_entity.set_name(godot::vformat("Scale%d", scale_index).utf8());
 #endif
 
 			marker_entity.set(CScale{ world.scales[scale_index] });

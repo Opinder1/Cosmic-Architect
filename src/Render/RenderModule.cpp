@@ -76,9 +76,9 @@ namespace voxel_game::rendering
             }
         });
 
-        world.system<const sim::CThreadWorker, CContext>(DEBUG_ONLY("SetThreadContexts"))
+        auto i = world.system<const sim::CThreadWorker, CContext>(DEBUG_ONLY("SetThreadContexts"))
             .multi_threaded()
-            .term_at(1).src<CContext>()
+            .term_at(1).singleton()
             .each([](flecs::iter& it, size_t i, const sim::CThreadWorker& worker, CContext& context)
         {
             thread_context = &context.threads[it.world().get_stage_id()];

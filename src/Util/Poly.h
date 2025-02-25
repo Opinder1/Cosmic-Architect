@@ -20,7 +20,7 @@ class PolyType : Nocopy, Nomove
 
 	inline static size_t k_total_type_indexes = 0;
 	template<class T>
-	inline static size_t k_type_index = 0;
+	inline static size_t k_type_index = k_max_offsets;
 
 private:
 	using FactoryCB = void (*)(std::byte*);
@@ -70,33 +70,39 @@ public:
 	template<class T>
 	void AddType()
 	{
+		DEBUG_ASSERT(k_type_index<T> != k_max_offsets, "This type was not registered");
+
 		m_type_offsets[k_type_index<T>] = m_total_size;
 		m_type_constructors[k_type_index<T>] = Construct<T>;
-		m_type_destructors[k_type_index<T>] = Construct<T>;
+		m_type_destructors[k_type_index<T>] = Destruct<T>;
 		m_total_size += sizeof(T);
 	}
 
 	template<class T>
 	const T* Get(const MainT* poly) const
 	{
+		DEBUG_ASSERT(m_type_offsets[k_type_index<T>] != 0, "This poly doesn't have this type");
 		return reinterpret_cast<const T*>(poly + m_type_offsets[k_type_index<T>]);
 	}
 
 	template<class T>
 	T* Get(MainT* poly) const
 	{
+		DEBUG_ASSERT(m_type_offsets[k_type_index<T>] != 0, "This poly doesn't have this type");
 		return reinterpret_cast<T*>(poly + m_type_offsets[k_type_index<T>]);
 	}
 
 	template<class T>
 	const T& Get(const MainT& poly) const
 	{
+		DEBUG_ASSERT(m_type_offsets[k_type_index<T>] != 0, "This poly doesn't have this type");
 		return *reinterpret_cast<const T*>(&poly + m_type_offsets[k_type_index<T>]);
 	}
 
 	template<class T>
 	T& Get(MainT& poly) const
 	{
+		DEBUG_ASSERT(m_type_offsets[k_type_index<T>] != 0, "This poly doesn't have this type");
 		return *reinterpret_cast<T*>(&poly + m_type_offsets[k_type_index<T>]);
 	}
 

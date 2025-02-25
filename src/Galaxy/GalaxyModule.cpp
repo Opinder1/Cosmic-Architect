@@ -51,10 +51,10 @@ namespace voxel_game::galaxy
 		spatial3d::InitializeWorldScaleEntities(galaxy_entity, *spatial_world.world);
 
 		// We want the simulated galaxy to load all galaxies around it
-		spatial3d::Loader& spatial_loader = galaxy_entity.ensure<spatial3d::Loader>();
-		spatial_loader.dist_per_lod = 3;
-		spatial_loader.min_lod = 0;
-		spatial_loader.max_lod = spatial3d::k_max_world_scale;
+		spatial3d::CLoader& spatial_loader = galaxy_entity.ensure<spatial3d::CLoader>();
+		spatial_loader.loader->dist_per_lod = 3;
+		spatial_loader.loader->min_lod = 0;
+		spatial_loader.loader->max_lod = spatial3d::k_max_world_scale;
 
 		galaxy_entity.add<rendering::CTransform>();
 
