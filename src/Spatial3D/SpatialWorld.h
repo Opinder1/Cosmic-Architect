@@ -87,9 +87,6 @@ namespace voxel_game::spatial3d
 	{
 		uint8_t index = 0;
 
-		Scale* parent = nullptr;
-		Scale* child = nullptr;
-
 		NodeMap nodes;
 
 		robin_hood::unordered_set<Entity*> entities;

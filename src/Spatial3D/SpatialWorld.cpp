@@ -199,7 +199,11 @@ namespace voxel_game::spatial3d
 		{
 			for (uint8_t scale_index = world.max_scale; scale_index < max_scale; scale_index++)
 			{
-				world.scales[scale_index] = types.scale_type.CreatePoly();
+				Scale* scale = types.scale_type.CreatePoly();
+
+				scale->index = scale_index;
+
+				world.scales[scale_index] = scale;
 			}
 		}
 		else
