@@ -55,16 +55,16 @@ namespace voxel_game::sim
 	public:
 		ThreadEntityPool();
 
-		void SetWorld(flecs::world_t* world);
+		void SetStage(flecs::world_t* stage);
 
-		void AllocateEntities();
+		void AllocateEntities(flecs::world_t* world);
 
-		void ClearEntities();
+		void ClearEntities(flecs::world_t* world);
 
 		flecs::entity CreateEntity();
 
 	private:
-		flecs::world_t* m_world = nullptr;
+		flecs::world_t* m_stage = nullptr;
 		SmallVector<flecs::entity_t, k_max_pool_entities> m_new_entities;
 	};
 

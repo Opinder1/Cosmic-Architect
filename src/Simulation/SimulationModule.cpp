@@ -48,11 +48,11 @@ namespace voxel_game::sim
 		world.system<CEntityPools>("ProcessEntityThreadCommands")
 			.kind(flecs::OnUpdate)
 			.term_at(0).singleton()
-			.each([](CEntityPools& thread_pools)
+			.each([world = world.c_ptr()](CEntityPools& thread_pools)
 		{
 			for (ThreadEntityPool& thread : thread_pools.threads)
 			{
-				thread.AllocateEntities();
+				thread.AllocateEntities(world);
 			}
 		});
 
@@ -62,6 +62,7 @@ namespace voxel_game::sim
 			.each([](flecs::iter& it, size_t i, const CThreadWorker& worker, CEntityPools& pools)
 		{
 			thread_pool = &pools.threads[it.world().get_stage_id()];
+			thread_pool->SetStage(it.world());
 		});
 	}
 }

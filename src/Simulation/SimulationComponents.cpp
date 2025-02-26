@@ -16,18 +16,11 @@ namespace voxel_game::sim
 		world.component<CEntityPools>();
 
 		world.component<CEntityPools>()
-			.on_add([world = world.c_ptr()](CEntityPools& pools)
-		{
-			for (ThreadEntityPool& pool : pools.threads)
-			{
-				pool.SetWorld(world);
-			}
-		})
 			.on_remove([world = world.c_ptr()](CEntityPools& pools)
 		{
 			for (ThreadEntityPool& pool : pools.threads)
 			{
-				pool.ClearEntities();
+				pool.ClearEntities(world);
 			}
 		});
 	}
@@ -35,26 +28,26 @@ namespace voxel_game::sim
 	ThreadEntityPool::ThreadEntityPool()
 	{}
 
-	void ThreadEntityPool::SetWorld(flecs::world_t* world)
+	void ThreadEntityPool::SetStage(flecs::world_t* stage)
 	{
-		m_world = world;
+		m_stage = stage;
 	}
 
-	void ThreadEntityPool::AllocateEntities()
+	void ThreadEntityPool::AllocateEntities(flecs::world_t* world)
 	{
 		size_t new_required = m_new_entities.capacity() - m_new_entities.size();
 
 		for (size_t i = 0; i < new_required; i++)
 		{
-			m_new_entities.push_back(ecs_new(m_world));
+			m_new_entities.push_back(ecs_new(world));
 		}
 	}
 
-	void ThreadEntityPool::ClearEntities()
+	void ThreadEntityPool::ClearEntities(flecs::world_t* world)
 	{
 		for (flecs::entity_t entity : m_new_entities)
 		{
-			ecs_delete(m_world, entity);
+			ecs_delete(world, entity);
 		}
 
 		m_new_entities.clear();
@@ -67,6 +60,6 @@ namespace voxel_game::sim
 		flecs::entity_t entity = m_new_entities.back();
 		m_new_entities.pop_back();
 
-		return flecs::entity(m_world, entity);
+		return flecs::entity(m_stage, entity);
 	}
 }
