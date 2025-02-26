@@ -76,7 +76,7 @@ namespace voxel_game::rendering
             }
         });
 
-        auto i = world.system<const sim::CThreadWorker, CContext>(DEBUG_ONLY("SetThreadContexts"))
+        world.system<const sim::CThreadWorker, CContext>(DEBUG_ONLY("SetThreadContexts"))
             .multi_threaded()
             .term_at(1).singleton()
             .each([](flecs::iter& it, size_t i, const sim::CThreadWorker& worker, CContext& context)
