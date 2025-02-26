@@ -33,7 +33,7 @@ namespace voxel_game::sim
 			thread_worker.set_name(godot::vformat("Worker%d", worker_index).utf8());
 #endif
 
-			thread_worker.add<CThreadWorker>();
+			thread_worker.ensure<CThreadWorker>().index = worker_index;
 		}
 
 		world.system<CFrame>("WorldUpdateTime")
