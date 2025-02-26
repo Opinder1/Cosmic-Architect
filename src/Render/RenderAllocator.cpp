@@ -310,6 +310,8 @@ namespace voxel_game::rendering
             rids.pop_back();
         }
 
+        DEBUG_ASSERT(rid.is_valid(), "The rid should be valid");
+
         return rid;
     }
 
