@@ -81,29 +81,34 @@ public:
 	template<class T>
 	const T* Get(const MainT* poly) const
 	{
-		DEBUG_ASSERT(m_type_offsets[k_type_index<T>] != 0, "This poly doesn't have this type");
-		return reinterpret_cast<const T*>(poly + m_type_offsets[k_type_index<T>]);
+		DEBUG_ASSERT(k_type_index<T> != k_max_offsets, "This type has not been registered");
+		DEBUG_ASSERT(m_type_offsets[k_type_index<T>] != 0, "Either T == MainT or this poly doesn't have this type");
+
+		const std::byte* ptr = reinterpret_cast<const std::byte*>(poly);
+
+#if defined(POLY_DEBUG)
+		DEBUG_ASSERT(m_created.contains(ptr), "We didn't create this poly");
+#endif
+
+		return reinterpret_cast<const T*>(ptr + m_type_offsets[k_type_index<T>]);
 	}
 
 	template<class T>
 	T* Get(MainT* poly) const
 	{
-		DEBUG_ASSERT(m_type_offsets[k_type_index<T>] != 0, "This poly doesn't have this type");
-		return reinterpret_cast<T*>(poly + m_type_offsets[k_type_index<T>]);
+		return const_cast<T*>(Get<T>(const_cast<const MainT*>(poly)));
 	}
 
 	template<class T>
 	const T& Get(const MainT& poly) const
 	{
-		DEBUG_ASSERT(m_type_offsets[k_type_index<T>] != 0, "This poly doesn't have this type");
-		return *reinterpret_cast<const T*>(&poly + m_type_offsets[k_type_index<T>]);
+		return *Get<T>(&poly);
 	}
 
 	template<class T>
 	T& Get(MainT& poly) const
 	{
-		DEBUG_ASSERT(m_type_offsets[k_type_index<T>] != 0, "This poly doesn't have this type");
-		return *reinterpret_cast<T*>(&poly + m_type_offsets[k_type_index<T>]);
+		return *Get<T>(&poly);
 	}
 
 	// Create a poly of this type
@@ -122,7 +127,7 @@ public:
 		}
 
 #if defined(POLY_DEBUG)
-		m_created.insert(reinterpret_cast<MainT*>(ptr));
+		m_created.insert(ptr);
 #endif
 		return reinterpret_cast<MainT*>(ptr);
 	}
@@ -132,11 +137,11 @@ public:
 	{
 		DEBUG_ASSERT(poly != nullptr, "A valid poly should be provided for destruction");
 
-#if defined(POLY_DEBUG)
-		m_created.erase(poly);
-#endif
-
 		std::byte* ptr = reinterpret_cast<std::byte*>(poly);
+
+#if defined(POLY_DEBUG)
+		m_created.erase(ptr);
+#endif
 
 		for (size_t i = 0; i < k_max_offsets; i++)
 		{
@@ -162,6 +167,6 @@ private:
 	std::array<FactoryCB, k_max_offsets> m_type_destructors = { nullptr };
 
 #if defined(POLY_DEBUG)
-	robin_hood::unordered_set<MainT*> m_created;
+	robin_hood::unordered_set<const std::byte*> m_created;
 #endif
 };
