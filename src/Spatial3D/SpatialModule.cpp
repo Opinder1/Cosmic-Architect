@@ -40,24 +40,6 @@ namespace voxel_game::spatial3d
 		ScaleType::RegisterType<Scale>();
 		WorldType::RegisterType<World>();
 
-		// Phases
-
-		world.singleton<PNodeCreate>()
-			.add(flecs::Phase)
-			.depends_on(flecs::OnUpdate);
-
-		world.singleton<PNodeLoad>()
-			.add(flecs::Phase)
-			.depends_on(flecs::OnUpdate);
-
-		world.singleton<PNodeUnload>()
-			.add(flecs::Phase)
-			.depends_on(flecs::OnUpdate);
-
-		world.singleton<PNodeDestroy>()
-			.add(flecs::Phase)
-			.depends_on(flecs::OnUpdate);
-
 		world.observer<CLoader, const CWorld>()
 			.event(flecs::OnAdd)
 			.term_at(1).up(flecs::ChildOf)

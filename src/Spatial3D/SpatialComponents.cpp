@@ -13,14 +13,6 @@ namespace voxel_game::spatial3d
 		world.component<CScale>();
 		world.component<CWorld>();
 
-		world.component<PNodeCreate>();
-		world.component<PNodeLoad>();
-		world.component<PNodeUnload>();
-		world.component<PNodeDestroy>();
-
-		world.component<EWorldCreate>();
-		world.component<EWorldDestroy>();
-
 		world.component<CLoader>()
 			.on_add([](CLoader& loader)
 		{

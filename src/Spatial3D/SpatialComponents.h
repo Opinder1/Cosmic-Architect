@@ -25,14 +25,6 @@ namespace voxel_game::spatial3d
 		Components(flecs::world& world);
 	};
 
-	struct PNodeCreate {}; // In this phase we create any new nodes
-	struct PNodeLoad {}; // In this phase we load any new nodes
-	struct PNodeUnload {}; // In this phase we unload any marked nodes
-	struct PNodeDestroy {}; // In this phase we destroy and unloaded nodes
-
-	struct EWorldCreate {};
-	struct EWorldDestroy {};
-
 	// An object that tells a spatial world where to load nodes and at what lods
 	struct CLoader
 	{
