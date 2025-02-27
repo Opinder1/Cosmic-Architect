@@ -258,7 +258,10 @@ namespace voxel_game::spatial3d
 				// Try and create the node
 				auto&& [it, emplaced] = scale.nodes.try_emplace(pos, types.node_type.CreatePoly());
 
-				DEBUG_ASSERT(emplaced, "The node should have been emplaced. We must have had a duplicate command.");
+				if (!emplaced) // Two loaders may request the same node
+				{
+					continue;
+				}
 
 				Node* node = it->second;
 
