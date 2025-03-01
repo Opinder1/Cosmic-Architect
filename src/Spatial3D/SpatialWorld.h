@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SpatialCoord.h"
-
 #include "Util/Nocopy.h"
 #include "Util/Util.h"
 #include "Util/Hash.h"
@@ -59,7 +57,8 @@ namespace voxel_game::spatial3d
 	// A single node in a spatial world. This is meant to be inherited from for custom data
 	struct Node : Nocopy, Nomove
 	{
-		Coord coord;
+		godot::Vector3i position;
+		uint8_t scale_index = 0;
 
 		NodeState state = NodeState::Unloaded;
 
@@ -133,9 +132,9 @@ namespace voxel_game::spatial3d
 
 	Scale& GetScale(World& spatial_world, uint8_t scale_index);
 
-	const Node* GetNode(const World& world, Coord coord);
+	const Node* GetNode(const World& world, godot::Vector3i position, uint8_t scale_index);
 
-	Node* GetNode(World& world, Coord coord);
+	Node* GetNode(World& world, godot::Vector3i position, uint8_t scale_index);
 
 	World* CreateWorld(Types& types, uint8_t max_scale);
 

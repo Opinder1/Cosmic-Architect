@@ -1,5 +1,4 @@
 #include "SpatialComponents.h"
-#include "SpatialCoord.h"
 #include "SpatialTraverse.h"
 
 #include <easy/profiler.h>
@@ -30,7 +29,7 @@ namespace voxel_game::spatial3d
 
 	uint8_t GetNodeParentIndex(godot::Vector3i pos)
 	{
-		return (pos.x) + (pos.y * 2) + (pos.z * 4);
+		return (pos.x & 0x1) + ((pos.y & 0x1) * 2) + ((pos.z & 0x1) * 4);
 	}
 
 	const Scale& GetScale(const World& world, uint8_t scale_index)
@@ -45,13 +44,13 @@ namespace voxel_game::spatial3d
 		return *world.scales[scale_index];
 	}
 
-	const Node* GetNode(const World& world, Coord coord)
+	const Node* GetNode(const World& world, godot::Vector3i position, uint8_t scale_index)
 	{
-		DEBUG_ASSERT(coord.scale < k_max_world_scale, "The coordinates scale is out of range");
+		DEBUG_ASSERT(scale_index < k_max_world_scale, "The coordinates scale is out of range");
 
-		const Scale& scale = GetScale(world, coord.scale);
+		const Scale& scale = GetScale(world, scale_index);
 
-		NodeMap::const_iterator it = scale.nodes.find(coord.pos);
+		NodeMap::const_iterator it = scale.nodes.find(position);
 
 		if (it == scale.nodes.end())
 		{
@@ -61,9 +60,9 @@ namespace voxel_game::spatial3d
 		return it->second;
 	}
 
-	Node* GetNode(World& world, Coord coord)
+	Node* GetNode(World& world, godot::Vector3i position, uint8_t scale_index)
 	{
-		return const_cast<Node*>(GetNode(world, coord));
+		return const_cast<Node*>(GetNode(world, position, scale_index));
 	}
 
 	void InitializeNode(World& world, Node& node, uint8_t scale_index)
@@ -72,7 +71,7 @@ namespace voxel_game::spatial3d
 
 		for (uint8_t neighbour_index = 0; neighbour_index < 6; neighbour_index++)
 		{
-			godot::Vector3i neighbour_pos = node.coord.pos + node_neighbour_offsets[neighbour_index];
+			godot::Vector3i neighbour_pos = node.position + node_neighbour_offsets[neighbour_index];
 
 			NodeMap::iterator it = scale.nodes.find(neighbour_pos);
 
@@ -92,16 +91,16 @@ namespace voxel_game::spatial3d
 		{
 			Scale& parent_scale = GetScale(world, scale_index + 1);
 
-			Coord parent_pos = node.coord.GetParent();
+			godot::Vector3i parent_pos = node.position / 2;
 
-			NodeMap::iterator it = parent_scale.nodes.find(parent_pos.pos);
+			NodeMap::iterator it = parent_scale.nodes.find(parent_pos);
 
 			if (it != parent_scale.nodes.end())
 			{
 				Node* parent_node = it->second;
 
 				node.parent = parent_node;
-				node.parent_index = GetNodeParentIndex(node.coord.GetParentRelPos());
+				node.parent_index = GetNodeParentIndex(node.position);
 
 				DEBUG_ASSERT(node.parent_index < 8, "The parent index is out of range");
 
@@ -116,10 +115,10 @@ namespace voxel_game::spatial3d
 
 			for (uint8_t child_index = 0; child_index < 8; child_index++)
 			{
-				Coord child_pos = node.coord.GetBottomLeftChild();
-				child_pos.pos += node_child_offsets[child_index];
+				godot::Vector3i child_pos = node.position * 2;
+				child_pos += node_child_offsets[child_index];
 
-				NodeMap::iterator it = child_scale.nodes.find(child_pos.pos);
+				NodeMap::iterator it = child_scale.nodes.find(child_pos);
 
 				if (it != child_scale.nodes.end())
 				{
@@ -256,22 +255,27 @@ namespace voxel_game::spatial3d
 			for (const godot::Vector3i& pos : scale.create_commands)
 			{
 				// Try and create the node
-				auto&& [it, emplaced] = scale.nodes.try_emplace(pos, types.node_type.CreatePoly());
+				auto&& [it, emplaced] = scale.nodes.try_emplace(pos, nullptr);
 
-				if (!emplaced) // Two loaders may request the same node
+				if (!emplaced) // Node already exists
 				{
 					continue;
 				}
 
+				it->second = types.node_type.CreatePoly();
+
 				Node* node = it->second;
 
 				// Initialize the node
-				node->coord = Coord(pos, scale_index);
+				node->position = pos;
+				node->scale_index = scale_index;
 				node->last_update_time = frame.frame_start_time;
 				node->state = NodeState::Unloaded;
 
 				InitializeNode(world, *node, scale_index);
 			}
+
+			scale.create_commands.clear();
 		}
 	}
 
@@ -290,10 +294,12 @@ namespace voxel_game::spatial3d
 
 				UninitializeNode(world, *node, scale_index);
 
-				types.node_type.DestroyPoly(node);
+				scale.nodes.erase(node->position);
 
-				scale.nodes.erase(node->coord.pos);
+				types.node_type.DestroyPoly(node);
 			}
+
+			scale.destroy_commands.clear();
 		}
 	}
 
@@ -341,13 +347,12 @@ namespace voxel_game::spatial3d
 		// Finish the previous load commands
 		for (Node* node : scale.load_commands)
 		{
-			DEBUG_ASSERT(node->state == NodeState::Loading, "Node should be in deleting state");
+			DEBUG_ASSERT(node->state == NodeState::Loading, "Node should be in loading state");
 
 			node->state = NodeState::Loaded;
 		}
 
 		// Clear previous commands. If you didn't handle them then too bad
-		scale.create_commands.clear();
 		scale.load_commands.clear();
 
 		const uint32_t scale_step = 1 << scale.index;
@@ -360,14 +365,8 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void UnloadNode(Scale& scale, Node& node, const sim::CFrame& frame, Clock::duration node_keepalive)
+	void UnloadNode(Scale& scale, Node& node, const sim::CFrame& frame)
 	{
-		// Check if node hasn't been touched in too long
-		if (frame.frame_start_time - node.last_update_time < node_keepalive)
-		{
-			return;
-		}
-
 		// Move the entity along to deletion
 		switch (node.state)
 		{
@@ -391,14 +390,25 @@ namespace voxel_game::spatial3d
 
 	void ScaleUnloadNodes(const World& world, Scale& scale, const sim::CFrame& frame)
 	{
+		// Finish the previous load commands
+		for (Node* node : scale.unload_commands)
+		{
+			DEBUG_ASSERT(node->state == NodeState::Unloading, "Node should be in unloading state");
+
+			node->state = NodeState::Unloaded;
+		}
+
 		// Clear previous commands. If you didn't handle them then too bad
 		scale.unload_commands.clear();
-		scale.destroy_commands.clear();
 
 		// For each node in the scale
 		for (auto&& [pos, node] : scale.nodes)
 		{
-			UnloadNode(scale, *node, frame, world.node_keepalive);
+			// Check if node hasn't been touched in too long
+			if (frame.frame_start_time - node->last_update_time > world.node_keepalive)
+			{
+				UnloadNode(scale, *node, frame);
+			}
 		}
 	}
 

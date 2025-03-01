@@ -47,7 +47,7 @@ namespace voxel_game::voxel
 
 	Voxel GetVoxelAtScale(spatial3d::Types& types, const spatial3d::World& world, godot::Vector3i pos, uint32_t scale)
 	{
-		const spatial3d::Node* node = spatial3d::GetNode(world, spatial3d::Coord(pos / 16, scale));
+		const spatial3d::Node* node = spatial3d::GetNode(world, pos / 16, scale);
 
 		if (node != nullptr)
 		{
@@ -64,7 +64,7 @@ namespace voxel_game::voxel
 			return Voxel{};
 		}
 
-		const spatial3d::Node* node = spatial3d::GetNode(world, spatial3d::Coord(pos / 16, start_scale));
+		const spatial3d::Node* node = spatial3d::GetNode(world, pos / 16, start_scale);
 
 		if (node == nullptr)
 		{
@@ -81,7 +81,7 @@ namespace voxel_game::voxel
 			return Voxel{};
 		}
 
-		const spatial3d::Node* node = spatial3d::GetNode(world, spatial3d::Coord(pos / 16, start_scale));
+		const spatial3d::Node* node = spatial3d::GetNode(world, pos / 16, start_scale);
 
 		if (node == nullptr)
 		{
@@ -95,7 +95,7 @@ namespace voxel_game::voxel
 	{
 		godot::Vector3i node_pos = pos / 16;
 
-		const spatial3d::Node* node = spatial3d::GetNode(world, spatial3d::Coord(node_pos, start_scale));
+		const spatial3d::Node* node = spatial3d::GetNode(world, node_pos, start_scale);
 
 		if (node == nullptr)
 		{

@@ -77,15 +77,15 @@ namespace voxel_game::universe
 		void LoadNode(spatial3d::Node* node)
 		{
 			const uint32_t entities_per_node = 4;
-			const uint32_t scale_step = 1 << node->coord.scale;
+			const uint32_t scale_step = 1 << node->scale_index;
 			const uint32_t scale_node_step = scale_step * world.node_size;
 			const double box_size = double(scale_step) / 2.0;
 
 			for (size_t i = 0; i < entities_per_node; i++)
 			{
-				double position_x = node->coord.pos.x * scale_node_step;
-				double position_y = node->coord.pos.y * scale_node_step;
-				double position_z = node->coord.pos.z * scale_node_step;
+				double position_x = node->position.x * scale_node_step;
+				double position_y = node->position.y * scale_node_step;
+				double position_z = node->position.z * scale_node_step;
 
 				position_x += godot::UtilityFunctions::randf_range(0, scale_node_step);
 				position_y += godot::UtilityFunctions::randf_range(0, scale_node_step);
@@ -115,18 +115,18 @@ namespace voxel_game::universe
 
 		void LoadNode(spatial3d::Node* node)
 		{
-			if (node->coord.pos.y != 0)
+			if (node->position.y != 0)
 			{
 				return;
 			}
 
-			const uint32_t scale_step = 1 << node->coord.scale;
+			const uint32_t scale_step = 1 << node->scale_index;
 			const uint32_t scale_node_step = scale_step * world.node_size;
 			const uint8_t box_shrink = 2;
 
-			double position_x = node->coord.pos.x * scale_node_step;
-			double position_y = node->coord.pos.y * scale_node_step;
-			double position_z = node->coord.pos.z * scale_node_step;
+			double position_x = node->position.x * scale_node_step;
+			double position_y = node->position.y * scale_node_step;
+			double position_z = node->position.z * scale_node_step;
 
 			flecs::entity galaxy = sim::GetPool().CreateEntity();
 
@@ -193,7 +193,7 @@ namespace voxel_game::universe
 			for (spatial3d::Node* node : spatial_scale.scale->unload_commands)
 			{
 				const uint32_t entities_per_node = 4;
-				const uint32_t scale_step = 1 << node->coord.scale;
+				const uint32_t scale_step = 1 << node->scale_index;
 				const uint32_t scale_node_step = scale_step * spatial_world.world->node_size;
 
 				for (flecs::entity_t galaxy : NODE_TO(node, Node)->galaxies)

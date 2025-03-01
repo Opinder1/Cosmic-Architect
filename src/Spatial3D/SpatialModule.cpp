@@ -60,7 +60,7 @@ namespace voxel_game::spatial3d
 
 		// System to initialize spatial nodes that have been added
 		world.system<CWorld, const sim::CFrame>(DEBUG_ONLY("WorldCreateNodes"))
-			.multi_threaded()
+			//.multi_threaded()
 			.term_at(1).singleton()
 			.each([](CWorld& spatial_world, const sim::CFrame& frame)
 		{
@@ -71,7 +71,7 @@ namespace voxel_game::spatial3d
 
 		// System to delete spatial nodes that have been marked to unload
 		world.system<CWorld>(DEBUG_ONLY("WorldDestroyNodes"))
-			.multi_threaded()
+			//.multi_threaded()
 			.each([](CWorld& spatial_world)
 		{
 			EASY_BLOCK("WorldDestroyNodes");
@@ -104,11 +104,19 @@ namespace voxel_game::spatial3d
 		});
 
 		// System to delete spatial nodes that have been marked to unload
-		world.system<const physics3d::CPosition, CEntity>(DEBUG_ONLY("EntityUpdateParentNode"))
+		world.system<const physics3d::CPosition, CLoader>(DEBUG_ONLY("LoaderUpdatePosition"))
+			.multi_threaded()
+			.each([](const physics3d::CPosition& position, CLoader& spatial_loader)
+		{
+			spatial_loader.loader->position = position.position;
+		});
+
+		// System to delete spatial nodes that have been marked to unload
+		world.system<const physics3d::CPosition, CEntity>(DEBUG_ONLY("EntityUpdatePosition"))
 			.multi_threaded()
 			.each([](const physics3d::CPosition& position, CEntity& spatial_entity)
 		{
-			spatial_entity.entity->position = position.position;
+			//spatial_entity.entity->position = position.position;
 		});
 	}
 
