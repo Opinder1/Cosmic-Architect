@@ -7,11 +7,11 @@ namespace voxel_game::spatial3d
 {
 	const godot::Vector3i node_neighbour_offsets[6] =
 	{
+		{-1, 0, 0},
+		{0, -1, 0},
 		{0, 0, -1},
 		{0, 0, 1},
-		{0, -1, 0},
 		{0, 1, 0},
-		{-1, 0, 0},
 		{1, 0, 0},
 	};
 
