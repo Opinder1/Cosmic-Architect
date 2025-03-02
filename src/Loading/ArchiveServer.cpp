@@ -231,11 +231,11 @@ namespace voxel_game::loading
 
 	void ArchiveServer::ProcessCommands()
 	{
-		TypedCommandBuffer commands_read;
+		TCommandBuffer<ArchiveServer> commands_read;
 
 		m_commands_swap.Retrieve(commands_read);
 
-		commands_read.ProcessCommands(this);
+		commands_read.ProcessCommands(*this);
 	}
 
 	bool ArchiveServer::ProcessLoadTask(LoadTask& task)

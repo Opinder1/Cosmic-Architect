@@ -9,12 +9,14 @@
 #include <godot_cpp/classes/rendering_device.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 
+using RD = godot::RenderingDevice;
+using RS = godot::RenderingServer;
+
 namespace voxel_game::rendering
 {
 	struct ThreadContext
 	{
-		// TODO Make into template with <godot::RenderingServer>
-		TypedCommandBuffer commands;
+		TCommandBuffer<RS> commands;
 
 		Allocator allocator;
 	};
@@ -34,6 +36,3 @@ namespace voxel_game::rendering
 		return GetContext().allocator.GetRID(type);
 	}
 }
-
-using RD = godot::RenderingDevice;
-using RS = godot::RenderingServer;

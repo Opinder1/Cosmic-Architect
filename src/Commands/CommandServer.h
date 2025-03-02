@@ -54,7 +54,7 @@ namespace voxel_game
 		template<class T>
 		void AddCommands(uint64_t object_id, T&& command_buffer)
 		{
-			AddCommandBuffer(object_id, std::make_unique<CommandBufferEntry<T>>(std::move(command_buffer)));
+			AddCommandBuffer(object_id, std::make_unique<TCommandBufferEntry<T>>(std::move(command_buffer)));
 		}
 
 		// Run all commands on the main thread and all rendering server commands on the render thread

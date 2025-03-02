@@ -79,6 +79,9 @@ namespace voxel_game
 	// We also pay a cost when moving expensive types into variants for execution but not inexpensive types nor the command name StringName
 	class GodotCommandBuffer : Nocopy
 	{
+		template<class T>
+		friend class TCommandBufferEntry;
+
 	public:
 		using Storage = std::vector<std::byte>;
 
@@ -105,6 +108,9 @@ namespace voxel_game
 		void Clear();
 
 		void ShrinkToFit();
+
+	protected:
+		size_t ProcessCommandsUntyped(void* object, size_t max);
 
 	private:
 		Storage m_data;

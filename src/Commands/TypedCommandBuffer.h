@@ -7,33 +7,25 @@
 #include "Util/Debug.h"
 
 #include <utility>
-#include <vector>
 #include <tuple>
 
 namespace voxel_game
 {
-	using TypedCommand = std::byte* (*)(void*, std::byte*, std::byte*, bool);
+	using TCommand = std::byte* (*)(void*, std::byte*, std::byte*, bool);
 
-	class TypedCommandBuffer : Nocopy
+	class TCommandBufferBase : Nocopy
 	{
-	public:
-		using Storage = std::vector<std::byte>;
+		template<class T>
+		friend class TCommandBufferEntry;
 
 	public:
-		TypedCommandBuffer();
-		~TypedCommandBuffer();
+		TCommandBufferBase();
 
-		TypedCommandBuffer(TypedCommandBuffer&& other) noexcept;
+		~TCommandBufferBase();
 
-		TypedCommandBuffer& operator=(TypedCommandBuffer&& other) noexcept;
+		TCommandBufferBase(TCommandBufferBase&& other) noexcept;
 
-		// Register a new command for the queue
-
-		template<auto Method, class... Args>
-		void AddCommand(Args&&... p_args);
-
-		// Process only up to a certain number of commands and return how many were processed (0 for max to process all)
-		size_t ProcessCommands(void* object, size_t max = k_process_all_commands);
+		TCommandBufferBase& operator=(TCommandBufferBase&& other) noexcept;
 
 		size_t NumCommands() const;
 
@@ -42,10 +34,39 @@ namespace voxel_game
 
 		void ShrinkToFit();
 
-	private:
+	protected:
+		size_t ProcessCommandsUntyped(void* object, size_t max);
+
+	protected:
 		Storage m_data;
 		size_t m_start = 0;
 		size_t m_num_commands = 0;
+	};
+
+	template<class T>
+	class TCommandBuffer : public TCommandBufferBase
+	{
+	public:
+		// Register a new command for the queue
+		template<auto Method, class... Args>
+		void AddCommand(Args&&... args)
+		{
+			DEBUG_ASSERT(m_start == 0, "We shouldn't be adding commands when we are already processing the buffer");
+
+			using Derived = typename get_method_class<decltype(Method)>::type;
+
+			static_assert(std::is_base_of_v<T, Derived> || std::is_base_of_v<Derived, T>);
+
+			DefaultCommand<Method, T, Derived, Args...>::Write(m_data, std::forward<Args>(args)...);
+
+			m_num_commands++;
+		}
+
+		// Process only up to a certain number of commands and return how many were processed (0 for max to process all)
+		size_t ProcessCommands(T& object, size_t max = k_process_all_commands)
+		{
+			return ProcessCommandsUntyped(&object, max);
+		}
 	};
 
 	// Write a type to a buffer
@@ -72,27 +93,17 @@ namespace voxel_game
 		return buffer_pos + sizeof(T);
 	}
 
-	// Write a type to a buffer. We write the plain type while allowing pointers
-	template<class T, class ArgT>
-	void WriteType(TypedCommandBuffer::Storage& buffer, ArgT&& data)
-	{
-		size_t pos = buffer.size();
-		buffer.resize(pos + sizeof(T));
-
-		new (buffer.data() + pos) T(std::forward<ArgT>(data));
-	}
-
 	// A templated method wrapper that reads all arguments needed to call the method.
-	template<auto Method, class Class, class... Args>
+	template<auto Method, class Base, class Derived, class... Args>
 	struct DefaultCommand
 	{
 		// Storage type for arguments being stored in memory. A tuple is used to make sure alignment of members is correct
 		using ArgStorage = std::tuple<std::remove_cv_t<std::remove_reference_t<Args>>...>;
 
 		template<size_t... Indexes>
-		static void Call(Class& object, ArgStorage& args, std::index_sequence<Indexes...>)
+		static void Call(Base& object, ArgStorage& args, std::index_sequence<Indexes...>)
 		{
-			(object.*Method)(std::forward<Args>(std::get<Indexes>(args))...);
+			(static_cast<Derived&>(object).*Method)(std::forward<Args>(std::get<Indexes>(args))...);
 		}
 
 		static std::byte* Read(void* object, std::byte* buffer_pos, std::byte* buffer_end, bool execute)
@@ -102,29 +113,17 @@ namespace voxel_game
 				ArgStorage* args;
 				ReadType<ArgStorage>(buffer_pos, buffer_end, args);
 
-				Call(*static_cast<Class*>(object), *args, std::index_sequence_for<Args...>{});
+				Call(*static_cast<Base*>(object), *args, std::index_sequence_for<Args...>{});
 			}
 
 			return DestroyType<ArgStorage>(buffer_pos, buffer_end);
 		}
 
-		static void Write(TypedCommandBuffer::Storage& storage, Args&&... args)
+		static void Write(Storage& storage, Args&&... args)
 		{
-			WriteType<TypedCommand>(storage, &DefaultCommand::Read);
+			WriteType<TCommand>(storage, &DefaultCommand::Read);
 
 			WriteType<ArgStorage>(storage, ArgStorage(std::forward<Args>(args)...));
 		}
 	};
-
-	template<auto Method, class... Args>
-	void TypedCommandBuffer::AddCommand(Args&&... args)
-	{
-		DEBUG_ASSERT(m_start == 0, "We shouldn't be adding commands when we are already processing the buffer");
-
-		using Class = typename get_method_class<decltype(Method)>::type;
-
-		DefaultCommand<Method, Class, Args...>::Write(m_data, std::forward<Args>(args)...);
-
-		m_num_commands++;
-	}
 }

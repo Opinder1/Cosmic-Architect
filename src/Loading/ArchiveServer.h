@@ -152,8 +152,8 @@ namespace voxel_game::loading
 		std::atomic_bool m_running = false;
 
 		// Commands requested to loader by owner thread
-		alignas(k_cache_line) TypedCommandBuffer m_commands_write;
-		alignas(k_cache_line) SwapBuffer<TypedCommandBuffer> m_commands_swap;
+		alignas(k_cache_line) TCommandBuffer<ArchiveServer> m_commands_write;
+		alignas(k_cache_line) SwapBuffer<TCommandBuffer<ArchiveServer>> m_commands_swap;
 
 		// Modifications output by loader to owner thread
 		alignas(k_cache_line) flecs::world m_modifications_write;

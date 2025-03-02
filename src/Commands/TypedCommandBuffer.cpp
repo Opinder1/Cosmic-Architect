@@ -7,28 +7,28 @@ namespace voxel_game
 {
 	std::byte* ProcessCommand(void* object, std::byte* buffer_pos, std::byte* buffer_end, bool execute)
 	{
-		TypedCommand* command;
-		buffer_pos = ReadType<TypedCommand>(buffer_pos, buffer_end, command);
+		TCommand* command;
+		buffer_pos = ReadType<TCommand>(buffer_pos, buffer_end, command);
 
 		return (*command)(object, buffer_pos, buffer_end, execute);
 	}
 
-	TypedCommandBuffer::TypedCommandBuffer()
+	TCommandBufferBase::TCommandBufferBase()
 	{
 		m_data.reserve(k_starting_buffer_size);
 	}
 
-	TypedCommandBuffer::~TypedCommandBuffer()
+	TCommandBufferBase::~TCommandBufferBase()
 	{
 		Clear();
 	}
 
-	TypedCommandBuffer::TypedCommandBuffer(TypedCommandBuffer&& other) noexcept
+	TCommandBufferBase::TCommandBufferBase(TCommandBufferBase&& other) noexcept
 	{
 		*this = std::move(other);
 	}
 
-	TypedCommandBuffer& TypedCommandBuffer::operator=(TypedCommandBuffer&& other) noexcept
+	TCommandBufferBase& TCommandBufferBase::operator=(TCommandBufferBase&& other) noexcept
 	{
 		Clear();
 
@@ -43,7 +43,7 @@ namespace voxel_game
 		return *this;
 	}
 
-	size_t TypedCommandBuffer::ProcessCommands(void* object, size_t max)
+	size_t TCommandBufferBase::ProcessCommandsUntyped(void* object, size_t max)
 	{
 		DEBUG_ASSERT(object != nullptr, "The object we are trying to process on should be valid");
 
@@ -77,12 +77,12 @@ namespace voxel_game
 		return num_processed;
 	}
 
-	size_t TypedCommandBuffer::NumCommands() const
+	size_t TCommandBufferBase::NumCommands() const
 	{
 		return m_num_commands;
 	}
 
-	void TypedCommandBuffer::Clear()
+	void TCommandBufferBase::Clear()
 	{
 		// Go through the buffer and read command data as if we were processing the commands but only destroy the data
 
@@ -98,7 +98,7 @@ namespace voxel_game
 		m_num_commands = 0;
 	}
 
-	void TypedCommandBuffer::ShrinkToFit()
+	void TCommandBufferBase::ShrinkToFit()
 	{
 		m_data.shrink_to_fit();
 	}

@@ -106,10 +106,10 @@ namespace voxel_game
 
 		// Commands to be deferred and processed by the internal thread
 		tkrzw::SpinMutex m_commands_mutex;
-		alignas(k_cache_line) TypedCommandBuffer m_deferred_commands;
+		alignas(k_cache_line) TCommandBuffer<SimulationServer> m_deferred_commands;
 
 		// Signals sent by the internal thread and deferred to be run by the main thread
-		alignas(k_cache_line) TypedCommandBuffer m_deferred_signals;
+		alignas(k_cache_line) TCommandBuffer<SimulationServer> m_deferred_signals;
 	};
 
 	template<class... Args>

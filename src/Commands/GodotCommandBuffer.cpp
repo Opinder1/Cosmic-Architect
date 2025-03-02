@@ -245,16 +245,6 @@ namespace voxel_game
 		}
 	}
 
-	// Write a type to a buffer. We write the plain type while allowing pointers
-	template<class T, class ArgT>
-	void WriteType(GodotCommandBuffer::Storage& buffer, ArgT&& data)
-	{
-		size_t pos = buffer.size();
-		buffer.resize(pos + sizeof(T));
-
-		new (buffer.data() + pos) T(std::forward<ArgT>(data));
-	}
-
 	void WriteGenericVariant(GodotCommandBuffer::Storage& buffer, const godot::Variant& argument)
 	{
 		switch (argument.get_type())
@@ -669,6 +659,11 @@ namespace voxel_game
 		m_num_commands -= num_processed;
 
 		return num_processed;
+	}
+
+	size_t GodotCommandBuffer::ProcessCommandsUntyped(void* object, size_t max)
+	{
+		return ProcessCommands(reinterpret_cast<godot::Object*>(object), max);
 	}
 
 	size_t GodotCommandBuffer::NumCommands() const

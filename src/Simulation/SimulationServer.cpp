@@ -106,14 +106,14 @@ namespace voxel_game
 
 		while (m_state.load(std::memory_order_acquire) == State::Loaded)
 		{
-			TypedCommandBuffer command_buffer;
+			TCommandBuffer<SimulationServer> command_buffer;
 			{
 				std::lock_guard lock(m_commands_mutex);
 				command_buffer = std::move(m_deferred_commands);
 			}
 
 			// Process the deferred commands sent by other threads
-			command_buffer.ProcessCommands(this);
+			command_buffer.ProcessCommands(*this);
 
 			DoSimulationThreadProgress();
 

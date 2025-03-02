@@ -4,17 +4,31 @@
 
 #include <godot_cpp/classes/object.hpp>
 
+#include <vector>
+
 namespace voxel_game
 {
 	constexpr const size_t k_starting_buffer_size = 4096;
 	constexpr const size_t k_process_all_commands = 0;
+
+	using Storage = std::vector<std::byte>;
+
+	// Write a type to a buffer. We write the plain type while allowing pointers
+	template<class T, class ArgT>
+	void WriteType(Storage& buffer, ArgT&& data)
+	{
+		size_t pos = buffer.size();
+		buffer.resize(pos + sizeof(T));
+
+		new (buffer.data() + pos) T(std::forward<ArgT>(data));
+	}
 
 	class CommandBufferEntryBase : Nocopy
 	{
 	public:
 		CommandBufferEntryBase() {}
 
-		virtual size_t ProcessCommands(godot::Object* object, size_t max = k_process_all_commands) = 0;
+		virtual size_t ProcessCommands(void* object, size_t max = k_process_all_commands) = 0;
 
 		virtual size_t NumCommands() const = 0;
 
@@ -24,16 +38,16 @@ namespace voxel_game
 	};
 
 	template<class T>
-	class CommandBufferEntry final : public CommandBufferEntryBase
+	class TCommandBufferEntry final : public CommandBufferEntryBase
 	{
 	public:
-		CommandBufferEntry(T&& buffer) :
+		TCommandBufferEntry(T&& buffer) :
 			m_buffer(std::move(buffer))
 		{}
 
-		size_t ProcessCommands(godot::Object* object, size_t max) override
+		size_t ProcessCommands(void* object, size_t max) override
 		{
-			return m_buffer.ProcessCommands(object, max);
+			return m_buffer.ProcessCommandsUntyped(object, max);
 		}
 
 		size_t NumCommands() const override
