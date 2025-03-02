@@ -8,7 +8,7 @@ namespace voxel_game::voxelrender
 	{
 		world.module<Components>();
 
-		world.component<Node>();
+		world.component<CContext>();
 		world.component<CWorld>();
 	}
 }

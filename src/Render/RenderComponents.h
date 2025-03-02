@@ -1,7 +1,7 @@
 #pragma once
 
-#include "RenderAllocator.h"
 #include "RenderInstancer.h"
+#include "RenderContext.h"
 
 #include "Commands/TypedCommandBuffer.h"
 
@@ -14,7 +14,6 @@
 
 #include <flecs/flecs.h>
 
-#include <array>
 #include <bitset>
 
 namespace voxel_game::rendering
@@ -44,14 +43,6 @@ namespace voxel_game::rendering
 	};
 
 	using ModifyFlags = std::bitset<ModifyFlag::Count>;
-
-	struct ThreadContext
-	{
-		// TODO Make into template with <godot::RenderingServer>
-		TypedCommandBuffer commands;
-
-		Allocator allocator;
-	};
 
 	struct CContext : Nocopy, Nomove
 	{

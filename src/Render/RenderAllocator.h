@@ -15,7 +15,7 @@
 
 namespace voxel_game::rendering
 {
-	enum class AllocateType : uint32_t
+	enum class RIDType : uint32_t
 	{
 		Texture2D,
 		Texture3D,
@@ -54,7 +54,7 @@ namespace voxel_game::rendering
 		Count,
 	};
 
-	constexpr const size_t k_num_alloc_types = to_underlying(AllocateType::Count);
+	constexpr const size_t k_num_alloc_types = to_underlying(RIDType::Count);
 
 	// A server that keeps some pools of render objects preallocated for any allocators to take
 	// Any taken render objects will automatically be refilled
@@ -109,9 +109,9 @@ namespace voxel_game::rendering
 
 		void Process();
 
-		godot::RID GetRID(AllocateType type);
+		godot::RID GetRID(RIDType type);
 
-		godot::RID EnsureRID(AllocateType type);
+		godot::RID EnsureRID(RIDType type);
 
 	private:
 		std::vector<godot::RID> m_rids[k_num_alloc_types];

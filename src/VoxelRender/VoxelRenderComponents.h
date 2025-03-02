@@ -15,6 +15,11 @@ namespace voxel_game::voxelrender
 		Components(flecs::world& world);
 	};
 
+	struct CContext
+	{
+		int i;
+	};
+
 	struct Node
 	{
 		godot::RID mesh;

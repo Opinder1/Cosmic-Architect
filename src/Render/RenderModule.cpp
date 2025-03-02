@@ -1,5 +1,6 @@
 #include "RenderModule.h"
 #include "RenderComponents.h"
+#include "RenderContext.h"
 
 #include "Physics3D/PhysicsComponents.h"
 
@@ -17,14 +18,6 @@ namespace voxel_game::rendering
 {
     const godot::Transform3D k_invisible_transform{ godot::Basis(), godot::Vector3(FLT_MAX, FLT_MAX, FLT_MAX) };
 
-    thread_local ThreadContext* thread_context = nullptr;
-
-    ThreadContext& GetContext()
-    {
-        DEBUG_ASSERT(thread_context != nullptr, "This thread doesn't have a context set");
-        return *thread_context;
-    }
-
 	Module::Module(flecs::world& world)
 	{
 		world.module<Module>();
@@ -37,7 +30,7 @@ namespace voxel_game::rendering
 
         CContext& context = world.ensure<CContext>();
 
-        thread_context = &context.threads[0];
+        SetContext(context.threads[0]);
 
         // Flush each threads render commands to the command queue server which will run them on the rendering server thread
         world.system<CContext>(DEBUG_ONLY("FrameFlushCommands"))
@@ -81,7 +74,7 @@ namespace voxel_game::rendering
             .term_at(1).singleton()
             .each([](flecs::iter& it, size_t i, const sim::CThreadWorker& worker, CContext& context)
         {
-            thread_context = &context.threads[it.world().get_stage_id()];
+            SetContext(context.threads[it.world().get_stage_id()]);
         });
 
         InitTransform(world);
@@ -135,7 +128,7 @@ namespace voxel_game::rendering
 
             if (transform.modified)
             {
-                ADD_RENDER_CMD(instance_set_transform, instance.id, transform.transform);
+                AddCommand<&RS::instance_set_transform>(instance.id, transform.transform);
             }
         });
     }
@@ -162,7 +155,7 @@ namespace voxel_game::rendering
         {
             DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
 
-            ADD_RENDER_CMD(free_rid, scenario.id);
+            AddCommand<&RS::free_rid>(scenario.id);
         });
 
         world.observer<const CInstance, const CScenario>(DEBUG_ONLY("InstanceSetScenario"))
@@ -175,8 +168,8 @@ namespace voxel_game::rendering
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
             DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
 
-            ADD_RENDER_CMD(instance_set_transform, instance.id, k_invisible_transform); // Fake invisibility until we set transform
-            ADD_RENDER_CMD(instance_set_scenario, instance.id, scenario.id);
+            AddCommand<&RS::instance_set_transform>(instance.id, k_invisible_transform); // Fake invisibility until we set transform
+            AddCommand<&RS::instance_set_scenario>(instance.id, scenario.id);
         });
     }
 
@@ -190,7 +183,7 @@ namespace voxel_game::rendering
         {
             EASY_BLOCK("AddUniqueInstance");
 
-            instance.id = ALLOC_RENDER_RID(Instance);
+            instance.id = AllocRID(RIDType::Instance);
 
             flecs::entity entity = it.entity(i);
 
@@ -205,7 +198,7 @@ namespace voxel_game::rendering
         {
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
 
-            ADD_RENDER_CMD(free_rid, instance.id);
+            AddCommand<&RS::RenderingServer::free_rid>(instance.id);
         });
     }
 
@@ -221,7 +214,7 @@ namespace voxel_game::rendering
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
             DEBUG_ASSERT(base.id != godot::RID(), "Base should be valid");
 
-            ADD_RENDER_CMD(instance_set_base, instance.id, base.id);
+            AddCommand<&RS::instance_set_base>(instance.id, base.id);
         });
 
         world.observer<const CBase>(DEBUG_ONLY("RemoveBase"))
@@ -231,7 +224,7 @@ namespace voxel_game::rendering
         {
             DEBUG_ASSERT(base.id != godot::RID(), "Base should be valid");
 
-            ADD_RENDER_CMD(free_rid, base.id);
+            AddCommand<&RS::free_rid>(base.id);
         });
 
         InitPlaceholderCube(world);

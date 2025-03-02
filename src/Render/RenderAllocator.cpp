@@ -157,7 +157,7 @@ namespace voxel_game::rendering
 
         for (size_t i = 0; i < all_rids_out.Size(); i++)
         {
-            AllocateType type = static_cast<AllocateType>(i);
+            RIDType type = static_cast<RIDType>(i);
             std::vector<godot::RID>& rids_out = all_rids_out[i];
 
             const size_t required = requested[i];
@@ -200,7 +200,7 @@ namespace voxel_game::rendering
 
         for (size_t i = 0; i < all_rids_in.Size(); i++)
         {
-            AllocateType type = static_cast<AllocateType>(i);
+            RIDType type = static_cast<RIDType>(i);
             std::vector<godot::RID>& rids_in = all_rids_in[i];
 
             if (rids_in.size() == 0) // No rids to deallocate
@@ -292,13 +292,13 @@ namespace voxel_game::rendering
 
         for (size_t i = 0; i < k_num_alloc_types; i++)
         {
-            requests[i] = k_max_preallocated[i] / 16;
+            requests[i] = k_max_preallocated[i];
         }
 
         AllocatorServer::get_singleton()->GetRIDs(requests, m_rids);
     }
 
-    godot::RID Allocator::GetRID(AllocateType type)
+    godot::RID Allocator::GetRID(RIDType type)
     {
         godot::RID rid;
 
@@ -315,7 +315,7 @@ namespace voxel_game::rendering
         return rid;
     }
 
-    godot::RID Allocator::EnsureRID(AllocateType type)
+    godot::RID Allocator::EnsureRID(RIDType type)
     {
         godot::RID rid = GetRID(type);
 
