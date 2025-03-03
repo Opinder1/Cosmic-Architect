@@ -1,5 +1,9 @@
-def get_level_power(level):
-    if level < 100:
+import math
+
+def get_level_power_multi(level):
+    if level < 10:
+        multi = 2
+    elif level < 100:
         multi = 2.5
     elif level < 250:
         multi = 3
@@ -19,9 +23,9 @@ def get_level_power(level):
     else:
         return round(power)
 
-def get_num_per_singularity(level):
+def approx_num_per_singularity(level):
     if level < 10:
-        return 0
+        multi = 1.035 # Children of low level mortals
     elif level < 100:
         multi = 1.038
     elif level < 250:
@@ -37,9 +41,29 @@ def get_num_per_singularity(level):
 
     return round(multi ** (1000 - level))
 
+def get_level_lifespan_multi(level):
+    if level < 100:
+        return 1
+    elif level < 250:
+        return 10
+    elif level < 450:
+        return 1000
+    else:
+        return math.inf
+
+def get_median_child_level(parent1_level, parent2_level):
+    level = round((parent1_level + parent2_level) / 3)
+    
+    if parent1_level == 1000 or parent2_level == 1000:
+        return level * 1.2 # Can give birth to eldrich if parent is singularity
+    elif parent1_level >= 700 and parent2_level >= 700:
+        return level # Can give birth to divinity if both parents are eldrich
+    else:
+        return min(level, 449)
+
 def print_levels():
     for i in range(0, 1001):
-        print("{:4}:{:10}".format(i, get_level_power(i)), end="")
+        print("{:4}:{:10}".format(i, get_level_power_multi(i)), end="")
 
         if i % 10 == 9:
             print()
@@ -50,12 +74,12 @@ def print_levels():
     print()
 
 def print_nums_per_singularity():
-    num_mortals = sum([get_num_per_singularity(i) for i in range(0, 100)])
-    num_trancendants = sum([get_num_per_singularity(i) for i in range(100, 250)])
-    num_demigods = sum([get_num_per_singularity(i) for i in range(250, 450)])
-    num_gods = sum([get_num_per_singularity(i) for i in range(450, 750)])
-    num_constellations = sum([get_num_per_singularity(i) for i in range(750, 1000)])
-    num_singularities = get_num_per_singularity(1000)
+    num_mortals = sum([approx_num_per_singularity(i) for i in range(0, 100)])
+    num_trancendants = sum([approx_num_per_singularity(i) for i in range(100, 250)])
+    num_demigods = sum([approx_num_per_singularity(i) for i in range(250, 450)])
+    num_gods = sum([approx_num_per_singularity(i) for i in range(450, 750)])
+    num_constellations = sum([approx_num_per_singularity(i) for i in range(750, 1000)])
+    num_singularities = approx_num_per_singularity(1000)
 
     print("singularities:  {:20}".format(num_singularities))
     print("constellations: {:20}".format(num_constellations))
@@ -76,8 +100,16 @@ def print_nums_per_singularity():
     print()
     
     for i in range(0, 100):
-        c = sum([get_num_per_singularity(i2) for i2 in range(i * 10, (i+1) * 10)])
+        c = sum([approx_num_per_singularity(i2) for i2 in range(i * 10, (i+1) * 10)])
         print("{:4}:{:20}".format(i, c))
 
-print_levels()
-print_nums_per_singularity()
+def print_level_children():
+    levels = [10, 99, 100, 249, 250, 449, 450, 699, 700, 999, 1000]
+    
+    for level in levels:
+        for level2 in levels:
+            print("{} + {} = {}".format(level, level2, get_median_child_level(level, level2)))
+
+#print_levels()
+#print_nums_per_singularity()
+print_level_children()
