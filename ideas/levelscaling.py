@@ -1,83 +1,96 @@
 import math
 
-def get_level_power_multi(level):
-    if level < 10:
-        multi = 2
-    elif level < 100:
-        multi = 2.5
-    elif level < 250:
-        multi = 3
-    elif level < 450:
-        multi = 3.5
-    elif level < 700:
-        multi = 4
+def get_level_step(level):
+    return level / 10
+
+def get_level_class_stage(level):
+    return level / 50
+
+def get_level_realm(level):
+    if level >= 1000: # Perfection
+        return 6
+    elif level >= 750: # Three quarters perfection
+        return 5
+    elif level >= 500: # Half way perfection
+        return 4
+    elif level >= 250: # Quarter perfection
+        return 3
+    elif level >= 100: # Tenth perfection
+        return 2
     else:
-        multi = 4.5
+        return 1
 
-    power = (level / 10) ** multi
+def get_level_xp(level):
+    return level ** 2
 
-    if level < 10:
-        return round(power, 2)
-    elif level < 24:
+def get_level_total_xp(level):
+    return sum([get_level_xp(i) for i in range(0, level)])
+
+def get_level_power_multi(level):
+    step = get_level_step(level)
+    realm = get_level_realm(level)
+    multi = 1 + (0.5 * realm)
+
+    power = step ** multi
+
+    if power < 100:
         return round(power, 1)
     else:
         return round(power)
 
 def approx_num_per_singularity(level):
-    if level < 10:
-        multi = 1.035 # Children of low level mortals
-    elif level < 100:
-        multi = 1.038
-    elif level < 250:
-        multi = 1.031
-    elif level < 450:
-        multi = 1.025
-    elif level < 700:
-        multi = 1.019
-    elif level < 1000:
-        multi = 1.010
-    else:
-        return 1
+    singularity_realm = get_level_realm(1000)
+    realm = get_level_realm(level)
 
-    return round(multi ** (1000 - level))
+    increase_per_level = 12
+    increase_per_realm = 1.3
+
+    t = (1000 - level) / increase_per_level
+
+    p = t ** ((singularity_realm - realm) ** increase_per_realm)
+
+    return round(p)
 
 def get_level_lifespan_multi(level):
-    if level < 100:
-        return 1
-    elif level < 250:
-        return 10
-    elif level < 450:
+    if level >= 500:
+        return math.inf # Immortal at half perfection
+    elif level >= 250:
         return 1000
+    elif level >= 100:
+        return 10
     else:
-        return math.inf
+        return 1
 
 def get_median_child_level(parent1_level, parent2_level):
-    level = round((parent1_level + parent2_level) / 3)
+    level = (parent1_level + parent2_level) / 3
     
     if parent1_level == 1000 or parent2_level == 1000:
-        return level * 1.2 # Can give birth to eldrich if parent is singularity
-    elif parent1_level >= 700 and parent2_level >= 700:
-        return level # Can give birth to divinity if both parents are eldrich
+        return round(level * 1.2) # Can give birth to eldrich if parent is singularity
     else:
-        return min(level, 449)
+        return round(min(level, 499)) # Can't give birth to immortals
 
 def print_levels():
-    for i in range(0, 1001):
-        print("{:4}:{:10}".format(i, get_level_power_multi(i)), end="")
-
-        if i % 10 == 9:
-            print()
-
-        if i == 99 or i == 249 or i == 449 or i == 699 or i == 999:
-            print()
+    for i in range(0, 1000, 10):
+        print("{:4}-{:<4}: {:10}-{:<10}".format(
+            i, i + 9,
+            get_level_power_multi(i), get_level_power_multi(i + 9)
+        ))
             
     print()
+
+def print_level_xps():
+    for i in range(0, 1000, 10):
+        print("{:4}-{:<4}: {:10}-{:<10} {:10}-{:<10}".format(
+            i, i + 9,
+            get_level_xp(i), get_level_xp(i + 9),
+            get_level_total_xp(i), get_level_total_xp(i + 9)
+        ))
 
 def print_nums_per_singularity():
     num_mortals = sum([approx_num_per_singularity(i) for i in range(0, 100)])
     num_trancendants = sum([approx_num_per_singularity(i) for i in range(100, 250)])
-    num_demigods = sum([approx_num_per_singularity(i) for i in range(250, 450)])
-    num_gods = sum([approx_num_per_singularity(i) for i in range(450, 750)])
+    num_demigods = sum([approx_num_per_singularity(i) for i in range(250, 500)])
+    num_gods = sum([approx_num_per_singularity(i) for i in range(500, 750)])
     num_constellations = sum([approx_num_per_singularity(i) for i in range(750, 1000)])
     num_singularities = approx_num_per_singularity(1000)
 
@@ -86,7 +99,7 @@ def print_nums_per_singularity():
     print("gods:           {:20}".format(num_gods))
     print("demigods:       {:20}".format(num_demigods))
     print("trancendants:   {:20}".format(num_trancendants))
-    print("num_mortals:    {:20}".format(num_mortals))
+    print("mortals:        {:20}".format(num_mortals))
     print("max_int:        {:20}".format(2**64))
 
     print()
@@ -104,12 +117,13 @@ def print_nums_per_singularity():
         print("{:4}:{:20}".format(i, c))
 
 def print_level_children():
-    levels = [10, 99, 100, 249, 250, 449, 450, 699, 700, 999, 1000]
+    levels = [10, 99, 100, 249, 250, 499, 500, 749, 750, 999, 1000]
     
     for level in levels:
         for level2 in levels:
             print("{} + {} = {}".format(level, level2, get_median_child_level(level, level2)))
 
-#print_levels()
+print_levels()
+#print_level_xps()
 #print_nums_per_singularity()
-print_level_children()
+#print_level_children()
