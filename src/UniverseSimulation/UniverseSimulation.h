@@ -6,6 +6,7 @@
 
 #include "Util/Debug.h"
 #include "Util/UUID.h"
+#include "Util/GodotMemory.h"
 
 #include <godot_cpp/variant/rid.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
@@ -38,15 +39,16 @@ namespace voxel_game
 			SERVER_TYPE_REMOTE
 		};
 
-		// Cached string names for optimization
-		static std::optional<const CommandStrings> k_commands;
-		static std::optional<const SignalStrings> k_signals;
-
 	public:
+		static UniverseSimulation* get_singleton();
+
 		UniverseSimulation();
 		~UniverseSimulation();
 
-		void Initialize(const godot::String& path, godot::RID scenario);
+		void SetRenderContext(godot::RID scenario);
+#if defined(DEBUG_ENABLED)
+		void DebugCommand(const godot::StringName& command, const godot::Array& args);
+#endif
 
 		bool CanSimulationStart() final;
 		void DoSimulationLoad() final;
@@ -54,9 +56,6 @@ namespace voxel_game
 		bool DoSimulationProgress(real_t delta) final;
 		void DoSimulationThreadProgress() final;
 
-#if defined(DEBUG_ENABLED)
-		void DebugCommand(const godot::StringName& command, const godot::Array& args);
-#endif
 
 		// ####### Universe #######
 
@@ -306,6 +305,12 @@ namespace voxel_game
 		static void _cleanup_methods();
 
 	private:
+		static godot::OptObj<UniverseSimulation> k_singleton;
+
+		// Cached string names for optimization
+		static std::optional<const CommandStrings> k_commands;
+		static std::optional<const SignalStrings> k_signals;
+
 		// Initialization variables
 		godot::String m_path;
 		godot::RID m_scenario;

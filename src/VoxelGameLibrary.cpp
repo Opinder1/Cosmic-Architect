@@ -141,6 +141,7 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 
 		godot::Engine::get_singleton()->register_singleton("CommandServer", voxel_game::CommandServer::get_singleton());
 		godot::Engine::get_singleton()->register_singleton("AllocatorServer", voxel_game::rendering::AllocatorServer::get_singleton());
+		godot::Engine::get_singleton()->register_singleton("UniverseSimulation", voxel_game::UniverseSimulation::get_singleton());
 
 		profiler::startListen();
 
@@ -156,6 +157,7 @@ void uninitialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 
 		profiler::stopListen();
 
+		godot::Engine::get_singleton()->unregister_singleton("UniverseSimulation");
 		godot::Engine::get_singleton()->unregister_singleton("AllocatorServer");
 		godot::Engine::get_singleton()->unregister_singleton("CommandServer");
 

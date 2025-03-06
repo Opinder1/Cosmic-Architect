@@ -19,7 +19,9 @@
 
 #include "Util/Debug.h"
 
+#include <godot_cpp/classes/display_server.hpp>
 #include <godot_cpp/classes/os.hpp>
+#include <godot_cpp/classes/project_settings.hpp>
 
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/type_info.hpp>
@@ -32,8 +34,15 @@ namespace voxel_game
 {
 	const size_t k_simulation_ticks_per_second = 20;
 
+	godot::OptObj<UniverseSimulation> UniverseSimulation::k_singleton;
+
 	std::optional<const UniverseSimulation::CommandStrings> UniverseSimulation::k_commands;
 	std::optional<const UniverseSimulation::SignalStrings> UniverseSimulation::k_signals;
+
+	UniverseSimulation* UniverseSimulation::get_singleton()
+	{
+		return &k_singleton.value();
+	}
 
 	UniverseSimulation::UniverseSimulation()
 	{}
@@ -43,11 +52,8 @@ namespace voxel_game
 		WaitUntilStopped();
 	}
 
-	void UniverseSimulation::Initialize(const godot::String& path, godot::RID scenario)
+	void UniverseSimulation::SetRenderContext(godot::RID scenario)
 	{
-		DEBUG_ASSERT(!path.is_empty(), "The path must be valid");
-
-		m_path = path;
 		m_scenario = scenario;
 	}
 
@@ -85,6 +91,8 @@ namespace voxel_game
 		}
 
 		// Create the universe
+
+		m_path = godot::ProjectSettings::get_singleton()->get_setting("voxel_game/universe/path");
 
 		m_universe_entity = universe::CreateNewUniverse(m_world, m_path, m_scenario);
 
@@ -166,8 +174,7 @@ namespace voxel_game
 		BIND_ENUM_CONSTANT(SERVER_TYPE_LOCAL);
 		BIND_ENUM_CONSTANT(SERVER_TYPE_REMOTE);
 
-		BIND_METHOD(godot::D_METHOD(k_commands->initialize, "path", "scenario"), &UniverseSimulation::Initialize);
-
+		BIND_METHOD(godot::D_METHOD("set_render_context", "scenario"), &UniverseSimulation::SetRenderContext);
 #if defined(DEBUG_ENABLED)
 		BIND_METHOD(godot::D_METHOD(k_commands->debug_command, "command", "arguments"), &UniverseSimulation::DebugCommand);
 #endif
@@ -572,10 +579,14 @@ namespace voxel_game
 		// ####### Magic #######
 
 		ADD_SIGNAL(godot::MethodInfo(k_signals->use_spell_response_response));
+
+		k_singleton.instantiate();
 	}
 
 	void UniverseSimulation::_cleanup_methods()
 	{
+		k_singleton.reset();
+
 		k_commands.reset();
 		k_signals.reset();
 	}
