@@ -1,4 +1,4 @@
-#include "UniverseSimulation/UniverseSimulation.h"
+#include "UniverseServer/UniverseServer.h"
 
 #include "Simulation/SimulationServer.h"
 
@@ -137,11 +137,11 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 		godot::ClassDB::register_class<voxel_game::CommandServer>();
 		godot::ClassDB::register_class<voxel_game::rendering::AllocatorServer>();
 		godot::ClassDB::register_class<voxel_game::SimulationServer>();
-		godot::ClassDB::register_class<voxel_game::UniverseSimulation>();
+		godot::ClassDB::register_class<voxel_game::UniverseServer>();
 
 		godot::Engine::get_singleton()->register_singleton("CommandServer", voxel_game::CommandServer::get_singleton());
 		godot::Engine::get_singleton()->register_singleton("AllocatorServer", voxel_game::rendering::AllocatorServer::get_singleton());
-		godot::Engine::get_singleton()->register_singleton("UniverseSimulation", voxel_game::UniverseSimulation::get_singleton());
+		godot::Engine::get_singleton()->register_singleton("UniverseServer", voxel_game::UniverseServer::get_singleton());
 
 		profiler::startListen();
 
@@ -157,11 +157,11 @@ void uninitialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 
 		profiler::stopListen();
 
-		godot::Engine::get_singleton()->unregister_singleton("UniverseSimulation");
+		godot::Engine::get_singleton()->unregister_singleton("UniverseServer");
 		godot::Engine::get_singleton()->unregister_singleton("AllocatorServer");
 		godot::Engine::get_singleton()->unregister_singleton("CommandServer");
 
-		voxel_game::UniverseSimulation::_cleanup_methods();
+		voxel_game::UniverseServer::_cleanup_methods();
 		voxel_game::rendering::AllocatorServer::_cleanup_methods();
 		voxel_game::CommandServer::_cleanup_methods();
 
