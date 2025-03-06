@@ -38,6 +38,16 @@ def get_level_power_multi(level):
     else:
         return round(power)
 
+def get_level_bodysize_multi(level):
+    bases = [0, 100, 250, 500, 750, 1000]
+
+    base = bases[get_level_realm(level) - 1]
+
+    a = 2 ** (base / 50)
+    b = 1.65 ** (level / 50)
+
+    return a + b - 1
+
 def approx_num_per_singularity(level):
     singularity_realm = get_level_realm(1000)
     realm = get_level_realm(level)
@@ -86,6 +96,13 @@ def print_level_xps():
             get_level_total_xp(i), get_level_total_xp(i + 9)
         ))
 
+def print_level_bodysize():
+    for i in range(0, 1001, 10):
+        print("{:4}-{:<4}: {:10}-{:<10}".format(
+            i, i + 9,
+            get_level_bodysize_multi(i), get_level_bodysize_multi(i + 9)
+        ))
+
 def print_nums_per_singularity():
     num_mortals = sum([approx_num_per_singularity(i) for i in range(0, 100)])
     num_trancendants = sum([approx_num_per_singularity(i) for i in range(100, 250)])
@@ -123,7 +140,8 @@ def print_level_children():
         for level2 in levels:
             print("{} + {} = {}".format(level, level2, get_median_child_level(level, level2)))
 
-print_levels()
+#print_levels()
 #print_level_xps()
+print_level_bodysize()
 #print_nums_per_singularity()
 #print_level_children()
