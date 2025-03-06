@@ -36,7 +36,6 @@ namespace voxel_game
 
 	godot::OptObj<UniverseSimulation> UniverseSimulation::k_singleton;
 
-	std::optional<const UniverseSimulation::CommandStrings> UniverseSimulation::k_commands;
 	std::optional<const UniverseSimulation::SignalStrings> UniverseSimulation::k_signals;
 
 	UniverseSimulation* UniverseSimulation::get_singleton()
@@ -168,7 +167,6 @@ namespace voxel_game
 
 	void UniverseSimulation::_bind_methods()
 	{
-		k_commands.emplace();
 		k_signals.emplace();
 
 		BIND_ENUM_CONSTANT(SERVER_TYPE_LOCAL);
@@ -176,236 +174,236 @@ namespace voxel_game
 
 		BIND_METHOD(godot::D_METHOD("set_render_context", "scenario"), &UniverseSimulation::SetRenderContext);
 #if defined(DEBUG_ENABLED)
-		BIND_METHOD(godot::D_METHOD(k_commands->debug_command, "command", "arguments"), &UniverseSimulation::DebugCommand);
+		BIND_METHOD(godot::D_METHOD("debug_command", "command", "arguments"), &UniverseSimulation::DebugCommand);
 #endif
 
 		// ####### Universe #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_universe_info), &UniverseSimulation::GetUniverseInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->connect_to_galaxy_list, "ip"), &UniverseSimulation::ConnectToGalaxyList);
-		BIND_METHOD(godot::D_METHOD(k_commands->disconnect_from_galaxy_list), &UniverseSimulation::DisconnectFromGalaxyList);
-		BIND_METHOD(godot::D_METHOD(k_commands->query_galaxy_list, "query"), &UniverseSimulation::QueryGalaxyList);
-		BIND_METHOD(godot::D_METHOD(k_commands->ping_remote_galaxy, "ip"), &UniverseSimulation::PingRemoteGalaxy);
-		BIND_METHOD(godot::D_METHOD(k_commands->start_local_galaxy, "path", "fragment_type", "server_type"), &UniverseSimulation::StartLocalGalaxy);
-		BIND_METHOD(godot::D_METHOD(k_commands->connect_to_galaxy, "path", "ip"), &UniverseSimulation::ConnectToGalaxy);
-		BIND_METHOD(godot::D_METHOD(k_commands->disconnect_from_galaxy), &UniverseSimulation::DisconnectFromGalaxy);
+		BIND_METHOD(godot::D_METHOD("get_universe_info"), &UniverseSimulation::GetUniverseInfo);
+		BIND_METHOD(godot::D_METHOD("connect_to_galaxy_list", "ip"), &UniverseSimulation::ConnectToGalaxyList);
+		BIND_METHOD(godot::D_METHOD("disconnect_from_galaxy_list"), &UniverseSimulation::DisconnectFromGalaxyList);
+		BIND_METHOD(godot::D_METHOD("query_galaxy_list", "query"), &UniverseSimulation::QueryGalaxyList);
+		BIND_METHOD(godot::D_METHOD("ping_remote_galaxy", "ip"), &UniverseSimulation::PingRemoteGalaxy);
+		BIND_METHOD(godot::D_METHOD("start_local_galaxy", "path", "fragment_type", "server_type"), &UniverseSimulation::StartLocalGalaxy);
+		BIND_METHOD(godot::D_METHOD("connect_to_galaxy", "path", "ip"), &UniverseSimulation::ConnectToGalaxy);
+		BIND_METHOD(godot::D_METHOD("disconnect_from_galaxy"), &UniverseSimulation::DisconnectFromGalaxy);
 
 		// ####### Fragments (admin only) #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_fragment_info, "fragment_id"), &UniverseSimulation::GetFragmentInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_current_fragment), &UniverseSimulation::GetCurrentFragment);
-		BIND_METHOD(godot::D_METHOD(k_commands->enter_fragment, "fragment_id", "method"), &UniverseSimulation::EnterFragment);
+		BIND_METHOD(godot::D_METHOD("get_fragment_info", "fragment_id"), &UniverseSimulation::GetFragmentInfo);
+		BIND_METHOD(godot::D_METHOD("get_current_fragment"), &UniverseSimulation::GetCurrentFragment);
+		BIND_METHOD(godot::D_METHOD("enter_fragment", "fragment_id", "method"), &UniverseSimulation::EnterFragment);
 
 		// ####### Account #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_account_info), &UniverseSimulation::GetAccountInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->create_account, "username", "password_hash"), &UniverseSimulation::CreateAccount);
-		BIND_METHOD(godot::D_METHOD(k_commands->account_login, "username", "password_hash"), &UniverseSimulation::AccountLogin);
-		BIND_METHOD(godot::D_METHOD(k_commands->saved_session_login), &UniverseSimulation::SavedSessionLogin);
-		BIND_METHOD(godot::D_METHOD(k_commands->clear_saved_session), &UniverseSimulation::ClearSavedSession);
-		BIND_METHOD(godot::D_METHOD(k_commands->delete_account), &UniverseSimulation::DeleteAccount);
-		BIND_METHOD(godot::D_METHOD(k_commands->logout_account), &UniverseSimulation::LogoutAccount);
+		BIND_METHOD(godot::D_METHOD("get_account_info"), &UniverseSimulation::GetAccountInfo);
+		BIND_METHOD(godot::D_METHOD("create_account", "username", "password_hash"), &UniverseSimulation::CreateAccount);
+		BIND_METHOD(godot::D_METHOD("account_login", "username", "password_hash"), &UniverseSimulation::AccountLogin);
+		BIND_METHOD(godot::D_METHOD("saved_session_login"), &UniverseSimulation::SavedSessionLogin);
+		BIND_METHOD(godot::D_METHOD("clear_saved_session"), &UniverseSimulation::ClearSavedSession);
+		BIND_METHOD(godot::D_METHOD("delete_account"), &UniverseSimulation::DeleteAccount);
+		BIND_METHOD(godot::D_METHOD("logout_account"), &UniverseSimulation::LogoutAccount);
 
 		// ####### Friends #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_friends), &UniverseSimulation::GetFriends);
-		BIND_METHOD(godot::D_METHOD(k_commands->invite_friend, "account_id"), &UniverseSimulation::InviteFriend);
-		BIND_METHOD(godot::D_METHOD(k_commands->accept_friend_invite, "account_id"), &UniverseSimulation::AcceptFreindInvite);
-		BIND_METHOD(godot::D_METHOD(k_commands->remove_friend, "account_id"), &UniverseSimulation::RemoveFriend);
+		BIND_METHOD(godot::D_METHOD("get_friends"), &UniverseSimulation::GetFriends);
+		BIND_METHOD(godot::D_METHOD("invite_friend", "account_id"), &UniverseSimulation::InviteFriend);
+		BIND_METHOD(godot::D_METHOD("accept_friend_invite", "account_id"), &UniverseSimulation::AcceptFreindInvite);
+		BIND_METHOD(godot::D_METHOD("remove_friend", "account_id"), &UniverseSimulation::RemoveFriend);
 
 		// ####### Chat #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_channel_info, "channel_id"), &UniverseSimulation::GetChannelInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->send_message_to_channel, "message", "channel_id"), &UniverseSimulation::SendMessageToChannel);
-		BIND_METHOD(godot::D_METHOD(k_commands->send_message_to_player, "message", "channel_id"), &UniverseSimulation::SendMessageToPlayer);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_chat_channel_history, "channel_id"), &UniverseSimulation::GetChatChannelHistory);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_private_chat_history, "account_id"), &UniverseSimulation::GetPrivateChatHistory);
+		BIND_METHOD(godot::D_METHOD("get_channel_info", "channel_id"), &UniverseSimulation::GetChannelInfo);
+		BIND_METHOD(godot::D_METHOD("send_message_to_channel", "message", "channel_id"), &UniverseSimulation::SendMessageToChannel);
+		BIND_METHOD(godot::D_METHOD("send_message_to_player", "message", "channel_id"), &UniverseSimulation::SendMessageToPlayer);
+		BIND_METHOD(godot::D_METHOD("get_chat_channel_history", "channel_id"), &UniverseSimulation::GetChatChannelHistory);
+		BIND_METHOD(godot::D_METHOD("get_private_chat_history", "account_id"), &UniverseSimulation::GetPrivateChatHistory);
 
 		// ####### Players #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_player_info, "player_id"), &UniverseSimulation::GetPlayerInfo);
+		BIND_METHOD(godot::D_METHOD("get_player_info", "player_id"), &UniverseSimulation::GetPlayerInfo);
 
 		// ####### Party #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_party_info, "party_host_id"), &UniverseSimulation::GetPartyInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->create_party), &UniverseSimulation::CreateParty);
-		BIND_METHOD(godot::D_METHOD(k_commands->invite_to_party, "player_id"), &UniverseSimulation::InviteToParty);
-		BIND_METHOD(godot::D_METHOD(k_commands->accept_invite, "player_id"), &UniverseSimulation::AcceptInvite);
-		BIND_METHOD(godot::D_METHOD(k_commands->kick_from_party), &UniverseSimulation::KickFromParty);
-		BIND_METHOD(godot::D_METHOD(k_commands->leave_party), &UniverseSimulation::LeaveParty);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_players_in_party), &UniverseSimulation::GetPlayersInParty);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_party_chat_channel), &UniverseSimulation::GetPartyChatChannel);
+		BIND_METHOD(godot::D_METHOD("get_party_info", "party_host_id"), &UniverseSimulation::GetPartyInfo);
+		BIND_METHOD(godot::D_METHOD("create_party"), &UniverseSimulation::CreateParty);
+		BIND_METHOD(godot::D_METHOD("invite_to_party", "player_id"), &UniverseSimulation::InviteToParty);
+		BIND_METHOD(godot::D_METHOD("accept_invite", "player_id"), &UniverseSimulation::AcceptInvite);
+		BIND_METHOD(godot::D_METHOD("kick_from_party"), &UniverseSimulation::KickFromParty);
+		BIND_METHOD(godot::D_METHOD("leave_party"), &UniverseSimulation::LeaveParty);
+		BIND_METHOD(godot::D_METHOD("get_players_in_party"), &UniverseSimulation::GetPlayersInParty);
+		BIND_METHOD(godot::D_METHOD("get_party_chat_channel"), &UniverseSimulation::GetPartyChatChannel);
 
 		// ####### Entity #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_entity_info, "entity_id"), &UniverseSimulation::GetEntityInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->request_entity_info, "entity_id"), &UniverseSimulation::RequestEntityInfo);
+		BIND_METHOD(godot::D_METHOD("get_entity_info", "entity_id"), &UniverseSimulation::GetEntityInfo);
+		BIND_METHOD(godot::D_METHOD("request_entity_info", "entity_id"), &UniverseSimulation::RequestEntityInfo);
 
 		// ####### Volume (is entity) #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_volume_info, "volume_id"), &UniverseSimulation::GetVolumeInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_block_info, "volume_id", "position"), &UniverseSimulation::GetBlockInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->place_block, "volume_id", "position", "block_id", "block_data"), &UniverseSimulation::PlaceBlock);
-		BIND_METHOD(godot::D_METHOD(k_commands->fill_blocks, "volume_id", "position_first", "position_second", "block_id", "block_data"), &UniverseSimulation::FillBlocks);
-		BIND_METHOD(godot::D_METHOD(k_commands->place_block_in_new_volume, "fragment_position", "block_id", "block_data"), &UniverseSimulation::PlaceBlockInNewVolume);
-		BIND_METHOD(godot::D_METHOD(k_commands->interact_block, "volume_id", "position", "interaction"), &UniverseSimulation::InteractBlock);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_entity_position_in_volume, "volume_id", "entity_id"), &UniverseSimulation::GetEntityPositionInVolume);
-		BIND_METHOD(godot::D_METHOD(k_commands->fragment_position_to_volume_position, "volume_id", "fragment_position"), &UniverseSimulation::FragmentPositionToVolumePosition);
-		BIND_METHOD(godot::D_METHOD(k_commands->volume_position_to_fragment_position, "volume_id", "volume_position"), &UniverseSimulation::VolumePositionToFragmentPosition);
+		BIND_METHOD(godot::D_METHOD("get_volume_info", "volume_id"), &UniverseSimulation::GetVolumeInfo);
+		BIND_METHOD(godot::D_METHOD("get_block_info", "volume_id", "position"), &UniverseSimulation::GetBlockInfo);
+		BIND_METHOD(godot::D_METHOD("place_block", "volume_id", "position", "block_id", "block_data"), &UniverseSimulation::PlaceBlock);
+		BIND_METHOD(godot::D_METHOD("fill_blocks", "volume_id", "position_first", "position_second", "block_id", "block_data"), &UniverseSimulation::FillBlocks);
+		BIND_METHOD(godot::D_METHOD("place_block_in_new_volume", "fragment_position", "block_id", "block_data"), &UniverseSimulation::PlaceBlockInNewVolume);
+		BIND_METHOD(godot::D_METHOD("interact_block", "volume_id", "position", "interaction"), &UniverseSimulation::InteractBlock);
+		BIND_METHOD(godot::D_METHOD("get_entity_position_in_volume", "volume_id", "entity_id"), &UniverseSimulation::GetEntityPositionInVolume);
+		BIND_METHOD(godot::D_METHOD("fragment_position_to_volume_position", "volume_id", "fragment_position"), &UniverseSimulation::FragmentPositionToVolumePosition);
+		BIND_METHOD(godot::D_METHOD("volume_position_to_fragment_position", "volume_id", "volume_position"), &UniverseSimulation::VolumePositionToFragmentPosition);
 
 		// ####### Galaxy Region #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_galaxy_info), &UniverseSimulation::GetGalaxyInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_galaxy_region_info, "galaxy_region_id"), &UniverseSimulation::GetGalaxyRegionInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->request_galaxy_region_info, "galaxy_region_id"), &UniverseSimulation::RequestGalaxyRegionInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_current_galaxy_regions), &UniverseSimulation::GetCurrentGalaxyRegions);
+		BIND_METHOD(godot::D_METHOD("get_galaxy_info"), &UniverseSimulation::GetGalaxyInfo);
+		BIND_METHOD(godot::D_METHOD("get_galaxy_region_info", "galaxy_region_id"), &UniverseSimulation::GetGalaxyRegionInfo);
+		BIND_METHOD(godot::D_METHOD("request_galaxy_region_info", "galaxy_region_id"), &UniverseSimulation::RequestGalaxyRegionInfo);
+		BIND_METHOD(godot::D_METHOD("get_current_galaxy_regions"), &UniverseSimulation::GetCurrentGalaxyRegions);
 
 		// ####### Galaxy Object (is volume) #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_galaxy_object_info, "galaxy_object_id"), &UniverseSimulation::GetGalaxyObjectInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->request_galaxy_object_info, "entity_id"), &UniverseSimulation::RequestGalaxyObjectInfo);
+		BIND_METHOD(godot::D_METHOD("get_galaxy_object_info", "galaxy_object_id"), &UniverseSimulation::GetGalaxyObjectInfo);
+		BIND_METHOD(godot::D_METHOD("request_galaxy_object_info", "entity_id"), &UniverseSimulation::RequestGalaxyObjectInfo);
 
 		// ####### Currency #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_currency_info, "currency_id"), &UniverseSimulation::GetCurrencyInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_bank_info, "bank_id"), &UniverseSimulation::GetBankInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_bank_interface_info, "bank_interface_id"), &UniverseSimulation::GetBankInterfaceInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_good_info, "good_id"), &UniverseSimulation::GetGoodInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_universal_currency), &UniverseSimulation::GetUniversalCurrency);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_bank_of_interface, "bank_interface_id"), &UniverseSimulation::GetBankOfInterface);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_owned_currencies), &UniverseSimulation::GetOwnedCurrencies);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_balance, "currency_id"), &UniverseSimulation::GetBalance);
-		BIND_METHOD(godot::D_METHOD(k_commands->withdraw, "currency_id", "amount", "bank_interface_id"), &UniverseSimulation::Withdraw);
-		BIND_METHOD(godot::D_METHOD(k_commands->deposit, "currency_id", "amount", "bank_interface_id"), &UniverseSimulation::Deposit);
-		BIND_METHOD(godot::D_METHOD(k_commands->convert, "from_currency_id", "from_currency_id", "amount", "bank_interface_id"), &UniverseSimulation::Convert);
-		BIND_METHOD(godot::D_METHOD(k_commands->pay_entity, "currency_id", "entity_id", "amount", "bank_interface_id"), &UniverseSimulation::PayEntity);
-		BIND_METHOD(godot::D_METHOD(k_commands->buy_good_with_currency, "good_id", "currency_id"), &UniverseSimulation::BuyGoodWithCurrency);
+		BIND_METHOD(godot::D_METHOD("get_currency_info", "currency_id"), &UniverseSimulation::GetCurrencyInfo);
+		BIND_METHOD(godot::D_METHOD("get_bank_info", "bank_id"), &UniverseSimulation::GetBankInfo);
+		BIND_METHOD(godot::D_METHOD("get_bank_interface_info", "bank_interface_id"), &UniverseSimulation::GetBankInterfaceInfo);
+		BIND_METHOD(godot::D_METHOD("get_good_info", "good_id"), &UniverseSimulation::GetGoodInfo);
+		BIND_METHOD(godot::D_METHOD("get_universal_currency"), &UniverseSimulation::GetUniversalCurrency);
+		BIND_METHOD(godot::D_METHOD("get_bank_of_interface", "bank_interface_id"), &UniverseSimulation::GetBankOfInterface);
+		BIND_METHOD(godot::D_METHOD("get_owned_currencies"), &UniverseSimulation::GetOwnedCurrencies);
+		BIND_METHOD(godot::D_METHOD("get_balance", "currency_id"), &UniverseSimulation::GetBalance);
+		BIND_METHOD(godot::D_METHOD("withdraw", "currency_id", "amount", "bank_interface_id"), &UniverseSimulation::Withdraw);
+		BIND_METHOD(godot::D_METHOD("deposit", "currency_id", "amount", "bank_interface_id"), &UniverseSimulation::Deposit);
+		BIND_METHOD(godot::D_METHOD("convert", "from_currency_id", "from_currency_id", "amount", "bank_interface_id"), &UniverseSimulation::Convert);
+		BIND_METHOD(godot::D_METHOD("pay_entity", "currency_id", "entity_id", "amount", "bank_interface_id"), &UniverseSimulation::PayEntity);
+		BIND_METHOD(godot::D_METHOD("buy_good_with_currency", "good_id", "currency_id"), &UniverseSimulation::BuyGoodWithCurrency);
 
 		// ####### Internet #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_internet_info, "internet_id"), &UniverseSimulation::GetInternetInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_website_info, "website_id"), &UniverseSimulation::GetWebsiteInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_website_page_info, "website_page_id"), &UniverseSimulation::GetWebsitePageInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_internet_websites, "internet_id"), &UniverseSimulation::GetInternetWebsites);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_website_pages, "website_id"), &UniverseSimulation::GetWebsitePages);
-		BIND_METHOD(godot::D_METHOD(k_commands->start_internet, "internet_id", "device_id"), &UniverseSimulation::StartInternet);
-		BIND_METHOD(godot::D_METHOD(k_commands->stop_internet), &UniverseSimulation::StopInternet);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_current_internet), &UniverseSimulation::GetCurrentInternet);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_current_internet_site), &UniverseSimulation::GetCurrentInternetSite);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_current_internet_page), &UniverseSimulation::GetCurrentInternetPage);
-		BIND_METHOD(godot::D_METHOD(k_commands->request_internet_url, "internet_url"), &UniverseSimulation::RequestInternetURL);
+		BIND_METHOD(godot::D_METHOD("get_internet_info", "internet_id"), &UniverseSimulation::GetInternetInfo);
+		BIND_METHOD(godot::D_METHOD("get_website_info", "website_id"), &UniverseSimulation::GetWebsiteInfo);
+		BIND_METHOD(godot::D_METHOD("get_website_page_info", "website_page_id"), &UniverseSimulation::GetWebsitePageInfo);
+		BIND_METHOD(godot::D_METHOD("get_internet_websites", "internet_id"), &UniverseSimulation::GetInternetWebsites);
+		BIND_METHOD(godot::D_METHOD("get_website_pages", "website_id"), &UniverseSimulation::GetWebsitePages);
+		BIND_METHOD(godot::D_METHOD("start_internet", "internet_id", "device_id"), &UniverseSimulation::StartInternet);
+		BIND_METHOD(godot::D_METHOD("stop_internet"), &UniverseSimulation::StopInternet);
+		BIND_METHOD(godot::D_METHOD("get_current_internet"), &UniverseSimulation::GetCurrentInternet);
+		BIND_METHOD(godot::D_METHOD("get_current_internet_site"), &UniverseSimulation::GetCurrentInternetSite);
+		BIND_METHOD(godot::D_METHOD("get_current_internet_page"), &UniverseSimulation::GetCurrentInternetPage);
+		BIND_METHOD(godot::D_METHOD("request_internet_url", "internet_url"), &UniverseSimulation::RequestInternetURL);
 
 		// ####### Faction Roles #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_role_info, "role_id"), &UniverseSimulation::GetRoleInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_permission_info, "permission_id"), &UniverseSimulation::GetPermissionInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_entity_role, "faction_id", "entity_id"), &UniverseSimulation::GetEntityRole);
-		BIND_METHOD(godot::D_METHOD(k_commands->add_faction_role, "faction_id", "role_id", "role_info"), &UniverseSimulation::AddFactionRole);
-		BIND_METHOD(godot::D_METHOD(k_commands->remove_faction_role, "faction_id", "role_id"), &UniverseSimulation::RemoveFactionRole);
-		BIND_METHOD(godot::D_METHOD(k_commands->modify_faction_role, "faction_id", "role_id", "role_info"), &UniverseSimulation::ModifyFactionRole);
-		BIND_METHOD(godot::D_METHOD(k_commands->add_permission_to_role, "faction_id", "role_id", "permission_id"), &UniverseSimulation::AddPermissionToRole);
-		BIND_METHOD(godot::D_METHOD(k_commands->remove_permission_from_role, "faction_id", "role_id", "permission_id"), &UniverseSimulation::RemovePermissionFromRole);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_entity_role, "faction_id", "entity_id", "role_id"), &UniverseSimulation::SetEntityRole);
-		BIND_METHOD(godot::D_METHOD(k_commands->entity_has_permission, "faction_id", "entity_id", "permission_id"), &UniverseSimulation::EntityHasPermission);
+		BIND_METHOD(godot::D_METHOD("get_role_info", "role_id"), &UniverseSimulation::GetRoleInfo);
+		BIND_METHOD(godot::D_METHOD("get_permission_info", "permission_id"), &UniverseSimulation::GetPermissionInfo);
+		BIND_METHOD(godot::D_METHOD("get_entity_role", "faction_id", "entity_id"), &UniverseSimulation::GetEntityRole);
+		BIND_METHOD(godot::D_METHOD("add_faction_role", "faction_id", "role_id", "role_info"), &UniverseSimulation::AddFactionRole);
+		BIND_METHOD(godot::D_METHOD("remove_faction_role", "faction_id", "role_id"), &UniverseSimulation::RemoveFactionRole);
+		BIND_METHOD(godot::D_METHOD("modify_faction_role", "faction_id", "role_id", "role_info"), &UniverseSimulation::ModifyFactionRole);
+		BIND_METHOD(godot::D_METHOD("add_permission_to_role", "faction_id", "role_id", "permission_id"), &UniverseSimulation::AddPermissionToRole);
+		BIND_METHOD(godot::D_METHOD("remove_permission_from_role", "faction_id", "role_id", "permission_id"), &UniverseSimulation::RemovePermissionFromRole);
+		BIND_METHOD(godot::D_METHOD("set_entity_role", "faction_id", "entity_id", "role_id"), &UniverseSimulation::SetEntityRole);
+		BIND_METHOD(godot::D_METHOD("entity_has_permission", "faction_id", "entity_id", "permission_id"), &UniverseSimulation::EntityHasPermission);
 
 		// ####### Faction (is entity) #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_faction_info, "faction_id"), &UniverseSimulation::GetFactionInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_joined_factions), &UniverseSimulation::GetJoinedFactions);
-		BIND_METHOD(godot::D_METHOD(k_commands->join_faction, "faction_id", "request_info"), &UniverseSimulation::JoinFaction);
-		BIND_METHOD(godot::D_METHOD(k_commands->leave_faction, "faction_id"), &UniverseSimulation::LeaveFaction);
-		BIND_METHOD(godot::D_METHOD(k_commands->invite_entity_to_faction, "faction_id", "entity_id"), &UniverseSimulation::InviteEntityToFaction);
-		BIND_METHOD(godot::D_METHOD(k_commands->kick_entity_from_faction, "faction_id", "entity_id"), &UniverseSimulation::KickEntityFromFaction);
-		BIND_METHOD(godot::D_METHOD(k_commands->add_child_faction, "parent_faction_id", "child_faction_id"), &UniverseSimulation::AddChildFaction);
-		BIND_METHOD(godot::D_METHOD(k_commands->remove_child_faction, "faction_id"), &UniverseSimulation::RemoveChildFaction);
-		BIND_METHOD(godot::D_METHOD(k_commands->invite_child_faction, "parent_faction_id", "child_faction_id"), &UniverseSimulation::InviteChildFaction);
-		BIND_METHOD(godot::D_METHOD(k_commands->kick_child_faction, "faction_id"), &UniverseSimulation::KickChildFaction);
+		BIND_METHOD(godot::D_METHOD("get_faction_info", "faction_id"), &UniverseSimulation::GetFactionInfo);
+		BIND_METHOD(godot::D_METHOD("get_joined_factions"), &UniverseSimulation::GetJoinedFactions);
+		BIND_METHOD(godot::D_METHOD("join_faction", "faction_id", "request_info"), &UniverseSimulation::JoinFaction);
+		BIND_METHOD(godot::D_METHOD("leave_faction", "faction_id"), &UniverseSimulation::LeaveFaction);
+		BIND_METHOD(godot::D_METHOD("invite_entity_to_faction", "faction_id", "entity_id"), &UniverseSimulation::InviteEntityToFaction);
+		BIND_METHOD(godot::D_METHOD("kick_entity_from_faction", "faction_id", "entity_id"), &UniverseSimulation::KickEntityFromFaction);
+		BIND_METHOD(godot::D_METHOD("add_child_faction", "parent_faction_id", "child_faction_id"), &UniverseSimulation::AddChildFaction);
+		BIND_METHOD(godot::D_METHOD("remove_child_faction", "faction_id"), &UniverseSimulation::RemoveChildFaction);
+		BIND_METHOD(godot::D_METHOD("invite_child_faction", "parent_faction_id", "child_faction_id"), &UniverseSimulation::InviteChildFaction);
+		BIND_METHOD(godot::D_METHOD("kick_child_faction", "faction_id"), &UniverseSimulation::KickChildFaction);
 
 		// ####### Player Faction (is faction) #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_global_player_faction), &UniverseSimulation::GetGlobalPlayerFaction);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_player_faction), &UniverseSimulation::GetPlayerFaction);
-		BIND_METHOD(godot::D_METHOD(k_commands->request_join_player_faction, "faction_id", "message"), &UniverseSimulation::RequestJoinPlayerFaction);
+		BIND_METHOD(godot::D_METHOD("get_global_player_faction"), &UniverseSimulation::GetGlobalPlayerFaction);
+		BIND_METHOD(godot::D_METHOD("get_player_faction"), &UniverseSimulation::GetPlayerFaction);
+		BIND_METHOD(godot::D_METHOD("request_join_player_faction", "faction_id", "message"), &UniverseSimulation::RequestJoinPlayerFaction);
 
 		// ####### Language #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_language_info, "language_id"), &UniverseSimulation::GetLanguageInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_language_translation, "language_id", "string"), &UniverseSimulation::GetLanguageTranslation);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_language_string, "language_id", "string_id"), &UniverseSimulation::GetLanguageString);
+		BIND_METHOD(godot::D_METHOD("get_language_info", "language_id"), &UniverseSimulation::GetLanguageInfo);
+		BIND_METHOD(godot::D_METHOD("get_language_translation", "language_id", "string"), &UniverseSimulation::GetLanguageTranslation);
+		BIND_METHOD(godot::D_METHOD("get_language_string", "language_id", "string_id"), &UniverseSimulation::GetLanguageString);
 
 		// ####### Culture #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_culture_info, "culture_id"), &UniverseSimulation::GetCultureInfo);
+		BIND_METHOD(godot::D_METHOD("get_culture_info", "culture_id"), &UniverseSimulation::GetCultureInfo);
 
 		// ####### Level #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_level), &UniverseSimulation::GetLevel);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_experience), &UniverseSimulation::GetExperience);
-		BIND_METHOD(godot::D_METHOD(k_commands->complete_level_up, "levelup_choices"), &UniverseSimulation::CompleteLevelUp);
+		BIND_METHOD(godot::D_METHOD("get_level"), &UniverseSimulation::GetLevel);
+		BIND_METHOD(godot::D_METHOD("get_experience"), &UniverseSimulation::GetExperience);
+		BIND_METHOD(godot::D_METHOD("complete_level_up", "levelup_choices"), &UniverseSimulation::CompleteLevelUp);
 
 		// ####### Player Control #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->set_sprint, "is_sprinting"), &UniverseSimulation::SetSprint);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_crouching, "is_crouching"), &UniverseSimulation::SetCrouching);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_prone, "is_prone"), &UniverseSimulation::SetProne);
-		BIND_METHOD(godot::D_METHOD(k_commands->do_walk, "velocity"), &UniverseSimulation::DoWalk);
-		BIND_METHOD(godot::D_METHOD(k_commands->do_look, "direction"), &UniverseSimulation::DoLook);
-		BIND_METHOD(godot::D_METHOD(k_commands->do_jump, "power"), &UniverseSimulation::DoJump);
+		BIND_METHOD(godot::D_METHOD("set_sprint", "is_sprinting"), &UniverseSimulation::SetSprint);
+		BIND_METHOD(godot::D_METHOD("set_crouching", "is_crouching"), &UniverseSimulation::SetCrouching);
+		BIND_METHOD(godot::D_METHOD("set_prone", "is_prone"), &UniverseSimulation::SetProne);
+		BIND_METHOD(godot::D_METHOD("do_walk", "velocity"), &UniverseSimulation::DoWalk);
+		BIND_METHOD(godot::D_METHOD("do_look", "direction"), &UniverseSimulation::DoLook);
+		BIND_METHOD(godot::D_METHOD("do_jump", "power"), &UniverseSimulation::DoJump);
 
 		// ####### Looking at #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_looking_at_entity), &UniverseSimulation::GetLookingAtEntity);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_looking_at_volume), &UniverseSimulation::GetLookingAtVolume);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_looking_at_block), &UniverseSimulation::GetLookingAtBlock);
+		BIND_METHOD(godot::D_METHOD("get_looking_at_entity"), &UniverseSimulation::GetLookingAtEntity);
+		BIND_METHOD(godot::D_METHOD("get_looking_at_volume"), &UniverseSimulation::GetLookingAtVolume);
+		BIND_METHOD(godot::D_METHOD("get_looking_at_block"), &UniverseSimulation::GetLookingAtBlock);
 
 		// ####### Inventory #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_inventory_info, "inventory_id"), &UniverseSimulation::GetInventoryInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_inventory), &UniverseSimulation::GetInventory);
-		BIND_METHOD(godot::D_METHOD(k_commands->get_inventory_item_entity, "inventory_id", "item_index"), &UniverseSimulation::GetInventoryItemEntity);
-		BIND_METHOD(godot::D_METHOD(k_commands->trash_inventory_item, "inventory_id", "item_index"), &UniverseSimulation::TrashInventoryItem);
-		BIND_METHOD(godot::D_METHOD(k_commands->move_inventory_item, "inventory_id", "from_item_index", "to_item_index"), &UniverseSimulation::MoveInventoryItem);
-		BIND_METHOD(godot::D_METHOD(k_commands->transfer_inventory_item, "from_inventory_id", "from_item_index", "to_inventory_id", "to_item_index"), &UniverseSimulation::TransferInventoryItem);
-		BIND_METHOD(godot::D_METHOD(k_commands->interact_with_inventory_item, "inventory_id", "item_index", "interaction_info"), &UniverseSimulation::InteractWithInventoryItem);
+		BIND_METHOD(godot::D_METHOD("get_inventory_info", "inventory_id"), &UniverseSimulation::GetInventoryInfo);
+		BIND_METHOD(godot::D_METHOD("get_inventory"), &UniverseSimulation::GetInventory);
+		BIND_METHOD(godot::D_METHOD("get_inventory_item_entity", "inventory_id", "item_index"), &UniverseSimulation::GetInventoryItemEntity);
+		BIND_METHOD(godot::D_METHOD("trash_inventory_item", "inventory_id", "item_index"), &UniverseSimulation::TrashInventoryItem);
+		BIND_METHOD(godot::D_METHOD("move_inventory_item", "inventory_id", "from_item_index", "to_item_index"), &UniverseSimulation::MoveInventoryItem);
+		BIND_METHOD(godot::D_METHOD("transfer_inventory_item", "from_inventory_id", "from_item_index", "to_inventory_id", "to_item_index"), &UniverseSimulation::TransferInventoryItem);
+		BIND_METHOD(godot::D_METHOD("interact_with_inventory_item", "inventory_id", "item_index", "interaction_info"), &UniverseSimulation::InteractWithInventoryItem);
 
 		// ####### Interact #######
-		BIND_METHOD(godot::D_METHOD(k_commands->store_entity, "entity_id", "inventory_id"), &UniverseSimulation::StoreEntity);
-		BIND_METHOD(godot::D_METHOD(k_commands->hold_block, "volume_id", "position"), &UniverseSimulation::HoldBlock);
-		BIND_METHOD(godot::D_METHOD(k_commands->hold_entity, "entity_id"), &UniverseSimulation::HoldEntity);
-		BIND_METHOD(godot::D_METHOD(k_commands->drop_held_entity), &UniverseSimulation::DropHeldEntity);
+		BIND_METHOD(godot::D_METHOD("store_entity", "entity_id", "inventory_id"), &UniverseSimulation::StoreEntity);
+		BIND_METHOD(godot::D_METHOD("hold_block", "volume_id", "position"), &UniverseSimulation::HoldBlock);
+		BIND_METHOD(godot::D_METHOD("hold_entity", "entity_id"), &UniverseSimulation::HoldEntity);
+		BIND_METHOD(godot::D_METHOD("drop_held_entity"), &UniverseSimulation::DropHeldEntity);
 
-		BIND_METHOD(godot::D_METHOD(k_commands->equip_item_from_world, "entity_id"), &UniverseSimulation::EquipItemFromWorld);
-		BIND_METHOD(godot::D_METHOD(k_commands->equip_item_from_inventory, "entity_id", "inventory_id", "item_index"), &UniverseSimulation::EquipItemFromInventory);
-		BIND_METHOD(godot::D_METHOD(k_commands->drop_equip_to_world, "entity_id"), &UniverseSimulation::DropEquipToWorld);
-		BIND_METHOD(godot::D_METHOD(k_commands->unequip_item_to_inventory, "entity_id", "inventory_id", "item_index"), &UniverseSimulation::UnequipItemToInventory);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_left_hand_equip, "entity_id"), &UniverseSimulation::SetLeftHandEquip);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_right_hand_equip, "entity_id"), &UniverseSimulation::SetRightHandEquip);
-		BIND_METHOD(godot::D_METHOD(k_commands->use_equip, "entity_id", "hand"), &UniverseSimulation::UseEquip);
-		BIND_METHOD(godot::D_METHOD(k_commands->toggle_equip, "entity_id", "toggled"), &UniverseSimulation::ToggleEquip);
+		BIND_METHOD(godot::D_METHOD("equip_item_from_world", "entity_id"), &UniverseSimulation::EquipItemFromWorld);
+		BIND_METHOD(godot::D_METHOD("equip_item_from_inventory", "entity_id", "inventory_id", "item_index"), &UniverseSimulation::EquipItemFromInventory);
+		BIND_METHOD(godot::D_METHOD("drop_equip_to_world", "entity_id"), &UniverseSimulation::DropEquipToWorld);
+		BIND_METHOD(godot::D_METHOD("unequip_item_to_inventory", "entity_id", "inventory_id", "item_index"), &UniverseSimulation::UnequipItemToInventory);
+		BIND_METHOD(godot::D_METHOD("set_left_hand_equip", "entity_id"), &UniverseSimulation::SetLeftHandEquip);
+		BIND_METHOD(godot::D_METHOD("set_right_hand_equip", "entity_id"), &UniverseSimulation::SetRightHandEquip);
+		BIND_METHOD(godot::D_METHOD("use_equip", "entity_id", "hand"), &UniverseSimulation::UseEquip);
+		BIND_METHOD(godot::D_METHOD("toggle_equip", "entity_id", "toggled"), &UniverseSimulation::ToggleEquip);
 
-		BIND_METHOD(godot::D_METHOD(k_commands->ride_entity, "entity_id", "attachment_point"), &UniverseSimulation::RideEntity);
-		BIND_METHOD(godot::D_METHOD(k_commands->change_attachment_point, "new_attachment_point"), &UniverseSimulation::ChangeAttachmentPoint);
-		BIND_METHOD(godot::D_METHOD(k_commands->exit_entity, "entity_id"), &UniverseSimulation::ExitEntity);
+		BIND_METHOD(godot::D_METHOD("ride_entity", "entity_id", "attachment_point"), &UniverseSimulation::RideEntity);
+		BIND_METHOD(godot::D_METHOD("change_attachment_point", "new_attachment_point"), &UniverseSimulation::ChangeAttachmentPoint);
+		BIND_METHOD(godot::D_METHOD("exit_entity", "entity_id"), &UniverseSimulation::ExitEntity);
 
-		BIND_METHOD(godot::D_METHOD(k_commands->interact_with_entity, "entity_id", "interaction_info"), &UniverseSimulation::InteractWithEntity);
+		BIND_METHOD(godot::D_METHOD("interact_with_entity", "entity_id", "interaction_info"), &UniverseSimulation::InteractWithEntity);
 
 		// ####### Vehicle Control #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->trigger_vehicle_control, "control_id"), &UniverseSimulation::TriggerVehicleControl);
-		BIND_METHOD(godot::D_METHOD(k_commands->toggle_vehicle_control, "control_id", "toggled"), &UniverseSimulation::ToggleVehicleControl);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_vehicle_control, "control_id", "value"), &UniverseSimulation::SetVehicleControl);
+		BIND_METHOD(godot::D_METHOD("trigger_vehicle_control", "control_id"), &UniverseSimulation::TriggerVehicleControl);
+		BIND_METHOD(godot::D_METHOD("toggle_vehicle_control", "control_id", "toggled"), &UniverseSimulation::ToggleVehicleControl);
+		BIND_METHOD(godot::D_METHOD("set_vehicle_control", "control_id", "value"), &UniverseSimulation::SetVehicleControl);
 
 		// ####### Abilities #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_ability_info, "ability_id"), &UniverseSimulation::GetAbilityInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->activate_ability, "ability_id"), &UniverseSimulation::ActivateAbility);
-		BIND_METHOD(godot::D_METHOD(k_commands->toggle_ability, "ability_id", "toggled"), &UniverseSimulation::ToggleAbility);
-		BIND_METHOD(godot::D_METHOD(k_commands->set_player_setting, "setting_id", "value"), &UniverseSimulation::SetPlayerSetting);
+		BIND_METHOD(godot::D_METHOD("get_ability_info", "ability_id"), &UniverseSimulation::GetAbilityInfo);
+		BIND_METHOD(godot::D_METHOD("activate_ability", "ability_id"), &UniverseSimulation::ActivateAbility);
+		BIND_METHOD(godot::D_METHOD("toggle_ability", "ability_id", "toggled"), &UniverseSimulation::ToggleAbility);
+		BIND_METHOD(godot::D_METHOD("set_player_setting", "setting_id", "value"), &UniverseSimulation::SetPlayerSetting);
 
 		// ####### Magic #######
 
-		BIND_METHOD(godot::D_METHOD(k_commands->get_spell_info, "spell_id"), &UniverseSimulation::GetSpellInfo);
-		BIND_METHOD(godot::D_METHOD(k_commands->use_spell, "spell_index", "params"), &UniverseSimulation::UseSpell);
+		BIND_METHOD(godot::D_METHOD("get_spell_info", "spell_id"), &UniverseSimulation::GetSpellInfo);
+		BIND_METHOD(godot::D_METHOD("use_spell", "spell_index", "params"), &UniverseSimulation::UseSpell);
 
 		// ####### Universe #######
 
@@ -587,7 +585,6 @@ namespace voxel_game
 	{
 		k_singleton.reset();
 
-		k_commands.reset();
 		k_signals.reset();
 	}
 }

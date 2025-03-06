@@ -308,7 +308,6 @@ namespace voxel_game
 		static godot::OptObj<UniverseSimulation> k_singleton;
 
 		// Cached string names for optimization
-		static std::optional<const CommandStrings> k_commands;
 		static std::optional<const SignalStrings> k_signals;
 
 		// Initialization variables
