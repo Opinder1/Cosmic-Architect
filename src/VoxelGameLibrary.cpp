@@ -21,6 +21,8 @@
 
 #include <easy/profiler.h>
 
+#include <fmt/format.h>
+
 void flecs_log_to_godot(int32_t level, const char* file, int32_t line, const char* msg)
 {
 	/* >0: Debug tracing. Only enabled in debug builds. */
@@ -29,7 +31,9 @@ void flecs_log_to_godot(int32_t level, const char* file, int32_t line, const cha
 	/* -3: Error. An issue occurred, and operation was unsuccessful. */
 	/* -4: Fatal. An issue occurred, and application must quit. */
 
-	godot::String log_msg = godot::vformat("%s:%d: %s", file, line, msg);
+	char log_msg[128];
+	
+	fmt::format_to_n(log_msg, sizeof(log_msg), "[Trace {}] {}:{}: {}", level, file, line, msg);
 
 	switch (level)
 	{
@@ -49,17 +53,6 @@ void flecs_log_to_godot(int32_t level, const char* file, int32_t line, const cha
 
 	case -1:
 		godot::UtilityFunctions::print(log_msg);
-		break;
-
-	case 0:
-		godot::UtilityFunctions::print(log_msg);
-		break;
-
-	case 1:
-	case 2:
-	case 3:
-	case 4:
-		godot::UtilityFunctions::print(godot::vformat("[Trace %d]", level), log_msg);
 		break;
 	}
 }
