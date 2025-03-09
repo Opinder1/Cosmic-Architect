@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Util/Poly.h"
+#include "GalaxyWorld.h"
 
 #include <godot_cpp/variant/color.hpp>
 
@@ -14,15 +14,6 @@ namespace voxel_game::galaxy
 	{
 		Components(flecs::world& world);
 	};
-
-	// This is a specialised node for a galaxy
-	struct Node
-	{
-		std::vector<flecs::entity_t> stars;
-	};
-
-	// This is a specialised scale for a galaxy
-	struct Scale {};
 
 	// This entity is a galaxy
 	struct CWorld {};
