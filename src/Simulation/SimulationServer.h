@@ -6,6 +6,7 @@
 #include "Util/PerThread.h"
 
 #include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/classes/object.hpp>
 
 #include <godot_cpp/core/gdvirtual.gen.inc>
 
@@ -21,9 +22,9 @@ namespace voxel_game
 	// are efficiently buffered and sent between threads with minimal blocking
 	// 
 	// The simulations methods should only be called by the thread that creates the simulation
-	class SimulationServer : public godot::RefCounted
+	class SimulationServer : public godot::Object
 	{
-		GDCLASS(SimulationServer, godot::RefCounted);
+		GDCLASS(SimulationServer, godot::Object);
 
 	public:
 		enum State
