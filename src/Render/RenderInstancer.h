@@ -15,6 +15,21 @@
 
 namespace voxel_game::rendering
 {
+	enum class BaseType
+	{
+		Mesh,
+		MultiMesh,
+		DirectionalLight,
+		OmniLight,
+		SpotLight,
+		ReflectionProbe,
+		Decal,
+		VoxelGI,
+		Particles,
+		FogVolume,
+		Occluder,
+	};
+
 	enum class InstanceDataFormat
 	{
 		Position12Bit, // 12 bit position (4 bit int)
@@ -48,6 +63,7 @@ namespace voxel_game::rendering
 	// A block of instances of a mesh type
 	struct MeshTypeInstancerBlock : Nocopy
 	{
+		godot::RID instance_id;
 		godot::RID multimesh_id;
 		godot::AABB aabb;
 
@@ -55,24 +71,66 @@ namespace voxel_game::rendering
 
 		std::vector<size_t> instances;
 		std::vector<unsigned char> instance_data;
+		std::vector<unsigned char> last_instance_data;
 	};
 
 	// A type of mesh instance that is rendered.
-	struct MeshTypeInstancer : Nocopy
+	class MeshTypeInstancer : Nocopy
 	{
-		godot::RID instance_id;
-		godot::RID base_id;
+	public:
+		MeshTypeInstancer(BaseType type, godot::RID base_id);
+
+		size_t EntityCount();
+
+		void AddEntity(flecs::entity_t entity);
+
+		void RemoveEntity(flecs::entity_t entity);
+
+		void SetTransform(flecs::entity_t entity, godot::Transform3D transform);
+
+		void RebalanceBlocks(godot::Transform3D camera_transform);
+
+	private:
+		godot::RID m_base_id;
+
+		BaseType m_type;
 
 		// Info about how the type is stored in the instance data
-		InstanceDataType type;
+		InstanceDataType m_data_type;
+
+		size_t m_block_dimensions = 3;
 
 		// Can have one or many render blocks
-		GrowingSmallVector<MeshTypeInstancerBlock, 1> blocks;
+		GrowingSmallVector<MeshTypeInstancerBlock, 1> m_blocks;
 	};
 
 	// Mesh type instancers for meshes that can be made into multimeshes
-	struct MeshInstancers : Nocopy
+	class Instancer : Nocopy
 	{
-		robin_hood::unordered_map<flecs::entity_t, MeshTypeInstancer> instances;
+	public:
+		Instancer();
+
+		void SetScenario(godot::RID scenario);
+
+		void AddType(flecs::id_t type_id, BaseType type, godot::RID base_id);
+
+		void RemoveType(flecs::id_t type_id);
+
+		void AddEntity(flecs::id_t type_id, flecs::entity_t entity);
+
+		void RemoveEntity(flecs::id_t type_id, flecs::entity_t entity);
+
+		void SetTransform(flecs::id_t type_id, flecs::entity_t entity, godot::Transform3D transform);
+
+		void RebalanceBlocks(godot::Transform3D camera_transform);
+
+		void CleanupEmptyTypes();
+
+	private:
+		godot::RID m_scenario;
+
+		godot::Transform3D m_transform;
+
+		robin_hood::unordered_map<flecs::id_t, MeshTypeInstancer> m_instancers;
 	};
 }

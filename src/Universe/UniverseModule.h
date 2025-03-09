@@ -15,5 +15,5 @@ namespace voxel_game::universe
 		Module(flecs::world& world);
 	};
 
-	flecs::entity CreateNewUniverse(flecs::world& world, const godot::StringName& path, godot::RID scenario_id);
+	flecs::entity CreateNewUniverse(flecs::world& world, const godot::StringName& path);
 }

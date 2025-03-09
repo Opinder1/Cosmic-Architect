@@ -2,11 +2,18 @@
 #include "UniverseServer_StringNames.h"
 
 #include "Universe/UniverseModule.h"
+
 #include "Galaxy/GalaxyModule.h"
+
 #include "Spatial3D/SpatialModule.h"
+
 #include "Voxel/VoxelModule.h"
+
 #include "VoxelRender/VoxelRenderModule.h"
+
 #include "Render/RenderModule.h"
+#include "Render/RenderComponents.h"
+
 #include "Simulation/SimulationModule.h"
 
 #include "Physics3D/PhysicsModule.h"
@@ -51,7 +58,7 @@ namespace voxel_game
 		WaitUntilStopped();
 	}
 
-	void UniverseServer::SetRenderContext(godot::RID scenario)
+	void UniverseServer::SetRenderScenario(godot::RID scenario)
 	{
 		m_scenario = scenario;
 	}
@@ -80,20 +87,23 @@ namespace voxel_game
 		m_world.import<physics3d::Module>();
 		m_world.import<spatial3d::Module>();
 		m_world.import<voxel::Module>();
-		m_world.import<voxelrender::Module>();
 		m_world.import<galaxy::Module>();
 		m_world.import<universe::Module>();
 
 		if (m_scenario.is_valid())
 		{
 			m_world.import<rendering::Module>();
+			//m_world.import<galaxyrender::Module>();
+			m_world.import<voxelrender::Module>();
+
+			rendering::InitializeContext(m_world, m_scenario);
 		}
 
 		// Create the universe
 
 		m_path = godot::ProjectSettings::get_singleton()->get_setting("voxel_game/universe/path");
 
-		m_universe_entity = universe::CreateNewUniverse(m_world, m_path, m_scenario);
+		m_universe_entity = universe::CreateNewUniverse(m_world, m_path);
 
 #if defined(DEBUG_ENABLED)
 		m_info_updater.SetWriterThread(std::this_thread::get_id());
@@ -172,7 +182,7 @@ namespace voxel_game
 		BIND_ENUM_CONSTANT(SERVER_TYPE_LOCAL);
 		BIND_ENUM_CONSTANT(SERVER_TYPE_REMOTE);
 
-		BIND_METHOD(godot::D_METHOD("set_render_context", "scenario"), &UniverseServer::SetRenderContext);
+		BIND_METHOD(godot::D_METHOD("set_render_scenario", "scenario"), &UniverseServer::SetRenderScenario);
 #if defined(DEBUG_ENABLED)
 		BIND_METHOD(godot::D_METHOD("debug_command", "command", "arguments"), &UniverseServer::DebugCommand);
 #endif

@@ -45,7 +45,8 @@ namespace voxel_game
 		UniverseServer();
 		~UniverseServer();
 
-		void SetRenderContext(godot::RID scenario);
+		// The universe server only adds renderable bases to this scenario
+		void SetRenderScenario(godot::RID scenario);
 #if defined(DEBUG_ENABLED)
 		void DebugCommand(const godot::StringName& command, const godot::Array& args);
 #endif

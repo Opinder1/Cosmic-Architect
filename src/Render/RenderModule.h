@@ -1,5 +1,7 @@
 #pragma once
 
+#include <godot_cpp/variant/rid.hpp>
+
 #include <flecs/flecs.h>
 
 namespace voxel_game::rendering
@@ -7,17 +9,9 @@ namespace voxel_game::rendering
 	struct Module
 	{
 		Module(flecs::world& world);
-
-		void InitTransform(flecs::world& world);
-
-		void InitScenario(flecs::world& world);
-
-		void InitUniqueInstance(flecs::world& world);
-
-		void InitBase(flecs::world& world);
-
-		void InitPlaceholderCube(flecs::world& world);
-
-		void InitMesh(flecs::world& world);
 	};
+
+	bool IsEnabled();
+
+	void InitializeContext(flecs::world& world, godot::RID scenario);
 }

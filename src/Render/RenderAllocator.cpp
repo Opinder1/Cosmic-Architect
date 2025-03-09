@@ -23,40 +23,40 @@ namespace voxel_game::rendering
 {
     const size_t k_max_preallocated[k_num_alloc_types] =
     {
-        0,      // texture_2d
-        0,      // texture_3d
-        0,      // shader
+        16,     // texture_2d
+        16,     // texture_3d
+        16,     // shader
         64,     // material
         128,    // mesh
-        0,      // multimesh
-        0,      // skeleton
-        0,      // directional_light
-        0,      // omni_light
-        0,      // spot_light
-        0,      // reflection_probe
-        0,      // decal
-        0,      // voxel_gi
-        0,      // lightmap
-        0,      // particles
-        0,      // particles_collision
-        0,      // fog_volume
-        0,      // visibility_notifier
-        0,      // occluder
-        0,      // camera
-        0,      // viewport
-        0,      // sky
-        0,      // compositor_effect
-        0,      // compositor
-        0,      // environment
-        0,      // camera_attributes
-        0,      // scenario
+        16,     // multimesh
+        16,     // skeleton
+        16,     // directional_light
+        16,     // omni_light
+        16,     // spot_light
+        16,     // reflection_probe
+        16,     // decal
+        16,     // voxel_gi
+        16,     // lightmap
+        16,     // particles
+        16,     // particles_collision
+        16,     // fog_volume
+        16,     // visibility_notifier
+        16,     // occluder
+        16,     // camera
+        16,     // viewport
+        16,     // sky
+        16,     // compositor_effect
+        16,     // compositor
+        16,     // environment
+        16,     // camera_attributes
+        16,     // scenario
         512,    // instance
-        0,      // canvas
-        0,      // canvas_texture
-        0,      // canvas_item
-        0,      // canvas_light
-        0,      // canvas_light_occluder
-        0,      // canvas_occluder_polygon
+        16,     // canvas
+        16,     // canvas_texture
+        16,     // canvas_item
+        16,     // canvas_light
+        16,     // canvas_light_occluder
+        16,     // canvas_occluder_polygon
     };
 
     using RIDGenerator = godot::RID(godot::RenderingServer::*)();

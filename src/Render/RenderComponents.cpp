@@ -12,14 +12,8 @@ namespace voxel_game::rendering
 
         world.component<CContext>();
         world.component<CTransform>();
-        world.component<CScenario>();
-        world.component<COwnedScenario>();
 
         world.component<CInstance>()
-            .add(flecs::Relationship)
-            .add(flecs::Exclusive);
-
-        world.component<CMultiInstance>()
             .add(flecs::Relationship)
             .add(flecs::Exclusive);
 
@@ -30,5 +24,17 @@ namespace voxel_game::rendering
 
         world.component<CMesh>()
             .add_second<CBase>(flecs::With);
+
+		world.component<CPointMesh>();
+		world.component<CMultimesh>();
+		world.component<CParticles>();
+		world.component<CParticlesCollision>();
+		world.component<CLight>();
+		world.component<CReflectionProbe>();
+		world.component<CDecal>();
+		world.component<CVoxelGI>();
+		world.component<CLightmap>();
+		world.component<COccluder>();
+		world.component<CFogVolume>();
 	}
 }

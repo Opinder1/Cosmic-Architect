@@ -24,7 +24,7 @@
 
 namespace voxel_game::universe
 {
-	flecs::entity CreateNewUniverse(flecs::world& world, const godot::StringName& path, godot::RID scenario_id)
+	flecs::entity CreateNewUniverse(flecs::world& world, const godot::StringName& path)
 	{
 		// Create the universe
 		flecs::entity universe_entity = world.entity();
@@ -36,7 +36,7 @@ namespace voxel_game::universe
 		universe_entity.emplace<sim::CPath>(path);
 		universe_entity.add<universe::CWorld>();
 		universe_entity.add<voxel::CWorld>(); // Testing
-		if (scenario_id.is_valid())
+		if (rendering::IsEnabled())
 		{
 			universe_entity.add<voxelrender::CWorld>(); // Testing
 		}
@@ -51,12 +51,8 @@ namespace voxel_game::universe
 
 		spatial3d::InitializeWorldScaleEntities(universe_entity, *spatial_world.world);
 
-		if (scenario_id.is_valid())
+		if (rendering::IsEnabled())
 		{
-			rendering::CScenario& scenario = universe_entity.ensure<rendering::CScenario>();
-
-			scenario.id = scenario_id;
-
 			universe_entity.add<rendering::CTransform>();
 
 			spatial3d::Types& types = spatial_world.types;

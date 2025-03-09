@@ -23,29 +23,10 @@ namespace voxel_game::rendering
 		Components(flecs::world& world);
 	};
 
-	struct ModifyFlag
-	{
-		enum : uint8_t
-		{
-			BlendShapeWeight,
-			CustomAABB,
-			ExtraVisibilityMargin,
-			IgnoreCulling,
-			LayerMask,
-			PivotData,
-			Scenario,
-			SurfaceOverrideMaterial,
-			Transform,
-			VisibilityParent,
-			Visible,
-			Count
-		};
-	};
-
-	using ModifyFlags = std::bitset<ModifyFlag::Count>;
-
 	struct CContext : Nocopy, Nomove
 	{
+		godot::RID scenario;
+
 		PerThread<ThreadContext> threads;
 	};
 
@@ -55,24 +36,15 @@ namespace voxel_game::rendering
 		bool modified = false;
 	};
 
-	// This is the scenario that all the children instances of this entity will register to
-	struct CScenario
-	{
-		godot::RID id;
-		godot::Vector3i camera_pos; // Updated to the currently enabled cameras position
-	};
-
-	// This tag denotes that this entity creates the scenario itself
-	struct COwnedScenario {};
-
-	// Relationship tag for setting the base type of the entity with it being a unique instance
 	struct CInstance
 	{
 		godot::RID id;
 	};
 
-	// Relationship tag for setting the base type of the entity to a batched type
-	struct CMultiInstance {};
+	struct CInstancer
+	{
+		Instancer instancer;
+	};
 
 	// This entity is a render base which instances will use to define what they render
 	struct CBase
@@ -84,11 +56,6 @@ namespace voxel_game::rendering
 	struct CPlaceholderCube {};
 
 	struct CMesh {};
-
-	struct CMeshFile
-	{
-		godot::StringName path;
-	};
 
 	struct CPointMesh : Nocopy
 	{
@@ -113,11 +80,5 @@ namespace voxel_game::rendering
 
 	struct COccluder {};
 
-	struct CVisibilityNotifier {};
-
 	struct CFogVolume {};
-
-	// Used by various lod systems to know where to load visual elements around
-	// Is related to the scenario that its in
-	struct CCamera {};
 }

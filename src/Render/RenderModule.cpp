@@ -16,74 +16,10 @@
 
 namespace voxel_game::rendering
 {
+    bool s_enabled = false;
     const godot::Transform3D k_invisible_transform{ godot::Basis(), godot::Vector3(FLT_MAX, FLT_MAX, FLT_MAX) };
 
-	Module::Module(flecs::world& world)
-	{
-		world.module<Module>();
-
-		world.import<Components>();
-        world.import<physics3d::Components>();
-
-        // Make sure we initially get some rids
-        AllocatorServer::get_singleton()->RequestRIDs(true);
-
-        CContext& context = world.ensure<CContext>();
-
-        SetContext(context.threads[0]);
-
-        // Flush each threads render commands to the command queue server which will run them on the rendering server thread
-        world.system<CContext>(DEBUG_ONLY("FrameFlushCommands"))
-            .immediate()
-            .each([](CContext& context)
-        {
-            CommandServer* cqserver = CommandServer::get_singleton();
-            uint64_t rserver_id = godot::RenderingServer::get_singleton()->get_instance_id();
-
-            for (ThreadContext& thread_context : context.threads)
-            {
-                cqserver->AddCommands(rserver_id, std::move(thread_context.commands));
-            }
-        });
-
-        world.observer<CContext>()
-            .event(flecs::OnRemove)
-            .each([](CContext& context)
-        {
-            CommandServer* cqserver = CommandServer::get_singleton();
-            uint64_t rserver_id = godot::RenderingServer::get_singleton()->get_instance_id();
-
-            for (ThreadContext& thread_context : context.threads)
-            {
-                cqserver->AddCommands(rserver_id, std::move(thread_context.commands));
-            }
-        });
-
-        world.system<CContext>(DEBUG_ONLY("PreallocateObjects"))
-            .immediate()
-            .each([](CContext& context)
-        {
-            for (ThreadContext& thread_context : context.threads)
-            {
-                thread_context.allocator.Process();
-            }
-        });
-
-        world.system<const sim::CThreadWorker, CContext>(DEBUG_ONLY("SetThreadContexts"))
-            .multi_threaded()
-            .term_at(1).singleton()
-            .each([](flecs::iter& it, size_t i, const sim::CThreadWorker& worker, CContext& context)
-        {
-            SetContext(context.threads[it.world().get_stage_id()]);
-        });
-
-        InitTransform(world);
-        InitScenario(world);
-        InitUniqueInstance(world);
-        InitBase(world);
-	}
-
-    void Module::InitTransform(flecs::world& world)
+    void InitTransform(flecs::world& world)
     {
         // Update the render tree nodes transform based on the current nodes position, rotation, scale and parents transform
         world.system<CTransform, const physics3d::CPosition*, const physics3d::CRotation*, const physics3d::CScale*, const CTransform*>(DEBUG_ONLY("UpdateTreeNodeTransforms"))
@@ -116,66 +52,11 @@ namespace voxel_game::rendering
             transform.modified = transform.transform != new_transform;
             transform.transform = new_transform;
         });
-
-        // Update the render instances transform based on the entities position, rotation, scale and parents transform given the entity is not a tree node
-        world.system<CInstance, const CTransform>(DEBUG_ONLY("UpdateInstanceTransform"))
-            .multi_threaded()
-            .term_at(0).second(flecs::Any)
-            .term_at(1).self().up(flecs::ChildOf)
-            .each([](CInstance& instance, const CTransform& transform)
-        {
-            DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
-
-            if (transform.modified)
-            {
-                AddCommand<&RS::instance_set_transform>(instance.id, transform.transform);
-            }
-        });
-    }
-    
-    void Module::InitScenario(flecs::world& world)
-    {
-        world.observer<CScenario>(DEBUG_ONLY("AddScenario"))
-            .event(flecs::OnAdd)
-            .yield_existing()
-            .with<const COwnedScenario>()
-            .each([](flecs::entity entity, CScenario& scenario)
-        {
-            EASY_BLOCK("AddScenario");
-
-            scenario.id = godot::RenderingServer::get_singleton()->scenario_create();
-
-            entity.modified<CScenario>();
-        });
-
-        world.observer<const CScenario>(DEBUG_ONLY("RemoveScenario"))
-            .event(flecs::OnRemove)
-            .with<const COwnedScenario>()
-            .each([](const CScenario& scenario)
-        {
-            DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
-
-            AddCommand<&RS::free_rid>(scenario.id);
-        });
-
-        world.observer<const CInstance, const CScenario>(DEBUG_ONLY("InstanceSetScenario"))
-            .event(flecs::OnSet)
-            .yield_existing()
-            .term_at(0).second(flecs::Any)
-            .term_at(1).up(flecs::ChildOf).filter()
-            .each([](const CInstance& instance, const CScenario& scenario)
-        {
-            DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
-            DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
-
-            AddCommand<&RS::instance_set_transform>(instance.id, k_invisible_transform); // Fake invisibility until we set transform
-            AddCommand<&RS::instance_set_scenario>(instance.id, scenario.id);
-        });
     }
 
-    void Module::InitUniqueInstance(flecs::world& world)
+    void InitInstance(flecs::world& world)
     {
-        world.observer<CInstance>(DEBUG_ONLY("AddUniqueInstance"))
+        world.observer<CInstance>(DEBUG_ONLY("AddInstance"))
             .event(flecs::OnAdd)
             .yield_existing()
             .term_at(0).second(flecs::Any)
@@ -191,7 +72,7 @@ namespace voxel_game::rendering
             entity.modified(it.pair(0));
         });
 
-        world.observer<const CInstance>(DEBUG_ONLY("RemoveUniqueInstance"))
+        world.observer<const CInstance>(DEBUG_ONLY("RemoveInstance"))
             .event(flecs::OnRemove)
             .term_at(0).second(flecs::Any)
             .each([](const CInstance& instance)
@@ -200,10 +81,36 @@ namespace voxel_game::rendering
 
             AddCommand<&RS::RenderingServer::free_rid>(instance.id);
         });
-    }
 
-    void Module::InitBase(flecs::world& world)
-    {
+        world.observer<const CInstance, const CContext>(DEBUG_ONLY("InstanceSetScenario"))
+            .event(flecs::OnSet)
+            .yield_existing()
+            .term_at(0).second(flecs::Any)
+            .term_at(1).singleton()
+            .each([](const CInstance& instance, const CContext& context)
+        {
+            DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
+            DEBUG_ASSERT(context.scenario != godot::RID(), "Scenario should be valid");
+
+            AddCommand<&RS::instance_set_transform>(instance.id, k_invisible_transform); // Fake invisibility until we set transform
+            AddCommand<&RS::instance_set_scenario>(instance.id, context.scenario);
+        });
+
+        // Update the render instances transform based on the entities position, rotation, scale and parents transform given the entity is not a tree node
+        world.system<CInstance, const CTransform>(DEBUG_ONLY("UpdateInstanceTransform"))
+            .multi_threaded()
+            .term_at(0).second(flecs::Any)
+            .term_at(1).self().up(flecs::ChildOf)
+            .each([](CInstance& instance, const CTransform& transform)
+        {
+            DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
+
+            if (transform.modified)
+            {
+                AddCommand<&RS::instance_set_transform>(instance.id, transform.transform);
+            }
+        });
+
         world.observer<const CInstance, const CBase>(DEBUG_ONLY("InstanceSetBase"))
             .event(flecs::OnSet)
             .yield_existing()
@@ -216,22 +123,9 @@ namespace voxel_game::rendering
 
             AddCommand<&RS::instance_set_base>(instance.id, base.id);
         });
-
-        world.observer<const CBase>(DEBUG_ONLY("RemoveBase"))
-            .event(flecs::OnRemove)
-            .term_at(0)
-            .each([](const CBase& base)
-        {
-            DEBUG_ASSERT(base.id != godot::RID(), "Base should be valid");
-
-            AddCommand<&RS::free_rid>(base.id);
-        });
-
-        InitPlaceholderCube(world);
-        InitMesh(world);
     }
 
-    void Module::InitPlaceholderCube(flecs::world& world)
+    void InitPlaceholderCube(flecs::world& world)
     {
         world.observer<const CPlaceholderCube, CBase>(DEBUG_ONLY("AddPlaceholderCube"))
             .event(flecs::OnAdd)
@@ -246,7 +140,7 @@ namespace voxel_game::rendering
         });
     }
 
-    void Module::InitMesh(flecs::world& world)
+    void InitMesh(flecs::world& world)
     {
         world.observer<const CMesh, CBase>(DEBUG_ONLY("AddMesh"))
             .event(flecs::OnAdd)
@@ -259,5 +153,102 @@ namespace voxel_game::rendering
 
             entity.modified<CBase>();
         });
+    }
+
+    void InitBase(flecs::world& world)
+    {
+        world.observer<const CBase>(DEBUG_ONLY("RemoveBase"))
+            .event(flecs::OnRemove)
+            .term_at(0)
+            .each([](const CBase& base)
+        {
+            DEBUG_ASSERT(base.id != godot::RID(), "Base should be valid");
+
+            AddCommand<&RS::free_rid>(base.id);
+        });
+
+        InitPlaceholderCube(world);
+        InitMesh(world);
+    }
+
+	Module::Module(flecs::world& world)
+	{
+		world.module<Module>();
+
+		world.import<Components>();
+        world.import<physics3d::Components>();
+
+        s_enabled = true;
+
+        // Make sure we initially get some rids
+        AllocatorServer::get_singleton()->RequestRIDs(true);
+
+        // Flush each threads render commands to the command queue server which will run them on the rendering server thread
+        world.system<CContext>(DEBUG_ONLY("ContextFlushRenderCommands"))
+            .immediate()
+            .each([](CContext& context)
+        {
+            CommandServer* cqserver = CommandServer::get_singleton();
+            uint64_t rserver_id = RS::get_singleton()->get_instance_id();
+
+            for (ThreadContext& thread_context : context.threads)
+            {
+                cqserver->AddCommands(rserver_id, std::move(thread_context.commands));
+            }
+        });
+
+        world.observer<CContext>(DEBUG_ONLY("ContextCleanupCommands"))
+            .event(flecs::OnRemove)
+            .each([](CContext& context)
+        {
+            CommandServer* cqserver = CommandServer::get_singleton();
+            uint64_t rserver_id = RS::get_singleton()->get_instance_id();
+
+            for (ThreadContext& thread_context : context.threads)
+            {
+                cqserver->AddCommands(rserver_id, std::move(thread_context.commands));
+            }
+        });
+
+        world.system<CContext>(DEBUG_ONLY("ContextPreallocateObjects"))
+            .immediate()
+            .each([](CContext& context)
+        {
+            for (ThreadContext& thread_context : context.threads)
+            {
+                thread_context.allocator.Process();
+            }
+        });
+
+        world.observer<CContext>(DEBUG_ONLY("ContextSetMainThreadContext"))
+            .event(flecs::OnAdd)
+            .each([](CContext& context)
+        {
+            SetContext(context.threads[0]);
+        });
+
+        world.system<const sim::CThreadWorker, CContext>(DEBUG_ONLY("ContextSetThreadContexts"))
+            .multi_threaded()
+            .term_at(1).singleton()
+            .each([](flecs::iter& it, size_t i, const sim::CThreadWorker& worker, CContext& context)
+        {
+            SetContext(context.threads[it.world().get_stage_id()]);
+        });
+
+        InitTransform(world);
+        InitInstance(world);
+        InitBase(world);
+	}
+
+    bool IsEnabled()
+    {
+        return s_enabled;
+    }
+
+    void InitializeContext(flecs::world& world, godot::RID scenario)
+    {
+        CContext& context = world.ensure<rendering::CContext>();
+
+        context.scenario = scenario;
     }
 }
