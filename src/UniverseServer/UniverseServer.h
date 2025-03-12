@@ -7,6 +7,7 @@
 #include "Util/Debug.h"
 #include "Util/UUID.h"
 #include "Util/GodotMemory.h"
+#include "Util/SmallVector.h"
 
 #include <godot_cpp/variant/rid.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
@@ -310,6 +311,7 @@ namespace voxel_game
 		flecs::world m_world;
 		flecs::entity_t m_universe_entity = 0;
 		flecs::entity_t m_galaxy_entity = 0;
+		SmallVector<flecs::entity_t, 4> m_world_entities;
 		flecs::entity_t m_player_entity = 0;
 
 		// Cached info to be written to by the internal thread and its contents retrieved and read by other threads

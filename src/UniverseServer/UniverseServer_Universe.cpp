@@ -50,7 +50,20 @@ namespace voxel_game
 			return;
 		}
 
-		m_galaxy_entity = galaxy::CreateNewSimulatedGalaxy(m_world, path, m_universe_entity);
+		// TODO: Make sure we intialize scenario so all instances have a scenario to be added to
+		// m_galaxy_entity = galaxy::CreateNewSimulatedGalaxy(m_world, path, m_universe_entity);
+
+		// Implement player module
+		// m_player_entity = player::CreateNewEntity(m_world, m_galaxy_entity, "localuser");
+		m_player_entity = ecs_new(m_world);
+
+		flecs::entity_t world_entity = ecs_get_parent(m_world, m_player_entity);
+
+		while (ecs_is_valid(m_world, world_entity) && world_entity != m_galaxy_entity)
+		{
+			m_world_entities.push_front(world_entity);
+			world_entity = ecs_get_parent(m_world, world_entity);
+		}
 
 		QueueSignal(k_signals->connected_to_galaxy);
 	}
