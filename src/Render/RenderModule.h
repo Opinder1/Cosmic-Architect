@@ -12,6 +12,4 @@ namespace voxel_game::rendering
 	};
 
 	bool IsEnabled();
-
-	void InitializeContext(flecs::world& world, godot::RID scenario);
 }

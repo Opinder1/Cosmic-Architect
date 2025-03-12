@@ -181,6 +181,8 @@ namespace voxel_game::rendering
         // Make sure we initially get some rids
         AllocatorServer::get_singleton()->RequestRIDs(true);
 
+        world.add<CContext>();
+
         // Flush each threads render commands to the command queue server which will run them on the rendering server thread
         world.system<CContext>(DEBUG_ONLY("ContextFlushRenderCommands"))
             .immediate()
@@ -219,6 +221,7 @@ namespace voxel_game::rendering
         });
 
         world.observer<CContext>(DEBUG_ONLY("ContextSetMainThreadContext"))
+            .yield_existing()
             .event(flecs::OnAdd)
             .each([](CContext& context)
         {
@@ -241,12 +244,5 @@ namespace voxel_game::rendering
     bool IsEnabled()
     {
         return godot::DisplayServer::get_singleton()->get_name() != "headless";
-    }
-
-    void InitializeContext(flecs::world& world, godot::RID scenario)
-    {
-        CContext& context = world.ensure<rendering::CContext>();
-
-        context.scenario = scenario;
     }
 }
