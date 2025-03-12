@@ -8,15 +8,16 @@
 
 namespace voxel_game::voxelrender
 {
-	struct Components
+	struct Node
 	{
-		Components(flecs::world& world);
+		godot::RID mesh;
+		godot::RID mesh_instance;
 	};
 
-	struct CContext
-	{
-		int i;
-	};
+	struct Scale {};
 
-	struct CWorld {};
+	struct World
+	{
+		godot::RID voxel_material;
+	};
 }

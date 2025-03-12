@@ -1,5 +1,6 @@
 #include "VoxelRenderModule.h"
 #include "VoxelRenderComponents.h"
+#include "VoxelRenderWorld.h"
 
 #include "Voxel/VoxelComponents.h"
 
