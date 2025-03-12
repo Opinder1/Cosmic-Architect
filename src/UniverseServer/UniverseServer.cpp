@@ -4,6 +4,7 @@
 #include "Universe/UniverseModule.h"
 
 #include "Galaxy/GalaxyModule.h"
+#include "GalaxyRender/GalaxyRenderModule.h"
 
 #include "Spatial3D/SpatialModule.h"
 
@@ -93,7 +94,7 @@ namespace voxel_game
 		if (m_scenario.is_valid())
 		{
 			m_world.import<rendering::Module>();
-			//m_world.import<galaxyrender::Module>();
+			m_world.import<galaxyrender::Module>();
 			m_world.import<voxelrender::Module>();
 
 			rendering::InitializeContext(m_world, m_scenario);
