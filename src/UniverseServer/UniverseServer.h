@@ -17,8 +17,6 @@
 
 #include <flecs/flecs.h>
 
-#include <TKRZW/tkrzw_thread_util.h>
-
 #include <optional>
 #include <thread>
 
@@ -62,15 +60,9 @@ namespace voxel_game
 		void DisconnectFromGalaxyList();
 		void QueryGalaxyList(const godot::Dictionary& query);
 		void PingRemoteGalaxy(const godot::String& ip);
-		void StartLocalGalaxy(const godot::String& path, const godot::String& fragment_type, ServerType server_type);
-		void ConnectToGalaxy(const godot::String& path, const godot::String& ip);
+		void StartLocalGalaxy(const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario);
+		void ConnectToGalaxy(const godot::String& path, const godot::String& ip, godot::RID scenario);
 		void DisconnectFromGalaxy();
-
-		// ####### Fragments (admin only) #######
-
-		godot::Dictionary GetFragmentInfo(const UUID& fragment_id);
-		UUID GetCurrentFragment();
-		void EnterFragment(const UUID& fragment_id, const godot::Dictionary& method); // We will have checked we can do so before hand
 
 		// ####### Account #######
 
@@ -81,6 +73,24 @@ namespace voxel_game
 		void ClearSavedSession();
 		void DeleteAccount();
 		void LogoutAccount();
+
+		// ####### Fragments (admin only) #######
+
+		godot::Dictionary GetFragmentInfo(const UUID& fragment_id);
+		UUID GetCurrentFragment();
+		void EnterFragment(const UUID& fragment_id, const godot::Dictionary& method); // We will have checked we can do so before hand
+
+		// ####### Galaxy Region #######
+
+		godot::Dictionary GetGalaxyInfo();
+		godot::Dictionary GetGalaxyRegionInfo(const UUID& galaxy_region_id);
+		void RequestGalaxyRegionInfo(const UUID& galaxy_region_id);
+		UUIDVector GetCurrentGalaxyRegions();
+
+		// ####### Galaxy Object (is volume) #######
+
+		godot::Dictionary GetGalaxyObjectInfo(const UUID& galaxy_object_id);
+		void RequestGalaxyObjectInfo(const UUID& entity_id);
 
 		// ####### Friends #######
 
@@ -128,18 +138,6 @@ namespace voxel_game
 		godot::Vector4i GetEntityPositionInVolume(const UUID& volume_id, const UUID& entity_id);
 		godot::Vector4i FragmentPositionToVolumePosition(const UUID& volume_id, const godot::Vector4& fragment_position);
 		godot::Vector4 VolumePositionToFragmentPosition(const UUID& volume_id, const godot::Vector4i& volume_position);
-
-		// ####### Galaxy Region #######
-
-		godot::Dictionary GetGalaxyInfo();
-		godot::Dictionary GetGalaxyRegionInfo(const UUID& galaxy_region_id);
-		void RequestGalaxyRegionInfo(const UUID& galaxy_region_id);
-		UUIDVector GetCurrentGalaxyRegions();
-
-		// ####### Galaxy Object (is volume) #######
-
-		godot::Dictionary GetGalaxyObjectInfo(const UUID& galaxy_object_id);
-		void RequestGalaxyObjectInfo(const UUID& entity_id);
 
 		// ####### Currency #######
 

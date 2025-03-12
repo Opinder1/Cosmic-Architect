@@ -43,9 +43,9 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::StartLocalGalaxy(const godot::String& path, const godot::String& fragment_type, ServerType server_type)
+	void UniverseServer::StartLocalGalaxy(const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario)
 	{
-		if (DeferCommand<&UniverseServer::StartLocalGalaxy>(path, fragment_type, server_type))
+		if (DeferCommand<&UniverseServer::StartLocalGalaxy>(path, fragment_type, server_type, scenario))
 		{
 			return;
 		}
@@ -55,9 +55,9 @@ namespace voxel_game
 		QueueSignal(k_signals->connected_to_galaxy);
 	}
 
-	void UniverseServer::ConnectToGalaxy(const godot::String& path, const godot::String& ip)
+	void UniverseServer::ConnectToGalaxy(const godot::String& path, const godot::String& ip, godot::RID scenario)
 	{
-		if (DeferCommand<&UniverseServer::ConnectToGalaxy>(path, ip))
+		if (DeferCommand<&UniverseServer::ConnectToGalaxy>(path, ip, scenario))
 		{
 			return;
 		}
