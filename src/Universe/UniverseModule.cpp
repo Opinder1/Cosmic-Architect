@@ -21,6 +21,15 @@
 
 namespace voxel_game::universe
 {
+	void InitializeUniverseConfig(flecs::entity entity)
+	{
+		sim::CConfig& config = entity.ensure<sim::CConfig>();
+
+		if (!config.values.has("test")) { config.values["test"] = 0; }
+
+		entity.modified<sim::CConfig>();
+	}
+
 	flecs::entity CreateNewUniverse(flecs::world& world, const godot::StringName& path)
 	{
 		// Create the universe
@@ -32,6 +41,10 @@ namespace voxel_game::universe
 
 		universe_entity.emplace<sim::CPath>(path);
 		universe_entity.add<universe::CWorld>();
+		universe_entity.add<sim::CConfig>();
+		universe_entity.emplace<sim::CConfigFile>(path.path_join("config.json"));
+
+		InitializeUniverseConfig(universe_entity);
 
 		spatial3d::CWorld& spatial_world = universe_entity.ensure<spatial3d::CWorld>();
 
