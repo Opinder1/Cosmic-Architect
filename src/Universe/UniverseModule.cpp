@@ -7,9 +7,6 @@
 #include "Spatial3D/SpatialComponents.h"
 #include "Spatial3D/SpatialModule.h"
 
-#include "Voxel/VoxelComponents.h" // Testing
-#include "VoxelRender/VoxelRenderComponents.h" // Testing
-
 #include "Physics3D/PhysicsComponents.h"
 
 #include "Simulation/SimulationComponents.h"
@@ -35,11 +32,6 @@ namespace voxel_game::universe
 
 		universe_entity.emplace<sim::CPath>(path);
 		universe_entity.add<universe::CWorld>();
-		universe_entity.add<voxel::CWorld>(); // Testing
-		if (rendering::IsEnabled())
-		{
-			universe_entity.add<voxelrender::CWorld>(); // Testing
-		}
 
 		spatial3d::CWorld& spatial_world = universe_entity.ensure<spatial3d::CWorld>();
 
@@ -54,10 +46,6 @@ namespace voxel_game::universe
 		if (rendering::IsEnabled())
 		{
 			universe_entity.add<rendering::CTransform>();
-
-			spatial3d::Types& types = spatial_world.types;
-
-			WORLD_TO(spatial_world.world, voxelrender::World)->voxel_material = rendering::AllocRID(rendering::RIDType::Material);
 		}
 
 		return universe_entity;
@@ -156,8 +144,6 @@ namespace voxel_game::universe
 
 		world.import<physics3d::Components>();
 		world.import<spatial3d::Components>();
-		world.import<voxel::Components>(); // Testing
-		world.import<voxelrender::Components>(); // Testing
 		world.import<universe::Components>();
 		world.import<galaxy::Prefabs>();
 
