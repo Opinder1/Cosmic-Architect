@@ -45,18 +45,15 @@ namespace voxel_game
 		UniverseServer();
 		~UniverseServer();
 
-		// The universe server only adds renderable bases to this scenario
-		void SetRenderScenario(godot::RID scenario);
-#if defined(DEBUG_ENABLED)
-		void DebugCommand(const godot::StringName& command, const godot::Array& args);
-#endif
-
 		bool CanSimulationStart() final;
 		void DoSimulationLoad() final;
 		void DoSimulationUnload() final;
 		bool DoSimulationProgress(real_t delta) final;
 		void DoSimulationThreadProgress() final;
 
+#if defined(DEBUG_ENABLED)
+		void DebugCommand(const godot::StringName& command, const godot::Array& args);
+#endif
 
 		// ####### Universe #######
 
@@ -310,10 +307,6 @@ namespace voxel_game
 
 		// Cached string names for optimization
 		static std::optional<const SignalStrings> k_signals;
-
-		// Initialization variables
-		godot::String m_path;
-		godot::RID m_scenario;
 
 		// World and quick access entities. Not thread safe
 		flecs::world m_world;

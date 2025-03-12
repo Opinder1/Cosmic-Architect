@@ -91,7 +91,7 @@ namespace voxel_game
 		m_world.import<galaxy::Module>();
 		m_world.import<universe::Module>();
 
-		if (m_scenario.is_valid())
+		if (rendering::IsEnabled())
 		{
 			m_world.import<rendering::Module>();
 			m_world.import<galaxyrender::Module>();
@@ -183,7 +183,6 @@ namespace voxel_game
 		BIND_ENUM_CONSTANT(SERVER_TYPE_LOCAL);
 		BIND_ENUM_CONSTANT(SERVER_TYPE_REMOTE);
 
-		BIND_METHOD(godot::D_METHOD("set_render_scenario", "scenario"), &UniverseServer::SetRenderScenario);
 #if defined(DEBUG_ENABLED)
 		BIND_METHOD(godot::D_METHOD("debug_command", "command", "arguments"), &UniverseServer::DebugCommand);
 #endif
