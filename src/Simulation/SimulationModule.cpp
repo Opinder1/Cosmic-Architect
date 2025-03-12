@@ -1,6 +1,9 @@
 #include "SimulationModule.h"
 #include "SimulationComponents.h"
 
+#include <godot_cpp/classes/file_access.hpp>
+#include <godot_cpp/classes/json.hpp>
+
 #include <flecs/flecs.h>
 
 namespace voxel_game::sim
@@ -21,8 +24,6 @@ namespace voxel_game::sim
 
 		world.add<CFrame>();
 
-		world.add<CConfig>();
-
 		world.add<CEntityPools>();
 
 		for (size_t worker_index = 0; worker_index < world.get_stage_count(); worker_index++)
@@ -35,6 +36,35 @@ namespace voxel_game::sim
 
 			thread_worker.ensure<CThreadWorker>().index = worker_index;
 		}
+
+		world.observer<CConfigFile, CConfig>("ConfigFileCreate")
+			.event(flecs::OnAdd)
+			.each([](CConfigFile& config_file, CConfig& config)
+		{
+			godot::Ref<godot::FileAccess> file = godot::FileAccess::open(config_file.path, godot::FileAccess::READ);
+
+			if (file.is_null() || file->get_error() != godot::Error::OK)
+			{
+				return;
+			}
+			
+			config.values = godot::JSON::parse_string(file->get_as_text());
+		});
+
+		world.observer<CConfigFile, CConfig>("ConfigFileUpdate")
+			.event(flecs::OnSet)
+			.term_at(0).filter()
+			.each([](CConfigFile& config_file, CConfig& config)
+		{
+			godot::Ref<godot::FileAccess> file = godot::FileAccess::open(config_file.path, godot::FileAccess::WRITE);
+
+			if (file.is_null() || file->get_error() != godot::Error::OK)
+			{
+				return;
+			}
+
+			file->store_string(godot::JSON::stringify(config.values));
+		});
 
 		world.system<CFrame>("WorldUpdateTime")
 			.kind(flecs::OnUpdate)

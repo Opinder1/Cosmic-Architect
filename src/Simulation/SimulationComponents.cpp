@@ -12,6 +12,7 @@ namespace voxel_game::sim
 		world.component<CLocalTime>();
 		world.component<CPath>();
 		world.component<CConfig>();
+		world.component<CConfigFile>();
 		world.component<CThreadWorker>();
 		world.component<CEntityPools>();
 

@@ -45,6 +45,11 @@ namespace voxel_game::sim
 		godot::Dictionary values;
 	};
 
+	struct CConfigFile
+	{
+		godot::StringName path;
+	};
+
 	struct CThreadWorker
 	{
 		size_t index;
