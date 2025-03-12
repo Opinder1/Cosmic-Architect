@@ -8,6 +8,7 @@
 
 #include "Commands/CommandServer.h"
 
+#include <godot_cpp/classes/display_server.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 
 #include <flecs/flecs.h>
@@ -16,7 +17,6 @@
 
 namespace voxel_game::rendering
 {
-    bool s_enabled = false;
     const godot::Transform3D k_invisible_transform{ godot::Basis(), godot::Vector3(FLT_MAX, FLT_MAX, FLT_MAX) };
 
     void InitTransform(flecs::world& world)
@@ -178,8 +178,6 @@ namespace voxel_game::rendering
 		world.import<Components>();
         world.import<physics3d::Components>();
 
-        s_enabled = true;
-
         // Make sure we initially get some rids
         AllocatorServer::get_singleton()->RequestRIDs(true);
 
@@ -242,7 +240,7 @@ namespace voxel_game::rendering
 
     bool IsEnabled()
     {
-        return s_enabled;
+        return godot::DisplayServer::get_singleton()->get_name() != "headless";
     }
 
     void InitializeContext(flecs::world& world, godot::RID scenario)
