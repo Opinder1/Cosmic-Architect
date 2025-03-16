@@ -21,9 +21,13 @@
 
 namespace voxel_game::universe
 {
-	void InitializeUniverseConfig(flecs::entity entity)
+	void InitializeUniverseConfig(flecs::entity entity, godot::String path)
 	{
 		sim::CConfig& config = entity.ensure<sim::CConfig>();
+
+		config.path = path;
+
+		sim::LoadJsonConfig(config);
 
 		if (!config.values.has("test")) { config.values["test"] = 0; }
 
@@ -41,14 +45,10 @@ namespace voxel_game::universe
 
 		universe_entity.emplace<sim::CPath>(path);
 		universe_entity.add<universe::CWorld>();
-		universe_entity.add<sim::CConfig>();
-		universe_entity.emplace<sim::CConfigFile>(path.path_join("config.json"));
 
-		InitializeUniverseConfig(universe_entity);
+		InitializeUniverseConfig(universe_entity, path.path_join("config.json"));
 
 		spatial3d::CWorld& spatial_world = universe_entity.ensure<spatial3d::CWorld>();
-
-		DEBUG_ASSERT(!world.is_deferred(), "Observers need to be invoked to initialize poly types");
 
 		spatial_world.world = spatial3d::CreateWorld(spatial_world.types, spatial3d::k_max_world_scale);
 		spatial_world.world->node_size = 16;

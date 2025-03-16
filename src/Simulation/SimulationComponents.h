@@ -42,12 +42,8 @@ namespace voxel_game::sim
 
 	struct CConfig
 	{
-		godot::Dictionary values;
-	};
-
-	struct CConfigFile
-	{
 		godot::StringName path;
+		godot::Dictionary values;
 	};
 
 	struct CThreadWorker

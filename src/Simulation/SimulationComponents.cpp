@@ -12,18 +12,8 @@ namespace voxel_game::sim
 		world.component<CLocalTime>();
 		world.component<CPath>();
 		world.component<CConfig>();
-		world.component<CConfigFile>();
 		world.component<CThreadWorker>();
 		world.component<CEntityPools>();
-
-		world.component<CEntityPools>()
-			.on_remove([world = world.c_ptr()](CEntityPools& pools)
-		{
-			for (ThreadEntityPool& pool : pools.threads)
-			{
-				pool.ClearEntities(world);
-			}
-		});
 	}
 
 	ThreadEntityPool::ThreadEntityPool()

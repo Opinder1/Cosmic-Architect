@@ -16,7 +16,7 @@ namespace voxel_game::sim
 
 	ThreadEntityPool& GetPool();
 	
-	void LoadJsonConfig(godot::String path, CConfig& config);
+	void LoadJsonConfig(CConfig& config);
 
-	void SaveJsonConfig(godot::String path, CConfig& config);
+	void SaveJsonConfig(CConfig& config);
 }

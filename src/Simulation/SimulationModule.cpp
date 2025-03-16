@@ -16,11 +16,44 @@ namespace voxel_game::sim
 		return *thread_pool;
 	}
 
+	void LoadJsonConfig(CConfig& config)
+	{
+		godot::Ref<godot::FileAccess> file = godot::FileAccess::open(config.path, godot::FileAccess::READ);
+
+		if (file.is_null() || file->get_error() != godot::Error::OK)
+		{
+			return;
+		}
+
+		config.values = godot::JSON::parse_string(file->get_as_text());
+	}
+
+	void SaveJsonConfig(CConfig& config)
+	{
+		godot::Ref<godot::FileAccess> file = godot::FileAccess::open(config.path, godot::FileAccess::WRITE);
+
+		if (file.is_null() || file->get_error() != godot::Error::OK)
+		{
+			return;
+		}
+
+		file->store_string(godot::JSON::stringify(config.values));
+	}
+
 	Module::Module(flecs::world& world)
 	{
 		world.module<Module>();
 
 		world.import<Components>();
+
+		world.component<CEntityPools>()
+			.on_remove([world = world.c_ptr()](CEntityPools& pools)
+		{
+			for (ThreadEntityPool& pool : pools.threads)
+			{
+				pool.ClearEntities(world);
+			}
+		});
 
 		world.add<CFrame>();
 
@@ -37,33 +70,12 @@ namespace voxel_game::sim
 			thread_worker.ensure<CThreadWorker>().index = worker_index;
 		}
 
-		world.observer<CConfigFile, CConfig>("ConfigFileCreate")
-			.event(flecs::OnAdd)
-			.each([](CConfigFile& config_file, CConfig& config)
-		{
-			godot::Ref<godot::FileAccess> file = godot::FileAccess::open(config_file.path, godot::FileAccess::READ);
-
-			if (file.is_null() || file->get_error() != godot::Error::OK)
-			{
-				return;
-			}
-			
-			config.values = godot::JSON::parse_string(file->get_as_text());
-		});
-
-		world.observer<CConfigFile, CConfig>("ConfigFileUpdate")
+		world.observer<CConfig>("ConfigUpdate")
 			.event(flecs::OnSet)
-			.term_at(0).filter()
-			.each([](CConfigFile& config_file, CConfig& config)
+			.event(flecs::OnRemove)
+			.each([](CConfig& config)
 		{
-			godot::Ref<godot::FileAccess> file = godot::FileAccess::open(config_file.path, godot::FileAccess::WRITE);
-
-			if (file.is_null() || file->get_error() != godot::Error::OK)
-			{
-				return;
-			}
-
-			file->store_string(godot::JSON::stringify(config.values));
+			SaveJsonConfig(config);
 		});
 
 		world.system<CFrame>("WorldUpdateTime")
