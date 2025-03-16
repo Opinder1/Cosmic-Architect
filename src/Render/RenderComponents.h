@@ -35,6 +35,11 @@ namespace voxel_game::rendering
 		godot::Transform3D transform;
 		bool modified = false;
 	};
+	
+	struct CScenario
+	{
+		godot::RID id;
+	};
 
 	struct CInstance
 	{

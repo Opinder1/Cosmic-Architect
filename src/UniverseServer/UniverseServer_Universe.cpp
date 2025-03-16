@@ -1,6 +1,8 @@
 #include "UniverseServer.h"
 #include "UniverseServer_StringNames.h"
 
+#include "Render/RenderComponents.h"
+
 #include "Galaxy/GalaxyModule.h"
 
 namespace voxel_game
@@ -50,8 +52,9 @@ namespace voxel_game
 			return;
 		}
 
-		// TODO: Make sure we intialize scenario so all instances have a scenario to be added to
-		// m_galaxy_entity = galaxy::CreateNewSimulatedGalaxy(m_world, path, m_universe_entity);
+		flecs::entity(m_world, m_universe_entity).emplace<rendering::CScenario>(scenario);
+
+		m_galaxy_entity = galaxy::CreateNewSimulatedGalaxy(m_world, path, m_universe_entity);
 
 		// Implement player module
 		// m_player_entity = player::CreateNewEntity(m_world, m_galaxy_entity, "localuser");

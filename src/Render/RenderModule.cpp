@@ -62,14 +62,15 @@ namespace voxel_game::rendering
             .term_at(0).second(flecs::Any)
             .each([](flecs::iter& it, size_t i, CInstance& instance)
         {
-            EASY_BLOCK("AddUniqueInstance");
+            if (instance.id == godot::RID())
+            {
+                instance.id = AllocRID(RIDType::Instance);
 
-            instance.id = AllocRID(RIDType::Instance);
+                flecs::entity entity = it.entity(i);
 
-            flecs::entity entity = it.entity(i);
-
-            // Mark the Instance pair as modified
-            entity.modified(it.pair(0));
+                // Mark the Instance pair as modified
+                entity.modified(it.pair(0));
+            }
         });
 
         world.observer<const CInstance>(DEBUG_ONLY("RemoveInstance"))
@@ -80,20 +81,6 @@ namespace voxel_game::rendering
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
 
             AddCommand<&RS::RenderingServer::free_rid>(instance.id);
-        });
-
-        world.observer<const CInstance, const CContext>(DEBUG_ONLY("InstanceSetScenario"))
-            .event(flecs::OnSet)
-            .yield_existing()
-            .term_at(0).second(flecs::Any)
-            .term_at(1).singleton()
-            .each([](const CInstance& instance, const CContext& context)
-        {
-            DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
-            DEBUG_ASSERT(context.scenario != godot::RID(), "Scenario should be valid");
-
-            AddCommand<&RS::instance_set_transform>(instance.id, k_invisible_transform); // Fake invisibility until we set transform
-            AddCommand<&RS::instance_set_scenario>(instance.id, context.scenario);
         });
 
         // Update the render instances transform based on the entities position, rotation, scale and parents transform given the entity is not a tree node
@@ -111,17 +98,56 @@ namespace voxel_game::rendering
             }
         });
 
+        world.observer<const CInstance, const CScenario>(DEBUG_ONLY("InstanceSetScenario"))
+            .event(flecs::OnSet)
+            .yield_existing()
+            .term_at(0).second(flecs::Any)
+            .term_at(1).up(flecs::ChildOf)
+            .each([](const CInstance& instance, const CScenario& scenario)
+        {
+            DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
+            DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
+
+            AddCommand<&RS::instance_set_transform>(instance.id, k_invisible_transform); // Fake invisibility until we set transform
+            AddCommand<&RS::instance_set_scenario>(instance.id, scenario.id);
+        });
+
         world.observer<const CInstance, const CBase>(DEBUG_ONLY("InstanceSetBase"))
             .event(flecs::OnSet)
             .yield_existing()
             .term_at(0).second("$Base")
-            .term_at(1).src("$Base").filter()
+            .term_at(1).src("$Base")
             .each([](const CInstance& instance, const CBase& base)
         {
             DEBUG_ASSERT(instance.id != godot::RID(), "Instance should be valid");
             DEBUG_ASSERT(base.id != godot::RID(), "Base should be valid");
 
             AddCommand<&RS::instance_set_base>(instance.id, base.id);
+        });
+    }
+
+    void InitScenario(flecs::world& world)
+    {
+        world.observer<CScenario>(DEBUG_ONLY("AddScenario"))
+            .event(flecs::OnAdd)
+            .yield_existing()
+            .each([](flecs::entity entity, CScenario& scenario)
+        {
+            if (scenario.id == godot::RID())
+            {
+                scenario.id = AllocRID(RIDType::Instance);
+
+                entity.modified<CScenario>();
+            }
+        });
+
+        world.observer<const CScenario>(DEBUG_ONLY("RemoveScenario"))
+            .event(flecs::OnRemove)
+            .each([](const CScenario& scenario)
+        {
+            DEBUG_ASSERT(scenario.id != godot::RID(), "Scenario should be valid");
+
+            AddCommand<&RS::RenderingServer::free_rid>(scenario.id);
         });
     }
 
@@ -134,9 +160,12 @@ namespace voxel_game::rendering
         {
             EASY_BLOCK("AddPlaceholderCube");
 
-            base.id = godot::RenderingServer::get_singleton()->get_test_cube();
+            if (base.id == godot::RID())
+            {
+                base.id = godot::RenderingServer::get_singleton()->get_test_cube();
 
-            entity.modified<CBase>();
+                entity.modified<CBase>();
+            }
         });
     }
 
@@ -149,9 +178,12 @@ namespace voxel_game::rendering
         {
             EASY_BLOCK("AddMesh");
 
-            base.id = godot::RenderingServer::get_singleton()->mesh_create();
+            if (base.id == godot::RID())
+            {
+                base.id = godot::RenderingServer::get_singleton()->mesh_create();
 
-            entity.modified<CBase>();
+                entity.modified<CBase>();
+            }
         });
     }
 
@@ -237,6 +269,7 @@ namespace voxel_game::rendering
         });
 
         InitTransform(world);
+        InitScenario(world);
         InitInstance(world);
         InitBase(world);
 	}

@@ -12,12 +12,13 @@ namespace voxel_game::rendering
 
         world.component<CContext>();
         world.component<CTransform>();
+		world.component<CScenario>();
+
+        world.component<CBase>();
 
         world.component<CInstance>()
             .add(flecs::Relationship)
             .add(flecs::Exclusive);
-
-        world.component<CBase>();
 
         world.component<CPlaceholderCube>()
             .add_second<CBase>(flecs::With);
@@ -25,16 +26,37 @@ namespace voxel_game::rendering
         world.component<CMesh>()
             .add_second<CBase>(flecs::With);
 
-		world.component<CPointMesh>();
-		world.component<CMultimesh>();
-		world.component<CParticles>();
-		world.component<CParticlesCollision>();
-		world.component<CLight>();
-		world.component<CReflectionProbe>();
-		world.component<CDecal>();
-		world.component<CVoxelGI>();
-		world.component<CLightmap>();
-		world.component<COccluder>();
-		world.component<CFogVolume>();
+		world.component<CPointMesh>()
+			.add_second<CBase>(flecs::With);
+
+		world.component<CMultimesh>()
+			.add_second<CBase>(flecs::With);
+
+		world.component<CParticles>()
+			.add_second<CBase>(flecs::With);
+
+		world.component<CParticlesCollision>()
+			.add_second<CBase>(flecs::With);
+
+		world.component<CLight>()
+			.add_second<CBase>(flecs::With);
+
+		world.component<CReflectionProbe>()
+			.add_second<CBase>(flecs::With);
+
+		world.component<CDecal>()
+			.add_second<CBase>(flecs::With);
+
+		world.component<CVoxelGI>()
+			.add_second<CBase>(flecs::With);
+
+		world.component<CLightmap>()
+			.add_second<CBase>(flecs::With);
+
+		world.component<COccluder>()
+			.add_second<CBase>(flecs::With);
+
+		world.component<CFogVolume>()
+			.add_second<CBase>(flecs::With);
 	}
 }
