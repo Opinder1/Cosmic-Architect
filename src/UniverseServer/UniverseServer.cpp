@@ -108,8 +108,6 @@ namespace voxel_game
 		m_info_updater.SetWriterThread(std::thread::id{}); // We may not start in thread mode next time
 #endif
 
-		m_world.set_threads(0);
-
 		m_world = flecs::world();
 	}
 
