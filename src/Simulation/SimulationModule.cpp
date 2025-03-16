@@ -18,26 +18,61 @@ namespace voxel_game::sim
 
 	void LoadJsonConfig(CConfig& config)
 	{
+		if (config.path.is_empty())
+		{
+			return;
+		}
+
 		godot::Ref<godot::FileAccess> file = godot::FileAccess::open(config.path, godot::FileAccess::READ);
 
 		if (file.is_null() || file->get_error() != godot::Error::OK)
 		{
+			DEBUG_PRINT_ERROR(godot::vformat("Failed to open the file %s", config.path));
 			return;
 		}
 
 		config.values = godot::JSON::parse_string(file->get_as_text());
+
+		file->close();
 	}
 
 	void SaveJsonConfig(CConfig& config)
 	{
-		godot::Ref<godot::FileAccess> file = godot::FileAccess::open(config.path, godot::FileAccess::WRITE);
-
-		if (file.is_null() || file->get_error() != godot::Error::OK)
+		if (config.path.is_empty())
 		{
 			return;
 		}
 
-		file->store_string(godot::JSON::stringify(config.values));
+		godot::Ref<godot::FileAccess> file = godot::FileAccess::open(config.path, godot::FileAccess::WRITE);
+
+		if (file.is_null() || file->get_error() != godot::Error::OK)
+		{
+			DEBUG_PRINT_ERROR(godot::vformat("Failed to open the file %s", config.path));
+			return;
+		}
+
+		file->store_string(godot::JSON::stringify(config.values, "    "));
+
+		file->close();
+	}
+
+	void InitializeConfig(flecs::entity entity, const godot::String& path, const ConfigDefaults& defaults)
+	{
+		sim::CConfig& config = entity.ensure<sim::CConfig>();
+
+		config.path = path;
+
+		sim::LoadJsonConfig(config);
+
+		for (auto&& [key, value] : defaults)
+		{
+			if (!config.values.has(key))
+			{
+				config.values[key] = value;
+			}
+		}
+
+		sim::SaveJsonConfig(config);
 	}
 
 	Module::Module(flecs::world& world)

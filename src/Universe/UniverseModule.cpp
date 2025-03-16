@@ -21,17 +21,76 @@
 
 namespace voxel_game::universe
 {
-	void InitializeUniverseConfig(flecs::entity entity, godot::String path)
+	sim::ConfigDefaults config_defaults;
+
+	void InitializeConfigDefaults()
 	{
-		sim::CConfig& config = entity.ensure<sim::CConfig>();
+		if (!config_defaults.empty())
+		{
+			return;
+		}
 
-		config.path = path;
+		config_defaults =
+		{
+			// General
+			{ "campaign_script", "" },
 
-		sim::LoadJsonConfig(config);
+			// Game mechanics
+			{ "universe_size", 0 },
+			{ "max_player_level", 1000 },
+			{ "max_npc_level", 999 },
+			{ "player_experience_gain_multiplier", 1.0 },
+			{ "global_loot_amount_multiplier", 1.0 },
+			{ "invisibility_ability_opacity", 20.0 },
+			{ "weather_events_frequency_multiplier", 1.0 },
+			{ "disaster_events_frequency_multiplier", 1.0 },
+			{ "faction_events_frequency_multiplier", 1.0 },
+			{ "plant_grow_speed_multiplier", 1.0 },
+			{ "npc_damage_multiplier", 1.0 },
+			{ "npc_health_multiplier", 1.0 },
+			{ "npc_energy_multiplier", 1.0 },
+			{ "npc_intelligence_multiplier", 1.0 },
+			{ "level0_civilisation_generation_factor", 1.0 },
+			{ "level1_civilization_generation_factor", 1.0 },
+			{ "level2_civilization_generation_factor", 1.0 },
+			{ "level3_civilization_generation_factor", 1.0 },
+			{ "forget_uninteracted_npcs", true },
+			{ "max_dropped_items", 1000 },
+			{ "dropped_item_removal_frequency", 10.0 },
+			{ "merge_similar_close_items", true },
+			{ "merge_all_close_items", false },
 
-		if (!config.values.has("test")) { config.values["test"] = 0; }
+			// Player mechanics
+			{ "allow_debug_config", false },
+			{ "player_experience_gain_multiplier", 1.0 },
+			{ "pvp_allowed", false },
+			{ "pvp_power_normalise_factor", 0.0 },
+			{ "keep_inventory_on_death", false },
+			{ "keep_equipment_on_death", false },
+			{ "player_level_difference_see_divine", 1000 },
+			{ "respawn_time", 10.0 },
+			{ "respawn_minimum_distance", 100.0 },
+			{ "can_respawn_in_faction", true },
+			{ "npc_forget_aggro_on_respawn", false },
+			{ "new_player_distance_from_activity", 1000.0 },
+			{ "new_player_starting_level", 10 },
+			{ "new_player_starting_economy", 0.0 },
+			{ "new_player_area_maximum_danger", 2 },
 
-		entity.modified<sim::CConfig>();
+			// Multiplayer
+			{ "max_players", 1 },
+			{ "use_player_roles", false },
+			{ "allow_chat", true },
+			{ "enable_profanity_filter", true },
+			{ "allow_external_character_profile", false },
+			{ "allow_external_schematics", false },
+			{ "use_accounts", false },
+			{ "use_blacklist", false },
+			{ "use_whitelist", false },
+			{ "enable_area_claiming", true },
+			{ "allow_area_overclaim", false },
+			{ "boss_difficulty_increase_per_player", 50.0 },
+		};
 	}
 
 	flecs::entity CreateNewUniverse(flecs::world& world, const godot::StringName& path)
@@ -46,7 +105,7 @@ namespace voxel_game::universe
 		universe_entity.emplace<sim::CPath>(path);
 		universe_entity.add<universe::CWorld>();
 
-		InitializeUniverseConfig(universe_entity, path.path_join("config.json"));
+		sim::InitializeConfig(universe_entity, path.path_join("config.json"), config_defaults);
 
 		spatial3d::CWorld& spatial_world = universe_entity.ensure<spatial3d::CWorld>();
 
@@ -159,6 +218,8 @@ namespace voxel_game::universe
 		world.import<spatial3d::Components>();
 		world.import<universe::Components>();
 		world.import<galaxy::Prefabs>();
+
+		InitializeConfigDefaults();
 
 		spatial3d::NodeType::RegisterType<Node>();
 		spatial3d::ScaleType::RegisterType<Scale>();
