@@ -3,6 +3,8 @@
 
 #include "Render/RenderComponents.h"
 
+#include "Player/PlayerModule.h"
+
 #include "Galaxy/GalaxyModule.h"
 
 namespace voxel_game
@@ -56,9 +58,10 @@ namespace voxel_game
 
 		m_galaxy_entity = galaxy::CreateNewSimulatedGalaxy(m_world, path, m_universe_entity);
 
-		// Implement player module
-		// m_player_entity = player::CreateNewEntity(m_world, m_galaxy_entity, "localuser");
-		m_player_entity = ecs_new(m_world);
+		m_player_entity = player::CreateLocalPlayer(m_world, m_galaxy_entity, "localuser");
+
+		/*
+		m_avatar_entity = player::GetAvatar(m_world, m_player_entity);
 
 		flecs::entity_t world_entity = ecs_get_parent(m_world, m_player_entity);
 
@@ -67,6 +70,7 @@ namespace voxel_game
 			m_world_entities.push_front(world_entity);
 			world_entity = ecs_get_parent(m_world, world_entity);
 		}
+		*/
 
 		QueueSignal(k_signals->connected_to_galaxy);
 	}
