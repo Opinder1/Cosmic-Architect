@@ -20,7 +20,6 @@ namespace voxel_game
     struct RDivinity
     {
         uint16_t divinity_power;
-        bool has_godhood;
     };
 
     struct CChaotic
