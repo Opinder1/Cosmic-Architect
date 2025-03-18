@@ -46,7 +46,7 @@ def get_level_bodysize_multi(level):
     a = 2 ** (base / 50)
     b = 1.65 ** (level / 50)
 
-    return a + b - 1
+    return round(a + b - 1, 2)
 
 def approx_num_per_singularity(level):
     singularity_realm = get_level_realm(1000)
@@ -79,30 +79,6 @@ def get_median_child_level(parent1_level, parent2_level):
     else:
         return round(min(level, 499)) # Can't give birth to immortals
 
-def print_levels():
-    for i in range(0, 1000, 10):
-        print("{:4}-{:<4}: {:10}-{:<10}".format(
-            i, i + 9,
-            get_level_power_multi(i), get_level_power_multi(i + 9)
-        ))
-            
-    print()
-
-def print_level_xps():
-    for i in range(0, 1000, 10):
-        print("{:4}-{:<4}: {:10}-{:<10} {:10}-{:<10}".format(
-            i, i + 9,
-            get_level_xp(i), get_level_xp(i + 9),
-            get_level_total_xp(i), get_level_total_xp(i + 9)
-        ))
-
-def print_level_bodysize():
-    for i in range(0, 1001, 10):
-        print("{:4}-{:<4}: {:10}-{:<10}".format(
-            i, i + 9,
-            get_level_bodysize_multi(i), get_level_bodysize_multi(i + 9)
-        ))
-
 def print_nums_per_singularity():
     num_mortals = sum([approx_num_per_singularity(i) for i in range(0, 100)])
     num_trancendants = sum([approx_num_per_singularity(i) for i in range(100, 250)])
@@ -128,20 +104,32 @@ def print_nums_per_singularity():
     print("mortals per trancendant:", num_mortals / num_trancendants)
           
     print()
-    
-    for i in range(0, 100):
-        c = sum([approx_num_per_singularity(i2) for i2 in range(i * 10, (i+1) * 10)])
-        print("{:4}:{:20}".format(i, c))
 
+def print_levels():
+    for i in range(0, 1000, 10):
+        sum_per_sing = sum([approx_num_per_singularity(i2) for i2 in range(i, i + 10)])
+        
+        print("{:4}-{:<4}: {:20} {:10}-{:<10} {:10}-{:<10} {:10}-{:<10} {:10}-{:<10}".format(
+            i, i + 9,
+
+            sum_per_sing,
+            
+            get_level_power_multi(i), get_level_power_multi(i + 9),
+            
+            get_level_xp(i), get_level_xp(i + 9),
+            get_level_total_xp(i), get_level_total_xp(i + 9),
+            
+            get_level_bodysize_multi(i), get_level_bodysize_multi(i + 9)
+        ))
+            
+    print()
+        
 def print_level_children():
     levels = [10, 99, 100, 249, 250, 499, 500, 749, 750, 999, 1000]
     
     for level in levels:
-        for level2 in levels:
-            print("{} + {} = {}".format(level, level2, get_median_child_level(level, level2)))
+        print("{} + {} = {}".format(level, level, get_median_child_level(level, level)))
 
-#print_levels()
-#print_level_xps()
-print_level_bodysize()
-#print_nums_per_singularity()
+print_nums_per_singularity()
+print_levels()
 #print_level_children()
