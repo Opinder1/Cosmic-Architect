@@ -4,10 +4,10 @@
 
 #include "Simulation/SimulationServer.h"
 
-#include "Util/Debug.h"
-#include "Util/UUID.h"
+#include "Util/GodotUUID.h"
 #include "Util/GodotMemory.h"
 #include "Util/SmallVector.h"
+#include "Util/Debug.h"
 
 #include <godot_cpp/variant/rid.hpp>
 #include <godot_cpp/variant/dictionary.hpp>

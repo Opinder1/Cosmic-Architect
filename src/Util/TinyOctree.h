@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VectorOperators.h"
+#include "GodotOperators.h"
 #include "Debug.h"
 
 #include <godot_cpp/variant/vector3i.hpp>

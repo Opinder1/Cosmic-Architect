@@ -1,4 +1,4 @@
-#include "UUID.h"
+#include "GodotUUID.h"
 
 size_t UUIDHash::operator()(const UUID& uuid) const
 {

@@ -3,10 +3,10 @@
 #include "Commands/TypedCommandBuffer.h"
 
 #include "Util/GodotHash.h"
+#include "Util/GodotUUID.h"
 #include "Util/Util.h"
 #include "Util/PerThread.h"
 #include "Util/Debug.h"
-#include "Util/UUID.h"
 
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/string_name.hpp>

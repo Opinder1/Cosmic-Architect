@@ -1,4 +1,4 @@
-#include "PropertyMacros.h"
+#include "GodotPropertyMacros.h"
 
 #include <godot_cpp/core/type_info.hpp>
 

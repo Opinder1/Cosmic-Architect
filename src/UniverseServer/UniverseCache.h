@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Util/UUID.h"
+#include "Util/GodotUUID.h"
 #include "Util/PerThread.h"
 #include "Util/Debug.h"
 #include "Util/GodotHash.h"

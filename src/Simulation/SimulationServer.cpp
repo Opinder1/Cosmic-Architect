@@ -3,7 +3,7 @@
 #include "Commands/CommandServer.h"
 
 #include "Util/Debug.h"
-#include "Util/PropertyMacros.h"
+#include "Util/GodotPropertyMacros.h"
 
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/type_info.hpp>
