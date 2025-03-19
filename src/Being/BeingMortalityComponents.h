@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Util/Time.h"
+#include "Util/Util.h"
 
 namespace voxel_game
 {
@@ -50,8 +50,15 @@ namespace voxel_game
 		uint16_t health;
 	};
 
+	struct CDead
+	{
+		Clock::time_point time_of_death;
+	};
+
+	// Relationship to a status effect entity. Can have multiple
 	struct RStatusEffect
 	{
+		Clock::time_point time_of_application;
 		uint8_t effect_amount;
 	};
 

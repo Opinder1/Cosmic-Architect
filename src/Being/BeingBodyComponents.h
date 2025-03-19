@@ -1,5 +1,10 @@
 #pragma once
 
+#include <godot_cpp/variant/quaternion.hpp>
+
+#include <flecs/flecs.h>
+
+#include <vector>
 #include <cstdint>
 
 namespace voxel_game
@@ -10,6 +15,19 @@ namespace voxel_game
 		uint8_t sight_distance;
 		uint16_t strength;
 		uint16_t body_size;
+	};
+
+	// Direction the entity is facing.
+	struct CFacing
+	{
+		godot::Quaternion direction;
+		float fov;
+	};
+
+	// How far the entity can sense either visually, vibration, smell or spiritually (6th sense)
+	struct CSense
+	{
+		float sense_distance;
 	};
 
 	struct CHumanoid
@@ -25,21 +43,6 @@ namespace voxel_game
 	struct CVirtualBody
 	{
 		uint16_t virtual_presence;
-	};
-
-	struct RSpecialEyes
-	{
-
-	};
-
-	struct RCyborgImplant
-	{
-
-	};
-
-	struct REquipment
-	{
-
 	};
 
 	struct CBeast
@@ -95,5 +98,23 @@ namespace voxel_game
 	struct CVirtualLifeform
 	{
 
+	};
+
+	// Special eyes that a being can have
+	struct CSpecialEyes
+	{
+
+	};
+
+	// An implant that a species has. Can have multiple
+	struct CCyborgImplants
+	{
+		std::vector<flecs::entity_t> implants;
+	};
+
+	// An item being worn by a species. Can have multiple
+	struct CEquipment
+	{
+		std::vector<flecs::entity_t> equipment;
 	};
 }

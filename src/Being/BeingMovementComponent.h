@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Util/Time.h"
+#include "Util/Util.h"
 
 namespace voxel_game
 {
