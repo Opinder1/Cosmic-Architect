@@ -4,52 +4,52 @@
 
 namespace voxel_game::voxel
 {
-	struct BlockTypeComponent {};
+	struct CBlockType {};
 
-	struct BlockMassComponent
+	struct CBlockMass
 	{
 		uint32_t mass = 0;
 	};
 
-	struct BlockBreakableComponent
+	struct CBlockBreakable
 	{
 		uint32_t tool_strength_required = 0;
 	};
 
-	struct BlockPlaceableComponent {};
+	struct CBlockPlaceable {};
 
-	struct BlockToughnessComponent
+	struct CBlockToughness
 	{
 		uint32_t toughness = 0;
 	};
 
-	struct BlockResistanceComponent
+	struct CBlockResistance
 	{
 		uint32_t explosion_resistance = 0;
 	};
 
-	struct BlockCombustibleComponent
+	struct CBlockCombustible
 	{
 		uint8_t burn_time = 0;
 	};
 
-	struct BlockDroppableComponent
+	struct CBlockDroppable
 	{
 		flecs::entity_t drop_type = 0;
 	};
 
-	struct BlockLiquidComponent
+	struct CBlockLiquid
 	{
 		uint32_t flow_rate = 0;
 		uint32_t swim_resistance = 0;
 	};
 
-	struct BlockTemperatureComponent
+	struct CBlockTemperature
 	{
 		int32_t temperature = 0;
 	};
 
-	struct BlockAfflicingComponent
+	struct CBlockAfflicing
 	{
 		flecs::entity_t effect = 0;
 	};

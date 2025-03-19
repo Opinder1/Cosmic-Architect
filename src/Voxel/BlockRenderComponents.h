@@ -7,27 +7,27 @@
 
 namespace voxel_game::voxel
 {
-	struct BlockColorComponent
+	struct CBlockColor
 	{
 		godot::Color color;
 	};
 
-	struct BlockTextureComponent
+	struct CBlockTexture
 	{
 		uint64_t texture_id = 0;
 	};
 
-	struct BlockAnimatedComponent
+	struct CBlockAnimated
 	{
 		uint8_t frame_count = 0;
 	};
 
-	struct BlockCustomTextureComponent
+	struct CBlockCustomTexture
 	{
 		godot::Ref<godot::Texture> texture;
 	};
 
-	struct BlockModelComponent
+	struct CBlockModel
 	{
 		godot::Ref<godot::Mesh> texture;
 	};
