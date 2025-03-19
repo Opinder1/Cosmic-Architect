@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Util/Hash.h"
+#include "Util/GodotHash.h"
 
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/variant.hpp>

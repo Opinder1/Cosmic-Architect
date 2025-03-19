@@ -2,7 +2,7 @@
 
 #include "Commands/TypedCommandBuffer.h"
 
-#include "Util/Hash.h"
+#include "Util/GodotHash.h"
 #include "Util/Util.h"
 #include "Util/PerThread.h"
 #include "Util/Debug.h"

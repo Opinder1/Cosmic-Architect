@@ -3,7 +3,7 @@
 #include "Util/UUID.h"
 #include "Util/PerThread.h"
 #include "Util/Debug.h"
-#include "Util/Hash.h"
+#include "Util/GodotHash.h"
 
 #include <godot_cpp/variant/dictionary.hpp>
 
