@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Util/UUID.h"
 #include "Util/Util.h"
 #include "Util/PerThread.h"
 #include "Util/SmallVector.h"
@@ -10,6 +11,8 @@
 
 #include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
+
+#include <robin_hood/robin_hood.h>
 
 #include <flecs/flecs.h>
 
@@ -49,6 +52,16 @@ namespace voxel_game::sim
 	struct CThreadWorker
 	{
 		size_t index;
+	};
+
+	struct CUUID
+	{
+		UUID id;
+	};
+
+	struct CUUIDDict
+	{
+		robin_hood::unordered_map<UUID, flecs::entity_t, UUIDHash> loaded_entities;
 	};
 
 	class ThreadEntityPool

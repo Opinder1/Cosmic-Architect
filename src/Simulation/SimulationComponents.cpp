@@ -14,6 +14,8 @@ namespace voxel_game::sim
 		world.component<CConfig>();
 		world.component<CThreadWorker>();
 		world.component<CEntityPools>();
+		world.component<CUUID>();
+		world.component<CUUIDDict>();
 	}
 
 	ThreadEntityPool::ThreadEntityPool()

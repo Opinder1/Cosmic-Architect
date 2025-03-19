@@ -1,7 +1,5 @@
 #pragma once
 
-#include "UUID.h"
-
 #include <godot_cpp/variant/color.hpp>
 #include <godot_cpp/variant/aabb.hpp>
 #include <godot_cpp/variant/basis.hpp>
@@ -30,11 +28,6 @@ struct ByteHash
     {
         return robin_hood::hash_bytes(&vec, sizeof(T));
     }
-};
-
-struct UUIDHash
-{
-    size_t operator()(const UUID&) const;
 };
 
 namespace robin_hood
