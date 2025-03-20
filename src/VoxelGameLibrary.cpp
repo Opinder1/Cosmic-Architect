@@ -136,7 +136,7 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 		godot::ClassDB::register_class<voxel_game::CommandWriter>();
 		godot::ClassDB::register_class<voxel_game::CommandServer>();
 		godot::ClassDB::register_class<voxel_game::rendering::AllocatorServer>();
-		godot::ClassDB::register_class<voxel_game::SimulationServer>();
+		godot::ClassDB::register_abstract_class<voxel_game::SimulationServer>();
 		godot::ClassDB::register_class<voxel_game::UniverseServer>();
 
 		godot::Engine::get_singleton()->register_singleton("CommandServer", voxel_game::CommandServer::get_singleton());

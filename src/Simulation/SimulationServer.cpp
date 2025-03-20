@@ -129,38 +129,6 @@ namespace voxel_game
 		m_state.store(State::Unloaded);
 	}
 
-	bool SimulationServer::CanSimulationStart()
-	{
-		bool should_load = false;
-		GDVIRTUAL_CALL(_can_simulation_start, should_load);
-		return should_load;
-	}
-
-	void SimulationServer::DoSimulationLoad()
-	{
-		GDVIRTUAL_CALL(_do_simulation_load);
-	}
-
-	void SimulationServer::DoSimulationUnload()
-	{
-		GDVIRTUAL_CALL(_do_simulation_unload);
-	}
-
-	bool SimulationServer::DoSimulationProgress(real_t delta)
-	{
-		bool keep_running = false;
-		GDVIRTUAL_CALL(_simulation_progress, delta, keep_running);
-		return keep_running;
-	}
-
-	void SimulationServer::DoSimulationThreadProgress()
-	{
-		if (!GDVIRTUAL_CALL(_simulation_thread_progress))
-		{
-			std::this_thread::yield(); // Avoid eating up tons of cpu running the progress loop constantly
-		}
-	}
-
 	void SimulationServer::_bind_methods()
 	{
 		BIND_ENUM_CONSTANT(THREAD_MODE_SINGLE_THREADED);
@@ -170,12 +138,6 @@ namespace voxel_game
 		BIND_METHOD(godot::D_METHOD("stop_simulation"), &SimulationServer::StopSimulation);
 		BIND_METHOD(godot::D_METHOD("is_threaded"), &SimulationServer::IsThreaded);
 		BIND_METHOD(godot::D_METHOD("progress", "delta"), &SimulationServer::Progress);
-
-		GDVIRTUAL_BIND(_can_simulation_start);
-		GDVIRTUAL_BIND(_do_simulation_load);
-		GDVIRTUAL_BIND(_do_simulation_unload);
-		GDVIRTUAL_BIND(_simulation_progress, "delta");
-		GDVIRTUAL_BIND(_simulation_thread_progress);
 
 		ADD_SIGNAL(godot::MethodInfo("load_state_changed", ENUM_PROPERTY("state", SimulationServer::LoadState)));
 	}

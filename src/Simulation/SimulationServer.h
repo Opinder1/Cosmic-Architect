@@ -7,6 +7,7 @@
 
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/classes/object.hpp>
+#include <godot_cpp/classes/global_constants_binds.hpp>
 
 #include <godot_cpp/core/gdvirtual.gen.inc>
 
@@ -64,19 +65,19 @@ namespace voxel_game
 		// If the following methods are overridden then the script overrides will no longer work.
 
 		// Control if the simulation will start or not
-		virtual bool CanSimulationStart();
+		virtual bool CanSimulationStart() = 0;
 
 		// Called when initializing the simulation. In threading mode will be called on the worker thread.
-		virtual void DoSimulationLoad();
+		virtual void DoSimulationLoad() = 0;
 
 		// Called when initializing the simulation. In threading mode will be called on the worker thread.
-		virtual void DoSimulationUnload();
+		virtual void DoSimulationUnload() = 0;
 
 		// Called on the thread that calls Progress()
-		virtual bool DoSimulationProgress(real_t delta);
+		virtual bool DoSimulationProgress(real_t delta) = 0;
 
 		// Called on the simulations worker thread if threading is enabled
-		virtual void DoSimulationThreadProgress();
+		virtual void DoSimulationThreadProgress() = 0;
 
 		// Queue a signal to be broadcast to the main thread. Call this on the simulation thread
 		template<class... Args>
@@ -88,12 +89,6 @@ namespace voxel_game
 
 	private:
 		void ThreadLoop();
-
-		GDVIRTUAL0R(bool, _can_simulation_start);
-		GDVIRTUAL0(_do_simulation_load);
-		GDVIRTUAL0(_do_simulation_unload);
-		GDVIRTUAL1R(bool, _simulation_progress, real_t);
-		GDVIRTUAL0(_simulation_thread_progress);
 
 	public:
 		static void _bind_methods();
