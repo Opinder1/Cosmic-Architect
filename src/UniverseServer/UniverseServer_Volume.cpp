@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseServer::GetVolumeInfo(const UUID& volume_id)
+	godot::Dictionary UniverseServer::GetVolumeInfo(const ID& volume_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		
@@ -19,7 +19,7 @@ namespace voxel_game
 		}
 	}
 
-	godot::Dictionary UniverseServer::GetBlockInfo(const UUID& volume_id, const godot::Vector4i& position)
+	godot::Dictionary UniverseServer::GetBlockInfo(const ID& volume_id, const godot::Vector4i& position)
 	{
 		godot::Dictionary volume = GetVolumeInfo(volume_id);
 
@@ -38,7 +38,7 @@ namespace voxel_game
 		return blocks.find_key(position);
 	}
 
-	void UniverseServer::PlaceBlock(const UUID& volume_id, const godot::Vector4i& position, const UUID& block_id, const godot::Dictionary& block_data)
+	void UniverseServer::PlaceBlock(const ID& volume_id, const godot::Vector4i& position, const ID& block_id, const godot::Dictionary& block_data)
 	{
 		if (DeferCommand<&UniverseServer::PlaceBlock>(volume_id, position, block_id, block_data))
 		{
@@ -46,7 +46,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::FillBlocks(const UUID& volume_id, const godot::Vector4i& position_first, const godot::Vector4i& position_second, const UUID& block_id, uint32_t block_data)
+	void UniverseServer::FillBlocks(const ID& volume_id, const godot::Vector4i& position_first, const godot::Vector4i& position_second, const ID& block_id, uint32_t block_data)
 	{
 		if (DeferCommand<&UniverseServer::FillBlocks>(volume_id, position_first, position_second, block_id, block_data))
 		{
@@ -54,7 +54,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::PlaceBlockInNewVolume(const godot::Vector4& fragment_position, const UUID& block_id, const godot::Dictionary& block_data)
+	void UniverseServer::PlaceBlockInNewVolume(const godot::Vector4& fragment_position, const ID& block_id, const godot::Dictionary& block_data)
 	{
 		if (DeferCommand<&UniverseServer::PlaceBlockInNewVolume>(fragment_position, block_id, block_data))
 		{
@@ -62,7 +62,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::InteractBlock(const UUID& volume_id, const godot::Vector4i& position, const godot::Dictionary& interaction)
+	void UniverseServer::InteractBlock(const ID& volume_id, const godot::Vector4i& position, const godot::Dictionary& interaction)
 	{
 		if (DeferCommand<&UniverseServer::InteractBlock>(volume_id, position, interaction))
 		{
@@ -70,7 +70,7 @@ namespace voxel_game
 		}
 	}
 
-	godot::Vector4i UniverseServer::GetEntityPositionInVolume(const UUID& volume_id, const UUID& entity_id)
+	godot::Vector4i UniverseServer::GetEntityPositionInVolume(const ID& volume_id, const ID& entity_id)
 	{
 		godot::Dictionary volume = GetVolumeInfo(volume_id);
 
@@ -89,7 +89,7 @@ namespace voxel_game
 		return entity_positions.find_key(entity_id);
 	}
 
-	godot::Vector4i UniverseServer::FragmentPositionToVolumePosition(const UUID& volume_id, const godot::Vector4& fragment_position)
+	godot::Vector4i UniverseServer::FragmentPositionToVolumePosition(const ID& volume_id, const godot::Vector4& fragment_position)
 	{
 		godot::Dictionary volume = GetVolumeInfo(volume_id);
 
@@ -107,7 +107,7 @@ namespace voxel_game
 		return godot::Vector4i(volume_position.x, volume_position.y, volume_position.z, fragment_position.w);
 	}
 
-	godot::Vector4 UniverseServer::VolumePositionToFragmentPosition(const UUID& volume_id, const godot::Vector4i& volume_position)
+	godot::Vector4 UniverseServer::VolumePositionToFragmentPosition(const ID& volume_id, const godot::Vector4i& volume_position)
 	{
 		godot::Dictionary volume = GetVolumeInfo(volume_id);
 

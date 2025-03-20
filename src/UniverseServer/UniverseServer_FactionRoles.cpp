@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseServer::GetRoleInfo(const UUID& role_id)
+	godot::Dictionary UniverseServer::GetRoleInfo(const ID& role_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		
@@ -19,7 +19,7 @@ namespace voxel_game
 		}
 	}
 
-	godot::Dictionary UniverseServer::GetPermissionInfo(const UUID& permission_id)
+	godot::Dictionary UniverseServer::GetPermissionInfo(const ID& permission_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 
@@ -35,26 +35,26 @@ namespace voxel_game
 		}
 	}
 
-	UUID UniverseServer::GetEntityRole(const UUID& faction_id, const UUID& entity_id)
+	ID UniverseServer::GetEntityRole(const ID& faction_id, const ID& entity_id)
 	{
 		godot::Dictionary entity = GetEntityInfo(entity_id);
 
 		if (entity.is_empty())
 		{
-			return UUID{};
+			return ID{};
 		}
 
 		godot::Dictionary entity_factions = entity.find_key("factions");
 		
 		if (entity_factions.is_empty())
 		{
-			return UUID{};
+			return ID{};
 		}
 		
 		return entity_factions.find_key(faction_id);
 	}
 
-	void UniverseServer::AddFactionRole(const UUID& faction_id, const UUID& role_id, const godot::Dictionary& role_info)
+	void UniverseServer::AddFactionRole(const ID& faction_id, const ID& role_id, const godot::Dictionary& role_info)
 	{
 		if (DeferCommand<&UniverseServer::AddFactionRole>(faction_id, role_id, role_info))
 		{
@@ -62,7 +62,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::RemoveFactionRole(const UUID& faction_id, const UUID& role_id)
+	void UniverseServer::RemoveFactionRole(const ID& faction_id, const ID& role_id)
 	{
 		if (DeferCommand<&UniverseServer::RemoveFactionRole>(faction_id, role_id))
 		{
@@ -70,7 +70,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::ModifyFactionRole(const UUID& faction_id, const UUID& role_id, const godot::Dictionary& role_info)
+	void UniverseServer::ModifyFactionRole(const ID& faction_id, const ID& role_id, const godot::Dictionary& role_info)
 	{
 		if (DeferCommand<&UniverseServer::ModifyFactionRole>(faction_id, role_id, role_info))
 		{
@@ -78,7 +78,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::AddPermissionToRole(const UUID& faction_id, const UUID& role_id, const UUID& permission_id)
+	void UniverseServer::AddPermissionToRole(const ID& faction_id, const ID& role_id, const ID& permission_id)
 	{
 		if (DeferCommand<&UniverseServer::AddPermissionToRole>(faction_id, role_id, permission_id))
 		{
@@ -86,7 +86,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::RemovePermissionFromRole(const UUID& faction_id, const UUID& role_id, const UUID& permission_id)
+	void UniverseServer::RemovePermissionFromRole(const ID& faction_id, const ID& role_id, const ID& permission_id)
 	{
 		if (DeferCommand<&UniverseServer::RemovePermissionFromRole>(faction_id, role_id, permission_id))
 		{
@@ -94,7 +94,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::SetEntityRole(const UUID& faction_id, const UUID& entity_id, const UUID& role_id)
+	void UniverseServer::SetEntityRole(const ID& faction_id, const ID& entity_id, const ID& role_id)
 	{
 		if (DeferCommand<&UniverseServer::SetEntityRole>(faction_id, entity_id, role_id))
 		{
@@ -102,13 +102,13 @@ namespace voxel_game
 		}
 	}
 
-	bool UniverseServer::EntityHasPermission(const UUID& faction_id, const UUID& entity_id, const UUID& permission_id)
+	bool UniverseServer::EntityHasPermission(const ID& faction_id, const ID& entity_id, const ID& permission_id)
 	{
 		// TODO: Have some better return value than just a bool so we can also have an error return value
 
-		UUID entity_role = GetEntityRole(faction_id, entity_id);
+		ID entity_role = GetEntityRole(faction_id, entity_id);
 
-		if (entity_role == UUID())
+		if (entity_role == ID())
 		{
 			return false;
 		}
@@ -120,7 +120,7 @@ namespace voxel_game
 			return false;
 		}
 
-		UUIDVector permissions = faction_role.find_key("permissions");
+		IDVector permissions = faction_role.find_key("permissions");
 
 		if (permissions.is_empty())
 		{

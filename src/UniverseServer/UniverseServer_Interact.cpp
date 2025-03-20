@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	void UniverseServer::StoreEntity(const UUID& entity_id, const UUID& inventory_id)
+	void UniverseServer::StoreEntity(const ID& entity_id, const ID& inventory_id)
 	{
 		if (DeferCommand<&UniverseServer::StoreEntity>(entity_id, inventory_id))
 		{
@@ -11,7 +11,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::HoldBlock(const UUID& volume_id, const godot::Vector4i& position)
+	void UniverseServer::HoldBlock(const ID& volume_id, const godot::Vector4i& position)
 	{
 		if (DeferCommand<&UniverseServer::HoldBlock>(volume_id, position))
 		{
@@ -19,7 +19,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::HoldEntity(const UUID& entity_id)
+	void UniverseServer::HoldEntity(const ID& entity_id)
 	{
 		if (DeferCommand<&UniverseServer::HoldEntity>(entity_id))
 		{
@@ -35,7 +35,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::EquipItemFromWorld(const UUID& entity_id)
+	void UniverseServer::EquipItemFromWorld(const ID& entity_id)
 	{
 		if (DeferCommand<&UniverseServer::EquipItemFromWorld>(entity_id))
 		{
@@ -43,7 +43,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::EquipItemFromInventory(const UUID& entity_id, const UUID& inventory_id, uint64_t item_index)
+	void UniverseServer::EquipItemFromInventory(const ID& entity_id, const ID& inventory_id, uint64_t item_index)
 	{
 		if (DeferCommand<&UniverseServer::EquipItemFromInventory>(entity_id, inventory_id, item_index))
 		{
@@ -51,7 +51,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::DropEquipToWorld(const UUID& entity_id)
+	void UniverseServer::DropEquipToWorld(const ID& entity_id)
 	{
 		if (DeferCommand<&UniverseServer::DropEquipToWorld>(entity_id))
 		{
@@ -59,7 +59,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::UnequipItemToInventory(const UUID& entity_id, const UUID& inventory_id, uint64_t item_index)
+	void UniverseServer::UnequipItemToInventory(const ID& entity_id, const ID& inventory_id, uint64_t item_index)
 	{
 		if (DeferCommand<&UniverseServer::UnequipItemToInventory>(entity_id, inventory_id, item_index))
 		{
@@ -67,7 +67,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::SetLeftHandEquip(const UUID& entity_id)
+	void UniverseServer::SetLeftHandEquip(const ID& entity_id)
 	{
 		if (DeferCommand<&UniverseServer::SetLeftHandEquip>(entity_id))
 		{
@@ -75,7 +75,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::SetRightHandEquip(const UUID& entity_id)
+	void UniverseServer::SetRightHandEquip(const ID& entity_id)
 	{
 		if (DeferCommand<&UniverseServer::SetRightHandEquip>(entity_id))
 		{
@@ -83,7 +83,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::UseEquip(const UUID& entity_id, uint64_t hand)
+	void UniverseServer::UseEquip(const ID& entity_id, uint64_t hand)
 	{
 		if (DeferCommand<&UniverseServer::UseEquip>(entity_id, hand))
 		{
@@ -91,7 +91,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::ToggleEquip(const UUID& entity_id, bool toggled)
+	void UniverseServer::ToggleEquip(const ID& entity_id, bool toggled)
 	{
 		if (DeferCommand<&UniverseServer::ToggleEquip>(entity_id, toggled))
 		{
@@ -99,7 +99,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::RideEntity(const UUID& entity_id, uint64_t attachment_point)
+	void UniverseServer::RideEntity(const ID& entity_id, uint64_t attachment_point)
 	{
 		if (DeferCommand<&UniverseServer::RideEntity>(entity_id, attachment_point))
 		{
@@ -115,7 +115,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::ExitEntity(const UUID& entity_id)
+	void UniverseServer::ExitEntity(const ID& entity_id)
 	{
 		if (DeferCommand<&UniverseServer::ExitEntity>(entity_id))
 		{
@@ -123,7 +123,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::InteractWithEntity(const UUID& entity_id, const godot::Dictionary& interaction_info)
+	void UniverseServer::InteractWithEntity(const ID& entity_id, const godot::Dictionary& interaction_info)
 	{
 		if (DeferCommand<&UniverseServer::InteractWithEntity>(entity_id, interaction_info))
 		{

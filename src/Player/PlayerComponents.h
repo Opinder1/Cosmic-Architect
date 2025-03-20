@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Util/GodotUUID.h"
+#include "Util/UUID.h"
 
 #include <godot_cpp/variant/string.hpp>
 

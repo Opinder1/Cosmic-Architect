@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseServer::GetCultureInfo(const UUID& culture_id)
+	godot::Dictionary UniverseServer::GetCultureInfo(const ID& culture_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 

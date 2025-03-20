@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseServer::GetGalaxyObjectInfo(const UUID& galaxy_object_id)
+	godot::Dictionary UniverseServer::GetGalaxyObjectInfo(const ID& galaxy_object_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 
@@ -19,7 +19,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::RequestGalaxyObjectInfo(const UUID& entity_id)
+	void UniverseServer::RequestGalaxyObjectInfo(const ID& entity_id)
 	{
 		if (DeferCommand<&UniverseServer::RequestGalaxyObjectInfo>(entity_id))
 		{

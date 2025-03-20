@@ -3,13 +3,13 @@
 
 namespace voxel_game
 {
-	UUIDVector UniverseServer::GetFriends()
+	IDVector UniverseServer::GetFriends()
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.account_info.find_key("friends");
 	}
 
-	void UniverseServer::InviteFriend(const UUID& account_id)
+	void UniverseServer::InviteFriend(const ID& account_id)
 	{
 		if (DeferCommand<&UniverseServer::InviteFriend>(account_id))
 		{
@@ -17,7 +17,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::AcceptFreindInvite(const UUID& account_id)
+	void UniverseServer::AcceptFreindInvite(const ID& account_id)
 	{
 		if (DeferCommand<&UniverseServer::AcceptFreindInvite>(account_id))
 		{
@@ -25,7 +25,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::RemoveFriend(const UUID& account_id)
+	void UniverseServer::RemoveFriend(const ID& account_id)
 	{
 		if (DeferCommand<&UniverseServer::RemoveFriend>(account_id))
 		{

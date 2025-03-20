@@ -63,7 +63,7 @@ namespace voxel_game
 		InfoUpdate update;
 
 		update.info = UniverseCache::GetInfo(type);
-		update.key = UUID();
+		update.key = k_invalid_id;
 		update.value = info;
 
 		if (update.info == nullptr)
@@ -75,7 +75,7 @@ namespace voxel_game
 		AddInfoUpdate(std::move(update));
 	}
 
-	void UniverseCacheUpdater::UpdateInfoMap(UniverseCache::Type type, UUID id, const UniverseCache::Info& info)
+	void UniverseCacheUpdater::UpdateInfoMap(UniverseCache::Type type, ID id, const UniverseCache::Info& info)
 	{
 		InfoUpdate update;
 
@@ -116,7 +116,7 @@ namespace voxel_game
 
 		for (const InfoUpdate& update : updates_read)
 		{
-			if (update.key == UUID())
+			if (update.key == k_invalid_id)
 			{
 				(out.*update.info) = update.value;
 			}

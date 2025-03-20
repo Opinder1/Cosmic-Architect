@@ -10,7 +10,7 @@ namespace voxel_game
 		return m_info_cache.galaxy_info;
 	}
 
-	godot::Dictionary UniverseServer::GetGalaxyRegionInfo(const UUID& galaxy_region_id)
+	godot::Dictionary UniverseServer::GetGalaxyRegionInfo(const ID& galaxy_region_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 
@@ -26,13 +26,13 @@ namespace voxel_game
 		}
 	}
 
-	UUIDVector UniverseServer::GetCurrentGalaxyRegions()
+	IDVector UniverseServer::GetCurrentGalaxyRegions()
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.player_info.find_key("galaxy_regions");
 	}
 
-	void UniverseServer::RequestGalaxyRegionInfo(const UUID& entity_id)
+	void UniverseServer::RequestGalaxyRegionInfo(const ID& entity_id)
 	{
 		if (DeferCommand<&UniverseServer::RequestGalaxyRegionInfo>(entity_id))
 		{

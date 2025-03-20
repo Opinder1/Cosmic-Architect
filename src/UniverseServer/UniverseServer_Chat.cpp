@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseServer::GetChannelInfo(const UUID& channel_id)
+	godot::Dictionary UniverseServer::GetChannelInfo(const ID& channel_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 
@@ -19,7 +19,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::SendMessageToChannel(const godot::String& message, const UUID& channel_id)
+	void UniverseServer::SendMessageToChannel(const godot::String& message, const ID& channel_id)
 	{
 		if (DeferCommand<&UniverseServer::SendMessageToChannel>(message, channel_id))
 		{
@@ -27,7 +27,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::SendMessageToPlayer(const godot::String& message, const UUID& account_id)
+	void UniverseServer::SendMessageToPlayer(const godot::String& message, const ID& account_id)
 	{
 		if (DeferCommand<&UniverseServer::SendMessageToPlayer>(message, account_id))
 		{
@@ -35,12 +35,12 @@ namespace voxel_game
 		}
 	}
 
-	godot::Array UniverseServer::GetChatChannelHistory(const UUID& channel_id)
+	godot::Array UniverseServer::GetChatChannelHistory(const ID& channel_id)
 	{
 		return GetChannelInfo(channel_id).find_key("chat_history");
 	}
 
-	godot::Array UniverseServer::GetPrivateChatHistory(const UUID& account_id)
+	godot::Array UniverseServer::GetPrivateChatHistory(const ID& account_id)
 	{
 		godot::Dictionary private_chats;
 		

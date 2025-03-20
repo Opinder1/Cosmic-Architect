@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseServer::GetPlayerInfo(const UUID& player_id)
+	godot::Dictionary UniverseServer::GetPlayerInfo(const ID& player_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		

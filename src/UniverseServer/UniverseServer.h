@@ -4,7 +4,6 @@
 
 #include "Simulation/SimulationServer.h"
 
-#include "Util/GodotUUID.h"
 #include "Util/GodotMemory.h"
 #include "Util/SmallVector.h"
 #include "Util/Debug.h"
@@ -77,140 +76,140 @@ namespace voxel_game
 
 		// ####### Fragments (admin only) #######
 
-		godot::Dictionary GetFragmentInfo(const UUID& fragment_id);
-		UUID GetCurrentFragment();
-		void EnterFragment(const UUID& fragment_id, const godot::Dictionary& method); // We will have checked we can do so before hand
+		godot::Dictionary GetFragmentInfo(const ID& fragment_id);
+		ID GetCurrentFragment();
+		void EnterFragment(const ID& fragment_id, const godot::Dictionary& method); // We will have checked we can do so before hand
 
 		// ####### Galaxy Region #######
 
 		godot::Dictionary GetGalaxyInfo();
-		godot::Dictionary GetGalaxyRegionInfo(const UUID& galaxy_region_id);
-		void RequestGalaxyRegionInfo(const UUID& galaxy_region_id);
-		UUIDVector GetCurrentGalaxyRegions();
+		godot::Dictionary GetGalaxyRegionInfo(const ID& galaxy_region_id);
+		void RequestGalaxyRegionInfo(const ID& galaxy_region_id);
+		IDVector GetCurrentGalaxyRegions();
 
 		// ####### Galaxy Object (is volume) #######
 
-		godot::Dictionary GetGalaxyObjectInfo(const UUID& galaxy_object_id);
-		void RequestGalaxyObjectInfo(const UUID& entity_id);
+		godot::Dictionary GetGalaxyObjectInfo(const ID& galaxy_object_id);
+		void RequestGalaxyObjectInfo(const ID& entity_id);
 
 		// ####### Friends #######
 
-		UUIDVector GetFriends();
-		void InviteFriend(const UUID& account_id);
-		void AcceptFreindInvite(const UUID& account_id);
-		void RemoveFriend(const UUID& account_id);
+		IDVector GetFriends();
+		void InviteFriend(const ID& account_id);
+		void AcceptFreindInvite(const ID& account_id);
+		void RemoveFriend(const ID& account_id);
 
 		// ####### Chat #######
 
-		godot::Dictionary GetChannelInfo(const UUID& channel_id);
-		void SendMessageToChannel(const godot::String& message, const UUID& channel_id);
-		void SendMessageToPlayer(const godot::String& message, const UUID& account_id);
-		godot::Array GetChatChannelHistory(const UUID& channel_id);
-		godot::Array GetPrivateChatHistory(const UUID& account_id);
+		godot::Dictionary GetChannelInfo(const ID& channel_id);
+		void SendMessageToChannel(const godot::String& message, const ID& channel_id);
+		void SendMessageToPlayer(const godot::String& message, const ID& account_id);
+		godot::Array GetChatChannelHistory(const ID& channel_id);
+		godot::Array GetPrivateChatHistory(const ID& account_id);
 
 		// ####### Players #######
 
-		godot::Dictionary GetPlayerInfo(const UUID& player_id);
+		godot::Dictionary GetPlayerInfo(const ID& player_id);
 
 		// ####### Party #######
 
-		godot::Dictionary GetPartyInfo(const UUID& party_host_id);
+		godot::Dictionary GetPartyInfo(const ID& party_host_id);
 		void CreateParty();
-		void InviteToParty(const UUID& player_id);
-		void AcceptInvite(const UUID& player_id);
+		void InviteToParty(const ID& player_id);
+		void AcceptInvite(const ID& player_id);
 		void KickFromParty();
 		void LeaveParty();
-		UUIDVector GetPlayersInParty();
-		UUID GetPartyChatChannel();
+		IDVector GetPlayersInParty();
+		ID GetPartyChatChannel();
 
 		// ####### Entity #######
 
-		godot::Dictionary GetEntityInfo(const UUID& entity_id);
-		void RequestEntityInfo(const UUID& entity_id);
+		godot::Dictionary GetEntityInfo(const ID& entity_id);
+		void RequestEntityInfo(const ID& entity_id);
 
 		// ####### Volume (is entity) #######
 
-		godot::Dictionary GetVolumeInfo(const UUID& volume_id);
-		godot::Dictionary GetBlockInfo(const UUID& volume_id, const godot::Vector4i& position);
-		void PlaceBlock(const UUID& volume_id, const godot::Vector4i& position, const UUID& block_id, const godot::Dictionary& block_data);
-		void FillBlocks(const UUID& volume_id, const godot::Vector4i& position_first, const godot::Vector4i& position_second, const UUID& block_id, uint32_t block_data);
-		void PlaceBlockInNewVolume(const godot::Vector4& fragment_position, const UUID& block_id, const godot::Dictionary& block_data);
-		void InteractBlock(const UUID& volume_id, const godot::Vector4i& position, const godot::Dictionary& interaction);
-		godot::Vector4i GetEntityPositionInVolume(const UUID& volume_id, const UUID& entity_id);
-		godot::Vector4i FragmentPositionToVolumePosition(const UUID& volume_id, const godot::Vector4& fragment_position);
-		godot::Vector4 VolumePositionToFragmentPosition(const UUID& volume_id, const godot::Vector4i& volume_position);
+		godot::Dictionary GetVolumeInfo(const ID& volume_id);
+		godot::Dictionary GetBlockInfo(const ID& volume_id, const godot::Vector4i& position);
+		void PlaceBlock(const ID& volume_id, const godot::Vector4i& position, const ID& block_id, const godot::Dictionary& block_data);
+		void FillBlocks(const ID& volume_id, const godot::Vector4i& position_first, const godot::Vector4i& position_second, const ID& block_id, uint32_t block_data);
+		void PlaceBlockInNewVolume(const godot::Vector4& fragment_position, const ID& block_id, const godot::Dictionary& block_data);
+		void InteractBlock(const ID& volume_id, const godot::Vector4i& position, const godot::Dictionary& interaction);
+		godot::Vector4i GetEntityPositionInVolume(const ID& volume_id, const ID& entity_id);
+		godot::Vector4i FragmentPositionToVolumePosition(const ID& volume_id, const godot::Vector4& fragment_position);
+		godot::Vector4 VolumePositionToFragmentPosition(const ID& volume_id, const godot::Vector4i& volume_position);
 
 		// ####### Currency #######
 
-		godot::Dictionary GetCurrencyInfo(const UUID& currency_id);
-		godot::Dictionary GetBankInfo(const UUID& bank_id);
-		godot::Dictionary GetBankInterfaceInfo(const UUID& bank_interface_id);
-		godot::Dictionary GetGoodInfo(const UUID& good_id);
-		UUID GetUniversalCurrency();
-		UUID GetBankOfInterface(const UUID& bank_interface_id);
-		UUIDVector GetOwnedCurrencies();
-		double GetBalance(const UUID& currency_id);
-		void Withdraw(const UUID& currency_id, real_t amount, const UUID& bank_interface_id);
-		void Deposit(const UUID& currency_id, real_t amount, const UUID& bank_interface_id);
-		void Convert(const UUID& from_currency_id, const UUID& to_currency_id, real_t amount, const UUID& bank_interface_id);
-		void PayEntity(const UUID& currency_id, const UUID& entity_id, real_t amount, const UUID& bank_interface_id);
-		void BuyGoodWithCurrency(const UUID& good_id, const UUID& currency_id); // The currency may not be accepted
+		godot::Dictionary GetCurrencyInfo(const ID& currency_id);
+		godot::Dictionary GetBankInfo(const ID& bank_id);
+		godot::Dictionary GetBankInterfaceInfo(const ID& bank_interface_id);
+		godot::Dictionary GetGoodInfo(const ID& good_id);
+		ID GetUniversalCurrency();
+		ID GetBankOfInterface(const ID& bank_interface_id);
+		IDVector GetOwnedCurrencies();
+		double GetBalance(const ID& currency_id);
+		void Withdraw(const ID& currency_id, real_t amount, const ID& bank_interface_id);
+		void Deposit(const ID& currency_id, real_t amount, const ID& bank_interface_id);
+		void Convert(const ID& from_currency_id, const ID& to_currency_id, real_t amount, const ID& bank_interface_id);
+		void PayEntity(const ID& currency_id, const ID& entity_id, real_t amount, const ID& bank_interface_id);
+		void BuyGoodWithCurrency(const ID& good_id, const ID& currency_id); // The currency may not be accepted
 
 		// ####### Internet #######
 
-		godot::Dictionary GetInternetInfo(const UUID& internet_id);
-		godot::Dictionary GetWebsiteInfo(const UUID& website_id);
-		godot::Dictionary GetWebsitePageInfo(const UUID& website_page_id);
-		UUIDVector GetInternetWebsites(const UUID& internet_id);
-		UUIDVector GetWebsitePages(const UUID& website_id);
-		void StartInternet(const UUID& internet_id, const UUID& device_id);
+		godot::Dictionary GetInternetInfo(const ID& internet_id);
+		godot::Dictionary GetWebsiteInfo(const ID& website_id);
+		godot::Dictionary GetWebsitePageInfo(const ID& website_page_id);
+		IDVector GetInternetWebsites(const ID& internet_id);
+		IDVector GetWebsitePages(const ID& website_id);
+		void StartInternet(const ID& internet_id, const ID& device_id);
 		void StopInternet();
-		UUID GetCurrentInternet();
-		UUID GetCurrentInternetSite();
-		UUID GetCurrentInternetPage();
+		ID GetCurrentInternet();
+		ID GetCurrentInternetSite();
+		ID GetCurrentInternetPage();
 		void RequestInternetURL(const godot::String& internet_url);
 
 		// ####### Faction Roles #######
 
-		godot::Dictionary GetRoleInfo(const UUID& role_id);
-		godot::Dictionary GetPermissionInfo(const UUID& permission_id);
-		UUID GetEntityRole(const UUID& faction_id, const UUID& entity_id);
-		void AddFactionRole(const UUID& faction_id, const UUID& role_id, const godot::Dictionary& role_info);
-		void RemoveFactionRole(const UUID& faction_id, const UUID& role_id);
-		void ModifyFactionRole(const UUID& faction_id, const UUID& role_id, const godot::Dictionary& role_info);
-		void AddPermissionToRole(const UUID& faction_id, const UUID& role_id, const UUID& permission_id); // Only can do this if we have permissions
-		void RemovePermissionFromRole(const UUID& faction_id, const UUID& role_id, const UUID& permission_id); // Only can do this if we have permissions
-		void SetEntityRole(const UUID& faction_id, const UUID& entity_id, const UUID& role_id); // Only can do this if we have permissions
-		bool EntityHasPermission(const UUID& faction_id, const UUID& entity_id, const UUID& permission_id);
+		godot::Dictionary GetRoleInfo(const ID& role_id);
+		godot::Dictionary GetPermissionInfo(const ID& permission_id);
+		ID GetEntityRole(const ID& faction_id, const ID& entity_id);
+		void AddFactionRole(const ID& faction_id, const ID& role_id, const godot::Dictionary& role_info);
+		void RemoveFactionRole(const ID& faction_id, const ID& role_id);
+		void ModifyFactionRole(const ID& faction_id, const ID& role_id, const godot::Dictionary& role_info);
+		void AddPermissionToRole(const ID& faction_id, const ID& role_id, const ID& permission_id); // Only can do this if we have permissions
+		void RemovePermissionFromRole(const ID& faction_id, const ID& role_id, const ID& permission_id); // Only can do this if we have permissions
+		void SetEntityRole(const ID& faction_id, const ID& entity_id, const ID& role_id); // Only can do this if we have permissions
+		bool EntityHasPermission(const ID& faction_id, const ID& entity_id, const ID& permission_id);
 
 		// ####### Faction (is entity) #######
 
-		godot::Dictionary GetFactionInfo(const UUID& faction_id);
-		UUIDVector GetJoinedFactions();
-		void JoinFaction(const UUID& faction_id, const godot::Dictionary& request_info);
-		void LeaveFaction(const UUID& faction_id);
-		void InviteEntityToFaction(const UUID& faction_id, const UUID& entity_id);
-		void KickEntityFromFaction(const UUID& faction_id, const UUID& entity_id);
-		void AddChildFaction(const UUID& parent_faction_id, const UUID& child_faction_id);
-		void RemoveChildFaction(const UUID& faction_id);
-		void InviteChildFaction(const UUID& parent_faction_id, const UUID& child_faction_id);
-		void KickChildFaction(const UUID& faction_id);
+		godot::Dictionary GetFactionInfo(const ID& faction_id);
+		IDVector GetJoinedFactions();
+		void JoinFaction(const ID& faction_id, const godot::Dictionary& request_info);
+		void LeaveFaction(const ID& faction_id);
+		void InviteEntityToFaction(const ID& faction_id, const ID& entity_id);
+		void KickEntityFromFaction(const ID& faction_id, const ID& entity_id);
+		void AddChildFaction(const ID& parent_faction_id, const ID& child_faction_id);
+		void RemoveChildFaction(const ID& faction_id);
+		void InviteChildFaction(const ID& parent_faction_id, const ID& child_faction_id);
+		void KickChildFaction(const ID& faction_id);
 
 		// ####### Player Faction (is faction) #######
 
-		UUID GetGlobalPlayerFaction(); // Is a faction which only players are part of. Player factions are children of this
-		UUID GetPlayerFaction();
-		void RequestJoinPlayerFaction(const UUID& faction_id, const godot::String& message);
+		ID GetGlobalPlayerFaction(); // Is a faction which only players are part of. Player factions are children of this
+		ID GetPlayerFaction();
+		void RequestJoinPlayerFaction(const ID& faction_id, const godot::String& message);
 
 		// ####### Language #######
 
-		godot::Dictionary GetLanguageInfo(const UUID& language_id);
-		void GetLanguageTranslation(const UUID& language_id, const godot::StringName& string);
-		void GetLanguageString(const UUID& language_id, uint64_t string_id);
+		godot::Dictionary GetLanguageInfo(const ID& language_id);
+		void GetLanguageTranslation(const ID& language_id, const godot::StringName& string);
+		void GetLanguageString(const ID& language_id, uint64_t string_id);
 
 		// ####### Culture #######
 
-		godot::Dictionary GetCultureInfo(const UUID& culture_id);
+		godot::Dictionary GetCultureInfo(const ID& culture_id);
 
 		// ####### Religion (is culture) #######
 
@@ -239,58 +238,58 @@ namespace voxel_game
 
 		// ####### Looking at #######
 
-		UUID GetLookingAtEntity();
-		UUID GetLookingAtVolume();
+		ID GetLookingAtEntity();
+		ID GetLookingAtVolume();
 		godot::Vector4i GetLookingAtBlock();
 
 		// ####### Inventory #######
 
-		godot::Dictionary GetInventoryInfo(const UUID& inventory_id);
-		UUID GetInventory();
-		UUID GetInventoryItemEntity(const UUID& inventory_id, uint64_t item_index);
-		void TrashInventoryItem(const UUID& inventory_id, uint64_t item_index);
-		void MoveInventoryItem(const UUID& inventory_id, uint64_t from_item_index, uint64_t to_item_index);
-		void TransferInventoryItem(const UUID& from_inventory_id, uint64_t from_item_index, const UUID& to_inventory_id, uint64_t to_item_index);
-		void InteractWithInventoryItem(const UUID& inventory_id, uint64_t item_index, const godot::Dictionary& interaction_info);
+		godot::Dictionary GetInventoryInfo(const ID& inventory_id);
+		ID GetInventory();
+		ID GetInventoryItemEntity(const ID& inventory_id, uint64_t item_index);
+		void TrashInventoryItem(const ID& inventory_id, uint64_t item_index);
+		void MoveInventoryItem(const ID& inventory_id, uint64_t from_item_index, uint64_t to_item_index);
+		void TransferInventoryItem(const ID& from_inventory_id, uint64_t from_item_index, const ID& to_inventory_id, uint64_t to_item_index);
+		void InteractWithInventoryItem(const ID& inventory_id, uint64_t item_index, const godot::Dictionary& interaction_info);
 
 		// ####### Interact #######
 
-		void StoreEntity(const UUID& entity_id, const UUID& inventory_id);
-		void HoldBlock(const UUID& volume_id, const godot::Vector4i& position);
-		void HoldEntity(const UUID& entity_id);
+		void StoreEntity(const ID& entity_id, const ID& inventory_id);
+		void HoldBlock(const ID& volume_id, const godot::Vector4i& position);
+		void HoldEntity(const ID& entity_id);
 		void DropHeldEntity();
 
-		void EquipItemFromWorld(const UUID& entity_id);
-		void EquipItemFromInventory(const UUID& entity_id, const UUID& inventory_id, uint64_t item_index);
-		void DropEquipToWorld(const UUID& entity_id);
-		void UnequipItemToInventory(const UUID& entity_id, const UUID& inventory_id, uint64_t item_index);
-		void SetLeftHandEquip(const UUID& entity_id);
-		void SetRightHandEquip(const UUID& entity_id);
-		void UseEquip(const UUID& entity_id, uint64_t hand);
-		void ToggleEquip(const UUID& entity_id, bool toggled);
+		void EquipItemFromWorld(const ID& entity_id);
+		void EquipItemFromInventory(const ID& entity_id, const ID& inventory_id, uint64_t item_index);
+		void DropEquipToWorld(const ID& entity_id);
+		void UnequipItemToInventory(const ID& entity_id, const ID& inventory_id, uint64_t item_index);
+		void SetLeftHandEquip(const ID& entity_id);
+		void SetRightHandEquip(const ID& entity_id);
+		void UseEquip(const ID& entity_id, uint64_t hand);
+		void ToggleEquip(const ID& entity_id, bool toggled);
 
-		void RideEntity(const UUID& entity_id, uint64_t attachment_point);
+		void RideEntity(const ID& entity_id, uint64_t attachment_point);
 		void ChangeAttachmentPoint(uint64_t new_attachment_point);
-		void ExitEntity(const UUID& entity_id);
+		void ExitEntity(const ID& entity_id);
 
-		void InteractWithEntity(const UUID& entity_id, const godot::Dictionary& interaction_info);
+		void InteractWithEntity(const ID& entity_id, const godot::Dictionary& interaction_info);
 
 		// ####### Vehicle Control #######
 
-		void TriggerVehicleControl(const UUID& control_id);
-		void ToggleVehicleControl(const UUID& control_id, bool toggled);
-		void SetVehicleControl(const UUID& control_id, const godot::Variant& value);
+		void TriggerVehicleControl(const ID& control_id);
+		void ToggleVehicleControl(const ID& control_id, bool toggled);
+		void SetVehicleControl(const ID& control_id, const godot::Variant& value);
 
 		// ####### Abilities #######
 
-		godot::Dictionary GetAbilityInfo(const UUID& ability_id);
-		void ActivateAbility(const UUID& ability_id);
-		void ToggleAbility(const UUID& ability_id, bool toggled);
-		void SetPlayerSetting(const UUID& setting_id, const godot::Variant& value);
+		godot::Dictionary GetAbilityInfo(const ID& ability_id);
+		void ActivateAbility(const ID& ability_id);
+		void ToggleAbility(const ID& ability_id, bool toggled);
+		void SetPlayerSetting(const ID& setting_id, const godot::Variant& value);
 
 		// ####### Magic #######
 
-		godot::Dictionary GetSpellInfo(const UUID& spell_id);
+		godot::Dictionary GetSpellInfo(const ID& spell_id);
 		void UseSpell(uint64_t spell_index, const godot::Dictionary& params);
 
 		// ####### Godhood #######

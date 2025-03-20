@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseServer::GetFactionInfo(const UUID& faction_id)
+	godot::Dictionary UniverseServer::GetFactionInfo(const ID& faction_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 
@@ -19,13 +19,13 @@ namespace voxel_game
 		}
 	}
 
-	UUIDVector UniverseServer::GetJoinedFactions()
+	IDVector UniverseServer::GetJoinedFactions()
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.player_info.find_key("joined_factions");
 	}
 
-	void UniverseServer::JoinFaction(const UUID& faction_id, const godot::Dictionary& request_info)
+	void UniverseServer::JoinFaction(const ID& faction_id, const godot::Dictionary& request_info)
 	{
 		if (DeferCommand<&UniverseServer::JoinFaction>(faction_id, request_info))
 		{
@@ -33,7 +33,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::LeaveFaction(const UUID& faction_id)
+	void UniverseServer::LeaveFaction(const ID& faction_id)
 	{
 		if (DeferCommand<&UniverseServer::LeaveFaction>(faction_id))
 		{
@@ -41,7 +41,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::InviteEntityToFaction(const UUID& faction_id, const UUID& entity_id)
+	void UniverseServer::InviteEntityToFaction(const ID& faction_id, const ID& entity_id)
 	{
 		if (DeferCommand<&UniverseServer::InviteEntityToFaction>(faction_id, entity_id))
 		{
@@ -49,7 +49,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::KickEntityFromFaction(const UUID& faction_id, const UUID& entity_id)
+	void UniverseServer::KickEntityFromFaction(const ID& faction_id, const ID& entity_id)
 	{
 		if (DeferCommand<&UniverseServer::KickEntityFromFaction>(faction_id, entity_id))
 		{
@@ -57,7 +57,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::AddChildFaction(const UUID& parent_faction_id, const UUID& child_faction_id)
+	void UniverseServer::AddChildFaction(const ID& parent_faction_id, const ID& child_faction_id)
 	{
 		if (DeferCommand<&UniverseServer::AddChildFaction>(parent_faction_id, child_faction_id))
 		{
@@ -65,7 +65,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::RemoveChildFaction(const UUID& faction_id)
+	void UniverseServer::RemoveChildFaction(const ID& faction_id)
 	{
 		if (DeferCommand<&UniverseServer::RemoveChildFaction>(faction_id))
 		{
@@ -73,7 +73,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::InviteChildFaction(const UUID& parent_faction_id, const UUID& child_faction_id)
+	void UniverseServer::InviteChildFaction(const ID& parent_faction_id, const ID& child_faction_id)
 	{
 		if (DeferCommand<&UniverseServer::InviteChildFaction>(parent_faction_id, child_faction_id))
 		{
@@ -81,7 +81,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::KickChildFaction(const UUID& faction_id)
+	void UniverseServer::KickChildFaction(const ID& faction_id)
 	{
 		if (DeferCommand<&UniverseServer::KickChildFaction>(faction_id))
 		{

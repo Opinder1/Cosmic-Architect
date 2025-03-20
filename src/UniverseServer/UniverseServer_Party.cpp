@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseServer::GetPartyInfo(const UUID& party_host_id)
+	godot::Dictionary UniverseServer::GetPartyInfo(const ID& party_host_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		
@@ -27,7 +27,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::InviteToParty(const UUID& player_id)
+	void UniverseServer::InviteToParty(const ID& player_id)
 	{
 		if (DeferCommand<&UniverseServer::InviteToParty>(player_id))
 		{
@@ -35,7 +35,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::AcceptInvite(const UUID& player_id)
+	void UniverseServer::AcceptInvite(const ID& player_id)
 	{
 		if (DeferCommand<&UniverseServer::AcceptInvite>(player_id))
 		{
@@ -59,7 +59,7 @@ namespace voxel_game
 		}
 	}
 
-	UUIDVector UniverseServer::GetPlayersInParty()
+	IDVector UniverseServer::GetPlayersInParty()
 	{
 		godot::Dictionary party;
 
@@ -70,13 +70,13 @@ namespace voxel_game
 
 		if (party.is_empty())
 		{
-			return UUIDVector{};
+			return IDVector{};
 		}
 
 		return party.find_key("players");
 	}
 
-	UUID UniverseServer::GetPartyChatChannel()
+	ID UniverseServer::GetPartyChatChannel()
 	{
 		godot::Dictionary party;
 
@@ -87,7 +87,7 @@ namespace voxel_game
 
 		if (party.is_empty())
 		{
-			return UUID{};
+			return ID{};
 		}
 
 		return party.find_key("chat_channel");

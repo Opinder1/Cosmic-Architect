@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseServer::GetInventoryInfo(const UUID& inventory_id)
+	godot::Dictionary UniverseServer::GetInventoryInfo(const ID& inventory_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		
@@ -19,32 +19,32 @@ namespace voxel_game
 		}
 	}
 
-	UUID UniverseServer::GetInventory()
+	ID UniverseServer::GetInventory()
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.player_info.find_key("inventory");
 	}
 
-	UUID UniverseServer::GetInventoryItemEntity(const UUID& inventory_id, uint64_t item_index)
+	ID UniverseServer::GetInventoryItemEntity(const ID& inventory_id, uint64_t item_index)
 	{
 		godot::Dictionary inventory = GetInventoryInfo(inventory_id);
 
 		if (inventory.is_empty())
 		{
-			return UUID{};
+			return ID{};
 		}
 
 		godot::Array items = inventory.find_key("items");
 
 		if (items.size() <= item_index)
 		{
-			return UUID{};
+			return ID{};
 		}
 
 		return items[item_index];
 	}
 
-	void UniverseServer::TrashInventoryItem(const UUID& inventory_id, uint64_t item_index)
+	void UniverseServer::TrashInventoryItem(const ID& inventory_id, uint64_t item_index)
 	{
 		if (DeferCommand<&UniverseServer::TrashInventoryItem>(inventory_id, item_index))
 		{
@@ -52,7 +52,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::MoveInventoryItem(const UUID& inventory_id, uint64_t from_item_index, uint64_t to_item_index)
+	void UniverseServer::MoveInventoryItem(const ID& inventory_id, uint64_t from_item_index, uint64_t to_item_index)
 	{
 		if (DeferCommand<&UniverseServer::MoveInventoryItem>(inventory_id, from_item_index, to_item_index))
 		{
@@ -60,7 +60,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::TransferInventoryItem(const UUID& from_inventory_id, uint64_t from_item_index, const UUID& to_inventory_id, uint64_t to_item_index)
+	void UniverseServer::TransferInventoryItem(const ID& from_inventory_id, uint64_t from_item_index, const ID& to_inventory_id, uint64_t to_item_index)
 	{
 		if (DeferCommand<&UniverseServer::TransferInventoryItem>(from_inventory_id, from_item_index, to_inventory_id, to_item_index))
 		{
@@ -68,7 +68,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::InteractWithInventoryItem(const UUID& inventory_id, uint64_t item_index, const godot::Dictionary& interaction_info)
+	void UniverseServer::InteractWithInventoryItem(const ID& inventory_id, uint64_t item_index, const godot::Dictionary& interaction_info)
 	{
 		if (DeferCommand<&UniverseServer::InteractWithInventoryItem>(inventory_id, item_index, interaction_info))
 		{

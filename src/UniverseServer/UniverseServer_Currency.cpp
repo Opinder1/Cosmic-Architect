@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseServer::GetCurrencyInfo(const UUID& currency_id)
+	godot::Dictionary UniverseServer::GetCurrencyInfo(const ID& currency_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 
@@ -19,7 +19,7 @@ namespace voxel_game
 		}
 	}
 
-	godot::Dictionary UniverseServer::GetBankInfo(const UUID& bank_id)
+	godot::Dictionary UniverseServer::GetBankInfo(const ID& bank_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 
@@ -35,7 +35,7 @@ namespace voxel_game
 		}
 	}
 
-	godot::Dictionary UniverseServer::GetBankInterfaceInfo(const UUID& bank_interface_id)
+	godot::Dictionary UniverseServer::GetBankInterfaceInfo(const ID& bank_interface_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 
@@ -51,7 +51,7 @@ namespace voxel_game
 		}
 	}
 
-	godot::Dictionary UniverseServer::GetGoodInfo(const UUID& good_id)
+	godot::Dictionary UniverseServer::GetGoodInfo(const ID& good_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 
@@ -67,24 +67,24 @@ namespace voxel_game
 		}
 	}
 
-	UUID UniverseServer::GetUniversalCurrency()
+	ID UniverseServer::GetUniversalCurrency()
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.galaxy_info.find_key("universal_currency");
 	}
 
-	UUID UniverseServer::GetBankOfInterface(const UUID& bank_interface_id)
+	ID UniverseServer::GetBankOfInterface(const ID& bank_interface_id)
 	{
 		return GetBankInterfaceInfo(bank_interface_id).find_key("bank");
 	}
 
-	UUIDVector UniverseServer::GetOwnedCurrencies()
+	IDVector UniverseServer::GetOwnedCurrencies()
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.player_info.find_key("owned_currencies");
 	}
 
-	double UniverseServer::GetBalance(const UUID& currency_id)
+	double UniverseServer::GetBalance(const ID& currency_id)
 	{
 		godot::Dictionary balances;
 
@@ -101,7 +101,7 @@ namespace voxel_game
 		return balances.find_key(currency_id);
 	}
 
-	void UniverseServer::Withdraw(const UUID& currency_id, real_t amount, const UUID& bank_interface_id)
+	void UniverseServer::Withdraw(const ID& currency_id, real_t amount, const ID& bank_interface_id)
 	{
 		if (DeferCommand<&UniverseServer::Withdraw>(currency_id, amount, bank_interface_id))
 		{
@@ -109,7 +109,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::Deposit(const UUID& currency_id, real_t amount, const UUID& bank_interface_id)
+	void UniverseServer::Deposit(const ID& currency_id, real_t amount, const ID& bank_interface_id)
 	{
 		if (DeferCommand<&UniverseServer::Deposit>(currency_id, amount, bank_interface_id))
 		{
@@ -117,7 +117,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::Convert(const UUID& from_currency_id, const UUID& to_currency_id, real_t amount, const UUID& bank_interface_id)
+	void UniverseServer::Convert(const ID& from_currency_id, const ID& to_currency_id, real_t amount, const ID& bank_interface_id)
 	{
 		if (DeferCommand<&UniverseServer::Convert>(from_currency_id, to_currency_id, amount, bank_interface_id))
 		{
@@ -125,7 +125,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::PayEntity(const UUID& currency_id, const UUID& entity_id, real_t amount, const UUID& bank_interface_id)
+	void UniverseServer::PayEntity(const ID& currency_id, const ID& entity_id, real_t amount, const ID& bank_interface_id)
 	{
 		if (DeferCommand<&UniverseServer::PayEntity>(currency_id, entity_id, amount, bank_interface_id))
 		{
@@ -133,7 +133,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::BuyGoodWithCurrency(const UUID& good_id, const UUID& currency_id)
+	void UniverseServer::BuyGoodWithCurrency(const ID& good_id, const ID& currency_id)
 	{
 		if (DeferCommand<&UniverseServer::BuyGoodWithCurrency>(good_id, currency_id))
 		{

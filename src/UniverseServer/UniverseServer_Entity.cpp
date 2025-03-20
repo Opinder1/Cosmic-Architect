@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseServer::GetEntityInfo(const UUID& entity_id)
+	godot::Dictionary UniverseServer::GetEntityInfo(const ID& entity_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 
@@ -19,7 +19,7 @@ namespace voxel_game
 		}
 	}
 
-	void UniverseServer::RequestEntityInfo(const UUID& entity_id)
+	void UniverseServer::RequestEntityInfo(const ID& entity_id)
 	{
 		if (DeferCommand<&UniverseServer::RequestEntityInfo>(entity_id))
 		{

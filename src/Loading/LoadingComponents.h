@@ -2,7 +2,7 @@
 
 #include "ArchiveServer.h"
 
-#include "Util/GodotUUID.h"
+#include "Util/UUID.h"
 
 #include <godot_cpp/variant/string_name.hpp>
 

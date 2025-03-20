@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Util/GodotUUID.h"
 #include "Util/PerThread.h"
 #include "Util/Debug.h"
 #include "Util/GodotHash.h"
@@ -16,11 +15,16 @@
 
 namespace voxel_game
 {
+	using ID = int64_t; // Pass flecs::id_t as int64
+	using IDVector = godot::PackedInt64Array;
+
+	constexpr const ID k_invalid_id = 0;
+
 	// The cache for a UniverseSimulation that stores all cached objects to be read in godot code
 	struct UniverseCache
 	{
 		using Info = godot::Dictionary;
-		using InfoMap = robin_hood::unordered_flat_map<UUID, Info, UUIDHash>;
+		using InfoMap = robin_hood::unordered_flat_map<ID, Info>;
 
 		enum class Type
 		{
@@ -100,7 +104,7 @@ namespace voxel_game
 				UniverseCache::Info UniverseCache::* info = nullptr;
 				UniverseCache::InfoMap UniverseCache::* info_map;
 			};
-			UUID key;
+			ID key;
 			UniverseCache::Info value;
 		};
 
@@ -115,7 +119,7 @@ namespace voxel_game
 		void UpdateInfo(UniverseCache::Type type, const UniverseCache::Info& info);
 
 		// Update a info entry of a map type
-		void UpdateInfoMap(UniverseCache::Type type, UUID id, const UniverseCache::Info& info);
+		void UpdateInfoMap(UniverseCache::Type type, ID id, const UniverseCache::Info& info);
 
 		// Write the changes to the exchange buffer
 		void PublishUpdates();

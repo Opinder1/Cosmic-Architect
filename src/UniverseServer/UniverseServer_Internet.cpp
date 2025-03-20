@@ -3,7 +3,7 @@
 
 namespace voxel_game
 {
-	godot::Dictionary UniverseServer::GetInternetInfo(const UUID& internet_id)
+	godot::Dictionary UniverseServer::GetInternetInfo(const ID& internet_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		
@@ -19,7 +19,7 @@ namespace voxel_game
 		}
 	}
 
-	godot::Dictionary UniverseServer::GetWebsiteInfo(const UUID& website_id)
+	godot::Dictionary UniverseServer::GetWebsiteInfo(const ID& website_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		
@@ -35,7 +35,7 @@ namespace voxel_game
 		}
 	}
 
-	godot::Dictionary UniverseServer::GetWebsitePageInfo(const UUID& website_page_id)
+	godot::Dictionary UniverseServer::GetWebsitePageInfo(const ID& website_page_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		
@@ -51,19 +51,19 @@ namespace voxel_game
 		}
 	}
 
-	UUIDVector UniverseServer::GetInternetWebsites(const UUID& internet_id)
+	IDVector UniverseServer::GetInternetWebsites(const ID& internet_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		return GetInternetInfo(internet_id).find_key("websites");
 	}
 
-	UUIDVector UniverseServer::GetWebsitePages(const UUID& website_id)
+	IDVector UniverseServer::GetWebsitePages(const ID& website_id)
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		return GetWebsiteInfo(website_id).find_key("pages");
 	}
 
-	void UniverseServer::UniverseServer::StartInternet(const UUID& internet_id, const UUID& device_id)
+	void UniverseServer::UniverseServer::StartInternet(const ID& internet_id, const ID& device_id)
 	{
 		if (DeferCommand<&UniverseServer::StartInternet>(internet_id, device_id))
 		{
@@ -79,19 +79,19 @@ namespace voxel_game
 		}
 	}
 
-	UUID UniverseServer::GetCurrentInternet()
+	ID UniverseServer::GetCurrentInternet()
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.player_info.find_key("internet");
 	}
 
-	UUID UniverseServer::GetCurrentInternetSite()
+	ID UniverseServer::GetCurrentInternetSite()
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.player_info.find_key("internet_site");
 	}
 
-	UUID UniverseServer::GetCurrentInternetPage()
+	ID UniverseServer::GetCurrentInternetPage()
 	{
 		std::shared_lock lock(m_info_cache.mutex);
 		return m_info_cache.player_info.find_key("internet_page");
