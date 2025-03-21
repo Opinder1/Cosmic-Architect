@@ -308,10 +308,20 @@ namespace voxel_game
 
 		// World and quick access entities. Not thread safe
 		flecs::world m_world;
+
+		flecs::entity_t m_player_entity = 0;
+		flecs::entity_t m_dimension_entity = 0;
+
 		flecs::entity_t m_universe_entity = 0;
 		flecs::entity_t m_galaxy_entity = 0;
-		SmallVector<flecs::entity_t, 4> m_world_entities;
-		flecs::entity_t m_player_entity = 0;
+		flecs::entity_t m_starsystem_entity = 0;
+
+		flecs::entity_t m_world_entity = 0;
+		flecs::entity_t m_spacestation_entity = 0;
+		flecs::entity_t m_spaceship_entity = 0;
+		flecs::entity_t m_vehicle_entity = 0;
+
+		flecs::entity_t m_avatar_entity = 0;
 
 		// Cached info to be written to by the internal thread and its contents retrieved and read by other threads
 		UniverseCacheUpdater m_info_updater; 
