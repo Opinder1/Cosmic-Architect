@@ -6,22 +6,21 @@
 #include "Galaxy/GalaxyModule.h"
 #include "GalaxyRender/GalaxyRenderModule.h"
 
+#include "Player/PlayerModule.h"
+
 #include "Spatial3D/SpatialModule.h"
 
 #include "Voxel/VoxelModule.h"
 #include "VoxelRender/VoxelRenderModule.h"
 
 #include "Render/RenderModule.h"
-#include "Render/RenderComponents.h"
 
 #include "Simulation/SimulationModule.h"
-#include "Simulation/SimulationComponents.h"
 
 #include "Physics3D/PhysicsModule.h"
 #include "Physics3D/PhysicsComponents.h"
 
 #include "Loading/LoadingModule.h"
-#include "Loading/LoadingComponents.h"
 
 #include "Commands/CommandServer.h"
 
@@ -85,6 +84,7 @@ namespace voxel_game
 		m_world.import<voxel::Module>();
 		m_world.import<galaxy::Module>();
 		m_world.import<universe::Module>();
+		m_world.import<player::Module>();
 
 		if (rendering::IsEnabled())
 		{
