@@ -46,14 +46,12 @@ namespace voxel_game::spatial3d
 	// A level of detail map for a world. The world will have multiple of these
 	struct CScale
 	{
-		Scale* scale = nullptr;
+		ScaleRef scale = nullptr;
 	};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct CWorld
 	{
-		World* world = nullptr;
-
-		Types types;
+		WorldRef world = nullptr;
 	};
 }

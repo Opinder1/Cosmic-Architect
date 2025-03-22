@@ -36,16 +36,12 @@ namespace voxel_game::spatial3d
 		world.import<sim::Components>();
 		world.import<physics3d::Components>();
 
-		NodeType::RegisterType<Node>();
-		ScaleType::RegisterType<Scale>();
-		WorldType::RegisterType<World>();
-
 		world.observer<CLoader, CWorld>()
 			.event(flecs::OnAdd)
 			.term_at(1).up(flecs::ChildOf)
 			.each([](CLoader& loader, CWorld& world)
 		{
-			world.world->loaders.insert(loader.loader);
+			world.world[&World::loaders].insert(loader.loader);
 		});
 
 		world.observer<CLoader, CWorld>()
@@ -53,7 +49,7 @@ namespace voxel_game::spatial3d
 			.term_at(1).up(flecs::ChildOf)
 			.each([](CLoader& loader, CWorld& world)
 		{
-			world.world->loaders.erase(loader.loader);
+			world.world[&World::loaders].erase(loader.loader);
 		});
 
 		// Systems
@@ -66,7 +62,7 @@ namespace voxel_game::spatial3d
 		{
 			EASY_BLOCK("WorldCreateNodes");
 
-			WorldCreateNodes(spatial_world.types, *spatial_world.world, frame);
+			WorldCreateNodes(spatial_world.world, frame);
 		});
 
 		// System to delete spatial nodes that have been marked to unload
@@ -76,7 +72,7 @@ namespace voxel_game::spatial3d
 		{
 			EASY_BLOCK("WorldDestroyNodes");
 
-			WorldDestroyNodes(spatial_world.types, *spatial_world.world);
+			WorldDestroyNodes(spatial_world.world);
 		});
 
 		// Systen to create or update all nodes in the range of loaders
@@ -88,7 +84,7 @@ namespace voxel_game::spatial3d
 		{
 			EASY_BLOCK("LoaderTouchNodes");
 
-			ScaleLoadNodes(*spatial_world.world, *spatial_scale.scale, frame);
+			ScaleLoadNodes(spatial_world.world, spatial_scale.scale, frame);
 		});
 
 		// System to mark any nodes that are no longer being observed to be unloaded
@@ -100,7 +96,7 @@ namespace voxel_game::spatial3d
 		{
 			EASY_BLOCK("ScaleUnloadUnusedNodes");
 
-			ScaleUnloadNodes(*spatial_world.world, *spatial_scale.scale, frame);
+			ScaleUnloadNodes(spatial_world.world, spatial_scale.scale, frame);
 		});
 
 		// System to delete spatial nodes that have been marked to unload
@@ -120,11 +116,11 @@ namespace voxel_game::spatial3d
 		});
 	}
 
-	void InitializeWorldScaleEntities(flecs::entity world_entity, World& world)
+	void InitializeWorldScaleEntities(flecs::entity world_entity, WorldRef world)
 	{
 		flecs::scoped_world scope = world_entity.scope();
 
-		for (uint8_t scale_index = 0; scale_index < world.max_scale; scale_index++)
+		for (uint8_t scale_index = 0; scale_index < world[&World::max_scale]; scale_index++)
 		{
 			flecs::entity marker_entity = scope.entity();
 
@@ -132,7 +128,7 @@ namespace voxel_game::spatial3d
 			marker_entity.set_name(godot::vformat("Scale%d", scale_index).utf8());
 #endif
 
-			marker_entity.emplace<CScale>(world.scales[scale_index]);
+			marker_entity.emplace<CScale>(world[&World::scales][scale_index]);
 		}
 	}
 }

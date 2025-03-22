@@ -18,9 +18,9 @@ class PolyType : Nocopy, Nomove
 	constexpr static const uint16_t k_invalid_poly_offset = UINT16_MAX;
 	constexpr static const size_t k_max_offsets = 16;
 
-	inline static size_t k_total_type_indexes = 0;
+public:
 	template<class T>
-	inline static size_t k_type_index = k_max_offsets;
+	static const size_t k_type_index;
 
 private:
 	using FactoryCB = void (*)(std::byte*);
@@ -56,15 +56,6 @@ public:
 #if defined(POLY_DEBUG)
 		DEBUG_ASSERT(m_created.empty(), "We should have destroyed all instances of this poly type");
 #endif
-	}
-
-	template<class T>
-	static void RegisterType()
-	{
-		DEBUG_ASSERT(k_total_type_indexes != k_max_offsets, "We don't support this many types for a poly");
-
-		k_type_index<T> = k_total_type_indexes;
-		k_total_type_indexes++;
 	}
 
 	template<class T>

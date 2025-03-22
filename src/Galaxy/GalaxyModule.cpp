@@ -22,6 +22,8 @@
 
 namespace voxel_game::galaxy
 {
+	spatial3d::Types galaxy_world_types;
+
 	flecs::entity CreateNewSimulatedGalaxy(flecs::world& world, const godot::String& path, flecs::entity_t universe_entity)
 	{
 		// Create the simulated galaxy
@@ -48,12 +50,9 @@ namespace voxel_game::galaxy
 
 		spatial3d::CWorld* spatial_world = galaxy_entity.get_mut<spatial3d::CWorld>();
 
-		spatial_world->types.node_type.AddType<Node>();
-		spatial_world->types.scale_type.AddType<Scale>();
+		spatial_world->world = spatial3d::CreateWorld(galaxy_world_types, spatial3d::k_max_world_scale);
 
-		spatial_world->world = spatial3d::CreateWorld(spatial_world->types, spatial3d::k_max_world_scale);
-
-		spatial3d::InitializeWorldScaleEntities(galaxy_entity, *spatial_world->world);
+		spatial3d::InitializeWorldScaleEntities(galaxy_entity, spatial_world->world);
 
 		// We want the simulated galaxy to load all galaxies around it
 		spatial3d::CLoader* spatial_loader = galaxy_entity.get_mut<spatial3d::CLoader>();
@@ -76,8 +75,11 @@ namespace voxel_game::galaxy
 		world.import<rendering::Components>();
 		world.import<sim::Components>();
 
-		spatial3d::NodeType::RegisterType<Node>();
-		spatial3d::ScaleType::RegisterType<Scale>();
+		galaxy_world_types.node_type.AddType<spatial3d::Node>();
+		galaxy_world_types.scale_type.AddType<spatial3d::Scale>();
+		galaxy_world_types.world_type.AddType<spatial3d::World>();
+		galaxy_world_types.node_type.AddType<Node>();
+		galaxy_world_types.scale_type.AddType<Scale>();
 
 		// Initialise the spatial world of a galaxy
 		world.observer<spatial3d::CWorld>(DEBUG_ONLY("GalaxyInitializeSpatialWorld"))

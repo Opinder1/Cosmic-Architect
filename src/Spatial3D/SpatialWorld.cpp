@@ -32,27 +32,27 @@ namespace voxel_game::spatial3d
 		return (pos.x & 0x1) + ((pos.y & 0x1) * 2) + ((pos.z & 0x1) * 4);
 	}
 
-	const Scale& GetScale(const World& world, uint8_t scale_index)
+	ScaleRef GetScale(WorldRef world, uint8_t scale_index)
 	{
-		DEBUG_ASSERT(scale_index < world.max_scale, "Requested scale out of range");
-		return *world.scales[scale_index];
+		DEBUG_ASSERT(scale_index < world[&World::max_scale], "Requested scale out of range");
+		return world[&World::scales][scale_index];
 	}
 
-	Scale& GetScale(World& world, uint8_t scale_index)
+	ConstScaleRef GetScale(ConstWorldRef world, uint8_t scale_index)
 	{
-		DEBUG_ASSERT(scale_index < world.max_scale, "Requested scale out of range");
-		return *world.scales[scale_index];
+		DEBUG_ASSERT(scale_index < world.Get<&World::max_scale>(), "Requested scale out of range");
+		return world[&World::scales][scale_index];
 	}
 
-	const Node* GetNode(const World& world, godot::Vector3i position, uint8_t scale_index)
+	ConstNodeRef GetNode(ConstWorldRef world, godot::Vector3i position, uint8_t scale_index)
 	{
 		DEBUG_ASSERT(scale_index < k_max_world_scale, "The coordinates scale is out of range");
 
-		const Scale& scale = GetScale(world, scale_index);
+		ConstScaleRef scale = GetScale(world, scale_index);
 
-		NodeMap::const_iterator it = scale.nodes.find(position);
+		NodeMap::const_iterator it = scale[&Scale::nodes].find(position);
 
-		if (it == scale.nodes.end())
+		if (it == scale[&Scale::nodes].end())
 		{
 			return nullptr;
 		}
@@ -60,97 +60,97 @@ namespace voxel_game::spatial3d
 		return it->second;
 	}
 
-	Node* GetNode(World& world, godot::Vector3i position, uint8_t scale_index)
+	NodeRef GetNode(WorldRef world, godot::Vector3i position, uint8_t scale_index)
 	{
-		return const_cast<Node*>(GetNode(world, position, scale_index));
+		return GetNode(ConstWorldRef(world), position, scale_index).NonConst();
 	}
 
-	void InitializeNode(World& world, Node& node, uint8_t scale_index)
+	void InitializeNode(WorldRef world, NodeRef node, uint8_t scale_index)
 	{
-		Scale& scale = GetScale(world, scale_index);
+		ScaleRef scale = GetScale(world, scale_index);
 
 		for (uint8_t neighbour_index = 0; neighbour_index < 6; neighbour_index++)
 		{
-			godot::Vector3i neighbour_pos = node.position + node_neighbour_offsets[neighbour_index];
+			godot::Vector3i neighbour_pos = node[&Node::position] + node_neighbour_offsets[neighbour_index];
 
-			NodeMap::iterator it = scale.nodes.find(neighbour_pos);
+			NodeMap::iterator it = scale[&Scale::nodes].find(neighbour_pos);
 
-			if (it != scale.nodes.end())
+			if (it != scale[&Scale::nodes].end())
 			{
-				Node* neighbour_node = it->second;
+				NodeRef neighbour_node = it->second;
 
-				node.neighbours[neighbour_index] = neighbour_node;
-				node.neighbour_mask |= 1 << neighbour_index;
+				node[&Node::neighbours][neighbour_index] = neighbour_node;
+				node[&Node::neighbour_mask] |= 1 << neighbour_index;
 
-				neighbour_node->neighbours[5 - neighbour_index] = &node;
-				neighbour_node->neighbour_mask |= 1 << (5 - neighbour_index);
+				neighbour_node[&Node::neighbours][5 - neighbour_index] = node;
+				neighbour_node[&Node::neighbour_mask] |= 1 << (5 - neighbour_index);
 			}
 		}
 
-		if (scale_index < world.max_scale - 1)
+		if (scale_index < world[&World::max_scale] - 1)
 		{
-			Scale& parent_scale = GetScale(world, scale_index + 1);
+			ScaleRef parent_scale = GetScale(world, scale_index + 1);
 
-			godot::Vector3i parent_pos = node.position / 2;
+			godot::Vector3i parent_pos = node[&Node::position] / 2;
 
-			NodeMap::iterator it = parent_scale.nodes.find(parent_pos);
+			NodeMap::iterator it = parent_scale[&Scale::nodes].find(parent_pos);
 
-			if (it != parent_scale.nodes.end())
+			if (it != parent_scale[&Scale::nodes].end())
 			{
-				Node* parent_node = it->second;
+				NodeRef parent_node = it->second;
 
-				node.parent = parent_node;
-				node.parent_index = GetNodeParentIndex(node.position);
+				node[&Node::parent] = parent_node;
+				node[&Node::parent_index] = GetNodeParentIndex(node[&Node::position]);
 
-				DEBUG_ASSERT(node.parent_index < 8, "The parent index is out of range");
+				DEBUG_ASSERT(node[&Node::parent_index] < 8, "The parent index is out of range");
 
-				parent_node->children[node.parent_index] = &node;
-				parent_node->children_mask |= 1 << node.parent_index;
+				parent_node[&Node::children][node[&Node::parent_index]] = node;
+				parent_node[&Node::children_mask] |= 1 << node[&Node::parent_index];
 			}
 		}
 
 		if (scale_index > 0)
 		{
-			Scale& child_scale = GetScale(world, scale_index - 1);
+			ScaleRef child_scale = GetScale(world, scale_index - 1);
 
 			for (uint8_t child_index = 0; child_index < 8; child_index++)
 			{
-				godot::Vector3i child_pos = node.position * 2;
+				godot::Vector3i child_pos = node[&Node::position] * 2;
 				child_pos += node_child_offsets[child_index];
 
-				NodeMap::iterator it = child_scale.nodes.find(child_pos);
+				NodeMap::iterator it = child_scale[&Scale::nodes].find(child_pos);
 
-				if (it != child_scale.nodes.end())
+				if (it != child_scale[&Scale::nodes].end())
 				{
-					Node* child_node = it->second;
+					NodeRef child_node = it->second;
 
-					node.children[child_index] = child_node;
-					node.children_mask |= 1 << child_index;
+					node[&Node::children][child_index] = child_node;
+					node[&Node::children_mask] |= 1 << child_index;
 
-					child_node->parent = &node;
-					child_node->parent_index = child_index;
+					child_node[&Node::parent] = node;
+					child_node[&Node::parent_index] = child_index;
 				}
 			}
 		}
 	}
 
-	void UninitializeNode(World& world, Node& node, uint8_t scale_index)
+	void UninitializeNode(WorldRef world, NodeRef node, uint8_t scale_index)
 	{
 		for (uint8_t neighbour_index = 0; neighbour_index < 6; neighbour_index++)
 		{
-			if (Node* neighbour_node = node.neighbours[neighbour_index])
+			if (NodeRef neighbour_node = node[&Node::neighbours][neighbour_index])
 			{
-				neighbour_node->neighbours[5 - neighbour_index] = nullptr;
-				neighbour_node->neighbour_mask &= ~(1 << (5 - neighbour_index));
+				neighbour_node[&Node::neighbours][5 - neighbour_index] = nullptr;
+				neighbour_node[&Node::neighbour_mask] &= ~(1 << (5 - neighbour_index));
 			}
 		}
 
-		if (scale_index < world.max_scale - 1)
+		if (scale_index < world[&World::max_scale] - 1)
 		{
-			if (Node* parent_node = node.parent)
+			if (NodeRef parent_node = node[&Node::parent])
 			{
-				parent_node->children[node.parent_index] = nullptr;
-				parent_node->children_mask &= ~(1 << node.parent_index);
+				parent_node[&Node::children][node[&Node::parent_index]] = nullptr;
+				parent_node[&Node::children_mask] &= ~(1 << node[&Node::parent_index]);
 			}
 		}
 
@@ -158,67 +158,71 @@ namespace voxel_game::spatial3d
 		{
 			for (uint8_t child_index = 0; child_index < 8; child_index++)
 			{
-				if (Node* child_node = node.children[child_index])
+				if (NodeRef child_node = node[&Node::children][child_index])
 				{
-					child_node->parent = nullptr;
-					child_node->parent_index = k_node_no_parent;
+					child_node[&Node::parent] = nullptr;
+					child_node[&Node::parent_index] = k_node_no_parent;
 				}
 			}
 		}
 	}
 
-	World* CreateWorld(Types& types, uint8_t max_scale)
+	WorldRef CreateWorld(Types& types, uint8_t max_scale)
 	{
-		World* world = types.world_type.CreatePoly();
+		WorldRef world = types.world_type.CreatePoly();
+		world.poly->types = &types;
 
-		WorldSetMaxScale(types, *world, max_scale);
+		WorldSetMaxScale(world, max_scale);
 
 		return world;
 	}
 
-	void DestroyWorld(Types& types, World* world)
+	void DestroyWorld(Types& types, WorldRef world)
 	{
-		for (size_t scale_index = 0; scale_index < world->max_scale; scale_index++)
+		for (size_t scale_index = 0; scale_index < world[&World::max_scale]; scale_index++)
 		{
-			Scale& scale = GetScale(*world, scale_index);
+			ScaleRef scale = GetScale(world, scale_index);
 
-			DEBUG_ASSERT(scale.create_commands.empty(), "All commands should have been destroyed before destroying the world");
-			DEBUG_ASSERT(scale.load_commands.empty(), "All commands should have been destroyed before destroying the world");
-			DEBUG_ASSERT(scale.unload_commands.empty(), "All commands should have been destroyed before destroying the world");
-			DEBUG_ASSERT(scale.destroy_commands.empty(), "All commands should have been destroyed before destroying the world");
-			DEBUG_ASSERT(scale.nodes.empty(), "All nodes should have been destroyed before destroying the world");
+			DEBUG_ASSERT(scale[&Scale::create_commands].empty(), "All commands should have been destroyed before destroying the world");
+			DEBUG_ASSERT(scale[&Scale::load_commands].empty(), "All commands should have been destroyed before destroying the world");
+			DEBUG_ASSERT(scale[&Scale::unload_commands].empty(), "All commands should have been destroyed before destroying the world");
+			DEBUG_ASSERT(scale[&Scale::destroy_commands].empty(), "All commands should have been destroyed before destroying the world");
+			DEBUG_ASSERT(scale[&Scale::nodes].empty(), "All nodes should have been destroyed before destroying the world");
 		}
 
-		types.world_type.DestroyPoly(world);
+		types.world_type.DestroyPoly(world.poly);
 	}
 
-	void WorldSetMaxScale(Types& types, World& world, size_t max_scale)
+	void WorldSetMaxScale(WorldRef world, size_t max_scale)
 	{
-		if (max_scale > world.max_scale)
+		Types* types = world.poly->types;
+
+		if (max_scale > world[&World::max_scale])
 		{
-			for (uint8_t scale_index = world.max_scale; scale_index < max_scale; scale_index++)
+			for (uint8_t scale_index = world[&World::max_scale]; scale_index < max_scale; scale_index++)
 			{
-				Scale* scale = types.scale_type.CreatePoly();
+				ScaleRef scale = types->scale_type.CreatePoly();
+				scale.poly->types = types;
 
-				scale->index = scale_index;
+				scale[&Scale::index] = scale_index;
 
-				world.scales[scale_index] = scale;
+				world[&World::scales][scale_index] = scale;
 			}
 		}
 		else
 		{
-			for (uint8_t scale_index = max_scale; scale_index < world.max_scale; scale_index++)
+			for (uint8_t scale_index = max_scale; scale_index < world[&World::max_scale]; scale_index++)
 			{
-				Scale& scale = GetScale(world, scale_index);
+				ScaleRef scale = GetScale(world, scale_index);
 
 				// Clear previous commands. If you didn't handle them then too bad
-				scale.unload_commands.clear();
-				scale.destroy_commands.clear();
+				scale[&Scale::unload_commands].clear();
+				scale[&Scale::destroy_commands].clear();
 
 				// For each node in the scale
-				for (auto&& [pos, node] : scale.nodes)
+				for (auto&& [pos, node] : scale[&Scale::nodes])
 				{
-					switch (node->state)
+					switch (node[&Node::state])
 					{
 					case NodeState::Loading:
 					case NodeState::Loaded:
@@ -234,80 +238,85 @@ namespace voxel_game::spatial3d
 					}
 				}
 
-				types.scale_type.DestroyPoly(world.scales[scale_index]);
+				types->scale_type.DestroyPoly(scale.poly);
 			}
 		}
 
-		world.max_scale = max_scale;
+		world[&World::max_scale] = max_scale;
 	}
 
-	void WorldCreateNodes(Types& types, World& world, const sim::CFrame& frame)
+	void WorldCreateNodes(WorldRef world, const sim::CFrame& frame)
 	{
-		DEBUG_ASSERT(world.max_scale > 0, "The spatial world should have at least one scale");
+		DEBUG_ASSERT(world[&World::max_scale] > 0, "The spatial world should have at least one scale");
 
-		for (size_t scale_index = 0; scale_index < world.max_scale; scale_index++)
+		Types* types = world.poly->types;
+
+		for (size_t scale_index = 0; scale_index < world[&World::max_scale]; scale_index++)
 		{
 			EASY_BLOCK("ScaleCreateNodes");
 
-			Scale& scale = GetScale(world, scale_index);
+			ScaleRef scale = GetScale(world, scale_index);
 
 			// For each create command
-			for (const godot::Vector3i& pos : scale.create_commands)
+			for (const godot::Vector3i& pos : scale[&Scale::create_commands])
 			{
 				// Try and create the node
-				auto&& [it, emplaced] = scale.nodes.try_emplace(pos, nullptr);
+				auto&& [it, emplaced] = scale[&Scale::nodes].try_emplace(pos, nullptr);
 
 				if (!emplaced) // Node already exists
 				{
 					continue;
 				}
 
-				it->second = types.node_type.CreatePoly();
+				it->second = types->node_type.CreatePoly();
 
-				Node* node = it->second;
+				NodeRef node = it->second;
+				node.poly->types = types;
 
 				// Initialize the node
-				node->position = pos;
-				node->scale_index = scale_index;
-				node->last_update_time = frame.frame_start_time;
-				node->state = NodeState::Unloaded;
+				node[&Node::position] = pos;
+				node[&Node::scale_index] = scale_index;
+				node[&Node::last_update_time] = frame.frame_start_time;
+				node[&Node::state] = NodeState::Unloaded;
 
-				InitializeNode(world, *node, scale_index);
+				InitializeNode(world, node, scale_index);
 			}
 
-			scale.create_commands.clear();
+			scale[&Scale::create_commands].clear();
 		}
 	}
 
-	void WorldDestroyNodes(Types& types, World& world)
+	void WorldDestroyNodes(WorldRef world)
 	{
-		for (size_t scale_index = 0; scale_index < world.max_scale; scale_index++)
+		Types* types = world.poly->types;
+
+		for (size_t scale_index = 0; scale_index < world[&World::max_scale]; scale_index++)
 		{
 			EASY_BLOCK("ScaleDestroyNodes");
 
-			Scale& scale = GetScale(world, scale_index);
+			ScaleRef scale = GetScale(world, scale_index);
 
 			// For each destroy command of the scale
-			for (Node* node : scale.destroy_commands)
+			for (NodeRef node : scale[&Scale::destroy_commands])
 			{
-				DEBUG_ASSERT(node->state == NodeState::Deleting, "Node should be in deleting state");
+				DEBUG_ASSERT(node[&Node::state] == NodeState::Deleting, "Node should be in deleting state");
 
-				UninitializeNode(world, *node, scale_index);
+				UninitializeNode(world, node, scale_index);
 
-				scale.nodes.erase(node->position);
+				scale[&Scale::nodes].erase(node[&Node::position]);
 
-				types.node_type.DestroyPoly(node);
+				types->node_type.DestroyPoly(node.poly);
 			}
 
-			scale.destroy_commands.clear();
+			scale[&Scale::destroy_commands].clear();
 		}
 	}
 
-	void LoaderLoadNodes(Scale& scale, const Loader& loader, const sim::CFrame& frame, double scale_node_step)
+	void LoaderLoadNodes(ScaleRef scale, const Loader& loader, const sim::CFrame& frame, double scale_node_step)
 	{
 		EASY_BLOCK("SingleLoader");
 
-		if (scale.index < loader.min_lod || scale.index > loader.max_lod)
+		if (scale[&Scale::index] < loader.min_lod || scale[&Scale::index] > loader.max_lod)
 		{
 			return;
 		}
@@ -315,106 +324,106 @@ namespace voxel_game::spatial3d
 		// For each node in the sphere of the loader
 		ForEachCoordInSphere(loader.position / scale_node_step, loader.dist_per_lod, [&](godot::Vector3i pos)
 		{
-			NodeMap::iterator it = scale.nodes.find(pos);
+			NodeMap::iterator it = scale[&Scale::nodes].find(pos);
 
-			if (it == scale.nodes.end())
+			if (it == scale[&Scale::nodes].end())
 			{
-				scale.create_commands.push_back(pos); // Create commands should immediately be executed this frame so don't worry about duplicates
+				scale[&Scale::create_commands].push_back(pos); // Create commands should immediately be executed this frame so don't worry about duplicates
 				return;
 			}
 
-			Node* node = it->second;
+			NodeRef node = it->second;
 
 			// Touch the node so it stays loaded
-			node->last_update_time = frame.frame_start_time;
+			node[&Node::last_update_time] = frame.frame_start_time;
 
 			// Load the node if its not loaded yet
-			switch (node->state)
+			switch (node[&Node::state])
 			{
 			case NodeState::Unloaded:
-				if (scale.load_commands.size() < k_max_frame_load_commands)
+				if (scale[&Scale::load_commands].size() < k_max_frame_load_commands)
 				{
-					scale.load_commands.push_back(node);
-					node->state = NodeState::Loading;
+					scale[&Scale::load_commands].push_back(node);
+					node[&Node::state] = NodeState::Loading;
 				}
 				break;
 			}
 		});
 	}
 
-	void ScaleLoadNodes(const World& world, Scale& scale, const sim::CFrame& frame)
+	void ScaleLoadNodes(ConstWorldRef world, ScaleRef scale, const sim::CFrame& frame)
 	{
 		// Finish the previous load commands
-		for (Node* node : scale.load_commands)
+		for (NodeRef node : scale[&Scale::load_commands])
 		{
-			DEBUG_ASSERT(node->state == NodeState::Loading, "Node should be in loading state");
+			DEBUG_ASSERT(node[&Node::state] == NodeState::Loading, "Node should be in loading state");
 
-			node->state = NodeState::Loaded;
+			node[&Node::state] = NodeState::Loaded;
 		}
 
 		// Clear previous commands. If you didn't handle them then too bad
-		scale.load_commands.clear();
+		scale[&Scale::load_commands].clear();
 
-		const uint32_t scale_step = 1 << scale.index;
-		const double scale_node_step = scale_step * world.node_size;
+		const uint32_t scale_step = 1 << scale[&Scale::index];
+		const double scale_node_step = scale_step * world[&World::node_size];
 
 		// For each command list that is a child of the world
-		for (const Loader* loader : world.loaders)
+		for (const Loader* loader : world[&World::loaders])
 		{
 			LoaderLoadNodes(scale, *loader, frame, scale_node_step);
 		}
 	}
 
-	void UnloadNode(Scale& scale, Node& node, const sim::CFrame& frame)
+	void UnloadNode(ScaleRef scale, NodeRef node, const sim::CFrame& frame)
 	{
 		// Move the entity along to deletion
-		switch (node.state)
+		switch (node[&Node::state])
 		{
 		case NodeState::Unloaded:
-			if (scale.destroy_commands.size() < k_max_frame_destroy_commands)
+			if (scale[&Scale::destroy_commands].size() < k_max_frame_destroy_commands)
 			{
-				scale.destroy_commands.push_back(&node);
-				node.state = NodeState::Deleting;
+				scale[&Scale::destroy_commands].push_back(node);
+				node[&Node::state] = NodeState::Deleting;
 			}
 			break;
 
 		case NodeState::Loaded:
-			if (scale.unload_commands.size() < k_max_frame_unload_commands)
+			if (scale[&Scale::unload_commands].size() < k_max_frame_unload_commands)
 			{
-				scale.unload_commands.push_back(&node);
-				node.state = NodeState::Unloading;
+				scale[&Scale::unload_commands].push_back(node);
+				node[&Node::state] = NodeState::Unloading;
 			}
 			break;
 		}
 	}
 
-	void ScaleUnloadNodes(const World& world, Scale& scale, const sim::CFrame& frame)
+	void ScaleUnloadNodes(ConstWorldRef world, ScaleRef scale, const sim::CFrame& frame)
 	{
 		// Finish the previous load commands
-		for (Node* node : scale.unload_commands)
+		for (NodeRef node : scale[&Scale::unload_commands])
 		{
-			DEBUG_ASSERT(node->state == NodeState::Unloading, "Node should be in unloading state");
+			DEBUG_ASSERT(node[&Node::state] == NodeState::Unloading, "Node should be in unloading state");
 
-			node->state = NodeState::Unloaded;
+			node[&Node::state] = NodeState::Unloaded;
 		}
 
 		// Clear previous commands. If you didn't handle them then too bad
-		scale.unload_commands.clear();
+		scale[&Scale::unload_commands].clear();
 
 		// For each node in the scale
-		for (auto&& [pos, node] : scale.nodes)
+		for (auto&& [pos, node] : scale[&Scale::nodes])
 		{
 			// Check if node hasn't been touched in too long
-			if (frame.frame_start_time - node->last_update_time > world.node_keepalive)
+			if (frame.frame_start_time - node[&Node::last_update_time] > world[&World::node_keepalive])
 			{
-				UnloadNode(scale, *node, frame);
+				UnloadNode(scale, node, frame);
 			}
 		}
 	}
 
-	void WorldUpdateEntityScales(World& world)
+	void WorldUpdateEntityScales(WorldRef world)
 	{
-		for (Entity* entity : world.entities)
+		for (Entity* entity : world[&World::entities])
 		{
 			if (entity->last_scale == entity->scale)
 			{
@@ -423,22 +432,22 @@ namespace voxel_game::spatial3d
 
 			godot::Vector3i required_node_pos = entity->position / (1 >> entity->scale);
 
-			Scale& old_scale = GetScale(world, entity->last_scale);
-			Scale& new_scale = GetScale(world, entity->scale);
+			ScaleRef old_scale = GetScale(world, entity->last_scale);
+			ScaleRef new_scale = GetScale(world, entity->scale);
 
-			auto old_it = old_scale.nodes.find(entity->last_node_pos);
-			auto new_it = new_scale.nodes.find(required_node_pos);
+			auto old_it = old_scale[&Scale::nodes].find(entity->last_node_pos);
+			auto new_it = new_scale[&Scale::nodes].find(required_node_pos);
 
-			DEBUG_ASSERT(old_it != old_scale.nodes.end(), "The current node should be loaded. If the node was unloaded it should have detached this entity");
+			DEBUG_ASSERT(old_it != old_scale[&Scale::nodes].end(), "The current node should be loaded. If the node was unloaded it should have detached this entity");
 
 			// If the required node is not loaded then wait until it is loaded
-			if (new_it != new_scale.nodes.end())
+			if (new_it != new_scale[&Scale::nodes].end())
 			{
-				old_scale.entities.erase(entity);
-				new_scale.entities.insert(entity);
+				old_scale[&Scale::entities].erase(entity);
+				new_scale[&Scale::entities].insert(entity);
 
-				old_it->second->entities.erase(entity);
-				new_it->second->entities.insert(entity);
+				old_it->second[&Node::entities].erase(entity);
+				new_it->second[&Node::entities].insert(entity);
 
 				entity->scale = entity->last_scale;
 				entity->last_node_pos = required_node_pos;
@@ -446,27 +455,27 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void ScaleUpdateEntityNodes(const World& world, Scale& scale)
+	void ScaleUpdateEntityNodes(ConstWorldRef world, ScaleRef scale)
 	{
-		for (Entity* entity : scale.entities)
+		for (Entity* entity : scale[&Scale::entities])
 		{
-			godot::Vector3i required_node_pos = entity->position / (1 >> scale.index);
+			godot::Vector3i required_node_pos = entity->position / (1 >> scale[&Scale::index]);
 
 			if (entity->last_node_pos == required_node_pos)
 			{
 				continue;
 			}
 
-			auto old_it = scale.nodes.find(entity->last_node_pos);
-			auto new_it = scale.nodes.find(required_node_pos);
+			auto old_it = scale[&Scale::nodes].find(entity->last_node_pos);
+			auto new_it = scale[&Scale::nodes].find(required_node_pos);
 
-			DEBUG_ASSERT(old_it != scale.nodes.end(), "The current node should be loaded. If the node was unloaded it should have detached this entity");
+			DEBUG_ASSERT(old_it != scale[&Scale::nodes].end(), "The current node should be loaded. If the node was unloaded it should have detached this entity");
 
 			// If the required node is not loaded then wait until it is loaded
-			if (new_it != scale.nodes.end())
+			if (new_it != scale[&Scale::nodes].end())
 			{
-				old_it->second->entities.erase(entity);
-				new_it->second->entities.insert(entity);
+				old_it->second[&Node::entities].erase(entity);
+				new_it->second[&Node::entities].insert(entity);
 
 				entity->last_node_pos = required_node_pos;
 			}

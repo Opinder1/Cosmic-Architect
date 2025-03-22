@@ -46,17 +46,16 @@ namespace voxel_game::voxelrender
 	struct VoxelRenderNodeLoader
 	{
 		flecs::entity entity;
-		const spatial3d::Types& types;
-		const spatial3d::World& spatial_world;
+		spatial3d::ConstWorldRef spatial_world;
 		voxel::CContext& voxel_ctx;
 		CContext& render_ctx;
 
-		void LoadNode(spatial3d::Node& node)
+		void LoadNode(spatial3d::NodeRef node)
 		{
-			NODE_TO(node, Node).mesh = rendering::AllocRID(rendering::RIDType::Mesh);
-			NODE_TO(node, Node).mesh_instance = rendering::AllocRID(rendering::RIDType::Instance);
+			node[&Node::mesh] = rendering::AllocRID(rendering::RIDType::Mesh);
+			node[&Node::mesh_instance] = rendering::AllocRID(rendering::RIDType::Instance);
 
-			rendering::AddCommand<&RS::instance_set_base>(NODE_TO(node, Node).mesh_instance, NODE_TO(node, Node).mesh);
+			rendering::AddCommand<&RS::instance_set_base>(node[&Node::mesh_instance], node[&Node::mesh]);
 
 			godot::PackedVector3Array vertexes;
 			godot::PackedColorArray colors;
@@ -70,14 +69,14 @@ namespace voxel_game::voxelrender
 			arrays[godot::RenderingServer::ARRAY_VERTEX] = vertexes;
 			arrays[godot::RenderingServer::ARRAY_COLOR] = colors;
 
-			rendering::AddCommand<&RS::mesh_add_surface_from_arrays>(NODE_TO(node, Node).mesh, godot::RenderingServer::PRIMITIVE_TRIANGLES, arrays, godot::Array(), godot::Dictionary(), 0);
-			rendering::AddCommand<&RS::mesh_surface_set_material>(NODE_TO(node, Node).mesh, 0, WORLD_TO(spatial_world, World).voxel_material);
+			rendering::AddCommand<&RS::mesh_add_surface_from_arrays>(node[&Node::mesh], godot::RenderingServer::PRIMITIVE_TRIANGLES, arrays, godot::Array(), godot::Dictionary(), 0);
+			rendering::AddCommand<&RS::mesh_surface_set_material>(node[&Node::mesh], 0, spatial_world[&voxelrender::World::voxel_material]);
 		}
 
-		void UnloadNode(spatial3d::Node& node)
+		void UnloadNode(spatial3d::NodeRef node)
 		{
-			rendering::AddCommand<&RS::free_rid>(NODE_TO(node, Node).mesh_instance);
-			rendering::AddCommand<&RS::free_rid>(NODE_TO(node, Node).mesh);
+			rendering::AddCommand<&RS::free_rid>(node[&Node::mesh_instance]);
+			rendering::AddCommand<&RS::free_rid>(node[&Node::mesh]);
 		}
 	};
 
@@ -90,30 +89,13 @@ namespace voxel_game::voxelrender
 		world.import<voxel::Components>();
 		world.import<spatial3d::Module>();
 
-		spatial3d::NodeType::RegisterType<Node>();
-		spatial3d::ScaleType::RegisterType<Scale>();
-		spatial3d::WorldType::RegisterType<World>();
-
-		// Initialise the spatial world of a universe
-		world.observer<spatial3d::CWorld>(DEBUG_ONLY("InitializeVoxelRenderWorld"))
-			.event(flecs::OnAdd)
-			.with<const CWorld>()
-			.each([](spatial3d::CWorld& spatial_world)
-		{
-			spatial_world.types.node_type.AddType<Node>();
-			spatial_world.types.scale_type.AddType<Scale>();
-			spatial_world.types.world_type.AddType<World>();
-		});
-
 		// Initialise the spatial world of a universe
 		world.observer<spatial3d::CWorld>(DEBUG_ONLY("UninitializeVoxelRenderWorld"))
 			.event(flecs::OnRemove)
 			.with<const CWorld>()
 			.each([](spatial3d::CWorld& spatial_world)
 		{
-			spatial3d::Types& types = spatial_world.types;
-
-			godot::RID voxel_material = WORLD_TO(spatial_world.world, World)->voxel_material;
+			godot::RID voxel_material = spatial_world.world[&World::voxel_material];
 
 			if (voxel_material.is_valid())
 			{
@@ -130,16 +112,16 @@ namespace voxel_game::voxelrender
 			.with<const CWorld>().up(flecs::ChildOf)
 			.each([](flecs::entity entity, spatial3d::CScale& spatial_scale, const spatial3d::CWorld& spatial_world, voxel::CContext& voxel_ctx, CContext& render_ctx)
 		{
-			VoxelRenderNodeLoader loader{ entity, spatial_world.types, *spatial_world.world, voxel_ctx, render_ctx };
+			VoxelRenderNodeLoader loader{ entity, spatial_world.world, voxel_ctx, render_ctx };
 
-			for (spatial3d::Node* node : spatial_scale.scale->load_commands)
+			for (spatial3d::NodeRef node : spatial_scale.scale[&spatial3d::Scale::load_commands])
 			{
-				loader.LoadNode(*node);
+				loader.LoadNode(node);
 			}
 
-			for (spatial3d::Node* node : spatial_scale.scale->unload_commands)
+			for (spatial3d::NodeRef node : spatial_scale.scale[&spatial3d::Scale::unload_commands])
 			{
-				loader.UnloadNode(*node);
+				loader.UnloadNode(node);
 			}
 		});
 	}

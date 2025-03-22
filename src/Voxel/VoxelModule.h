@@ -11,8 +11,7 @@ namespace godot
 
 namespace voxel_game::spatial3d
 {
-	struct World;
-	struct Types;
+	struct ConstWorldRef;
 }
 
 namespace voxel_game::voxel
@@ -24,11 +23,11 @@ namespace voxel_game::voxel
 		Module(flecs::world& world);
 	};
 
-	Voxel GetVoxelAtScale(spatial3d::Types& types, const spatial3d::World& world, godot::Vector3i pos, uint32_t scale);
+	Voxel GetVoxelAtScale(spatial3d::ConstWorldRef world, godot::Vector3i pos, uint32_t scale);
 
-	Voxel GetVoxelDepthFirst(spatial3d::Types& types, const spatial3d::World& world, godot::Vector3i pos, uint32_t start_scale);
+	Voxel GetVoxelDepthFirst(spatial3d::ConstWorldRef world, godot::Vector3i pos, uint32_t start_scale);
 
-	Voxel GetVoxelBreadthFirst(spatial3d::Types& types, const spatial3d::World& world, godot::Vector3i pos, uint32_t start_scale);
+	Voxel GetVoxelBreadthFirst(spatial3d::ConstWorldRef world, godot::Vector3i pos, uint32_t start_scale);
 
-	Voxel GetVoxelOctreeSearch(spatial3d::Types& types, const spatial3d::World& world, godot::Vector3i pos, uint32_t start_scale);
+	Voxel GetVoxelOctreeSearch(spatial3d::ConstWorldRef world, godot::Vector3i pos, uint32_t start_scale);
 }
