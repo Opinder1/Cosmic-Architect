@@ -136,6 +136,7 @@ namespace voxel_game
 
 		BIND_METHOD(godot::D_METHOD("start_simulation", "thread_mode"), &SimulationServer::StartSimulation);
 		BIND_METHOD(godot::D_METHOD("stop_simulation"), &SimulationServer::StopSimulation);
+		BIND_METHOD(godot::D_METHOD("wait_until_stopped"), &SimulationServer::WaitUntilStopped);
 		BIND_METHOD(godot::D_METHOD("is_threaded"), &SimulationServer::IsThreaded);
 		BIND_METHOD(godot::D_METHOD("progress", "delta"), &SimulationServer::Progress);
 
