@@ -7,6 +7,6 @@ namespace voxel_game::player
 		world.module<Components>();
 
 		world.component<CPlayer>();
-		world.component<GPlayers>();
+		world.component<CPlayers>();
 	}
 }

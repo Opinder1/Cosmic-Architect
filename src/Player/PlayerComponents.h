@@ -36,7 +36,7 @@ namespace voxel_game::player
 		std::vector<UUID> friends;
 	};
 
-	struct GPlayers
+	struct CPlayers
 	{
 		std::vector<UUID> players;
 	};
