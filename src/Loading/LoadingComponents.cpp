@@ -10,7 +10,7 @@ namespace voxel_game::loading
 
 		world.component<CIdentifier>();
 		world.component<CSaveable>();
-		world.component<CDatabase>();
+		world.component<CEntityDatabase>();
 		world.component<ArchiveServer>();
 	}
 }

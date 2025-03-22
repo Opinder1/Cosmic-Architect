@@ -40,18 +40,18 @@ namespace voxel_game::spatial3d
 		ScaleType::RegisterType<Scale>();
 		WorldType::RegisterType<World>();
 
-		world.observer<CLoader, const CWorld>()
+		world.observer<CLoader, CWorld>()
 			.event(flecs::OnAdd)
 			.term_at(1).up(flecs::ChildOf)
-			.each([](CLoader& loader, const CWorld& world)
+			.each([](CLoader& loader, CWorld& world)
 		{
 			world.world->loaders.insert(loader.loader);
 		});
 
-		world.observer<CLoader, const CWorld>()
+		world.observer<CLoader, CWorld>()
 			.event(flecs::OnRemove)
 			.term_at(1).up(flecs::ChildOf)
-			.each([](CLoader& loader, const CWorld& world)
+			.each([](CLoader& loader, CWorld& world)
 		{
 			world.world->loaders.erase(loader.loader);
 		});
@@ -132,7 +132,7 @@ namespace voxel_game::spatial3d
 			marker_entity.set_name(godot::vformat("Scale%d", scale_index).utf8());
 #endif
 
-			marker_entity.set(CScale{ world.scales[scale_index] });
+			marker_entity.emplace<CScale>(world.scales[scale_index]);
 		}
 	}
 }

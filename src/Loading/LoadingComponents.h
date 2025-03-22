@@ -21,7 +21,7 @@ namespace voxel_game::loading
 		uint64_t last_save_frame = 0;
 	};
 
-	struct CDatabase
+	struct CEntityDatabase
 	{
 		godot::StringName path;
 		ArchiveServer::DBHandle handle;

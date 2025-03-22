@@ -13,6 +13,7 @@
 #include "Spatial3D/SpatialComponents.h"
 #include "Spatial3D/SpatialModule.h"
 
+#include "Render/RenderModule.h"
 #include "Render/RenderComponents.h"
 
 #include "Util/Debug.h"
@@ -30,33 +31,35 @@ namespace voxel_game::galaxy
 		galaxy_entity.set_name("SimulatedGalaxy");
 #endif
 
-		galaxy_entity.emplace<sim::CPath>(path);
-
-		loading::CDatabase& database = galaxy_entity.ensure<loading::CDatabase>();
-		database.path = path.path_join("entities.db");
-
 		galaxy_entity.child_of(universe_entity);
 
-		galaxy_entity.add<CWorld>();
-
-		spatial3d::CWorld& spatial_world = galaxy_entity.ensure<spatial3d::CWorld>();
-
-		DEBUG_ASSERT(!world.is_deferred(), "Observers need to be invoked to initialize poly types");
-
-		spatial_world.world = spatial3d::CreateWorld(spatial_world.types, spatial3d::k_max_world_scale);
-
+		galaxy_entity.emplace<sim::CPath>(path);
 		galaxy_entity.add<physics3d::CPosition>();
 		galaxy_entity.add<physics3d::CRotation>();
+		galaxy_entity.add<CWorld>();
+		galaxy_entity.add<spatial3d::CWorld>();
+		galaxy_entity.add<spatial3d::CLoader>();
+		galaxy_entity.emplace<loading::CEntityDatabase>(path.path_join("entities.db"));
 
-		spatial3d::InitializeWorldScaleEntities(galaxy_entity, *spatial_world.world);
+		if (rendering::IsEnabled())
+		{
+			galaxy_entity.add<rendering::CTransform>();
+		}
+
+		spatial3d::CWorld* spatial_world = galaxy_entity.get_mut<spatial3d::CWorld>();
+
+		spatial_world->types.node_type.AddType<Node>();
+		spatial_world->types.scale_type.AddType<Scale>();
+
+		spatial_world->world = spatial3d::CreateWorld(spatial_world->types, spatial3d::k_max_world_scale);
+
+		spatial3d::InitializeWorldScaleEntities(galaxy_entity, *spatial_world->world);
 
 		// We want the simulated galaxy to load all galaxies around it
-		spatial3d::CLoader& spatial_loader = galaxy_entity.ensure<spatial3d::CLoader>();
-		spatial_loader.loader->dist_per_lod = 3;
-		spatial_loader.loader->min_lod = 0;
-		spatial_loader.loader->max_lod = spatial3d::k_max_world_scale;
-
-		galaxy_entity.add<rendering::CTransform>();
+		spatial3d::CLoader* spatial_loader = galaxy_entity.get_mut<spatial3d::CLoader>();
+		spatial_loader->loader->dist_per_lod = 3;
+		spatial_loader->loader->min_lod = 0;
+		spatial_loader->loader->max_lod = spatial3d::k_max_world_scale;
 
 		return galaxy_entity;
 	}
@@ -69,6 +72,9 @@ namespace voxel_game::galaxy
 		world.import<Prefabs>();
 		world.import<spatial3d::Components>();
 		world.import<physics3d::Components>();
+		world.import<loading::Components>();
+		world.import<rendering::Components>();
+		world.import<sim::Components>();
 
 		spatial3d::NodeType::RegisterType<Node>();
 		spatial3d::ScaleType::RegisterType<Scale>();
@@ -79,8 +85,7 @@ namespace voxel_game::galaxy
 			.with<const CWorld>()
 			.each([](spatial3d::CWorld& spatial_world)
 		{
-			spatial_world.types.node_type.AddType<Node>();
-			spatial_world.types.scale_type.AddType<Scale>();
+
 		});
 	}
 }

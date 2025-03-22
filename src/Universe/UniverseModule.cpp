@@ -9,6 +9,8 @@
 
 #include "Physics3D/PhysicsComponents.h"
 
+#include "Loading/LoadingComponents.h"
+
 #include "Simulation/SimulationComponents.h"
 #include "Simulation/SimulationModule.h"
 
@@ -104,21 +106,28 @@ namespace voxel_game::universe
 
 		universe_entity.emplace<sim::CPath>(path);
 		universe_entity.add<universe::CWorld>();
-
-		sim::InitializeConfig(universe_entity, path.path_join("config.json"), config_defaults);
-
-		spatial3d::CWorld& spatial_world = universe_entity.ensure<spatial3d::CWorld>();
-
-		spatial_world.world = spatial3d::CreateWorld(spatial_world.types, spatial3d::k_max_world_scale);
-		spatial_world.world->node_size = 16;
-		spatial_world.world->node_keepalive = 1s;
-
-		spatial3d::InitializeWorldScaleEntities(universe_entity, *spatial_world.world);
+		universe_entity.add<spatial3d::CWorld>();
+		universe_entity.add<sim::CConfig>();
+		universe_entity.emplace<loading::CEntityDatabase>(path.path_join("entities.db"));
 
 		if (rendering::IsEnabled())
 		{
 			universe_entity.add<rendering::CTransform>();
 		}
+
+		sim::InitializeConfig(universe_entity, path.path_join("config.json"), config_defaults);
+
+		spatial3d::CWorld* spatial_world = universe_entity.get_mut<spatial3d::CWorld>();
+
+		spatial_world->types.node_type.AddType<Node>();
+		spatial_world->types.scale_type.AddType<Scale>();
+		spatial_world->types.world_type.AddType<World>();
+
+		spatial_world->world = spatial3d::CreateWorld(spatial_world->types, spatial3d::k_max_world_scale);
+		spatial_world->world->node_size = 16;
+		spatial_world->world->node_keepalive = 1s;
+
+		spatial3d::InitializeWorldScaleEntities(universe_entity, *spatial_world->world);
 
 		return universe_entity;
 	}
@@ -214,6 +223,8 @@ namespace voxel_game::universe
 	{
 		world.module<Module>();
 
+		world.import<sim::Components>();
+		world.import<loading::Components>();
 		world.import<physics3d::Components>();
 		world.import<spatial3d::Components>();
 		world.import<universe::Components>();
@@ -224,17 +235,6 @@ namespace voxel_game::universe
 		spatial3d::NodeType::RegisterType<Node>();
 		spatial3d::ScaleType::RegisterType<Scale>();
 		spatial3d::WorldType::RegisterType<World>();
-
-		// Initialise the spatial world of a universe
-		world.observer<spatial3d::CWorld>(DEBUG_ONLY("UniverseInitializeSpatialWorld"))
-			.event(flecs::OnAdd)
-			.with<const CWorld>()
-			.each([](spatial3d::CWorld& spatial_world)
-		{
-			spatial_world.types.node_type.AddType<Node>();
-			spatial_world.types.scale_type.AddType<Scale>();
-			spatial_world.types.world_type.AddType<World>();
-		});
 
 		world.system<spatial3d::CScale, const spatial3d::CWorld>(DEBUG_ONLY("UniverseLoadSpatialNode"))
 			.multi_threaded()
