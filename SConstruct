@@ -78,7 +78,7 @@ if ARGUMENTS.get("vs_proj"): # Generate VS project for intellisense and nice bui
     target = "VoxelGameDemo/bin/voxelgame{}{}".format(env["suffix"], env["SHLIBSUFFIX"])
     
     debug_settings = {
-        'LocalDebuggerCommand': "C:/Godot/godotengine/bin/godot.windows.template_debug.dev.double.x86_64.exe",
+        'LocalDebuggerCommand': "C:/Godot/godotengine/bin/godot.windows.editor.dev.double.x86_64.exe",
         'LocalDebuggerCommandArguments': "--path C:/Godot/Projects/VoxelGame/VoxelGameDemo --debug --remote-debug tcp://127.0.0.1:6007",
     }
 
