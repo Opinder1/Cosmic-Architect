@@ -171,6 +171,9 @@ namespace voxel_game::spatial3d
 	{
 		WorldRef world = types.world_type.CreatePoly();
 		world.poly->types = &types;
+#if defined(DEBUG_ENABLED)
+		world.poly->ptr = world.poly->types->world_type.Get<World>(world.poly);
+#endif
 
 		WorldSetMaxScale(world, max_scale);
 
@@ -203,6 +206,9 @@ namespace voxel_game::spatial3d
 			{
 				ScaleRef scale = types->scale_type.CreatePoly();
 				scale.poly->types = types;
+#if defined(DEBUG_ENABLED)
+				scale.poly->ptr = scale.poly->types->scale_type.Get<Scale>(scale.poly);
+#endif
 
 				scale[&Scale::index] = scale_index;
 
@@ -272,6 +278,9 @@ namespace voxel_game::spatial3d
 
 				NodeRef node = it->second;
 				node.poly->types = types;
+#if defined(DEBUG_ENABLED)
+				node.poly->ptr = node.poly->types->node_type.Get<Node>(node.poly);
+#endif
 
 				// Initialize the node
 				node[&Node::position] = pos;

@@ -2,12 +2,19 @@
 
 #include "Util/Poly.h"
 #include "Util/Util.h"
+#include "Util/Debug.h"
 
 namespace voxel_game::spatial3d
 {
 	struct NodeHeader;
 	struct ScaleHeader;
 	struct WorldHeader;
+
+#if defined(DEBUG_ENABLED)
+	struct Node;
+	struct Scale;
+	struct World;
+#endif
 
 	struct Types
 	{
@@ -19,16 +26,25 @@ namespace voxel_game::spatial3d
 	struct NodeHeader
 	{
 		Types* types;
+#if defined(DEBUG_ENABLED) // Pointer to see node info in debugger
+		Node* ptr;
+#endif
 	};
 
 	struct ScaleHeader
 	{
 		Types* types;
+#if defined(DEBUG_ENABLED) // Pointer to see scale info in debugger
+		Scale* ptr;
+#endif
 	};
 
 	struct WorldHeader
 	{
 		Types* types;
+#if defined(DEBUG_ENABLED) // Pointer to see world info in debugger
+		World* ptr;
+#endif
 	};
 
 	struct NodeRef
