@@ -61,7 +61,7 @@ public:
 	template<class T>
 	void AddType()
 	{
-		DEBUG_ASSERT(k_type_index<T> != k_max_offsets, "This type was not registered");
+		DEBUG_ASSERT(k_type_index<T> < k_max_offsets, "This types index is too large");
 
 		m_type_offsets[k_type_index<T>] = m_total_size;
 		m_type_constructors[k_type_index<T>] = Construct<T>;
@@ -72,7 +72,7 @@ public:
 	template<class T>
 	const T* Get(const MainT* poly) const
 	{
-		DEBUG_ASSERT(k_type_index<T> != k_max_offsets, "This type has not been registered");
+		DEBUG_ASSERT(k_type_index<T> < k_max_offsets, "This types index is too large");
 		DEBUG_ASSERT(m_type_offsets[k_type_index<T>] != 0, "Either T == MainT or this poly doesn't have this type");
 
 		const std::byte* ptr = reinterpret_cast<const std::byte*>(poly);
