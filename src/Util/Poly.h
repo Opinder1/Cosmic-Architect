@@ -9,7 +9,7 @@
 
 #include <robin_hood/robin_hood.h>
 
-#define POLY_DEBUG
+#define POLY_DEBUG DEBUG_ENABLED
 
 // A system for creating runtime defined structs which are efficently allocated in memory
 template<class MainT>
