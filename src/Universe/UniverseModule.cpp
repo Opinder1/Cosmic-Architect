@@ -122,8 +122,8 @@ namespace voxel_game::universe
 		spatial3d::CWorld* spatial_world = universe_entity.get_mut<spatial3d::CWorld>();
 
 		spatial_world->world = spatial3d::CreateWorld(universe_world_types, spatial3d::k_max_world_scale);
-		spatial_world->world[&spatial3d::World::node_size] = 16;
-		spatial_world->world[&spatial3d::World::node_keepalive] = 1s;
+		spatial_world->world->*&spatial3d::World::node_size = 16;
+		spatial_world->world->*&spatial3d::World::node_keepalive = 1s;
 
 		spatial3d::InitializeWorldScaleEntities(universe_entity, spatial_world->world);
 
@@ -139,15 +139,15 @@ namespace voxel_game::universe
 		void LoadNode(spatial3d::NodeRef node)
 		{
 			const uint32_t entities_per_node = 4;
-			const uint32_t scale_step = 1 << node[&spatial3d::Node::scale_index];
-			const uint32_t scale_node_step = scale_step * world[&spatial3d::World::node_size];
+			const uint32_t scale_step = 1 << node->*&spatial3d::Node::scale_index;
+			const uint32_t scale_node_step = scale_step * world->*&spatial3d::World::node_size;
 			const double box_size = double(scale_step) / 2.0;
 
 			for (size_t i = 0; i < entities_per_node; i++)
 			{
-				double position_x = node[&spatial3d::Node::position].x * scale_node_step;
-				double position_y = node[&spatial3d::Node::position].y * scale_node_step;
-				double position_z = node[&spatial3d::Node::position].z * scale_node_step;
+				double position_x = (node->*&spatial3d::Node::position).x * scale_node_step;
+				double position_y = (node->*&spatial3d::Node::position).y * scale_node_step;
+				double position_z = (node->*&spatial3d::Node::position).z * scale_node_step;
 
 				position_x += godot::UtilityFunctions::randf_range(0, scale_node_step);
 				position_y += godot::UtilityFunctions::randf_range(0, scale_node_step);
@@ -162,8 +162,8 @@ namespace voxel_game::universe
 				galaxy.add<rendering::CTransform>();
 				spatial3d::CEntity& entity = galaxy.ensure<spatial3d::CEntity>();
 
-				node[&spatial3d::Node::entities].insert(entity.entity);
-				node[&Node::galaxies].push_back(galaxy);
+				(node->*&spatial3d::Node::entities).insert(entity.entity);
+				(node->*&Node::galaxies).push_back(galaxy);
 			}
 		}
 	};
@@ -176,39 +176,39 @@ namespace voxel_game::universe
 
 		void LoadNode(spatial3d::NodeRef node)
 		{
-			if (node[&spatial3d::Node::position].y != 0)
+			if ((node->*&spatial3d::Node::position).y != 0)
 			{
 				return;
 			}
 
-			const uint32_t scale_step = 1 << node[&spatial3d::Node::scale_index];
-			const int32_t scale_node_step = scale_step * world[&spatial3d::World::node_size];
+			const uint32_t scale_step = 1 << node->*&spatial3d::Node::scale_index;
+			const int32_t scale_node_step = scale_step * world->*&spatial3d::World::node_size;
 			const uint8_t box_shrink = 2;
 
-			int32_t position_x = node[&spatial3d::Node::position].x * scale_node_step;
-			int32_t position_y = node[&spatial3d::Node::position].y * scale_node_step;
-			int32_t position_z = node[&spatial3d::Node::position].z * scale_node_step;
+			int32_t position_x = (node->*&spatial3d::Node::position).x * scale_node_step;
+			int32_t position_y = (node->*&spatial3d::Node::position).y * scale_node_step;
+			int32_t position_z = (node->*&spatial3d::Node::position).z * scale_node_step;
 
 			flecs::entity galaxy = sim::GetPool().CreateEntity();
 
 			galaxy.child_of(entity);
 			galaxy.is_a<galaxy::GalaxyPrefab>();
-			galaxy.emplace<physics3d::CPosition>(godot::Vector3i{ position_x, position_y - node[&spatial3d::Node::scale_index] - 1, position_z });
+			galaxy.emplace<physics3d::CPosition>(godot::Vector3i{ position_x, position_y - node->*&spatial3d::Node::scale_index - 1, position_z });
 			galaxy.emplace<physics3d::CScale>(godot::Vector3i{scale_node_step / 4, 1, scale_node_step / 4});
 			galaxy.add<rendering::CTransform>();
 			spatial3d::CEntity& entity = galaxy.ensure<spatial3d::CEntity>();
 
-			node[&spatial3d::Node::entities].insert(entity.entity);
-			node[&Node::galaxies].push_back(galaxy);
+			(node->*&spatial3d::Node::entities).insert(entity.entity);
+			(node->*&Node::galaxies).push_back(galaxy);
 		}
 
 		void UnloadNode(spatial3d::NodeRef node)
 		{
 			const uint32_t entities_per_node = 4;
-			const uint32_t scale_step = 1 << node[&spatial3d::Node::scale_index];
-			const uint32_t scale_node_step = scale_step * world[&spatial3d::World::node_size];
+			const uint32_t scale_step = 1 << node->*&spatial3d::Node::scale_index;
+			const uint32_t scale_node_step = scale_step * world->*&spatial3d::World::node_size;
 
-			for (flecs::entity_t galaxy : node[&Node::galaxies])
+			for (flecs::entity_t galaxy : node->*&Node::galaxies)
 			{
 				flecs::entity(entity.world(), galaxy).destruct();
 			}
@@ -243,12 +243,12 @@ namespace voxel_game::universe
 		{
 			UniverseNodeLoaderTest2 loader{ entity, spatial_world.world };
 
-			for (spatial3d::NodeRef node : spatial_scale.scale[&spatial3d::Scale::load_commands])
+			for (spatial3d::NodeRef node : spatial_scale.scale->*&spatial3d::Scale::load_commands)
 			{
 				loader.LoadNode(node);
 			}
 
-			for (spatial3d::NodeRef node : spatial_scale.scale[&spatial3d::Scale::unload_commands])
+			for (spatial3d::NodeRef node : spatial_scale.scale->*&spatial3d::Scale::unload_commands)
 			{
 				loader.UnloadNode(node);
 			}

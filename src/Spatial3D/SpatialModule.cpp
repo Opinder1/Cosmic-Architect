@@ -41,7 +41,7 @@ namespace voxel_game::spatial3d
 			.term_at(1).up(flecs::ChildOf)
 			.each([](CLoader& loader, CWorld& world)
 		{
-			world.world[&World::loaders].insert(loader.loader);
+			(world.world->*&World::loaders).insert(loader.loader);
 		});
 
 		world.observer<CLoader, CWorld>()
@@ -49,7 +49,7 @@ namespace voxel_game::spatial3d
 			.term_at(1).up(flecs::ChildOf)
 			.each([](CLoader& loader, CWorld& world)
 		{
-			world.world[&World::loaders].erase(loader.loader);
+			(world.world->*&World::loaders).erase(loader.loader);
 		});
 
 		// Systems
@@ -120,7 +120,7 @@ namespace voxel_game::spatial3d
 	{
 		flecs::scoped_world scope = world_entity.scope();
 
-		for (uint8_t scale_index = 0; scale_index < world[&World::max_scale]; scale_index++)
+		for (uint8_t scale_index = 0; scale_index < world->*&World::max_scale; scale_index++)
 		{
 			flecs::entity marker_entity = scope.entity();
 
@@ -128,7 +128,7 @@ namespace voxel_game::spatial3d
 			marker_entity.set_name(godot::vformat("Scale%d", scale_index).utf8());
 #endif
 
-			marker_entity.emplace<CScale>(world[&World::scales][scale_index]);
+			marker_entity.emplace<CScale>((world->*&World::scales)[scale_index]);
 		}
 	}
 }

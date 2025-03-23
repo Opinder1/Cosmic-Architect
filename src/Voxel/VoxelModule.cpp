@@ -40,7 +40,7 @@ namespace voxel_game::voxel
 			return Voxel{};
 		}
 
-		return node[&Node::voxels][pos.x % 16][pos.y % 16][pos.z % 16];
+		return (node->*&Node::voxels)[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
 	Voxel GetVoxelDepthFirst(spatial3d::ConstWorldRef world, godot::Vector3i pos, uint32_t start_scale)
@@ -57,7 +57,7 @@ namespace voxel_game::voxel
 			return GetVoxelDepthFirst(world, pos, start_scale + 1);
 		}
 
-		return node[&Node::voxels][pos.x % 16][pos.y % 16][pos.z % 16];
+		return (node->*&Node::voxels)[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
 	Voxel GetVoxelBreadthFirst(spatial3d::ConstWorldRef world, godot::Vector3i pos, uint32_t start_scale)
@@ -74,7 +74,7 @@ namespace voxel_game::voxel
 			return GetVoxelDepthFirst(world, pos, start_scale - 1);
 		}
 
-		return node[&Node::voxels][pos.x % 16][pos.y % 16][pos.z % 16];
+		return (node->*&Node::voxels)[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
 	Voxel GetVoxelOctreeSearch(spatial3d::ConstWorldRef world, godot::Vector3i pos, uint32_t start_scale)
@@ -92,7 +92,7 @@ namespace voxel_game::voxel
 		{
 			godot::Vector3i child_pos = { node_pos.x & 0x1, node_pos.y & 0x1, node_pos.z & 0x1 };
 
-			spatial3d::ConstNodeRef child_node = node[&spatial3d::Node::children][(child_pos.x * 4) + (child_pos.y * 2) + child_pos.z];
+			spatial3d::ConstNodeRef child_node = (node->*&spatial3d::Node::children)[(child_pos.x * 4) + (child_pos.y * 2) + child_pos.z];
 
 			if (child_node)
 			{
@@ -104,6 +104,6 @@ namespace voxel_game::voxel
 			node_pos.x >>= 2; node_pos.y >>= 2; node_pos.z >>= 2;
 		}
 
-		return node[&Node::voxels][pos.x % 16][pos.y % 16][pos.z % 16];
+		return (node->*&Node::voxels)[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 }

@@ -61,7 +61,7 @@ namespace voxel_game::spatial3d
 		}
 
 		template<class T, class Ret>
-		Ret& operator[](Ret T::*Member)
+		Ret& operator->*(Ret T::*Member)
 		{
 			return poly->types->node_type.Get<T>(poly)->*Member;
 		}
@@ -91,7 +91,7 @@ namespace voxel_game::spatial3d
 		}
 
 		template<class T, class Ret>
-		const Ret& operator[](Ret T::* Member)
+		const Ret& operator->*(Ret T::* Member)
 		{
 			return poly->types->node_type.Get<T>(poly)->*Member;
 		}
@@ -118,7 +118,7 @@ namespace voxel_game::spatial3d
 		}
 
 		template<class T, class Ret>
-		Ret& operator[](Ret T::* Member)
+		Ret& operator->*(Ret T::* Member)
 		{
 			return poly->types->scale_type.Get<T>(poly)->*Member;
 		}
@@ -148,7 +148,7 @@ namespace voxel_game::spatial3d
 		}
 
 		template<class T, class Ret>
-		const Ret& operator[](Ret T::* Member)
+		const Ret& operator->*(Ret T::* Member)
 		{
 			return poly->types->scale_type.Get<T>(poly)->*Member;
 		}
@@ -175,7 +175,7 @@ namespace voxel_game::spatial3d
 		}
 
 		template<class T, class Ret>
-		Ret& operator[](Ret T::* Member)
+		Ret& operator->*(Ret T::* Member)
 		{
 			return poly->types->world_type.Get<T>(poly)->*Member;
 		}
@@ -205,7 +205,7 @@ namespace voxel_game::spatial3d
 		}
 
 		template<class T, class Ret>
-		const Ret& operator[](Ret T::* Member)
+		const Ret& operator->*(Ret T::* Member)
 		{
 			return poly->types->world_type.Get<T>(poly)->*Member;
 		}

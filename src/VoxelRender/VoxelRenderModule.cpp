@@ -52,10 +52,10 @@ namespace voxel_game::voxelrender
 
 		void LoadNode(spatial3d::NodeRef node)
 		{
-			node[&Node::mesh] = rendering::AllocRID(rendering::RIDType::Mesh);
-			node[&Node::mesh_instance] = rendering::AllocRID(rendering::RIDType::Instance);
+			node->*&Node::mesh = rendering::AllocRID(rendering::RIDType::Mesh);
+			node->*&Node::mesh_instance = rendering::AllocRID(rendering::RIDType::Instance);
 
-			rendering::AddCommand<&RS::instance_set_base>(node[&Node::mesh_instance], node[&Node::mesh]);
+			rendering::AddCommand<&RS::instance_set_base>(node->*&Node::mesh_instance, node->*&Node::mesh);
 
 			godot::PackedVector3Array vertexes;
 			godot::PackedColorArray colors;
@@ -69,14 +69,14 @@ namespace voxel_game::voxelrender
 			arrays[godot::RenderingServer::ARRAY_VERTEX] = vertexes;
 			arrays[godot::RenderingServer::ARRAY_COLOR] = colors;
 
-			rendering::AddCommand<&RS::mesh_add_surface_from_arrays>(node[&Node::mesh], godot::RenderingServer::PRIMITIVE_TRIANGLES, arrays, godot::Array(), godot::Dictionary(), 0);
-			rendering::AddCommand<&RS::mesh_surface_set_material>(node[&Node::mesh], 0, spatial_world[&voxelrender::World::voxel_material]);
+			rendering::AddCommand<&RS::mesh_add_surface_from_arrays>(node->*&Node::mesh, godot::RenderingServer::PRIMITIVE_TRIANGLES, arrays, godot::Array(), godot::Dictionary(), 0);
+			rendering::AddCommand<&RS::mesh_surface_set_material>(node->*&Node::mesh, 0, spatial_world->*&voxelrender::World::voxel_material);
 		}
 
 		void UnloadNode(spatial3d::NodeRef node)
 		{
-			rendering::AddCommand<&RS::free_rid>(node[&Node::mesh_instance]);
-			rendering::AddCommand<&RS::free_rid>(node[&Node::mesh]);
+			rendering::AddCommand<&RS::free_rid>(node->*&Node::mesh_instance);
+			rendering::AddCommand<&RS::free_rid>(node->*&Node::mesh);
 		}
 	};
 
@@ -95,7 +95,7 @@ namespace voxel_game::voxelrender
 			.with<const CWorld>()
 			.each([](spatial3d::CWorld& spatial_world)
 		{
-			godot::RID voxel_material = spatial_world.world[&World::voxel_material];
+			godot::RID voxel_material = spatial_world.world->*&World::voxel_material;
 
 			if (voxel_material.is_valid())
 			{
@@ -114,12 +114,12 @@ namespace voxel_game::voxelrender
 		{
 			VoxelRenderNodeLoader loader{ entity, spatial_world.world, voxel_ctx, render_ctx };
 
-			for (spatial3d::NodeRef node : spatial_scale.scale[&spatial3d::Scale::load_commands])
+			for (spatial3d::NodeRef node : spatial_scale.scale->*&spatial3d::Scale::load_commands)
 			{
 				loader.LoadNode(node);
 			}
 
-			for (spatial3d::NodeRef node : spatial_scale.scale[&spatial3d::Scale::unload_commands])
+			for (spatial3d::NodeRef node : spatial_scale.scale->*&spatial3d::Scale::unload_commands)
 			{
 				loader.UnloadNode(node);
 			}
