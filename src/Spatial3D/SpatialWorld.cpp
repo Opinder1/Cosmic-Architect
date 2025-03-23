@@ -38,17 +38,11 @@ namespace voxel_game::spatial3d
 		return (world->*&World::scales)[scale_index];
 	}
 
-	ConstScaleRef GetScale(ConstWorldRef world, uint8_t scale_index)
-	{
-		DEBUG_ASSERT(scale_index < world->*&World::max_scale, "Requested scale out of range");
-		return (world->*&World::scales)[scale_index];
-	}
-
-	ConstNodeRef GetNode(ConstWorldRef world, godot::Vector3i position, uint8_t scale_index)
+	NodeRef GetNode(WorldRef world, godot::Vector3i position, uint8_t scale_index)
 	{
 		DEBUG_ASSERT(scale_index < k_max_world_scale, "The coordinates scale is out of range");
 
-		ConstScaleRef scale = GetScale(world, scale_index);
+		ScaleRef scale = GetScale(world, scale_index);
 
 		NodeMap::const_iterator it = (scale->*&Scale::nodes).find(position);
 
@@ -58,11 +52,6 @@ namespace voxel_game::spatial3d
 		}
 
 		return it->second;
-	}
-
-	NodeRef GetNode(WorldRef world, godot::Vector3i position, uint8_t scale_index)
-	{
-		return GetNode(ConstWorldRef(world), position, scale_index).NonConst();
 	}
 
 	void InitializeNode(WorldRef world, NodeRef node, uint8_t scale_index)
@@ -180,8 +169,10 @@ namespace voxel_game::spatial3d
 		return world;
 	}
 
-	void DestroyWorld(Types& types, WorldRef world)
+	void DestroyWorld(WorldRef world)
 	{
+		Types* types = world.poly->types;
+
 		for (size_t scale_index = 0; scale_index < world->*&World::max_scale; scale_index++)
 		{
 			ScaleRef scale = GetScale(world, scale_index);
@@ -193,7 +184,7 @@ namespace voxel_game::spatial3d
 			DEBUG_ASSERT((scale->*&Scale::nodes).empty(), "All nodes should have been destroyed before destroying the world");
 		}
 
-		types.world_type.DestroyPoly(world.poly);
+		types->world_type.DestroyPoly(world.poly);
 	}
 
 	void WorldSetMaxScale(WorldRef world, size_t max_scale)
@@ -360,7 +351,7 @@ namespace voxel_game::spatial3d
 		});
 	}
 
-	void ScaleLoadNodes(ConstWorldRef world, ScaleRef scale, const sim::CFrame& frame)
+	void ScaleLoadNodes(WorldRef world, ScaleRef scale, const sim::CFrame& frame)
 	{
 		// Finish the previous load commands
 		for (NodeRef node : scale->*&Scale::load_commands)
@@ -406,7 +397,7 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void ScaleUnloadNodes(ConstWorldRef world, ScaleRef scale, const sim::CFrame& frame)
+	void ScaleUnloadNodes(WorldRef world, ScaleRef scale, const sim::CFrame& frame)
 	{
 		// Finish the previous load commands
 		for (NodeRef node : scale->*&Scale::unload_commands)
@@ -464,7 +455,7 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void ScaleUpdateEntityNodes(ConstWorldRef world, ScaleRef scale)
+	void ScaleUpdateEntityNodes(WorldRef world, ScaleRef scale)
 	{
 		for (Entity* entity : scale->*&Scale::entities)
 		{

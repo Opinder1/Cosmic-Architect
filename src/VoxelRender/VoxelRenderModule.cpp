@@ -46,7 +46,7 @@ namespace voxel_game::voxelrender
 	struct VoxelRenderNodeLoader
 	{
 		flecs::entity entity;
-		spatial3d::ConstWorldRef spatial_world;
+		spatial3d::WorldRef spatial_world;
 		voxel::CContext& voxel_ctx;
 		CContext& render_ctx;
 

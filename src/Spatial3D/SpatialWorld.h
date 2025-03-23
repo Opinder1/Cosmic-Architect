@@ -114,11 +114,7 @@ namespace voxel_game::spatial3d
 		std::array<ScaleRef, k_max_world_scale> scales;
 	};
 
-	ConstScaleRef GetScale(ConstWorldRef spatial_world, uint8_t scale_index);
-
 	ScaleRef GetScale(WorldRef spatial_world, uint8_t scale_index);
-
-	ConstNodeRef GetNode(ConstWorldRef world, godot::Vector3i position, uint8_t scale_index);
 
 	NodeRef GetNode(WorldRef world, godot::Vector3i position, uint8_t scale_index);
 
@@ -132,11 +128,11 @@ namespace voxel_game::spatial3d
 
 	void WorldDestroyNodes(WorldRef world);
 
-	void ScaleLoadNodes(ConstWorldRef world, ScaleRef scale, const sim::CFrame& frame);
+	void ScaleLoadNodes(WorldRef world, ScaleRef scale, const sim::CFrame& frame);
 
-	void ScaleUnloadNodes(ConstWorldRef world, ScaleRef scale, const sim::CFrame& frame);
+	void ScaleUnloadNodes(WorldRef world, ScaleRef scale, const sim::CFrame& frame);
 
 	void WorldUpdateEntityScales(WorldRef world);
 
-	void ScaleUpdateEntityNodes(ConstWorldRef world, ScaleRef scale);
+	void ScaleUpdateEntityNodes(WorldRef world, ScaleRef scale);
 }

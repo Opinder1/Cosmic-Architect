@@ -134,7 +134,7 @@ namespace voxel_game::universe
 	struct UniverseNodeLoaderTest1
 	{
 		flecs::entity entity;
-		spatial3d::ConstWorldRef world;
+		spatial3d::WorldRef world;
 
 		void LoadNode(spatial3d::NodeRef node)
 		{
@@ -172,7 +172,7 @@ namespace voxel_game::universe
 	struct UniverseNodeLoaderTest2
 	{
 		flecs::entity entity;
-		spatial3d::ConstWorldRef world;
+		spatial3d::WorldRef world;
 
 		void LoadNode(spatial3d::NodeRef node)
 		{
