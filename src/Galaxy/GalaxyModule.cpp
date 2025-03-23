@@ -33,15 +33,9 @@ namespace voxel_game::galaxy
 		galaxy_entity.set_name("SimulatedGalaxy");
 #endif
 
+		galaxy_entity.is_a<PSimulatedGalaxy>();
 		galaxy_entity.child_of(universe_entity);
-
 		galaxy_entity.emplace<sim::CPath>(path);
-		galaxy_entity.add<physics3d::CPosition>();
-		galaxy_entity.add<physics3d::CRotation>();
-		galaxy_entity.add<CWorld>();
-		galaxy_entity.add<spatial3d::CWorld>();
-		galaxy_entity.add<spatial3d::CLoader>();
-		galaxy_entity.emplace<loading::CEntityDatabase>(path.path_join("entities.db"));
 
 		if (rendering::IsEnabled())
 		{
@@ -59,6 +53,11 @@ namespace voxel_game::galaxy
 		spatial_loader->loader->dist_per_lod = 3;
 		spatial_loader->loader->min_lod = 0;
 		spatial_loader->loader->max_lod = spatial3d::k_max_world_scale;
+
+		flecs::entity entity_loader = world.entity();
+
+		entity_loader.emplace<loading::CEntityDatabase>(path.path_join("entities.db"));
+		entity_loader.child_of(galaxy_entity);
 
 		return galaxy_entity;
 	}

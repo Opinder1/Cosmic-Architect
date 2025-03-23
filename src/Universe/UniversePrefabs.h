@@ -2,14 +2,12 @@
 
 #include <flecs/flecs.h>
 
-namespace voxel_game::galaxy
+namespace voxel_game::universe
 {
 	struct Prefabs
 	{
 		Prefabs(flecs::world& world);
 	};
 
-	struct PGalaxy {};
-
-	struct PSimulatedGalaxy {};
+	struct PSimulatedUniverse {};
 }

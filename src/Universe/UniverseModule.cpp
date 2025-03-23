@@ -1,5 +1,6 @@
 #include "UniverseModule.h"
 #include "UniverseComponents.h"
+#include "UniversePrefabs.h"
 
 #include "Galaxy/GalaxyComponents.h"
 #include "Galaxy/GalaxyPrefabs.h"
@@ -106,16 +107,8 @@ namespace voxel_game::universe
 		universe_entity.set_name("Universe");
 #endif
 
+		universe_entity.is_a<PSimulatedUniverse>();
 		universe_entity.emplace<sim::CPath>(path);
-		universe_entity.add<universe::CWorld>();
-		universe_entity.add<spatial3d::CWorld>();
-		universe_entity.add<sim::CConfig>();
-		universe_entity.emplace<loading::CEntityDatabase>(path.path_join("entities.db"));
-
-		if (rendering::IsEnabled())
-		{
-			universe_entity.add<rendering::CTransform>();
-		}
 
 		sim::InitializeConfig(universe_entity, path.path_join("config.json"), config_defaults);
 
@@ -126,6 +119,11 @@ namespace voxel_game::universe
 		spatial_world->world->*&spatial3d::World::node_keepalive = 1s;
 
 		spatial3d::InitializeWorldScaleEntities(universe_entity, spatial_world->world);
+
+		flecs::entity entity_loader = world.entity();
+
+		entity_loader.emplace<loading::CEntityDatabase>(path.path_join("entities.db"));
+		entity_loader.child_of(universe_entity);
 
 		return universe_entity;
 	}
@@ -156,10 +154,9 @@ namespace voxel_game::universe
 				flecs::entity galaxy = sim::GetPool().CreateEntity();
 
 				galaxy.child_of(entity);
-				galaxy.is_a<galaxy::GalaxyPrefab>();
+				galaxy.is_a<galaxy::PGalaxy>();
 				galaxy.set(physics3d::CPosition{ godot::Vector3(position_x, position_y, position_z) });
 				galaxy.set(physics3d::CScale{ godot::Vector3(box_size, box_size, box_size) });
-				galaxy.add<rendering::CTransform>();
 				spatial3d::CEntity& entity = galaxy.ensure<spatial3d::CEntity>();
 
 				(node->*&spatial3d::Node::entities).insert(entity.entity);
@@ -192,10 +189,9 @@ namespace voxel_game::universe
 			flecs::entity galaxy = sim::GetPool().CreateEntity();
 
 			galaxy.child_of(entity);
-			galaxy.is_a<galaxy::GalaxyPrefab>();
+			galaxy.is_a<galaxy::PGalaxy>();
 			galaxy.emplace<physics3d::CPosition>(godot::Vector3i{ position_x, position_y - node->*&spatial3d::Node::scale_index - 1, position_z });
 			galaxy.emplace<physics3d::CScale>(godot::Vector3i{scale_node_step / 4, 1, scale_node_step / 4});
-			galaxy.add<rendering::CTransform>();
 			spatial3d::CEntity& entity = galaxy.ensure<spatial3d::CEntity>();
 
 			(node->*&spatial3d::Node::entities).insert(entity.entity);
@@ -219,6 +215,8 @@ namespace voxel_game::universe
 	{
 		world.module<Module>();
 
+		world.import<Components>();
+		world.import<Prefabs>();
 		world.import<sim::Components>();
 		world.import<loading::Components>();
 		world.import<physics3d::Components>();
@@ -241,7 +239,7 @@ namespace voxel_game::universe
 			.with<const CWorld>().up(flecs::ChildOf)
 			.each([](flecs::entity entity, spatial3d::CScale& spatial_scale, const spatial3d::CWorld& spatial_world)
 		{
-			UniverseNodeLoaderTest2 loader{ entity, spatial_world.world };
+			UniverseNodeLoaderTest2 loader{ entity.parent(), spatial_world.world};
 
 			for (spatial3d::NodeRef node : spatial_scale.scale->*&spatial3d::Scale::load_commands)
 			{
