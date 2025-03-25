@@ -1,12 +1,11 @@
 #pragma once
 
+#include "SpatialPoly.h"
 
 #include <flecs/flecs.h>
 
 namespace voxel_game::spatial3d
 {
-	struct WorldRef;
-
 	struct Module
 	{
 		Module(flecs::world& world);

@@ -21,7 +21,6 @@ namespace voxel_game::universe
 
 		world.prefab<PSimulatedUniverse>()
 			.add<universe::CWorld>()
-			.add<universe::CWorld>()
 			.add<spatial3d::CWorld>()
 			.add<sim::CConfig>();
 

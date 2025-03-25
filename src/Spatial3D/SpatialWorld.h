@@ -101,6 +101,9 @@ namespace voxel_game::spatial3d
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct World : Nocopy, Nomove
 	{
+		ScaleType* scale_type = nullptr;
+		NodeType* node_type = nullptr;
+
 		godot::AABB bounds;
 		uint8_t max_scale = 0;
 		uint8_t node_size = 1;

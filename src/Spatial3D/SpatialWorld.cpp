@@ -159,10 +159,9 @@ namespace voxel_game::spatial3d
 	WorldRef CreateWorld(Types& types, uint8_t max_scale)
 	{
 		WorldRef world = types.world_type.CreatePoly();
-		world.poly->types = &types;
-#if defined(DEBUG_ENABLED)
-		world.poly->ptr = world.poly->types->world_type.Get<World>(world.poly);
-#endif
+
+		world->*&World::scale_type = &types.scale_type;
+		world->*&World::node_type = &types.node_type;
 
 		WorldSetMaxScale(world, max_scale);
 
@@ -171,8 +170,6 @@ namespace voxel_game::spatial3d
 
 	void DestroyWorld(WorldRef world)
 	{
-		Types* types = world.poly->types;
-
 		for (size_t scale_index = 0; scale_index < world->*&World::max_scale; scale_index++)
 		{
 			ScaleRef scale = GetScale(world, scale_index);
@@ -184,22 +181,16 @@ namespace voxel_game::spatial3d
 			DEBUG_ASSERT((scale->*&Scale::nodes).empty(), "All nodes should have been destroyed before destroying the world");
 		}
 
-		types->world_type.DestroyPoly(world.poly);
+		world.Destroy();
 	}
 
 	void WorldSetMaxScale(WorldRef world, size_t max_scale)
 	{
-		Types* types = world.poly->types;
-
 		if (max_scale > world->*&World::max_scale)
 		{
 			for (uint8_t scale_index = world->*&World::max_scale; scale_index < max_scale; scale_index++)
 			{
-				ScaleRef scale = types->scale_type.CreatePoly();
-				scale.poly->types = types;
-#if defined(DEBUG_ENABLED)
-				scale.poly->ptr = scale.poly->types->scale_type.Get<Scale>(scale.poly);
-#endif
+				ScaleRef scale = (world->*&World::scale_type)->CreatePoly();
 
 				scale->*&Scale::index = scale_index;
 
@@ -235,7 +226,7 @@ namespace voxel_game::spatial3d
 					}
 				}
 
-				types->scale_type.DestroyPoly(scale.poly);
+				scale.Destroy();
 			}
 		}
 
@@ -245,8 +236,6 @@ namespace voxel_game::spatial3d
 	void WorldCreateNodes(WorldRef world, const sim::CFrame& frame)
 	{
 		DEBUG_ASSERT(world->*&World::max_scale > 0, "The spatial world should have at least one scale");
-
-		Types* types = world.poly->types;
 
 		for (size_t scale_index = 0; scale_index < world->*&World::max_scale; scale_index++)
 		{
@@ -265,13 +254,9 @@ namespace voxel_game::spatial3d
 					continue;
 				}
 
-				it->second = types->node_type.CreatePoly();
+				it->second = (world->*&World::node_type)->CreatePoly();
 
 				NodeRef node = it->second;
-				node.poly->types = types;
-#if defined(DEBUG_ENABLED)
-				node.poly->ptr = node.poly->types->node_type.Get<Node>(node.poly);
-#endif
 
 				// Initialize the node
 				node->*&Node::position = pos;
@@ -288,8 +273,6 @@ namespace voxel_game::spatial3d
 
 	void WorldDestroyNodes(WorldRef world)
 	{
-		Types* types = world.poly->types;
-
 		for (size_t scale_index = 0; scale_index < world->*&World::max_scale; scale_index++)
 		{
 			EASY_BLOCK("ScaleDestroyNodes");
@@ -305,7 +288,7 @@ namespace voxel_game::spatial3d
 
 				(scale->*&Scale::nodes).erase(node->*&Node::position);
 
-				types->node_type.DestroyPoly(node.poly);
+				node.Destroy();
 			}
 
 			(scale->*&Scale::destroy_commands).clear();

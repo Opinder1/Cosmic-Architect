@@ -12,25 +12,25 @@
 #define POLY_DEBUG DEBUG_ENABLED
 
 // A system for creating runtime defined structs which are efficently allocated in memory
-template<class MainT>
+template<class T, size_t k_max_offsets>
 class PolyType : Nocopy, Nomove
 {
+private:
 	constexpr static const uint16_t k_invalid_poly_offset = UINT16_MAX;
-	constexpr static const size_t k_max_offsets = 16;
+
+	using FactoryCB = void (*)(std::byte*);
 
 public:
 	template<class T>
 	static const size_t k_type_index;
 
-private:
-	using FactoryCB = void (*)(std::byte*);
-
-	struct Entry
+	struct Header
 	{
-		FactoryCB construct = nullptr;
-		FactoryCB destruct = nullptr;
-		uint16_t offset = 0;
+		PolyType* types;
 	};
+
+	template<>
+	const size_t k_type_index<Header> = 0;
 
 private:
 	template<class T>
@@ -48,7 +48,7 @@ private:
 public:
 	PolyType()
 	{
-		AddType<MainT>();
+		AddType<Header>();
 	}
 
 	~PolyType()
@@ -70,10 +70,10 @@ public:
 	}
 
 	template<class T>
-	const T* Get(const MainT* poly) const
+	const T* Get(const Header* poly) const
 	{
 		DEBUG_ASSERT(k_type_index<T> < k_max_offsets, "This types index is too large");
-		DEBUG_ASSERT(m_type_offsets[k_type_index<T>] != 0, "Either T == MainT or this poly doesn't have this type");
+		DEBUG_ASSERT(m_type_offsets[k_type_index<T>] != 0, "Either T == HeaderT or this poly doesn't have this type");
 
 		const std::byte* ptr = reinterpret_cast<const std::byte*>(poly);
 
@@ -85,25 +85,25 @@ public:
 	}
 
 	template<class T>
-	T* Get(MainT* poly) const
+	T* Get(Header* poly) const
 	{
-		return const_cast<T*>(Get<T>(const_cast<const MainT*>(poly)));
+		return const_cast<T*>(Get<T>(const_cast<const Header*>(poly)));
 	}
 
 	template<class T>
-	const T& Get(const MainT& poly) const
+	const T& Get(const Header& poly) const
 	{
 		return *Get<T>(&poly);
 	}
 
 	template<class T>
-	T& Get(MainT& poly) const
+	T& Get(Header& poly) const
 	{
 		return *Get<T>(&poly);
 	}
 
 	// Create a poly of this type
-	MainT* CreatePoly()
+	Header* CreatePoly()
 	{
 		DEBUG_ASSERT(m_total_size > 0, "We should have entries for the poly type");
 
@@ -120,17 +120,22 @@ public:
 #if defined(POLY_DEBUG)
 		m_created.insert(ptr);
 #endif
-		return reinterpret_cast<MainT*>(ptr);
+		Header* header = reinterpret_cast<Header*>(ptr);
+
+		header->types = this;
+
+		return header;
 	}
 
 	// Destroy a poly of this type
-	void DestroyPoly(MainT* poly)
+	void DestroyPoly(Header* poly)
 	{
 		DEBUG_ASSERT(poly != nullptr, "A valid poly should be provided for destruction");
 
 		std::byte* ptr = reinterpret_cast<std::byte*>(poly);
 
 #if defined(POLY_DEBUG)
+		DEBUG_ASSERT(m_created.contains(ptr), "We didn't create this poly");
 		m_created.erase(ptr);
 #endif
 
@@ -152,12 +157,57 @@ public:
 	}
 
 private:
-	uint16_t m_total_size = 0;
 	std::array<uint16_t, k_max_offsets> m_type_offsets = { 0 };
+
+	uint16_t m_total_size = 0;
 	std::array<FactoryCB, k_max_offsets> m_type_constructors = { nullptr };
 	std::array<FactoryCB, k_max_offsets> m_type_destructors = { nullptr };
 
 #if defined(POLY_DEBUG)
 	robin_hood::unordered_set<const std::byte*> m_created;
 #endif
+};
+
+template<class Type>
+class PolyRef
+{
+	using Header = typename Type::Header;
+
+public:
+	PolyRef() : m_poly(nullptr) {}
+	PolyRef(Header* poly) : m_poly(poly) {}
+
+	template<class T>
+	T& Get() const
+	{
+		return m_poly->types->Get<T>(*m_poly);
+	}
+
+	template<auto Member,
+		class Ret = get_member_type<decltype(Member)>::type,
+		class Class = get_member_class<decltype(Member)>::type>
+	Ret& Var() const
+	{
+		return m_poly->types->Get<Class>(m_poly)->*Member;
+	}
+
+	template<class T, class Ret>
+	Ret& operator->*(Ret T::* Member) const
+	{
+		return m_poly->types->Get<T>(m_poly)->*Member;
+	}
+
+	void Destroy()
+	{
+		m_poly->types->DestroyPoly(m_poly);
+		m_poly = nullptr;
+	}
+
+	operator bool() const
+	{
+		return m_poly != nullptr;
+	}
+
+private:
+	Header* m_poly;
 };

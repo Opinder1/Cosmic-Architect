@@ -26,9 +26,7 @@ namespace voxel_game::spatial3d
 		world.component<CWorld>()
 			.on_remove([](CWorld& world)
 		{
-			Types* types = world.world.poly->types;
-
-			types->world_type.DestroyPoly(world.world.poly);
+			world.world.Destroy();
 		});
 	}
 }
