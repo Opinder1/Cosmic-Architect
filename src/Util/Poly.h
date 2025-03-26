@@ -2,12 +2,13 @@
 
 #include "Debug.h"
 #include "Nocopy.h"
+#include "Util/Util.h"
+
+#include <robin_hood/robin_hood.h>
 
 #include <array>
 #include <vector>
 #include <memory>
-
-#include <robin_hood/robin_hood.h>
 
 #define POLY_DEBUG DEBUG_ENABLED
 
@@ -26,23 +27,23 @@ static void PolyComponentDestruct(std::byte* ptr)
 }
 
 // A system for creating runtime defined structs which are efficently allocated in memory
-template<class T, size_t k_max_offsets>
+template<class DerivedT, size_t N>
 class PolyType : Nocopy, Nomove
 {
-private:
-	constexpr static const uint16_t k_invalid_poly_offset = UINT16_MAX;
-
 public:
+	constexpr static const uint16_t k_invalid_poly_offset = UINT16_MAX;
+	constexpr static const size_t k_num_types = N;
+
 	template<class T>
 	static const size_t k_type_index;
 
 	struct Header
 	{
-		PolyType* types;
+		PolyType* archetype = nullptr;
 	};
 
-	static const std::array<PolyComponentCB, k_max_offsets> k_type_constructors;
-	static const std::array<PolyComponentCB, k_max_offsets> k_type_destructors;
+	static const std::array<PolyComponentCB, k_num_types> k_type_constructors;
+	static const std::array<PolyComponentCB, k_num_types> k_type_destructors;
 
 public:
 	PolyType()
@@ -62,7 +63,7 @@ public:
 	template<class T>
 	void AddType()
 	{
-		DEBUG_ASSERT(k_type_index<T> < k_max_offsets, "This types index is too large");
+		DEBUG_ASSERT(k_type_index<T> < k_num_types, "This types index is too large");
 
 		m_type_offsets[k_type_index<T>] = m_total_size;
 		m_total_size += sizeof(T);
@@ -71,7 +72,7 @@ public:
 	template<class T>
 	const T* Get(const Header* poly) const
 	{
-		DEBUG_ASSERT(k_type_index<T> < k_max_offsets, "This types index is too large");
+		DEBUG_ASSERT(k_type_index<T> < k_num_types, "This types index is too large");
 		DEBUG_ASSERT(m_type_offsets[k_type_index<T>] != 0, "Either T == HeaderT or this poly doesn't have this type");
 
 		const std::byte* ptr = reinterpret_cast<const std::byte*>(poly);
@@ -108,7 +109,7 @@ public:
 
 		std::byte* ptr = reinterpret_cast<std::byte*>(malloc(m_total_size));
 
-		for (size_t i = 0; i < k_max_offsets; i++)
+		for (size_t i = 0; i < k_num_types; i++)
 		{
 			if (m_type_offsets[i] != k_invalid_poly_offset)
 			{
@@ -121,7 +122,7 @@ public:
 #endif
 		Header* header = reinterpret_cast<Header*>(ptr);
 
-		header->types = this;
+		header->archetype = this;
 
 		return header;
 	}
@@ -138,7 +139,7 @@ public:
 		m_created.erase(ptr);
 #endif
 
-		for (size_t i = 0; i < k_max_offsets; i++)
+		for (size_t i = 0; i < k_num_types; i++)
 		{
 			if (m_type_offsets[i] != k_invalid_poly_offset)
 			{
@@ -156,7 +157,7 @@ public:
 	}
 
 private:
-	std::array<uint16_t, k_max_offsets> m_type_offsets;
+	std::array<uint16_t, k_num_types> m_type_offsets;
 	uint16_t m_total_size = 0;
 
 #if defined(POLY_DEBUG)
@@ -164,10 +165,10 @@ private:
 #endif
 };
 
-template<class Type>
+template<class ArchetypeT>
 class PolyRef
 {
-	using Header = typename Type::Header;
+	using Header = typename ArchetypeT::Header;
 
 public:
 	PolyRef() : m_poly(nullptr) {}
@@ -176,19 +177,19 @@ public:
 	template<class T>
 	T& Get() const
 	{
-		return m_poly->types->Get<T>(*m_poly);
+		return m_poly->archetype->Get<T>(*m_poly);
 	}
 
 	template<class T>
 	T* TryGet() const
 	{
-		return m_poly->types->Get<T>(m_poly);
+		return m_poly->archetype->Get<T>(m_poly);
 	}
 
 	template<class T>
 	bool Has() const
 	{
-		return m_poly->types->Get<T>(m_poly) != nullptr;
+		return m_poly->archetype->Get<T>(m_poly) != nullptr;
 	}
 
 	template<auto Member,
@@ -196,18 +197,18 @@ public:
 		class Class = get_member_class<decltype(Member)>::type>
 	Ret& Var() const
 	{
-		return m_poly->types->Get<Class>(m_poly)->*Member;
+		return m_poly->archetype->Get<Class>(m_poly)->*Member;
 	}
 
 	template<class T, class Ret>
 	Ret& operator->*(Ret T::* Member) const
 	{
-		return m_poly->types->Get<T>(m_poly)->*Member;
+		return m_poly->archetype->Get<T>(m_poly)->*Member;
 	}
 
 	void Destroy()
 	{
-		m_poly->types->DestroyPoly(m_poly);
+		m_poly->archetype->DestroyPoly(m_poly);
 		m_poly = nullptr;
 	}
 

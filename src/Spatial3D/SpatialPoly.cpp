@@ -15,7 +15,7 @@ template<> template<> const size_t spatial3d::NodeType::k_type_index<galaxy::Nod
 template<> template<> const size_t spatial3d::NodeType::k_type_index<voxel::Node> = 4;
 template<> template<> const size_t spatial3d::NodeType::k_type_index<voxelrender::Node> = 5;
 
-template<> const std::array<PolyComponentCB, 6> spatial3d::NodeType::k_type_constructors =
+const std::array<PolyComponentCB, 6> PolyType<spatial3d::NodeType, 6>::k_type_constructors =
 {
 	PolyComponentConstruct<spatial3d::NodeType::Header>,
 	PolyComponentConstruct<spatial3d::Node>,
@@ -25,7 +25,7 @@ template<> const std::array<PolyComponentCB, 6> spatial3d::NodeType::k_type_cons
 	PolyComponentConstruct<voxelrender::Node>,
 };
 
-template<> const std::array<PolyComponentCB, 6> spatial3d::NodeType::k_type_destructors =
+const std::array<PolyComponentCB, 6> PolyType<spatial3d::NodeType, 6>::k_type_destructors =
 {
 	PolyComponentDestruct<spatial3d::NodeType::Header>,
 	PolyComponentDestruct<spatial3d::Node>,
@@ -42,7 +42,7 @@ template<> template<> const size_t spatial3d::ScaleType::k_type_index<galaxy::Sc
 template<> template<> const size_t spatial3d::ScaleType::k_type_index<voxel::Scale> = 4;
 template<> template<> const size_t spatial3d::ScaleType::k_type_index<voxelrender::Scale> = 5;
 
-template<> const std::array<PolyComponentCB, 6> spatial3d::ScaleType::k_type_constructors =
+const std::array<PolyComponentCB, 6> PolyType<spatial3d::ScaleType, 6>::k_type_constructors =
 {
 	PolyComponentConstruct<spatial3d::ScaleType::Header>,
 	PolyComponentConstruct<spatial3d::Scale>,
@@ -52,7 +52,7 @@ template<> const std::array<PolyComponentCB, 6> spatial3d::ScaleType::k_type_con
 	PolyComponentConstruct<voxelrender::Scale>,
 };
 
-template<> const std::array<PolyComponentCB, 6> spatial3d::ScaleType::k_type_destructors =
+const std::array<PolyComponentCB, 6> PolyType<spatial3d::ScaleType, 6>::k_type_destructors =
 {
 	PolyComponentDestruct<spatial3d::ScaleType::Header>,
 	PolyComponentDestruct<spatial3d::Scale>,
@@ -69,7 +69,7 @@ template<> template<> const size_t spatial3d::WorldType::k_type_index<galaxy::Wo
 template<> template<> const size_t spatial3d::WorldType::k_type_index<voxel::World> = 4;
 template<> template<> const size_t spatial3d::WorldType::k_type_index<voxelrender::World> = 5;
 
-template<> const std::array<PolyComponentCB, 6> spatial3d::WorldType::k_type_constructors =
+const std::array<PolyComponentCB, 6> PolyType<spatial3d::WorldType, 6>::k_type_constructors =
 {
 	PolyComponentConstruct<spatial3d::WorldType::Header>,
 	PolyComponentConstruct<spatial3d::World>,
@@ -79,7 +79,7 @@ template<> const std::array<PolyComponentCB, 6> spatial3d::WorldType::k_type_con
 	PolyComponentConstruct<voxelrender::World>,
 };
 
-template<> const std::array<PolyComponentCB, 6> spatial3d::WorldType::k_type_destructors =
+const std::array<PolyComponentCB, 6> PolyType<spatial3d::WorldType, 6>::k_type_destructors =
 {
 	PolyComponentDestruct<spatial3d::WorldType::Header>,
 	PolyComponentDestruct<spatial3d::World>,
@@ -88,3 +88,14 @@ template<> const std::array<PolyComponentCB, 6> spatial3d::WorldType::k_type_des
 	PolyComponentDestruct<voxel::World>,
 	PolyComponentDestruct<voxelrender::World>,
 };
+
+#include "Util/PolyFactory.h"
+
+using F = PolyFactory<spatial3d::WorldType>;
+
+void Test()
+{
+	F factory;
+
+	PolyPtr<F> ptr = factory.CreatePoly(GenerateUUID());
+}

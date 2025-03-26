@@ -6,17 +6,35 @@
 
 namespace voxel_game::spatial3d
 {
-	struct NodePolyType {};
-	struct ScalePolyType {};
-	struct WorldPolyType {};
+	struct NodeType : PolyType<NodeType, 6>
+	{
+		using PolyType::PolyType;
+	};
 
-	using NodeType = PolyType<NodePolyType, 6>;
-	using ScaleType = PolyType<ScalePolyType, 6>;
-	using WorldType = PolyType<WorldPolyType, 6>;
+	struct ScaleType : PolyType<ScaleType, 6>
+	{
+		using PolyType::PolyType;
+	};
 
-	using NodeRef = PolyRef<NodeType>;
-	using ScaleRef = PolyRef<ScaleType>;
-	using WorldRef = PolyRef<WorldType>;
+	struct WorldType : PolyType<WorldType, 6>
+	{
+		using PolyType::PolyType;
+	};
+
+	struct NodeRef : PolyRef<NodeType>
+	{
+		using PolyRef::PolyRef;
+	};
+
+	struct ScaleRef : PolyRef<ScaleType>
+	{
+		using PolyRef::PolyRef;
+	};
+
+	struct WorldRef : PolyRef<WorldType>
+	{
+		using PolyRef::PolyRef;
+	};
 
 	struct Types
 	{
