@@ -1,9 +1,7 @@
 #include "UniverseModule.h"
 #include "UniverseComponents.h"
-#include "UniversePrefabs.h"
 
 #include "Galaxy/GalaxyComponents.h"
-#include "Galaxy/GalaxyPrefabs.h"
 
 #include "Spatial3D/SpatialComponents.h"
 #include "Spatial3D/SpatialModule.h"
@@ -107,8 +105,15 @@ namespace voxel_game::universe
 		universe_entity.set_name("Universe");
 #endif
 
-		universe_entity.is_a<PSimulatedUniverse>();
 		universe_entity.emplace<sim::CPath>(path);
+		universe_entity.add<universe::CWorld>();
+		universe_entity.add<spatial3d::CWorld>();
+		universe_entity.add<sim::CConfig>();
+
+		if (rendering::IsEnabled())
+		{
+			world.add<rendering::CTransform>();
+		}
 
 		sim::InitializeConfig(universe_entity, path.path_join("config.json"), config_defaults);
 
@@ -129,12 +134,39 @@ namespace voxel_game::universe
 	}
 
 	// Spawns a bunch of random cubes around the camera
-	struct UniverseNodeLoaderTest1
+	struct UniverseNodeLoaderTest
 	{
 		flecs::entity entity;
 		spatial3d::WorldRef world;
 
-		void LoadNode(spatial3d::NodeRef node)
+		void CreateGalaxy(spatial3d::NodeRef node, godot::Vector3 position, godot::Vector3 scale)
+		{
+			flecs::entity galaxy = sim::GetPool().CreateEntity();
+
+			galaxy.child_of(entity);
+			galaxy.add<galaxy::CWorld>();
+			galaxy.add<physics3d::CPosition>();
+			galaxy.add<physics3d::CScale>();
+			galaxy.set(physics3d::CPosition{ position });
+			galaxy.set(physics3d::CScale{ scale });
+
+			if (rendering::IsEnabled())
+			{
+				flecs::entity galaxy_schematic = sim::GetPool().CreateEntity();
+
+				galaxy_schematic.add<rendering::CPlaceholderCube>();
+
+				galaxy.add<rendering::CTransform>();
+				galaxy.add<rendering::CInstance>(galaxy_schematic);
+			}
+
+			spatial3d::CEntity& entity = galaxy.ensure<spatial3d::CEntity>();
+
+			(node->*&spatial3d::Node::entities).insert(entity.entity);
+			(node->*&Node::galaxies).push_back(galaxy);
+		}
+
+		void LoadNodeRandomly(spatial3d::NodeRef node)
 		{
 			const uint32_t entities_per_node = 4;
 			const uint32_t scale_step = 1 << node->*&spatial3d::Node::scale_index;
@@ -143,35 +175,17 @@ namespace voxel_game::universe
 
 			for (size_t i = 0; i < entities_per_node; i++)
 			{
-				double position_x = (node->*&spatial3d::Node::position).x * scale_node_step;
-				double position_y = (node->*&spatial3d::Node::position).y * scale_node_step;
-				double position_z = (node->*&spatial3d::Node::position).z * scale_node_step;
+				godot::Vector3 position = node->*&spatial3d::Node::position * scale_node_step;
 
-				position_x += godot::UtilityFunctions::randf_range(0, scale_node_step);
-				position_y += godot::UtilityFunctions::randf_range(0, scale_node_step);
-				position_z += godot::UtilityFunctions::randf_range(0, scale_node_step);
+				position.x += godot::UtilityFunctions::randf_range(0, scale_node_step);
+				position.y += godot::UtilityFunctions::randf_range(0, scale_node_step);
+				position.z += godot::UtilityFunctions::randf_range(0, scale_node_step);
 
-				flecs::entity galaxy = sim::GetPool().CreateEntity();
-
-				galaxy.child_of(entity);
-				galaxy.is_a<galaxy::PGalaxy>();
-				galaxy.set(physics3d::CPosition{ godot::Vector3(position_x, position_y, position_z) });
-				galaxy.set(physics3d::CScale{ godot::Vector3(box_size, box_size, box_size) });
-				spatial3d::CEntity& entity = galaxy.ensure<spatial3d::CEntity>();
-
-				(node->*&spatial3d::Node::entities).insert(entity.entity);
-				(node->*&Node::galaxies).push_back(galaxy);
+				CreateGalaxy(node, position, godot::Vector3(box_size, box_size, box_size));
 			}
 		}
-	};
 
-	// Spawns a bunch of flat squares around the camera on the xz plane
-	struct UniverseNodeLoaderTest2
-	{
-		flecs::entity entity;
-		spatial3d::WorldRef world;
-
-		void LoadNode(spatial3d::NodeRef node)
+		void LoadNodePlane(spatial3d::NodeRef node)
 		{
 			if ((node->*&spatial3d::Node::position).y != 0)
 			{
@@ -182,20 +196,11 @@ namespace voxel_game::universe
 			const int32_t scale_node_step = scale_step * world->*&spatial3d::World::node_size;
 			const uint8_t box_shrink = 2;
 
-			int32_t position_x = (node->*&spatial3d::Node::position).x * scale_node_step;
-			int32_t position_y = (node->*&spatial3d::Node::position).y * scale_node_step;
-			int32_t position_z = (node->*&spatial3d::Node::position).z * scale_node_step;
+			godot::Vector3i position = node->*&spatial3d::Node::position * scale_node_step;
 
-			flecs::entity galaxy = sim::GetPool().CreateEntity();
+			position.y -= node->*&spatial3d::Node::scale_index - 1;
 
-			galaxy.child_of(entity);
-			galaxy.is_a<galaxy::PGalaxy>();
-			galaxy.emplace<physics3d::CPosition>(godot::Vector3i{ position_x, position_y - node->*&spatial3d::Node::scale_index - 1, position_z });
-			galaxy.emplace<physics3d::CScale>(godot::Vector3i{scale_node_step / 4, 1, scale_node_step / 4});
-			spatial3d::CEntity& entity = galaxy.ensure<spatial3d::CEntity>();
-
-			(node->*&spatial3d::Node::entities).insert(entity.entity);
-			(node->*&Node::galaxies).push_back(galaxy);
+			CreateGalaxy(node, position, godot::Vector3i{ scale_node_step / 4, 1, scale_node_step / 4 });
 		}
 
 		void UnloadNode(spatial3d::NodeRef node)
@@ -216,13 +221,11 @@ namespace voxel_game::universe
 		world.module<Module>();
 
 		world.import<Components>();
-		world.import<Prefabs>();
 		world.import<sim::Components>();
 		world.import<loading::Components>();
 		world.import<physics3d::Components>();
 		world.import<spatial3d::Components>();
 		world.import<universe::Components>();
-		world.import<galaxy::Prefabs>();
 
 		InitializeConfigDefaults();
 
@@ -239,11 +242,11 @@ namespace voxel_game::universe
 			.with<const CWorld>().up(flecs::ChildOf)
 			.each([](flecs::entity entity, spatial3d::CScale& spatial_scale, const spatial3d::CWorld& spatial_world)
 		{
-			UniverseNodeLoaderTest2 loader{ entity.parent(), spatial_world.world};
+			UniverseNodeLoaderTest loader{ entity.parent(), spatial_world.world};
 
 			for (spatial3d::NodeRef node : spatial_scale.scale->*&spatial3d::Scale::load_commands)
 			{
-				loader.LoadNode(node);
+				loader.LoadNodePlane(node);
 			}
 
 			for (spatial3d::NodeRef node : spatial_scale.scale->*&spatial3d::Scale::unload_commands)

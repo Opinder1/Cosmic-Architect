@@ -1,4 +1,5 @@
 #include "UniverseServer.h"
+#include "UniverseServer_StaticData.h"
 #include "UniverseServer_StringNames.h"
 
 #include "Universe/UniverseModule.h"
@@ -42,6 +43,8 @@ namespace voxel_game
 	const size_t k_simulation_ticks_per_second = 20;
 
 	godot::OptObj<UniverseServer> UniverseServer::k_singleton;
+
+	std::optional<UniverseServer::StaticData> UniverseServer::k_static_data;
 
 	std::optional<const UniverseServer::SignalStrings> UniverseServer::k_signals;
 
@@ -424,10 +427,12 @@ namespace voxel_game
 		ADD_SIGNAL(godot::MethodInfo(k_signals->use_spell_response_response));
 
 		k_singleton.instantiate();
+		k_static_data.emplace();
 	}
 
 	void UniverseServer::_cleanup_methods()
 	{
+		k_static_data.reset();
 		k_singleton.reset();
 
 		k_signals.reset();

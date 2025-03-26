@@ -27,7 +27,7 @@ namespace voxel_game
 	{
 		GDCLASS(UniverseServer, SimulationServer);
 
-		struct CommandStrings;
+		struct StaticData;
 		struct SignalStrings;
 
 	public:
@@ -302,6 +302,8 @@ namespace voxel_game
 
 	private:
 		static godot::OptObj<UniverseServer> k_singleton;
+
+		static std::optional<StaticData> k_static_data;
 
 		// Cached string names for optimization
 		static std::optional<const SignalStrings> k_signals;

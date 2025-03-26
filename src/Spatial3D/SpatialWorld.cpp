@@ -163,7 +163,16 @@ namespace voxel_game::spatial3d
 		world->*&World::scale_type = &types.scale_type;
 		world->*&World::node_type = &types.node_type;
 
-		WorldSetMaxScale(world, max_scale);
+		for (uint8_t scale_index = world->*&World::max_scale; scale_index < max_scale; scale_index++)
+		{
+			ScaleRef scale = (world->*&World::scale_type)->CreatePoly();
+
+			scale->*&Scale::index = scale_index;
+
+			(world->*&World::scales)[scale_index] = scale;
+		}
+
+		world->*&World::max_scale = max_scale;
 
 		return world;
 	}
@@ -179,58 +188,30 @@ namespace voxel_game::spatial3d
 			DEBUG_ASSERT((scale->*&Scale::unload_commands).empty(), "All commands should have been destroyed before destroying the world");
 			DEBUG_ASSERT((scale->*&Scale::destroy_commands).empty(), "All commands should have been destroyed before destroying the world");
 			DEBUG_ASSERT((scale->*&Scale::nodes).empty(), "All nodes should have been destroyed before destroying the world");
+
+			// For each node in the scale
+			for (auto&& [pos, node] : scale->*&Scale::nodes)
+			{
+				switch (node->*&Node::state)
+				{
+				case NodeState::Loading:
+				case NodeState::Loaded:
+				case NodeState::Unloading:
+					// Unload node
+
+					// Fallthrough
+
+				case NodeState::Unloaded:
+				case NodeState::Deleting:
+					// Destroy node
+					break;
+				}
+			}
+
+			scale.Destroy();
 		}
 
 		world.Destroy();
-	}
-
-	void WorldSetMaxScale(WorldRef world, size_t max_scale)
-	{
-		if (max_scale > world->*&World::max_scale)
-		{
-			for (uint8_t scale_index = world->*&World::max_scale; scale_index < max_scale; scale_index++)
-			{
-				ScaleRef scale = (world->*&World::scale_type)->CreatePoly();
-
-				scale->*&Scale::index = scale_index;
-
-				(world->*&World::scales)[scale_index] = scale;
-			}
-		}
-		else
-		{
-			for (uint8_t scale_index = max_scale; scale_index < world->*&World::max_scale; scale_index++)
-			{
-				ScaleRef scale = GetScale(world, scale_index);
-
-				// Clear previous commands. If you didn't handle them then too bad
-				(scale->*&Scale::unload_commands).clear();
-				(scale->*&Scale::destroy_commands).clear();
-
-				// For each node in the scale
-				for (auto&& [pos, node] : scale->*&Scale::nodes)
-				{
-					switch (node->*&Node::state)
-					{
-					case NodeState::Loading:
-					case NodeState::Loaded:
-					case NodeState::Unloading:
-						// Unload node
-
-						// Fallthrough
-
-					case NodeState::Unloaded:
-					case NodeState::Deleting:
-						// Destroy node
-						break;
-					}
-				}
-
-				scale.Destroy();
-			}
-		}
-
-		world->*&World::max_scale = max_scale;
 	}
 
 	void WorldCreateNodes(WorldRef world, const sim::CFrame& frame)

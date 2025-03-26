@@ -125,8 +125,6 @@ namespace voxel_game::spatial3d
 
 	void DestroyWorld(WorldRef world);
 
-	void WorldSetMaxScale(WorldRef world, size_t max_scale);
-
 	void WorldCreateNodes(WorldRef world, const sim::CFrame& frame);
 
 	void WorldDestroyNodes(WorldRef world);

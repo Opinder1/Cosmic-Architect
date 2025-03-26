@@ -1,6 +1,5 @@
 #include "GalaxyModule.h"
 #include "GalaxyComponents.h"
-#include "GalaxyPrefabs.h"
 
 #include "Universe/UniverseComponents.h"
 
@@ -33,8 +32,12 @@ namespace voxel_game::galaxy
 		galaxy_entity.set_name("SimulatedGalaxy");
 #endif
 
-		galaxy_entity.is_a<PSimulatedGalaxy>();
 		galaxy_entity.child_of(universe_entity);
+		galaxy_entity.add<physics3d::CPosition>();
+		galaxy_entity.add<physics3d::CRotation>();
+		galaxy_entity.add<CWorld>();
+		galaxy_entity.add<spatial3d::CWorld>();
+		galaxy_entity.add<spatial3d::CLoader>();
 		galaxy_entity.emplace<sim::CPath>(path);
 
 		if (rendering::IsEnabled())
@@ -67,7 +70,6 @@ namespace voxel_game::galaxy
 		world.module<Module>();
 
 		world.import<Components>();
-		world.import<Prefabs>();
 		world.import<spatial3d::Components>();
 		world.import<physics3d::Components>();
 		world.import<loading::Components>();
@@ -79,14 +81,5 @@ namespace voxel_game::galaxy
 		galaxy_world_types.world_type.AddType<spatial3d::World>();
 		galaxy_world_types.node_type.AddType<Node>();
 		galaxy_world_types.scale_type.AddType<Scale>();
-
-		// Initialise the spatial world of a galaxy
-		world.observer<spatial3d::CWorld>(DEBUG_ONLY("GalaxyInitializeSpatialWorld"))
-			.event(flecs::OnAdd)
-			.with<const CWorld>()
-			.each([](spatial3d::CWorld& spatial_world)
-		{
-
-		});
 	}
 }
