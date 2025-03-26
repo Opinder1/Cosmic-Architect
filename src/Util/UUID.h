@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <type_traits>
 
 struct UUID
 {
@@ -9,7 +10,11 @@ struct UUID
     bool operator==(const UUID& other) const;
 };
 
-struct UUIDHash
+namespace std
 {
-    size_t operator()(const UUID&) const;
-};
+    template<>
+    struct hash<UUID>
+    {
+        size_t operator()(const UUID& uuid) const noexcept;
+    };
+}

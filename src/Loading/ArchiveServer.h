@@ -108,7 +108,7 @@ namespace voxel_game::loading
 			std::vector<flecs::entity_t> entity_pool;
 
 			// Cache of already loaded entities
-			robin_hood::unordered_node_map<UUID, EntityData, UUIDHash> entity_cache;
+			robin_hood::unordered_node_map<UUID, EntityData> entity_cache;
 
 			robin_hood::unordered_node_map<DBHandle, Database> databases;
 		};

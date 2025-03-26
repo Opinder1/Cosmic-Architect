@@ -61,7 +61,7 @@ namespace voxel_game::sim
 
 	struct CUUIDDict
 	{
-		robin_hood::unordered_map<UUID, flecs::entity_t, UUIDHash> loaded_entities;
+		robin_hood::unordered_map<UUID, flecs::entity_t> loaded_entities;
 	};
 
 	class ThreadEntityPool
