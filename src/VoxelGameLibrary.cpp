@@ -11,6 +11,7 @@
 
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/os.hpp>
+#include <godot_cpp/classes/worker_thread_pool.hpp>
 
 #include <godot_cpp/variant/utility_functions.hpp>
 
@@ -22,6 +23,17 @@
 #include <easy/profiler.h>
 
 #include <fmt/format.h>
+
+ecs_os_thread_t flecs_task_new(ecs_os_thread_callback_t callback, void* param)
+{
+	return godot::WorkerThreadPool::get_singleton()->add_native_task((void(*)(void*))callback, param, true);
+}
+
+void* flecs_task_join(ecs_os_thread_t thread)
+{
+	godot::WorkerThreadPool::get_singleton()->wait_for_task_completion(thread);
+	return nullptr;
+}
 
 void flecs_log_to_godot(int32_t level, const char* file, int32_t line, const char* msg)
 {
@@ -102,6 +114,9 @@ void initialize_flecs()
 	ecs_os_set_api_defaults();
 
 	ecs_os_api_t api = ecs_os_get_api();
+
+	api.task_new_ = flecs_task_new;
+	api.task_join_ = flecs_task_join;
 
 	api.log_ = flecs_log_to_godot;
 	api.log_level_ = 0;

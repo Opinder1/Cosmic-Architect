@@ -70,7 +70,14 @@ namespace voxel_game
 	{
 		m_world = flecs::world();
 
-		m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
+		if (false)
+		{
+			m_world.set_task_threads(godot::OS::get_singleton()->get_processor_count() - 1);
+		}
+		else
+		{
+			m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
+		}
 
 		m_world.set_target_fps(k_simulation_ticks_per_second);
 
@@ -434,7 +441,6 @@ namespace voxel_game
 	{
 		k_static_data.reset();
 		k_singleton.reset();
-
 		k_signals.reset();
 	}
 }
