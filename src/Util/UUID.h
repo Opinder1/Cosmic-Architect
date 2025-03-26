@@ -10,6 +10,8 @@ struct UUID
     bool operator==(const UUID& other) const;
 };
 
+UUID GenerateUUID();
+
 namespace std
 {
     template<>
