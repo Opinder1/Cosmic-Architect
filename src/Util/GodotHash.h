@@ -21,6 +21,8 @@
 
 #include <robin_hood/robin_hood.h>
 
+#include <type_traits>
+
 template<class T>
 struct ByteHash
 {
@@ -30,7 +32,7 @@ struct ByteHash
     }
 };
 
-namespace robin_hood
+namespace std
 {
     template<>
     struct hash<godot::Color>
@@ -139,7 +141,10 @@ namespace robin_hood
     {
         size_t operator()(const godot::String& string) const noexcept;
     };
+}
 
+namespace robin_hood
+{
     template<>
     struct hash<godot::StringName>
     {

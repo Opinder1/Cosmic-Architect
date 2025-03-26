@@ -9,7 +9,7 @@ namespace
 	}
 }
 
-namespace robin_hood
+namespace std
 {
     size_t hash<godot::Color>::operator()(const godot::Color& color) const noexcept
     {
@@ -208,7 +208,10 @@ namespace robin_hood
     {
         return string.hash();
     }
+}
 
+namespace robin_hood
+{
     size_t hash<godot::StringName>::operator()(const godot::StringName& string) const noexcept
     {
         return string.hash();
