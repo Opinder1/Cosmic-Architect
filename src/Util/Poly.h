@@ -11,14 +11,26 @@
 
 #define POLY_DEBUG DEBUG_ENABLED
 
+using PolyComponentCB = void (*)(std::byte*);
+
+template<class T>
+static void PolyComponentConstruct(std::byte* ptr)
+{
+	new (reinterpret_cast<T*>(ptr)) T();
+}
+
+template<class T>
+static void PolyComponentDestruct(std::byte* ptr)
+{
+	std::destroy_at(reinterpret_cast<T*>(ptr));
+}
+
 // A system for creating runtime defined structs which are efficently allocated in memory
 template<class T, size_t k_max_offsets>
 class PolyType : Nocopy, Nomove
 {
 private:
 	constexpr static const uint16_t k_invalid_poly_offset = UINT16_MAX;
-
-	using FactoryCB = void (*)(std::byte*);
 
 public:
 	template<class T>
@@ -29,25 +41,14 @@ public:
 		PolyType* types;
 	};
 
-	template<>
-	const size_t k_type_index<Header> = 0;
-
-private:
-	template<class T>
-	static void Construct(std::byte* ptr)
-	{
-		new (reinterpret_cast<T*>(ptr)) T();
-	}
-
-	template<class T>
-	static void Destruct(std::byte* ptr)
-	{
-		std::destroy_at(reinterpret_cast<T*>(ptr));
-	}
+	static const std::array<PolyComponentCB, k_max_offsets> k_type_constructors;
+	static const std::array<PolyComponentCB, k_max_offsets> k_type_destructors;
 
 public:
 	PolyType()
 	{
+		m_type_offsets.fill(k_invalid_poly_offset);
+
 		AddType<Header>();
 	}
 
@@ -64,8 +65,6 @@ public:
 		DEBUG_ASSERT(k_type_index<T> < k_max_offsets, "This types index is too large");
 
 		m_type_offsets[k_type_index<T>] = m_total_size;
-		m_type_constructors[k_type_index<T>] = Construct<T>;
-		m_type_destructors[k_type_index<T>] = Destruct<T>;
 		m_total_size += sizeof(T);
 	}
 
@@ -111,9 +110,9 @@ public:
 
 		for (size_t i = 0; i < k_max_offsets; i++)
 		{
-			if (m_type_constructors[i] != nullptr)
+			if (m_type_offsets[i] != k_invalid_poly_offset)
 			{
-				m_type_constructors[i](ptr + m_type_offsets[i]);
+				k_type_constructors[i](ptr + m_type_offsets[i]);
 			}
 		}
 
@@ -141,9 +140,9 @@ public:
 
 		for (size_t i = 0; i < k_max_offsets; i++)
 		{
-			if (m_type_destructors[i] != nullptr)
+			if (m_type_offsets[i] != k_invalid_poly_offset)
 			{
-				m_type_destructors[i](ptr + m_type_offsets[i]);
+				k_type_destructors[i](ptr + m_type_offsets[i]);
 			}
 		}
 
@@ -157,11 +156,8 @@ public:
 	}
 
 private:
-	std::array<uint16_t, k_max_offsets> m_type_offsets = { 0 };
-
+	std::array<uint16_t, k_max_offsets> m_type_offsets;
 	uint16_t m_total_size = 0;
-	std::array<FactoryCB, k_max_offsets> m_type_constructors = { nullptr };
-	std::array<FactoryCB, k_max_offsets> m_type_destructors = { nullptr };
 
 #if defined(POLY_DEBUG)
 	robin_hood::unordered_set<const std::byte*> m_created;
@@ -181,6 +177,18 @@ public:
 	T& Get() const
 	{
 		return m_poly->types->Get<T>(*m_poly);
+	}
+
+	template<class T>
+	T* TryGet() const
+	{
+		return m_poly->types->Get<T>(m_poly);
+	}
+
+	template<class T>
+	bool Has() const
+	{
+		return m_poly->types->Get<T>(m_poly) != nullptr;
 	}
 
 	template<auto Member,
