@@ -12,10 +12,6 @@
 
 #define POLY_DEBUG DEBUG_ENABLED
 
-using ComponentConstructCB = void (*)(std::byte*);
-using ComponentDestructCB = void (*)(std::byte*);
-using ComponentMoveCB = void (*)(std::byte*, std::byte*);
-
 template<class T>
 static void ComponentConstruct(std::byte* ptr)
 {
@@ -29,9 +25,35 @@ static void ComponentDestruct(std::byte* ptr)
 }
 
 template<class T>
-static void ComponentMove(std::byte* from, std::byte* to)
+static void ComponentMove(const std::byte* from, std::byte* to)
 {
-	*reinterpret_cast<T*>(to) = std::move(*reinterpret_cast<T*>(from));
+	if constexpr (std::is_move_assignable_v<T>)
+	{
+		*reinterpret_cast<T*>(to) = std::move(*reinterpret_cast<const T*>(from));
+	}
+	else
+	{
+		DEBUG_PRINT_ERROR("Can't move type");
+		DEBUG_CRASH();
+	}
+}
+
+struct PolyTypeInfo
+{
+	using ComponentConstructCB = void (*)(std::byte*);
+	using ComponentDestructCB = void (*)(std::byte*);
+	using ComponentMoveCB = void (*)(const std::byte*, std::byte*);
+
+	ComponentConstructCB construct;
+	ComponentDestructCB destruct;
+	ComponentMoveCB move;
+	size_t size;
+};
+
+template<class T>
+constexpr PolyTypeInfo MakeTypeInfo()
+{
+	return { ComponentConstruct<T>, ComponentDestruct<T>, ComponentMove<T>, sizeof(T) };
 }
 
 // A system for creating runtime defined structs which are efficently allocated in memory
@@ -48,15 +70,12 @@ private:
 	template<class T>
 	static const size_t k_type_index;
 
+	static const std::array<PolyTypeInfo, k_num_types> k_type_info;
+
 	struct Header
 	{
 		PolyType* archetype = nullptr;
 	};
-
-	static const std::array<ComponentConstructCB, k_num_types> k_type_constructors;
-	static const std::array<ComponentDestructCB, k_num_types> k_type_destructors;
-	static const std::array<ComponentMoveCB, k_num_types> k_type_movers;
-	static const std::array<size_t, k_num_types> k_type_sizes;
 
 public:
 	class Ref
@@ -141,7 +160,7 @@ public:
 		DEBUG_ASSERT(index < k_num_types, "This types index is too large");
 
 		m_type_offsets[index] = m_total_size;
-		m_total_size += k_type_sizes[index];
+		m_total_size += k_type_info[index].size;
 	}
 
 	template<class T>
@@ -214,7 +233,7 @@ public:
 		{
 			if (m_type_offsets[i] != k_invalid_offset)
 			{
-				k_type_constructors[i](ptr + m_type_offsets[i]);
+				k_type_info[i].construct(ptr + m_type_offsets[i]);
 			}
 		}
 	}
@@ -229,7 +248,7 @@ public:
 		{
 			if (m_type_offsets[i] != k_invalid_offset)
 			{
-				k_type_destructors[i](ptr + m_type_offsets[i]);
+				k_type_info[i].destruct(ptr + m_type_offsets[i]);
 			}
 		}
 	}

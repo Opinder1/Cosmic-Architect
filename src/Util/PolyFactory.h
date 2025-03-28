@@ -246,20 +246,20 @@ private:
 					std::byte* from = (std::byte*)entry.header + entry.archetype->m_type_offsets[i];
 					std::byte* to = (std::byte*)new_poly + new_archetype.m_type_offsets[i];
 
-					ArchetypeT::k_type_movers[i](from, to);
+					ArchetypeT::k_type_info[i].move(from, to);
 				}
 				else
 				{
 					std::byte* from = (std::byte*)entry.header + entry.archetype->m_type_offsets[i];
 
-					ArchetypeT::k_type_destructors[i](from);
+					ArchetypeT::k_type_info[i].destruct(from);
 				}
 			}
 			else if (new_exists)
 			{
 				std::byte* to = (std::byte*)new_poly + new_archetype.m_type_offsets[i];
 
-				ArchetypeT::k_type_constructors[i](to);
+				ArchetypeT::k_type_info[i].construct(to);
 			}
 		}
 
