@@ -171,7 +171,7 @@ public:
 
 		PolyEntry& entry = it->second;
 
-		UpdateType(entry, type_id_mod & entry.id);
+		UpdateType(entry, type_id_mod | entry.id);
 	}
 
 	template<class... Types>
@@ -195,7 +195,8 @@ private:
 
 		if (emplaced)
 		{
-			for (size_t i = 0; i < entry.id.size(); i++)
+			entry.id = id;
+			for (size_t i = 1; i < entry.id.size(); i++)
 			{
 				if (entry.id.test(i))
 				{
@@ -267,8 +268,9 @@ private:
 
 		UnrefArchetype(entry.id);
 
-		entry.header = new_poly;
 		entry.id = new_type_id;
+		entry.archetype = &new_archetype;
+		entry.header = new_poly;
 	}
 
 private:
