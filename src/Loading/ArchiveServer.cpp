@@ -1,5 +1,6 @@
 #include "ArchiveServer.h"
 
+/*
 namespace
 {
 	std::string_view UUIDToData(const UUID& id)
@@ -316,3 +317,4 @@ namespace voxel_game::loading
 		}
 	}
 }
+*/

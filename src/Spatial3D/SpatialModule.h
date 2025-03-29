@@ -1,16 +1,17 @@
 #pragma once
 
-#include "SpatialPoly.h"
-
-#include <flecs/flecs.h>
+namespace voxel_game::universe
+{
+	struct Simulation;
+}
 
 namespace voxel_game::spatial3d
 {
-	struct Module
-	{
-		Module(flecs::world& world);
-	};
+	void Initialize(universe::Simulation& simulation);
 
-	// Add scale workers to a world for each scale the world currently has
-	void InitializeWorldScaleEntities(flecs::entity world_entity, WorldRef world);
+	void Uninitialize(universe::Simulation& simulation);
+
+	void Update(universe::Simulation& simulation);
+
+	void WorkerUpdate(universe::Simulation& simulation, size_t index);
 }

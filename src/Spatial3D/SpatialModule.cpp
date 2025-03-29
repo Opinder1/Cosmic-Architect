@@ -13,21 +13,7 @@
 
 namespace voxel_game::spatial3d
 {
-	flecs::entity CreateSyncPhase(flecs::world& world, flecs::entity_t parent)
-	{
-		flecs::entity sync_phase = world.entity(DEBUG_ONLY("ThreadSyncPhase"))
-			.add(flecs::Phase)
-			.child_of(parent)
-			.depends_on(parent);
-
-		world.system(DEBUG_ONLY("ThreadSyncSystem"))
-			.immediate()
-			.kind(sync_phase)
-			.run([](flecs::iter& it) {});
-
-		return sync_phase;
-	}
-
+	/*
 	Module::Module(flecs::world& world)
 	{
 		world.module<Module>();
@@ -115,20 +101,5 @@ namespace voxel_game::spatial3d
 			//spatial_entity.entity->position = position.position;
 		});
 	}
-
-	void InitializeWorldScaleEntities(flecs::entity world_entity, WorldRef world)
-	{
-		flecs::scoped_world scope = world_entity.scope();
-
-		for (uint8_t scale_index = 0; scale_index < world->*&World::max_scale; scale_index++)
-		{
-			flecs::entity marker_entity = scope.entity();
-
-#if defined(DEBUG_ENABLED)
-			marker_entity.set_name(godot::vformat("Scale%d", scale_index).utf8());
-#endif
-
-			marker_entity.emplace<CScale>((world->*&World::scales)[scale_index]);
-		}
-	}
+	*/
 }

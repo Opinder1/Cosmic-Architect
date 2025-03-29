@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flecs/flecs.h>
+#include "Spatial3D/SpatialPoly.h"
 
 #include <cstdint>
 
@@ -9,25 +9,28 @@ namespace godot
 	struct Vector3i;
 }
 
-namespace voxel_game::spatial3d
+namespace voxel_game::universe
 {
-	struct ConstWorldRef;
+	struct Simulation;
 }
 
 namespace voxel_game::voxel
 {
 	struct Voxel;
 
-	struct Module
-	{
-		Module(flecs::world& world);
-	};
+	void Initialize(universe::Simulation& simulation);
 
-	Voxel GetVoxelAtScale(spatial3d::ConstWorldRef world, godot::Vector3i pos, uint32_t scale);
+	void Uninitialize(universe::Simulation& simulation);
 
-	Voxel GetVoxelDepthFirst(spatial3d::ConstWorldRef world, godot::Vector3i pos, uint32_t start_scale);
+	void Update(universe::Simulation& simulation);
 
-	Voxel GetVoxelBreadthFirst(spatial3d::ConstWorldRef world, godot::Vector3i pos, uint32_t start_scale);
+	void WorkerUpdate(universe::Simulation& simulation, size_t index);
 
-	Voxel GetVoxelOctreeSearch(spatial3d::ConstWorldRef world, godot::Vector3i pos, uint32_t start_scale);
+	Voxel GetVoxelAtScale(spatial3d::WorldRef world, godot::Vector3i pos, uint32_t scale);
+
+	Voxel GetVoxelDepthFirst(spatial3d::WorldRef world, godot::Vector3i pos, uint32_t start_scale);
+
+	Voxel GetVoxelBreadthFirst(spatial3d::WorldRef world, godot::Vector3i pos, uint32_t start_scale);
+
+	Voxel GetVoxelOctreeSearch(spatial3d::WorldRef world, godot::Vector3i pos, uint32_t start_scale);
 }

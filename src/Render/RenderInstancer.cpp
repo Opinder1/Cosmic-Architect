@@ -15,17 +15,17 @@ namespace voxel_game::rendering
 		return 0;
 	}
 
-	void MeshTypeInstancer::AddEntity(flecs::entity_t entity)
+	void MeshTypeInstancer::AddEntity(UUID entity)
 	{
 		
 	}
 
-	void MeshTypeInstancer::RemoveEntity(flecs::entity_t entity)
+	void MeshTypeInstancer::RemoveEntity(UUID entity)
 	{
 
 	}
 
-	void MeshTypeInstancer::SetTransform(flecs::entity_t entity, godot::Transform3D transform)
+	void MeshTypeInstancer::SetTransform(UUID entity, godot::Transform3D transform)
 	{
 
 	}
@@ -39,7 +39,7 @@ namespace voxel_game::rendering
 	{
 		m_scenario = scenario;
 
-		GrowingSmallVector<flecs::id_t, 128> remove_list;
+		GrowingSmallVector<UUID, 128> remove_list;
 
 		for (auto&& [id, instancer] : m_instancers)
 		{
@@ -49,33 +49,33 @@ namespace voxel_game::rendering
 			}
 		}
 
-		for (flecs::id_t id : remove_list)
+		for (UUID id : remove_list)
 		{
 			RemoveType(id);
 		}
 	}
 
-	void Instancer::AddType(flecs::id_t type_id, BaseType type, godot::RID base)
+	void Instancer::AddType(UUID type_id, BaseType type, godot::RID base)
 	{
 		m_instancers.emplace(type_id, MeshTypeInstancer(type, base));
 	}
 
-	void Instancer::RemoveType(flecs::id_t type_id)
+	void Instancer::RemoveType(UUID type_id)
 	{
 		m_instancers.erase(type_id);
 	}
 
-	void Instancer::AddEntity(flecs::id_t type_id, flecs::entity_t entity)
+	void Instancer::AddEntity(UUID type_id, UUID entity)
 	{
 		m_instancers.at(type_id).AddEntity(entity);
 	}
 
-	void Instancer::RemoveEntity(flecs::id_t type_id, flecs::entity_t entity)
+	void Instancer::RemoveEntity(UUID type_id, UUID entity)
 	{
 		m_instancers.at(type_id).RemoveEntity(entity);
 	}
 
-	void Instancer::SetTransform(flecs::id_t type_id, flecs::entity_t entity, godot::Transform3D transform)
+	void Instancer::SetTransform(UUID type_id, UUID entity, godot::Transform3D transform)
 	{
 		m_instancers.at(type_id).SetTransform(entity, transform);
 	}

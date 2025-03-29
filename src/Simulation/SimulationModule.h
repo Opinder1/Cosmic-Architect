@@ -5,27 +5,30 @@
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/variant.hpp>
 
-#include <flecs/flecs.h>
-
 #include <robin_hood/robin_hood.h>
 
-namespace voxel_game::sim
+namespace voxel_game::universe
+{
+	struct Simulation;
+}
+
+namespace voxel_game::simulation
 {
 	struct CConfig;
-	class ThreadEntityPool;
 
 	using ConfigDefaults = robin_hood::unordered_map<godot::String, godot::Variant>;
 
-	struct Module
-	{
-		Module(flecs::world& world);
-	};
+	void Initialize(universe::Simulation& simulation);
 
-	ThreadEntityPool& GetPool();
+	void Uninitialize(universe::Simulation& simulation);
+
+	void Update(universe::Simulation& simulation);
+
+	void WorkerUpdate(universe::Simulation& simulation, size_t index);
 	
 	void LoadJsonConfig(CConfig& config);
 
 	void SaveJsonConfig(CConfig& config);
 
-	void InitializeConfig(flecs::entity entity, const godot::String& path, const ConfigDefaults& defaults);
+	void InitializeConfig(CConfig& config, const godot::String& path, const ConfigDefaults& defaults);
 }

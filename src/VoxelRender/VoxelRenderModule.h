@@ -1,11 +1,17 @@
 #pragma once
 
-#include <flecs/flecs.h>
+namespace voxel_game::universe
+{
+	struct Simulation;
+}
 
 namespace voxel_game::voxelrender
 {
-	struct Module
-	{
-		Module(flecs::world& world);
-	};
+	void Initialize(universe::Simulation& simulation);
+
+	void Uninitialize(universe::Simulation& simulation);
+
+	void Update(universe::Simulation& simulation);
+
+	void WorkerUpdate(universe::Simulation& simulation, size_t index);
 }

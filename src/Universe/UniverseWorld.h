@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flecs/flecs.h>
+#include "Entity/EntityPoly.h"
 
 #include <vector>
 
@@ -9,7 +9,7 @@ namespace voxel_game::universe
 	// This is a specialised node for a universe
 	struct Node
 	{
-		std::vector<flecs::entity_t> galaxies;
+		std::vector<entity::Ptr> galaxies;
 	};
 
 	// This is a specialised scale for a universe

@@ -1,18 +1,28 @@
 #pragma once
 
-#include <flecs/flecs.h>
+#include "Entity/EntityPoly.h"
 
 namespace godot
 {
 	class String;
 }
 
+namespace voxel_game::universe
+{
+	struct Simulation;
+}
+
 namespace voxel_game::galaxy
 {
-	struct Module
-	{
-		Module(flecs::world& world);
-	};
+	void Initialize(universe::Simulation& simulation);
 
-	flecs::entity CreateNewSimulatedGalaxy(flecs::world& world, const godot::String& path, flecs::entity_t universe_entity);
+	void Uninitialize(universe::Simulation& simulation);
+
+	void Update(universe::Simulation& simulation);
+
+	void WorkerUpdate(universe::Simulation& simulation, size_t index);
+
+	entity::Ptr CreateNewSimulatedGalaxy(universe::Simulation& simulation, const godot::String& path, entity::Ptr universe_entity);
+
+	void DestroySimulatedGalaxy(universe::Simulation& simulation, entity::Ptr galaxy);
 }

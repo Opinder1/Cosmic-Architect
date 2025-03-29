@@ -1,27 +1,21 @@
 #include "UniverseServer.h"
-#include "UniverseServer_StaticData.h"
 #include "UniverseServer_StringNames.h"
 
-#include "Universe/UniverseModule.h"
+#include "Universe/UniverseSimulation.h"
 
+#include "Universe/UniverseModule.h"
 #include "Galaxy/GalaxyModule.h"
 #include "GalaxyRender/GalaxyRenderModule.h"
-
 #include "Player/PlayerModule.h"
-
 #include "Spatial3D/SpatialModule.h"
-
 #include "Voxel/VoxelModule.h"
 #include "VoxelRender/VoxelRenderModule.h"
-
 #include "Render/RenderModule.h"
-
 #include "Simulation/SimulationModule.h"
-
 #include "Physics3D/PhysicsModule.h"
-#include "Physics3D/PhysicsComponents.h"
-
 #include "Loading/LoadingModule.h"
+
+#include "Physics3D/PhysicsComponents.h"
 
 #include "Commands/CommandServer.h"
 
@@ -44,9 +38,9 @@ namespace voxel_game
 
 	godot::OptObj<UniverseServer> UniverseServer::k_singleton;
 
-	std::optional<UniverseServer::StaticData> UniverseServer::k_static_data;
-
 	std::optional<const UniverseServer::SignalStrings> UniverseServer::k_signals;
+
+	std::optional<universe::Simulation> UniverseServer::k_simulation;
 
 	UniverseServer* UniverseServer::get_singleton()
 	{
@@ -68,44 +62,14 @@ namespace voxel_game
 
 	void UniverseServer::DoSimulationLoad()
 	{
-		m_world = flecs::world();
+		k_simulation.emplace();
 
-		if (false)
-		{
-			m_world.set_task_threads(godot::OS::get_singleton()->get_processor_count() - 1);
-		}
-		else
-		{
-			m_world.set_threads(godot::OS::get_singleton()->get_processor_count());
-		}
-
-		m_world.set_target_fps(k_simulation_ticks_per_second);
-
-		// Import modules
-#if defined(DEBUG_ENABLED)
-		m_world.import<flecs::stats>();
-		m_world.set<flecs::Rest>({});
-#endif
-
-		m_world.import<loading::Module>();
-		m_world.import<sim::Module>();
-		m_world.import<physics3d::Module>();
-		m_world.import<spatial3d::Module>();
-		m_world.import<voxel::Module>();
-		m_world.import<galaxy::Module>();
-		m_world.import<universe::Module>();
-		m_world.import<player::Module>();
-
-		if (rendering::IsEnabled())
-		{
-			m_world.import<rendering::Module>();
-			m_world.import<galaxyrender::Module>();
-			m_world.import<voxelrender::Module>();
-		}
+		universe::Initialize(*k_simulation);
+		galaxy::Initialize(*k_simulation);
 
 		godot::String universe_path = godot::ProjectSettings::get_singleton()->get_setting("voxel_game/universe/path");
 
-		m_universe_entity = universe::CreateNewUniverse(m_world, universe_path);
+		m_universe_entity = universe::CreateNewUniverse(*k_simulation, universe_path);
 
 #if defined(DEBUG_ENABLED)
 		m_info_updater.SetWriterThread(std::this_thread::get_id());
@@ -118,10 +82,13 @@ namespace voxel_game
 		m_info_updater.SetWriterThread(std::thread::id{}); // We may not start in thread mode next time
 #endif
 
-		m_world = flecs::world();
+		galaxy::Uninitialize(*k_simulation);
+		universe::Uninitialize(*k_simulation);
+
+		k_simulation.reset();
 	}
 
-	bool UniverseServer::DoSimulationProgress(real_t delta)
+	void UniverseServer::DoSimulationProgress(real_t delta)
 	{
 		EASY_FUNCTION();
 
@@ -129,12 +96,10 @@ namespace voxel_game
 		{
 			// If we we are threaded then get the latest info cache data
 			m_info_updater.RetrieveUpdates(m_info_cache);
-
-			return true; // We always keep running when threaded as the thread will stop at its own pace
 		}
 		else
 		{
-			return m_world.progress(static_cast<ecs_ftime_t>(delta));
+			Progress();
 		}
 	}
 
@@ -142,7 +107,7 @@ namespace voxel_game
 	{
 		EASY_FUNCTION();
 
-		m_world.progress();
+		Progress();
 
 		// Publish updates to the info caches to be read on the main thread
 		m_info_updater.PublishUpdates();
@@ -164,9 +129,14 @@ namespace voxel_game
 				return;
 			}
 
+			if (!m_galaxy_entity)
+			{
+				return;
+			}
+
 			godot::Transform3D transform = args[0];
 
-			flecs::entity(m_world, m_galaxy_entity).set<physics3d::CPosition>({ transform.origin });
+			m_galaxy_entity->*&physics3d::CPosition::position = transform.origin;
 		}
 		else
 		{
@@ -174,6 +144,12 @@ namespace voxel_game
 		}
 	}
 #endif
+
+	void UniverseServer::Progress()
+	{
+		universe::Update(*k_simulation);
+		galaxy::Update(*k_simulation);
+	}
 
 	void UniverseServer::_bind_methods()
 	{
@@ -434,12 +410,10 @@ namespace voxel_game
 		ADD_SIGNAL(godot::MethodInfo(k_signals->use_spell_response_response));
 
 		k_singleton.instantiate();
-		k_static_data.emplace();
 	}
 
 	void UniverseServer::_cleanup_methods()
 	{
-		k_static_data.reset();
 		k_singleton.reset();
 		k_signals.reset();
 	}

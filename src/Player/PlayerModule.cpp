@@ -3,19 +3,8 @@
 
 namespace voxel_game::player
 {
-	Module::Module(flecs::world& world)
+	entity::Ptr CreateLocalPlayer(universe::Simulation& simulation, entity::Ptr server, const godot::String& name)
 	{
-		world.module<Module>();
-
-		world.import<Components>();
-	}
-
-	flecs::entity_t CreateLocalPlayer(flecs::world& world, flecs::entity_t server, const godot::String& name)
-	{
-		flecs::entity entity = world.scope(server).entity();
-
-		entity.add<CPlayer>();
-
-		return entity;
+		return entity::Ptr{};
 	}
 }

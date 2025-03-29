@@ -125,13 +125,13 @@ namespace voxel_game::spatial3d
 
 	void DestroyWorld(WorldRef world);
 
-	void WorldCreateNodes(WorldRef world, const sim::CFrame& frame);
+	void WorldCreateNodes(WorldRef world, const simulation::CFrame& frame);
 
 	void WorldDestroyNodes(WorldRef world);
 
-	void ScaleLoadNodes(WorldRef world, ScaleRef scale, const sim::CFrame& frame);
+	void ScaleLoadNodes(WorldRef world, ScaleRef scale, const simulation::CFrame& frame);
 
-	void ScaleUnloadNodes(WorldRef world, ScaleRef scale, const sim::CFrame& frame);
+	void ScaleUnloadNodes(WorldRef world, ScaleRef scale, const simulation::CFrame& frame);
 
 	void WorldUpdateEntityScales(WorldRef world);
 

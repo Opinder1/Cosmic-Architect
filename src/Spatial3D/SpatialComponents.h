@@ -13,18 +13,11 @@
 
 #include <robin_hood/robin_hood.h>
 
-#include <flecs/flecs.h>
-
 #include <array>
 #include <vector>
 
 namespace voxel_game::spatial3d
 {
-	struct Components
-	{
-		Components(flecs::world& world);
-	};
-
 	// An object that tells a spatial world where to load nodes and at what lods
 	struct CLoader
 	{

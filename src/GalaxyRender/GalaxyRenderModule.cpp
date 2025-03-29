@@ -7,11 +7,5 @@
 
 namespace voxel_game::galaxyrender
 {
-	Module::Module(flecs::world& world)
-	{
-		world.module<Module>();
 
-		world.import<Components>();
-		world.import<spatial3d::Components>();
-	}
 }

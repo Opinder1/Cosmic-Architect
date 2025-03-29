@@ -4,15 +4,8 @@
 #include <godot_cpp/variant/Quaternion.hpp>
 #include <godot_cpp/variant/AABB.hpp>
 
-#include <flecs/flecs.h>
-
 namespace voxel_game::physics3d
 {
-	struct Components
-	{
-		Components(flecs::world& world);
-	};
-
 	// Entities that are children of a world entity should have this component
 	// so that the system knows how to place them in the spatial world
 	struct CPosition

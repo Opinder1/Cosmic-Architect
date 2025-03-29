@@ -7,12 +7,11 @@
 
 #include "Simulation/SimulationComponents.h"
 
-#include <flecs/flecs.h>
-
 #include "Util/Debug.h"
 
 namespace voxel_game::voxel
 {
+	/*
 	Module::Module(flecs::world& world)
 	{
 		world.module<Module>();
@@ -30,6 +29,7 @@ namespace voxel_game::voxel
 
 		});
 	}
+	*/
 
 	Voxel GetVoxelAtScale(spatial3d::WorldRef world, godot::Vector3i pos, uint32_t scale)
 	{

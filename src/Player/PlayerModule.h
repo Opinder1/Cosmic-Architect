@@ -1,17 +1,25 @@
 #pragma once
 
+#include "Entity/EntityPoly.h"
+
 #include <godot_cpp/variant/string.hpp>
 
-#include <flecs/flecs.h>
+namespace voxel_game::universe
+{
+	struct Simulation;
+}
 
 namespace voxel_game::player
 {
-	struct Module
-	{
-		Module(flecs::world& world);
-	};
+	void Initialize(universe::Simulation& simulation);
 
-	flecs::entity_t CreateLocalPlayer(flecs::world& world, flecs::entity_t server, const godot::String& name);
+	void Uninitialize(universe::Simulation& simulation);
 
-	flecs::entity_t CreatePlayerAvatar(flecs::world& world, flecs::entity_t player);
+	void Update(universe::Simulation& simulation);
+
+	void WorkerUpdate(universe::Simulation& simulation, size_t index);
+
+	entity::Ptr CreateLocalPlayer(universe::Simulation& simulation, entity::Ptr server, const godot::String& name);
+
+	entity::Ptr CreatePlayerAvatar(universe::Simulation& simulation, entity::Ptr player);
 }

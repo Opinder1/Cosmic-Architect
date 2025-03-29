@@ -1,5 +1,5 @@
 #pragma once
-
+/*
 #include "Commands/TypedCommandBuffer.h"
 
 #include "Util/GodotHash.h"
@@ -175,3 +175,4 @@ namespace voxel_game::loading
 #endif
 	};
 }
+*/

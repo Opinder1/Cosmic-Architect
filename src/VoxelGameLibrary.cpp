@@ -18,135 +18,15 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
-#include <flecs/flecs.h>
-
 #include <easy/profiler.h>
 
 #include <fmt/format.h>
-
-ecs_os_thread_t flecs_task_new(ecs_os_thread_callback_t callback, void* param)
-{
-	return godot::WorkerThreadPool::get_singleton()->add_native_task((void(*)(void*))callback, param, true);
-}
-
-void* flecs_task_join(ecs_os_thread_t thread)
-{
-	godot::WorkerThreadPool::get_singleton()->wait_for_task_completion(thread);
-	return nullptr;
-}
-
-void flecs_log_to_godot(int32_t level, const char* file, int32_t line, const char* msg)
-{
-	/* >0: Debug tracing. Only enabled in debug builds. */
-	/*  0: Tracing. Enabled in debug/release builds. */
-	/* -2: Warning. An issue occurred, but operation was successful. */
-	/* -3: Error. An issue occurred, and operation was unsuccessful. */
-	/* -4: Fatal. An issue occurred, and application must quit. */
-
-	char log_msg[128];
-	
-	fmt::format_to_n(log_msg, sizeof(log_msg), "[Trace {}] {}:{}: {}", level, file, line, msg);
-
-	switch (level)
-	{
-	case -4:
-		godot::_err_print_error(FUNCTION_STR, file, line, log_msg, true, false);
-		godot::_err_flush_stdout();
-		GENERATE_TRAP();
-		break;
-
-	case -3:
-		godot::_err_print_error(FUNCTION_STR, file, line, log_msg, true, false);
-		break;
-
-	case -2:
-		godot::_err_print_error(FUNCTION_STR, file, line, log_msg, true, true);
-		break;
-
-	case -1:
-		godot::UtilityFunctions::print(log_msg);
-		break;
-	}
-}
-
-void* flecs_malloc_godot(ecs_size_t size)
-{
-	return memalloc(size);
-}
-
-void* flecs_realloc_godot(void* ptr, ecs_size_t size)
-{
-	if (ptr == nullptr)
-	{
-		return memalloc(size);
-	}
-	else
-	{
-		return memrealloc(ptr, size);
-	}
-}
-
-void* flecs_calloc_godot(ecs_size_t size)
-{
-	return memset(memalloc(size), 0, size);
-}
-
-void flecs_free_godot(void* ptr)
-{
-	if (ptr != nullptr)
-	{
-		memfree(ptr);
-	}
-}
-
-void flecs_perf_trace_push(const char* filename, size_t line, const char* name)
-{
-	EASY_NONSCOPED_BLOCK(name);
-}
-
-void flecs_perf_trace_pop(const char* filename, size_t line, const char* name)
-{
-	EASY_END_BLOCK;
-}
-
-void initialize_flecs()
-{
-	ecs_os_set_api_defaults();
-
-	ecs_os_api_t api = ecs_os_get_api();
-
-	api.task_new_ = flecs_task_new;
-	api.task_join_ = flecs_task_join;
-
-	api.log_ = flecs_log_to_godot;
-	api.log_level_ = 0;
-	api.flags_ = EcsOsApiHighResolutionTimer | EcsOsApiLogWithTimeStamp | EcsOsApiLogWithTimeDelta;
-
-	api.malloc_ = flecs_malloc_godot;
-	api.realloc_ = flecs_realloc_godot;
-	api.calloc_ = flecs_calloc_godot;
-	api.free_ = flecs_free_godot;
-
-	api.perf_trace_push_ = flecs_perf_trace_push;
-	api.perf_trace_pop_ = flecs_perf_trace_pop;
-
-	ecs_os_set_api(&api); // Set the initialized flag so we don't override the log_ again
-
-	ecs_os_init();
-}
-
-void uninitialize_flecs()
-{
-	ecs_os_fini();
-}
 
 void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 {
 	if (p_level == godot::MODULE_INITIALIZATION_LEVEL_SCENE)
 	{
 		godot::UtilityFunctions::print("Loading voxel world extension");
-
-		initialize_flecs();
 
 		godot::ClassDB::register_class<voxel_game::CommandWriter>();
 		godot::ClassDB::register_class<voxel_game::CommandServer>();
@@ -179,8 +59,6 @@ void uninitialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 		voxel_game::UniverseServer::_cleanup_methods();
 		voxel_game::rendering::AllocatorServer::_cleanup_methods();
 		voxel_game::CommandServer::_cleanup_methods();
-
-		uninitialize_flecs();
 
 		godot::UtilityFunctions::print("Unloaded voxel world extension");
 	}

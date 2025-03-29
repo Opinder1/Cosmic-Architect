@@ -12,17 +12,10 @@
 #include <godot_cpp/variant/packed_byte_array.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 
-#include <flecs/flecs.h>
-
 #include <bitset>
 
 namespace voxel_game::rendering
 {
-	struct Components
-	{
-		Components(flecs::world& world);
-	};
-
 	struct CContext : Nocopy, Nomove
 	{
 		godot::RID scenario;

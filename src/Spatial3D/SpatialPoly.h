@@ -21,25 +21,16 @@ namespace voxel_game::spatial3d
 		using PolyType::PolyType;
 	};
 
-	struct NodeRef : NodeType::Ref
-	{
-		using NodeType::Ref::Ref;
-	};
-
-	struct ScaleRef : ScaleType::Ref
-	{
-		using ScaleType::Ref::Ref;
-	};
-
-	struct WorldRef : WorldType::Ref
-	{
-		using WorldType::Ref::Ref;
-	};
-
 	struct Types
 	{
 		NodeType node_type;
 		ScaleType scale_type;
 		WorldType world_type;
 	};
+
+	using NodeRef = NodeType::Ref;
+
+	using ScaleRef = ScaleType::Ref;
+
+	using WorldRef = WorldType::Ref;
 }

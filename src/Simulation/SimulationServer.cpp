@@ -14,7 +14,7 @@
 
 namespace voxel_game
 {
-	const size_t k_SimulationServer_ticks_per_second = 20;
+	const size_t k_ticks_per_second = 20;
 
 	SimulationServer::SimulationServer()
 	{}
@@ -82,16 +82,12 @@ namespace voxel_game
 		}
 	}
 
-	bool SimulationServer::Progress(real_t delta)
+	void SimulationServer::Progress(real_t delta)
 	{
-		bool keep_running = false;
-
 		if (m_state.load(std::memory_order_acquire) == State::Loaded) // Don't progress until loaded
 		{
-			keep_running = DoSimulationProgress(delta);
+			DoSimulationProgress(delta);
 		}
-
-		return keep_running;
 	}
 
 	void SimulationServer::ThreadLoop()

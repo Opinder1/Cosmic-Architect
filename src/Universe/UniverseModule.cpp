@@ -1,5 +1,6 @@
 #include "UniverseModule.h"
 #include "UniverseComponents.h"
+#include "UniverseSimulation.h"
 
 #include "Galaxy/GalaxyComponents.h"
 
@@ -18,13 +19,9 @@
 
 #include "Util/Debug.h"
 
-#include <flecs/flecs.h>
-
 namespace voxel_game::universe
 {
-	spatial3d::Types universe_world_types;
-
-	sim::ConfigDefaults config_defaults;
+	simulation::ConfigDefaults config_defaults;
 
 	void InitializeConfigDefaults()
 	{
@@ -96,73 +93,22 @@ namespace voxel_game::universe
 		};
 	}
 
-	flecs::entity CreateNewUniverse(flecs::world& world, const godot::StringName& path)
-	{
-		// Create the universe
-		flecs::entity universe_entity = world.entity();
-
-#if defined(DEBUG_ENABLED)
-		universe_entity.set_name("Universe");
-#endif
-
-		universe_entity.emplace<sim::CPath>(path);
-		universe_entity.add<universe::CWorld>();
-		universe_entity.add<spatial3d::CWorld>();
-		universe_entity.add<sim::CConfig>();
-
-		if (rendering::IsEnabled())
-		{
-			world.add<rendering::CTransform>();
-		}
-
-		sim::InitializeConfig(universe_entity, path.path_join("config.json"), config_defaults);
-
-		spatial3d::CWorld* spatial_world = universe_entity.get_mut<spatial3d::CWorld>();
-
-		spatial_world->world = spatial3d::CreateWorld(universe_world_types, spatial3d::k_max_world_scale);
-		spatial_world->world->*&spatial3d::World::node_size = 16;
-		spatial_world->world->*&spatial3d::World::node_keepalive = 1s;
-
-		spatial3d::InitializeWorldScaleEntities(universe_entity, spatial_world->world);
-
-		flecs::entity entity_loader = world.entity();
-
-		entity_loader.emplace<loading::CEntityDatabase>(path.path_join("entities.db"));
-		entity_loader.child_of(universe_entity);
-
-		return universe_entity;
-	}
-
 	// Spawns a bunch of random cubes around the camera
 	struct UniverseNodeLoaderTest
 	{
-		flecs::entity entity;
+		Simulation& simulation;
 		spatial3d::WorldRef world;
 
 		void CreateGalaxy(spatial3d::NodeRef node, godot::Vector3 position, godot::Vector3 scale)
 		{
-			flecs::entity galaxy = sim::GetPool().CreateEntity();
+			entity::Ptr galaxy = simulation.entity_factory.CreatePoly(GenerateUUID());
 
-			galaxy.child_of(entity);
-			galaxy.add<galaxy::CWorld>();
-			galaxy.add<physics3d::CPosition>();
-			galaxy.add<physics3d::CScale>();
-			galaxy.set(physics3d::CPosition{ position });
-			galaxy.set(physics3d::CScale{ scale });
+			simulation.entity_factory.AddTypes<galaxy::CWorld, physics3d::CPosition, physics3d::CScale, physics3d::CPosition, physics3d::CScale, spatial3d::CEntity>(galaxy.GetID());
 
-			if (rendering::IsEnabled())
-			{
-				flecs::entity galaxy_schematic = sim::GetPool().CreateEntity();
+			galaxy->*&physics3d::CPosition::position = position;
+			galaxy->*&physics3d::CScale::scale = scale;
 
-				galaxy_schematic.add<rendering::CPlaceholderCube>();
-
-				galaxy.add<rendering::CTransform>();
-				galaxy.add<rendering::CInstance>(galaxy_schematic);
-			}
-
-			spatial3d::CEntity& entity = galaxy.ensure<spatial3d::CEntity>();
-
-			(node->*&spatial3d::Node::entities).insert(entity.entity);
+			(node->*&spatial3d::Node::entities).insert(galaxy->*&spatial3d::CEntity::entity);
 			(node->*&Node::galaxies).push_back(galaxy);
 		}
 
@@ -209,50 +155,88 @@ namespace voxel_game::universe
 			const uint32_t scale_step = 1 << node->*&spatial3d::Node::scale_index;
 			const uint32_t scale_node_step = scale_step * world->*&spatial3d::World::node_size;
 
-			for (flecs::entity_t galaxy : node->*&Node::galaxies)
+			for (entity::Ptr galaxy : node->*&Node::galaxies)
 			{
-				flecs::entity(entity.world(), galaxy).destruct();
+				// galaxy.unref();
 			}
 		}
 	};
 
-	Module::Module(flecs::world& world)
+	void Initialize(Simulation& simulation)
 	{
-		world.module<Module>();
-
-		world.import<Components>();
-		world.import<sim::Components>();
-		world.import<loading::Components>();
-		world.import<physics3d::Components>();
-		world.import<spatial3d::Components>();
-		world.import<universe::Components>();
-
 		InitializeConfigDefaults();
 
-		universe_world_types.node_type.AddType<spatial3d::Node>();
-		universe_world_types.scale_type.AddType<spatial3d::Scale>();
-		universe_world_types.world_type.AddType<spatial3d::World>();
-		universe_world_types.node_type.AddType<Node>();
-		universe_world_types.scale_type.AddType<Scale>();
-		universe_world_types.world_type.AddType<World>();
+		simulation.universe_types.node_type.AddType<spatial3d::Node>();
+		simulation.universe_types.node_type.AddType<Node>();
 
-		world.system<spatial3d::CScale, const spatial3d::CWorld>(DEBUG_ONLY("UniverseLoadSpatialNode"))
-			.multi_threaded()
-			.term_at(1).up(flecs::ChildOf)
-			.with<const CWorld>().up(flecs::ChildOf)
-			.each([](flecs::entity entity, spatial3d::CScale& spatial_scale, const spatial3d::CWorld& spatial_world)
+		simulation.universe_types.scale_type.AddType<spatial3d::Scale>();
+		simulation.universe_types.scale_type.AddType<Scale>();
+
+		simulation.universe_types.world_type.AddType<spatial3d::World>();
+		simulation.universe_types.world_type.AddType<World>();
+	}
+
+	void Uninitialize(Simulation& simulation)
+	{
+
+	}
+
+	void Update(Simulation& simulation)
+	{
+		for (spatial3d::WorldRef world : simulation.universe_worlds)
 		{
-			UniverseNodeLoaderTest loader{ entity.parent(), spatial_world.world};
+			UniverseNodeLoaderTest loader{ simulation, world };
 
-			for (spatial3d::NodeRef node : spatial_scale.scale->*&spatial3d::Scale::load_commands)
+			for (spatial3d::ScaleRef scale : world->*&spatial3d::World::scales)
 			{
-				loader.LoadNodePlane(node);
-			}
+				for (spatial3d::NodeRef node : scale->*&spatial3d::Scale::load_commands)
+				{
+					loader.LoadNodePlane(node);
+				}
 
-			for (spatial3d::NodeRef node : spatial_scale.scale->*&spatial3d::Scale::unload_commands)
-			{
-				loader.UnloadNode(node);
+				for (spatial3d::NodeRef node : scale->*&spatial3d::Scale::unload_commands)
+				{
+					loader.UnloadNode(node);
+				}
 			}
-		});
+		}
+	}
+
+	void WorkerUpdate(Simulation& simulation, size_t index)
+	{
+
+	}
+
+	entity::Ptr CreateNewUniverse(Simulation& simulation, const godot::StringName& path)
+	{
+		// Create the universe
+		entity::Ptr universe_entity = simulation.entity_factory.CreatePoly(GenerateUUID());
+
+		simulation.entity_factory.AddTypes<
+			simulation::CPath,
+			universe::CWorld,
+			spatial3d::CWorld,
+			simulation::CConfig
+		>(universe_entity.GetID());
+
+		universe_entity->*&simulation::CPath::path = path;
+
+		if (rendering::IsEnabled())
+		{
+			simulation.entity_factory.AddTypes<rendering::CTransform>(universe_entity.GetID());
+		}
+
+		simulation::InitializeConfig(universe_entity.Get<simulation::CConfig>(), path.path_join("config.json"), config_defaults);
+
+		universe_entity->*&spatial3d::CWorld::world = spatial3d::CreateWorld(simulation.universe_types, spatial3d::k_max_world_scale);
+		(universe_entity->*&spatial3d::CWorld::world)->*&spatial3d::World::node_size = 16;
+		(universe_entity->*&spatial3d::CWorld::world)->*&spatial3d::World::node_keepalive = 1s;
+
+		// flecs::entity entity_loader = world.entity();
+
+		// entity_loader.emplace<loading::CEntityDatabase>(path.path_join("entities.db"));
+		// entity_loader.child_of(universe_entity);
+
+		return universe_entity;
 	}
 }

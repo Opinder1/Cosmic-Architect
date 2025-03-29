@@ -59,7 +59,7 @@ namespace voxel_game
 		bool IsThreaded();
 
 		// Progress the simulation from the owning thread. When in thread mode, this is just to communicate with the thread
-		bool Progress(real_t delta);
+		void Progress(real_t delta);
 
 	protected:
 		// If the following methods are overridden then the script overrides will no longer work.
@@ -74,7 +74,7 @@ namespace voxel_game
 		virtual void DoSimulationUnload() = 0;
 
 		// Called on the thread that calls Progress()
-		virtual bool DoSimulationProgress(real_t delta) = 0;
+		virtual void DoSimulationProgress(real_t delta) = 0;
 
 		// Called on the simulations worker thread if threading is enabled
 		virtual void DoSimulationThreadProgress() = 0;

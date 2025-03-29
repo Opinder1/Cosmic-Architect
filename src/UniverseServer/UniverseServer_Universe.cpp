@@ -7,6 +7,8 @@
 
 #include "Galaxy/GalaxyModule.h"
 
+#include "Universe/UniverseSimulation.h"
+
 namespace voxel_game
 {
 	godot::Dictionary UniverseServer::GetUniverseInfo()
@@ -54,11 +56,11 @@ namespace voxel_game
 			return;
 		}
 
-		flecs::entity(m_world, m_universe_entity).emplace<rendering::CScenario>(scenario);
+		m_universe_entity->*&rendering::CScenario::id = scenario;
 
-		m_galaxy_entity = galaxy::CreateNewSimulatedGalaxy(m_world, path, m_universe_entity);
+		m_galaxy_entity = galaxy::CreateNewSimulatedGalaxy(*k_simulation, path, m_universe_entity);
 
-		m_player_entity = player::CreateLocalPlayer(m_world, m_galaxy_entity, "localuser");
+		m_player_entity = player::CreateLocalPlayer(*k_simulation, m_galaxy_entity, "localuser");
 
 		QueueSignal(k_signals->connected_to_galaxy);
 	}
@@ -78,7 +80,7 @@ namespace voxel_game
 			return;
 		}
 
-		ecs_delete(m_world, m_galaxy_entity);
+		galaxy::DestroySimulatedGalaxy(*k_simulation, m_galaxy_entity);
 
 		QueueSignal(k_signals->disconnected_from_galaxy);
 	}

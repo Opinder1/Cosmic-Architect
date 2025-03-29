@@ -2,14 +2,20 @@
 
 #include <godot_cpp/variant/rid.hpp>
 
-#include <flecs/flecs.h>
+namespace voxel_game::universe
+{
+	struct Simulation;
+}
 
 namespace voxel_game::rendering
 {
-	struct Module
-	{
-		Module(flecs::world& world);
-	};
+	void Initialize(universe::Simulation& simulation);
+
+	void Uninitialize(universe::Simulation& simulation);
+
+	void Update(universe::Simulation& simulation);
+
+	void WorkerUpdate(universe::Simulation& simulation, size_t index);
 
 	bool IsEnabled();
 }

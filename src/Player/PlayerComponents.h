@@ -1,10 +1,10 @@
 #pragma once
 
+#include "Entity/EntityPoly.h"
+
 #include "Util/UUID.h"
 
 #include <godot_cpp/variant/string.hpp>
-
-#include <flecs/flecs.h>
 
 #include <vector>
 
@@ -14,7 +14,7 @@ namespace voxel_game::player
 	{
 		UUID storage; // Storage that entity is in
 		UUID id; // Id of entity in storage
-		flecs::entity_t cached_entity; // Cached entity if we have already found it
+		entity::Ptr cached_entity; // Cached entity if we have already found it
 	};
 
 	// Tree to find players avatar
@@ -44,10 +44,5 @@ namespace voxel_game::player
 	struct CPlayerAvatar
 	{
 
-	};
-
-	struct Components
-	{
-		Components(flecs::world& world);
 	};
 }

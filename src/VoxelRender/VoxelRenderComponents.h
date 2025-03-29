@@ -4,15 +4,8 @@
 
 #include <godot_cpp/variant/rid.hpp>
 
-#include <flecs/flecs.h>
-
 namespace voxel_game::voxelrender
 {
-	struct Components
-	{
-		Components(flecs::world& world);
-	};
-
 	struct CContext
 	{
 		int i;

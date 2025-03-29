@@ -4,18 +4,8 @@
 #include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/classes/json.hpp>
 
-#include <flecs/flecs.h>
-
-namespace voxel_game::sim
+namespace voxel_game::simulation
 {
-	thread_local ThreadEntityPool* thread_pool = nullptr;
-
-	ThreadEntityPool& GetPool()
-	{
-		DEBUG_ASSERT(thread_pool != nullptr, "This thread doesn't have a pool set");
-		return *thread_pool;
-	}
-
 	void LoadJsonConfig(CConfig& config)
 	{
 		if (config.path.is_empty())
@@ -56,13 +46,11 @@ namespace voxel_game::sim
 		file->close();
 	}
 
-	void InitializeConfig(flecs::entity entity, const godot::String& path, const ConfigDefaults& defaults)
+	void InitializeConfig(CConfig& config, const godot::String& path, const ConfigDefaults& defaults)
 	{
-		sim::CConfig& config = entity.ensure<sim::CConfig>();
-
 		config.path = path;
 
-		sim::LoadJsonConfig(config);
+		simulation::LoadJsonConfig(config);
 
 		for (auto&& [key, value] : defaults)
 		{
@@ -72,9 +60,10 @@ namespace voxel_game::sim
 			}
 		}
 
-		sim::SaveJsonConfig(config);
+		simulation::SaveJsonConfig(config);
 	}
 
+	/*
 	Module::Module(flecs::world& world)
 	{
 		world.module<Module>();
@@ -142,4 +131,5 @@ namespace voxel_game::sim
 			thread_pool->SetStage(it.world());
 		});
 	}
+	*/
 }

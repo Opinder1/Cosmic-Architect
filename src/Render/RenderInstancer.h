@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Util/Nocopy.h"
+#include "Util/UUID.h"
 #include "Util/SmallVector.h"
 #include "Util/DirtyTracker.h"
 
@@ -8,8 +9,6 @@
 #include <godot_cpp/variant/aabb.hpp>
 
 #include <robin_hood/robin_hood.h>
-
-#include <flecs/flecs.h>
 
 #include <vector>
 
@@ -82,11 +81,11 @@ namespace voxel_game::rendering
 
 		size_t EntityCount();
 
-		void AddEntity(flecs::entity_t entity);
+		void AddEntity(UUID entity);
 
-		void RemoveEntity(flecs::entity_t entity);
+		void RemoveEntity(UUID entity);
 
-		void SetTransform(flecs::entity_t entity, godot::Transform3D transform);
+		void SetTransform(UUID entity, godot::Transform3D transform);
 
 		void RebalanceBlocks(godot::Transform3D camera_transform);
 
@@ -112,15 +111,15 @@ namespace voxel_game::rendering
 
 		void SetScenario(godot::RID scenario);
 
-		void AddType(flecs::id_t type_id, BaseType type, godot::RID base_id);
+		void AddType(UUID type_id, BaseType type, godot::RID base_id);
 
-		void RemoveType(flecs::id_t type_id);
+		void RemoveType(UUID type_id);
 
-		void AddEntity(flecs::id_t type_id, flecs::entity_t entity);
+		void AddEntity(UUID type_id, UUID entity);
 
-		void RemoveEntity(flecs::id_t type_id, flecs::entity_t entity);
+		void RemoveEntity(UUID type_id, UUID entity);
 
-		void SetTransform(flecs::id_t type_id, flecs::entity_t entity, godot::Transform3D transform);
+		void SetTransform(UUID type_id, UUID entity, godot::Transform3D transform);
 
 		void RebalanceBlocks(godot::Transform3D camera_transform);
 
@@ -131,6 +130,6 @@ namespace voxel_game::rendering
 
 		godot::Transform3D m_transform;
 
-		robin_hood::unordered_map<flecs::id_t, MeshTypeInstancer> m_instancers;
+		robin_hood::unordered_map<UUID, MeshTypeInstancer> m_instancers;
 	};
 }

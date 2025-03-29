@@ -5,8 +5,6 @@
 
 #include <TKRZW/tkrzw_thread_util.h>
 
-#include <flecs/flecs.h>
-
 #include <thread>
 
 #if defined(DEBUG_THREAD_CHECK)

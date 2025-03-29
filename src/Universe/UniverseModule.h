@@ -1,19 +1,18 @@
 #pragma once
 
-#include <flecs/flecs.h>
-
-namespace godot
-{
-	class StringName;
-	class RID;
-}
+#include "Entity/EntityComponents.h"
 
 namespace voxel_game::universe
 {
-	struct Module
-	{
-		Module(flecs::world& world);
-	};
+	struct Simulation;
 
-	flecs::entity CreateNewUniverse(flecs::world& world, const godot::StringName& path);
+	void Initialize(Simulation& simulation);
+
+	void Uninitialize(Simulation& simulation);
+
+	void Update(Simulation& simulation);
+
+	void WorkerUpdate(Simulation& simulation, size_t index);
+
+	entity::Ptr CreateNewUniverse(Simulation& simulation, const godot::StringName& path);
 }

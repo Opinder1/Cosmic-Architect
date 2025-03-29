@@ -1,85 +1,93 @@
 #include "GalaxyModule.h"
 #include "GalaxyComponents.h"
 
-#include "Universe/UniverseComponents.h"
+#include "Universe/UniverseSimulation.h"
 
-#include "Physics3D/PhysicsComponents.h"
-
-#include "Simulation/SimulationComponents.h"
-
-#include "Loading/LoadingComponents.h"
-
-#include "Spatial3D/SpatialComponents.h"
 #include "Spatial3D/SpatialModule.h"
-
 #include "Render/RenderModule.h"
+
+#include "Universe/UniverseComponents.h"
+#include "Physics3D/PhysicsComponents.h"
+#include "Simulation/SimulationComponents.h"
+#include "Loading/LoadingComponents.h"
+#include "Spatial3D/SpatialComponents.h"
 #include "Render/RenderComponents.h"
+#include "Entity/EntityComponents.h"
 
 #include "Util/Debug.h"
 
-#include <flecs/flecs.h>
-
 namespace voxel_game::galaxy
 {
-	spatial3d::Types galaxy_world_types;
+	void Initialize(universe::Simulation& simulation)
+	{
+		simulation.galaxy_types.node_type.AddType<spatial3d::Node>();
+		simulation.galaxy_types.node_type.AddType<Node>();
 
-	flecs::entity CreateNewSimulatedGalaxy(flecs::world& world, const godot::String& path, flecs::entity_t universe_entity)
+		simulation.galaxy_types.scale_type.AddType<spatial3d::Scale>();
+		simulation.galaxy_types.scale_type.AddType<Scale>();
+
+		simulation.galaxy_types.world_type.AddType<spatial3d::World>();
+	}
+
+	void Uninitialize(universe::Simulation& simulation)
+	{
+
+	}
+
+	void Update(universe::Simulation& simulation)
+	{
+
+	}
+
+	void WorkerUpdate(universe::Simulation& simulation, size_t index)
+	{
+
+	}
+
+	entity::Ptr CreateNewSimulatedGalaxy(universe::Simulation& simulation, const godot::String& path, entity::Ptr universe_entity)
 	{
 		// Create the simulated galaxy
-		flecs::entity galaxy_entity = world.entity();
+		entity::Ptr galaxy_entity = simulation.entity_factory.CreatePoly(GenerateUUID());
 
 #if defined(DEBUG_ENABLED)
-		galaxy_entity.set_name("SimulatedGalaxy");
+		simulation.entity_factory.AddTypes<entity::CName>(galaxy_entity.GetID());
+		galaxy_entity->*&entity::CName::name = "SimulatedGalaxy";
 #endif
 
-		galaxy_entity.child_of(universe_entity);
-		galaxy_entity.add<physics3d::CPosition>();
-		galaxy_entity.add<physics3d::CRotation>();
-		galaxy_entity.add<CWorld>();
-		galaxy_entity.add<spatial3d::CWorld>();
-		galaxy_entity.add<spatial3d::CLoader>();
-		galaxy_entity.emplace<sim::CPath>(path);
+		simulation.entity_factory.AddTypes<
+			entity::CParent,
+			physics3d::CPosition,
+			physics3d::CRotation,
+			CWorld,
+			spatial3d::CWorld,
+			spatial3d::CLoader,
+			simulation::CPath
+		>(galaxy_entity.GetID());
 
 		if (rendering::IsEnabled())
 		{
-			galaxy_entity.add<rendering::CTransform>();
+			simulation.entity_factory.AddTypes<rendering::CTransform>(galaxy_entity.GetID());
 		}
 
-		spatial3d::CWorld* spatial_world = galaxy_entity.get_mut<spatial3d::CWorld>();
+		galaxy_entity->*&entity::CParent::parent = universe_entity;
 
-		spatial_world->world = spatial3d::CreateWorld(galaxy_world_types, spatial3d::k_max_world_scale);
-
-		spatial3d::InitializeWorldScaleEntities(galaxy_entity, spatial_world->world);
+		galaxy_entity->*&spatial3d::CWorld::world = spatial3d::CreateWorld(simulation.galaxy_types, spatial3d::k_max_world_scale);
 
 		// We want the simulated galaxy to load all galaxies around it
-		spatial3d::CLoader* spatial_loader = galaxy_entity.get_mut<spatial3d::CLoader>();
-		spatial_loader->loader->dist_per_lod = 3;
-		spatial_loader->loader->min_lod = 0;
-		spatial_loader->loader->max_lod = spatial3d::k_max_world_scale;
+		(galaxy_entity->*&spatial3d::CLoader::loader)->dist_per_lod = 3;
+		(galaxy_entity->*&spatial3d::CLoader::loader)->min_lod = 0;
+		(galaxy_entity->*&spatial3d::CLoader::loader)->max_lod = spatial3d::k_max_world_scale;
 
-		flecs::entity entity_loader = world.entity();
+		//flecs::entity entity_loader = world.entity();
 
-		entity_loader.emplace<loading::CEntityDatabase>(path.path_join("entities.db"));
-		entity_loader.child_of(galaxy_entity);
+		//entity_loader.emplace<loading::CEntityDatabase>(path.path_join("entities.db"));
+		//entity_loader.child_of(galaxy_entity);
 
 		return galaxy_entity;
 	}
 
-	Module::Module(flecs::world& world)
+	void DestroySimulatedGalaxy(universe::Simulation& simulation, entity::Ptr galaxy)
 	{
-		world.module<Module>();
-
-		world.import<Components>();
-		world.import<spatial3d::Components>();
-		world.import<physics3d::Components>();
-		world.import<loading::Components>();
-		world.import<rendering::Components>();
-		world.import<sim::Components>();
-
-		galaxy_world_types.node_type.AddType<spatial3d::Node>();
-		galaxy_world_types.scale_type.AddType<spatial3d::Scale>();
-		galaxy_world_types.world_type.AddType<spatial3d::World>();
-		galaxy_world_types.node_type.AddType<Node>();
-		galaxy_world_types.scale_type.AddType<Scale>();
+		simulation.entity_factory.DestroyPoly(galaxy.GetID());
 	}
 }

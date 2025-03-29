@@ -16,8 +16,6 @@
 #include <godot_cpp/variant/packed_vector3_array.hpp>
 #include <godot_cpp/variant/packed_color_array.hpp>
 
-#include <flecs/flecs.h>
-
 #include "Util/Debug.h"
 
 namespace voxel_game::voxelrender
@@ -42,6 +40,7 @@ namespace voxel_game::voxelrender
 		godot::RID m_compositor_effect;
 	};
 
+	/*
 	// Spawns a bunch of flat squares around the camera on the xz plane
 	struct VoxelRenderNodeLoader
 	{
@@ -125,4 +124,5 @@ namespace voxel_game::voxelrender
 			}
 		});
 	}
+	*/
 }

@@ -214,7 +214,7 @@ namespace voxel_game::spatial3d
 		world.Destroy();
 	}
 
-	void WorldCreateNodes(WorldRef world, const sim::CFrame& frame)
+	void WorldCreateNodes(WorldRef world, const simulation::CFrame& frame)
 	{
 		DEBUG_ASSERT(world->*&World::max_scale > 0, "The spatial world should have at least one scale");
 
@@ -276,7 +276,7 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void LoaderLoadNodes(ScaleRef scale, const Loader& loader, const sim::CFrame& frame, double scale_node_step)
+	void LoaderLoadNodes(ScaleRef scale, const Loader& loader, const simulation::CFrame& frame, double scale_node_step)
 	{
 		EASY_BLOCK("SingleLoader");
 
@@ -315,7 +315,7 @@ namespace voxel_game::spatial3d
 		});
 	}
 
-	void ScaleLoadNodes(WorldRef world, ScaleRef scale, const sim::CFrame& frame)
+	void ScaleLoadNodes(WorldRef world, ScaleRef scale, const simulation::CFrame& frame)
 	{
 		// Finish the previous load commands
 		for (NodeRef node : scale->*&Scale::load_commands)
@@ -338,7 +338,7 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void UnloadNode(ScaleRef scale, NodeRef node, const sim::CFrame& frame)
+	void UnloadNode(ScaleRef scale, NodeRef node, const simulation::CFrame& frame)
 	{
 		// Move the entity along to deletion
 		switch (node->*&Node::state)
@@ -361,7 +361,7 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void ScaleUnloadNodes(WorldRef world, ScaleRef scale, const sim::CFrame& frame)
+	void ScaleUnloadNodes(WorldRef world, ScaleRef scale, const simulation::CFrame& frame)
 	{
 		// Finish the previous load commands
 		for (NodeRef node : scale->*&Scale::unload_commands)

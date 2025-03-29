@@ -6,8 +6,6 @@
 
 #include <godot_cpp/variant/string_name.hpp>
 
-#include <flecs/flecs.h>
-
 namespace voxel_game::loading
 {
 	struct CIdentifier
@@ -24,11 +22,6 @@ namespace voxel_game::loading
 	struct CEntityDatabase
 	{
 		godot::StringName path;
-		ArchiveServer::DBHandle handle;
-	};
-
-	struct Components
-	{
-		Components(flecs::world& world);
+		// ArchiveServer::DBHandle handle;
 	};
 }

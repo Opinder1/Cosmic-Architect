@@ -7,15 +7,8 @@
 #include <godot_cpp/classes/packet_peer_udp.hpp>
 #include <godot_cpp/classes/packet_peer_dtls.hpp>
 
-#include <flecs/flecs.h>
-
 namespace voxel_game::network
 {
-	struct Components
-	{
-		Components(flecs::world& world);
-	};
-
 	struct CCertificate
 	{
 		godot::Ref<godot::X509Certificate> certificate;

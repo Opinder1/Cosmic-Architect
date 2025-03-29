@@ -14,18 +14,11 @@
 
 #include <robin_hood/robin_hood.h>
 
-#include <flecs/flecs.h>
-
 #include <vector>
 
-namespace voxel_game::sim
+namespace voxel_game::simulation
 {
 	constexpr const size_t k_max_pool_entities = 1024;
-
-	struct Components
-	{
-		Components(flecs::world& world);
-	};
 
 	struct CFrame
 	{
@@ -57,33 +50,5 @@ namespace voxel_game::sim
 	struct CUUID
 	{
 		UUID id;
-	};
-
-	struct CUUIDDict
-	{
-		robin_hood::unordered_map<UUID, flecs::entity_t> loaded_entities;
-	};
-
-	class ThreadEntityPool
-	{
-	public:
-		ThreadEntityPool();
-
-		void SetStage(flecs::world_t* stage);
-
-		void AllocateEntities(flecs::world_t* world);
-
-		void ClearEntities(flecs::world_t* world);
-
-		flecs::entity CreateEntity();
-
-	private:
-		flecs::world_t* m_stage = nullptr;
-		SmallVector<flecs::entity_t, k_max_pool_entities> m_new_entities;
-	};
-
-	struct CEntityPools : Nocopy
-	{
-		PerThread<ThreadEntityPool> threads;
 	};
 }

@@ -11,12 +11,11 @@
 #include <godot_cpp/classes/display_server.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 
-#include <flecs/flecs.h>
-
 #include <easy/profiler.h>
 
 namespace voxel_game::rendering
 {
+    /*
     const godot::Transform3D k_invisible_transform{ godot::Basis(), godot::Vector3(FLT_MAX, FLT_MAX, FLT_MAX) };
 
     void InitTransform(flecs::world& world)
@@ -273,6 +272,7 @@ namespace voxel_game::rendering
         InitInstance(world);
         InitBase(world);
 	}
+    */
 
     bool IsEnabled()
     {
