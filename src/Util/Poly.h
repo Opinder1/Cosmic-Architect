@@ -25,11 +25,11 @@ static void ComponentDestruct(std::byte* ptr)
 }
 
 template<class T>
-static void ComponentMove(const std::byte* from, std::byte* to)
+static void ComponentMove(std::byte* from, std::byte* to)
 {
 	if constexpr (std::is_move_assignable_v<T>)
 	{
-		*reinterpret_cast<T*>(to) = std::move(*reinterpret_cast<const T*>(from));
+		*reinterpret_cast<T*>(to) = std::move(*reinterpret_cast<T*>(from));
 	}
 	else
 	{
@@ -42,7 +42,7 @@ struct PolyTypeInfo
 {
 	using ComponentConstructCB = void (*)(std::byte*);
 	using ComponentDestructCB = void (*)(std::byte*);
-	using ComponentMoveCB = void (*)(const std::byte*, std::byte*);
+	using ComponentMoveCB = void (*)(std::byte*, std::byte*);
 
 	ComponentConstructCB construct;
 	ComponentDestructCB destruct;
