@@ -44,10 +44,10 @@ struct PolyTypeInfo
 	using ComponentDestructCB = void (*)(std::byte*);
 	using ComponentMoveCB = void (*)(std::byte*, std::byte*);
 
-	ComponentConstructCB construct;
-	ComponentDestructCB destruct;
-	ComponentMoveCB move;
-	size_t size;
+	ComponentConstructCB construct = nullptr;
+	ComponentDestructCB destruct = nullptr;
+	ComponentMoveCB move = nullptr;
+	size_t size = 0;
 };
 
 template<class T>
