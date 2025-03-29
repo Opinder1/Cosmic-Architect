@@ -146,21 +146,24 @@ public:
 #endif
 	}
 
-	template<class T>
-	void AddType()
-	{
-		DEBUG_ASSERT(k_type_index<T> < k_num_types, "This types index is too large");
-
-		m_type_offsets[k_type_index<T>] = m_total_size;
-		m_total_size += sizeof(T);
-	}
-
 	void AddType(size_t index)
 	{
+#if defined(POLY_DEBUG)
+		DEBUG_ASSERT(m_created.size() == 0, "We can't add types once we have created polys in existence");
+#endif
 		DEBUG_ASSERT(index < k_num_types, "This types index is too large");
+		DEBUG_ASSERT(m_type_offsets[index] == k_invalid_offset, "This type is clashing with another");
 
 		m_type_offsets[index] = m_total_size;
 		m_total_size += k_type_info[index].size;
+	}
+
+	template<class T>
+	void AddType()
+	{
+		DEBUG_ASSERT(k_type_info[k_type_index<T>].size == sizeof(T), "The type info of this type may be incorrect");
+
+		AddType(k_type_index<T>);
 	}
 
 	template<class T>
@@ -226,6 +229,9 @@ public:
 	void ConstructPoly(Header* poly)
 	{
 		DEBUG_ASSERT(poly != nullptr, "A valid poly should be provided for construction");
+#if defined(POLY_DEBUG)
+		DEBUG_ASSERT(m_created.contains(poly), "We didn't create this poly");
+#endif
 
 		std::byte* ptr = reinterpret_cast<std::byte*>(poly);
 
@@ -241,6 +247,9 @@ public:
 	void DestructPoly(Header* poly)
 	{
 		DEBUG_ASSERT(poly != nullptr, "A valid poly should be provided for destruction");
+#if defined(POLY_DEBUG)
+		DEBUG_ASSERT(m_created.contains(poly), "We didn't create this poly");
+#endif
 
 		std::byte* ptr = reinterpret_cast<std::byte*>(poly);
 
