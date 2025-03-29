@@ -13,7 +13,7 @@
 // The main use case of this octree is storing block entities for chunks where we may have a
 // variable amount of them but we want to use as little memory as possible when we have a
 // Small amount of elements in the tree.
-template<class Item, size_t k_depth, Item k_invalid_item>
+template<class Item, size_t k_depth, auto k_invalid_item>
 class TinyOctree
 {
 	using Offset = uint16_t;
