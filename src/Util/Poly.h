@@ -235,7 +235,7 @@ public:
 
 		std::byte* ptr = reinterpret_cast<std::byte*>(poly);
 
-		for (size_t i = 0; i < k_num_types; i++)
+		for (size_t i = 1; i < k_num_types; i++)
 		{
 			if (m_type_offsets[i] != k_invalid_offset)
 			{
@@ -253,7 +253,7 @@ public:
 
 		std::byte* ptr = reinterpret_cast<std::byte*>(poly);
 
-		for (size_t i = 0; i < k_num_types; i++)
+		for (size_t i = 1; i < k_num_types; i++)
 		{
 			if (m_type_offsets[i] != k_invalid_offset)
 			{
