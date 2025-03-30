@@ -276,17 +276,17 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void LoaderLoadNodes(ScaleRef scale, const Loader& loader, const simulation::CFrame& frame, double scale_node_step)
+	void LoaderLoadNodes(ScaleRef scale, entity::Ptr loader, const simulation::CFrame& frame, double scale_node_step)
 	{
 		EASY_BLOCK("SingleLoader");
 
-		if (scale->*&Scale::index < loader.min_lod || scale->*&Scale::index > loader.max_lod)
+		if (scale->*&Scale::index < loader->*&CLoader::min_lod || scale->*&Scale::index > loader->*&CLoader::max_lod)
 		{
 			return;
 		}
 
 		// For each node in the sphere of the loader
-		ForEachCoordInSphere(loader.position / scale_node_step, loader.dist_per_lod, [&](godot::Vector3i pos)
+		ForEachCoordInSphere(loader->*&physics3d::CPosition::position / scale_node_step, loader->*&CLoader::dist_per_lod, [&](godot::Vector3i pos)
 		{
 			NodeMap::iterator it = (scale->*&Scale::nodes).find(pos);
 
@@ -332,9 +332,9 @@ namespace voxel_game::spatial3d
 		const double scale_node_step = scale_step * world->*&World::node_size;
 
 		// For each command list that is a child of the world
-		for (const Loader* loader : world->*&World::loaders)
+		for (entity::Ptr loader : world->*&World::loaders)
 		{
-			LoaderLoadNodes(scale, *loader, frame, scale_node_step);
+			LoaderLoadNodes(scale, loader, frame, scale_node_step);
 		}
 	}
 
@@ -387,19 +387,19 @@ namespace voxel_game::spatial3d
 
 	void WorldUpdateEntityScales(WorldRef world)
 	{
-		for (Entity* entity : world->*&World::entities)
+		for (entity::Ptr entity : world->*&World::entities)
 		{
-			if (entity->last_scale == entity->scale)
+			if (entity->*&CEntity::last_scale == entity->*&CEntity::scale)
 			{
 				continue;
 			}
 
-			godot::Vector3i required_node_pos = entity->position / (1 >> entity->scale);
+			godot::Vector3i required_node_pos = entity->*&CEntity::position / (1 >> entity->*&CEntity::scale);
 
-			ScaleRef old_scale = GetScale(world, entity->last_scale);
-			ScaleRef new_scale = GetScale(world, entity->scale);
+			ScaleRef old_scale = GetScale(world, entity->*&CEntity::last_scale);
+			ScaleRef new_scale = GetScale(world, entity->*&CEntity::scale);
 
-			auto old_it = (old_scale->*&Scale::nodes).find(entity->last_node_pos);
+			auto old_it = (old_scale->*&Scale::nodes).find(entity->*&CEntity::last_node_pos);
 			auto new_it = (new_scale->*&Scale::nodes).find(required_node_pos);
 
 			DEBUG_ASSERT(old_it != (old_scale->*&Scale::nodes).end(), "The current node should be loaded. If the node was unloaded it should have detached this entity");
@@ -413,24 +413,24 @@ namespace voxel_game::spatial3d
 				(old_it->second->*&Node::entities).erase(entity);
 				(new_it->second->*&Node::entities).insert(entity);
 
-				entity->scale = entity->last_scale;
-				entity->last_node_pos = required_node_pos;
+				entity->*&CEntity::scale = entity->*&CEntity::last_scale;
+				entity->*&CEntity::last_node_pos = required_node_pos;
 			}
 		}
 	}
 
 	void ScaleUpdateEntityNodes(WorldRef world, ScaleRef scale)
 	{
-		for (Entity* entity : scale->*&Scale::entities)
+		for (entity::Ptr entity : scale->*&Scale::entities)
 		{
-			godot::Vector3i required_node_pos = entity->position / (1 >> scale->*&Scale::index);
+			godot::Vector3i required_node_pos = entity->*&CEntity::position / (1 >> scale->*&Scale::index);
 
-			if (entity->last_node_pos == required_node_pos)
+			if (entity->*&CEntity::last_node_pos == required_node_pos)
 			{
 				continue;
 			}
 
-			auto old_it = (scale->*&Scale::nodes).find(entity->last_node_pos);
+			auto old_it = (scale->*&Scale::nodes).find(entity->*&CEntity::last_node_pos);
 			auto new_it = (scale->*&Scale::nodes).find(required_node_pos);
 
 			DEBUG_ASSERT(old_it != (scale->*&Scale::nodes).end(), "The current node should be loaded. If the node was unloaded it should have detached this entity");
@@ -441,7 +441,7 @@ namespace voxel_game::spatial3d
 				(old_it->second->*&Node::entities).erase(entity);
 				(new_it->second->*&Node::entities).insert(entity);
 
-				entity->last_node_pos = required_node_pos;
+				entity->*&CEntity::last_node_pos = required_node_pos;
 			}
 		}
 	}

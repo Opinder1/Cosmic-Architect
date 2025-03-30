@@ -74,9 +74,9 @@ namespace voxel_game::galaxy
 		galaxy_entity->*&spatial3d::CWorld::world = spatial3d::CreateWorld(simulation.galaxy_types, spatial3d::k_max_world_scale);
 
 		// We want the simulated galaxy to load all galaxies around it
-		(galaxy_entity->*&spatial3d::CLoader::loader)->dist_per_lod = 3;
-		(galaxy_entity->*&spatial3d::CLoader::loader)->min_lod = 0;
-		(galaxy_entity->*&spatial3d::CLoader::loader)->max_lod = spatial3d::k_max_world_scale;
+		galaxy_entity->*&spatial3d::CLoader::dist_per_lod = 3;
+		galaxy_entity->*&spatial3d::CLoader::min_lod = 0;
+		galaxy_entity->*&spatial3d::CLoader::max_lod = spatial3d::k_max_world_scale;
 
 		//flecs::entity entity_loader = world.entity();
 

@@ -108,7 +108,7 @@ namespace voxel_game::universe
 			galaxy->*&physics3d::CPosition::position = position;
 			galaxy->*&physics3d::CScale::scale = scale;
 
-			(node->*&spatial3d::Node::entities).insert(galaxy->*&spatial3d::CEntity::entity);
+			(node->*&spatial3d::Node::entities).insert(galaxy);
 			(node->*&Node::galaxies).push_back(galaxy);
 		}
 

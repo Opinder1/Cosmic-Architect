@@ -2,11 +2,13 @@
 
 #include "SpatialPoly.h"
 
+#include "Entity/EntityPoly.h"
+
+#include "Simulation/SimulationComponents.h"
+
 #include "Util/Nocopy.h"
 #include "Util/Util.h"
 #include "Util/GodotHash.h"
-
-#include "Simulation/SimulationComponents.h"
 
 #include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/variant/vector3i.hpp>
@@ -35,26 +37,6 @@ namespace voxel_game::spatial3d
 		Deleting, // Has a delete command
 	};
 
-	struct Entity
-	{
-		uint8_t scale = 0;
-		godot::Vector3 position;
-
-		uint8_t last_scale = 0;
-		godot::Vector3i last_node_pos;
-	};
-
-	// An object that tells a spatial world where to load nodes and at what lods
-	struct Loader
-	{
-		uint8_t dist_per_lod = 0; // The number of nodes there are until the next lod starts
-		uint8_t min_lod = 0; // The minimum lod this camera can see
-		uint8_t max_lod = 0; // The maximum lod this camera can see
-		uint8_t update_frequency = 0; // The frequency
-
-		godot::Vector3 position;
-	};
-
 	// A single node in a spatial world. This is meant to be inherited from for custom data
 	struct Node : Nocopy, Nomove
 	{
@@ -77,7 +59,7 @@ namespace voxel_game::spatial3d
 
 		NodeRef neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
 
-		robin_hood::unordered_set<Entity*> entities;
+		robin_hood::unordered_set<entity::Ptr> entities;
 	};
 
 	using NodeMap = robin_hood::unordered_map<godot::Vector3i, NodeRef>;
@@ -89,7 +71,7 @@ namespace voxel_game::spatial3d
 
 		NodeMap nodes;
 
-		robin_hood::unordered_set<Entity*> entities;
+		robin_hood::unordered_set<entity::Ptr> entities;
 
 		// Commands
 		std::vector<godot::Vector3i> create_commands;
@@ -110,9 +92,9 @@ namespace voxel_game::spatial3d
 
 		Clock::duration node_keepalive = 10s;
 
-		robin_hood::unordered_set<Loader*> loaders;
+		robin_hood::unordered_set<entity::Ptr> loaders;
 
-		robin_hood::unordered_set<Entity*> entities;
+		robin_hood::unordered_set<entity::Ptr> entities;
 
 		std::array<ScaleRef, k_max_world_scale> scales;
 	};
