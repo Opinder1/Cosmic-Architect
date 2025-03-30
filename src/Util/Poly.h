@@ -127,6 +127,11 @@ public:
 			return m_poly != nullptr;
 		}
 
+		uint64_t Hash() const
+		{
+			return reinterpret_cast<uint64_t>(m_poly);
+		}
+
 	private:
 		Header* m_poly;
 	};

@@ -84,6 +84,11 @@ public:
 			return m_entry != nullptr;
 		}
 
+		uint64_t Hash() const
+		{
+			return reinterpret_cast<uint64_t>(m_entry);
+		}
+
 	private:
 		ArchetypeT* GetType() const
 		{

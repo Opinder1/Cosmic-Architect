@@ -107,7 +107,6 @@ const std::array<PolyTypeInfo, 128> PolyType<entity::Type, 128>::k_type_info =
 	MakeTypeInfo<spatial3d::CLoader>(),
 	MakeTypeInfo<spatial3d::CRegion>(),
 	MakeTypeInfo<spatial3d::CEntity>(),
-	MakeTypeInfo<spatial3d::CScale>(),
 	MakeTypeInfo<spatial3d::CWorld>(),
 	MakeTypeInfo<universe::CWorld>(),
 	MakeTypeInfo<galaxy::CWorld>(),
@@ -116,3 +115,8 @@ const std::array<PolyTypeInfo, 128> PolyType<entity::Type, 128>::k_type_info =
 	MakeTypeInfo<voxel::CWorld>(),
 	MakeTypeInfo<voxelrender::CWorld>(),
 };
+
+size_t std::hash<voxel_game::entity::Ptr>::operator()(const voxel_game::entity::Ptr& ptr) const noexcept
+{
+	return ptr.Hash();
+}

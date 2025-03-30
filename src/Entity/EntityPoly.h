@@ -13,3 +13,12 @@ namespace voxel_game::entity
 
 	using Ptr = Factory::Ptr;
 }
+
+namespace std
+{
+	template<>
+	struct hash<voxel_game::entity::Ptr>
+	{
+		size_t operator()(const voxel_game::entity::Ptr& ptr) const noexcept;
+	};
+}
