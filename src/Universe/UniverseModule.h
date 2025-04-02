@@ -14,5 +14,5 @@ namespace voxel_game::universe
 
 	void WorkerUpdate(Simulation& simulation, size_t index);
 
-	entity::Ptr CreateNewUniverse(Simulation& simulation, const godot::StringName& path);
+	entity::Ref CreateNewUniverse(Simulation& simulation, const godot::StringName& path);
 }

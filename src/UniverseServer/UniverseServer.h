@@ -316,19 +316,19 @@ namespace voxel_game
 
 		static std::optional<universe::Simulation> k_simulation;
 
-		entity::Ptr m_player_entity = 0;
-		entity::Ptr m_dimension_entity = 0;
+		entity::Ref m_player_entity;
+		entity::Ref m_dimension_entity;
 
-		entity::Ptr m_universe_entity = 0;
-		entity::Ptr m_galaxy_entity = 0;
-		entity::Ptr m_starsystem_entity = 0;
+		entity::Ref m_universe_entity;
+		entity::Ref m_galaxy_entity;
+		entity::Ref m_starsystem_entity;
 
-		entity::Ptr m_world_entity = 0;
-		entity::Ptr m_spacestation_entity = 0;
-		entity::Ptr m_spaceship_entity = 0;
-		entity::Ptr m_vehicle_entity = 0;
+		entity::Ref m_world_entity;
+		entity::Ref m_spacestation_entity;
+		entity::Ref m_spaceship_entity;
+		entity::Ref m_vehicle_entity;
 
-		entity::Ptr m_avatar_entity = 0;
+		entity::Ref m_avatar_entity;
 
 		// Cached info to be written to by the internal thread and its contents retrieved and read by other threads
 		UniverseCacheUpdater m_info_updater; 

@@ -116,7 +116,12 @@ const std::array<PolyTypeInfo, 128> PolyType<entity::Type, 128>::k_type_info =
 	MakeTypeInfo<voxelrender::CWorld>(),
 };
 
-size_t std::hash<voxel_game::entity::Ptr>::operator()(const voxel_game::entity::Ptr& ptr) const noexcept
+size_t std::hash<voxel_game::entity::WRef>::operator()(const voxel_game::entity::WRef& wref) const noexcept
 {
-	return ptr.Hash();
+	return wref.Hash();
+}
+
+size_t std::hash<voxel_game::entity::Ref>::operator()(const voxel_game::entity::Ref& ref) const noexcept
+{
+	return ref.Hash();
 }

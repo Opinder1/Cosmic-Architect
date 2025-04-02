@@ -19,7 +19,7 @@ namespace voxel_game::player
 
 	void WorkerUpdate(universe::Simulation& simulation, size_t index);
 
-	entity::Ptr CreateLocalPlayer(universe::Simulation& simulation, entity::Ptr server, const godot::String& name);
+	entity::Ref CreateLocalPlayer(universe::Simulation& simulation, entity::WRef server, const godot::String& name);
 
-	entity::Ptr CreatePlayerAvatar(universe::Simulation& simulation, entity::Ptr player);
+	entity::Ref CreatePlayerAvatar(universe::Simulation& simulation, entity::WRef player);
 }

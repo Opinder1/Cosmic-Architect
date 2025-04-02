@@ -11,6 +11,6 @@ namespace voxel_game::entity
 
 	struct CParent
 	{
-		Ptr parent;
+		Ref parent;
 	};
 }

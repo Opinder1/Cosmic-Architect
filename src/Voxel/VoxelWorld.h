@@ -34,7 +34,7 @@ namespace voxel_game::voxel
 		bool modified : 1; // This node has been modified so should be saved and loaded instead of regenerated
 		bool edited : 1; // A change has been made to this node and loaders should be notified
 
-		TinyOctree<entity::Ptr, 4, nullptr> voxel_entities; // Assign entities for voxels
+		TinyOctree<entity::Ref, 4, nullptr> voxel_entities; // Assign entities for voxels
 
 		Voxel voxels[16][16][16] = {}; // This member is last since its large
 	};
@@ -55,8 +55,8 @@ namespace voxel_game::voxel
 
 		size_t refcount = 0; // Number of chunks referencing us
 
-		entity::Ptr item = 0; // The related item type for this voxel type
-		entity::Ptr interact = 0; // The entity that dictates our interaction outcome
+		entity::Ref item; // The related item type for this voxel type
+		entity::Ref interact; // The entity that dictates our interaction outcome
 
 		godot::Color(*color)(uint16_t) = nullptr; // Convert the block to a color when displayed in things like a minimap
 

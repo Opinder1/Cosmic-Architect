@@ -44,10 +44,10 @@ namespace voxel_game::galaxy
 
 	}
 
-	entity::Ptr CreateNewSimulatedGalaxy(universe::Simulation& simulation, const godot::String& path, entity::Ptr universe_entity)
+	entity::Ref CreateNewSimulatedGalaxy(universe::Simulation& simulation, const godot::String& path, entity::WRef universe_entity)
 	{
 		// Create the simulated galaxy
-		entity::Ptr galaxy_entity = simulation.entity_factory.CreatePoly(GenerateUUID());
+		entity::Ref galaxy_entity = simulation.entity_factory.CreatePoly(GenerateUUID());
 
 #if defined(DEBUG_ENABLED)
 		simulation.entity_factory.AddTypes<entity::CName>(galaxy_entity.GetID());
@@ -86,7 +86,7 @@ namespace voxel_game::galaxy
 		return galaxy_entity;
 	}
 
-	void DestroySimulatedGalaxy(universe::Simulation& simulation, entity::Ptr galaxy)
+	void DestroySimulatedGalaxy(universe::Simulation& simulation, entity::WRef galaxy)
 	{
 		simulation.entity_factory.DestroyPoly(galaxy.GetID());
 	}

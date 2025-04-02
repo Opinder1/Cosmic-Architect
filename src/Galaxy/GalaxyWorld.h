@@ -9,7 +9,7 @@ namespace voxel_game::galaxy
 	// This is a specialised node for a galaxy
 	struct Node
 	{
-		std::vector<entity::Ptr> stars;
+		std::vector<entity::Ref> stars;
 	};
 
 	// This is a specialised scale for a galaxy

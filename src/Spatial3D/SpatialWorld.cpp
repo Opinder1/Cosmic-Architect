@@ -276,7 +276,7 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void LoaderLoadNodes(ScaleRef scale, entity::Ptr loader, const simulation::CFrame& frame, double scale_node_step)
+	void LoaderLoadNodes(ScaleRef scale, entity::WRef loader, const simulation::CFrame& frame, double scale_node_step)
 	{
 		EASY_BLOCK("SingleLoader");
 
@@ -332,7 +332,7 @@ namespace voxel_game::spatial3d
 		const double scale_node_step = scale_step * world->*&World::node_size;
 
 		// For each command list that is a child of the world
-		for (entity::Ptr loader : world->*&World::loaders)
+		for (entity::WRef loader : world->*&World::loaders)
 		{
 			LoaderLoadNodes(scale, loader, frame, scale_node_step);
 		}
@@ -387,7 +387,7 @@ namespace voxel_game::spatial3d
 
 	void WorldUpdateEntityScales(WorldRef world)
 	{
-		for (entity::Ptr entity : world->*&World::entities)
+		for (entity::WRef entity : world->*&World::entities)
 		{
 			if (entity->*&CEntity::last_scale == entity->*&CEntity::scale)
 			{
@@ -421,7 +421,7 @@ namespace voxel_game::spatial3d
 
 	void ScaleUpdateEntityNodes(WorldRef world, ScaleRef scale)
 	{
-		for (entity::Ptr entity : scale->*&Scale::entities)
+		for (entity::WRef entity : scale->*&Scale::entities)
 		{
 			godot::Vector3i required_node_pos = entity->*&CEntity::position / (1 >> scale->*&Scale::index);
 

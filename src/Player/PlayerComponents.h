@@ -14,7 +14,7 @@ namespace voxel_game::player
 	{
 		UUID storage; // Storage that entity is in
 		UUID id; // Id of entity in storage
-		entity::Ptr cached_entity; // Cached entity if we have already found it
+		entity::Ref cached_entity; // Cached entity if we have already found it
 	};
 
 	// Tree to find players avatar

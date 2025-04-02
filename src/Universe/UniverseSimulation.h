@@ -38,9 +38,9 @@ namespace voxel_game::universe
 		// Entity
 		entity::Factory entity_factory;
 
-		entity::Ptr universe;
+		entity::Ref universe;
 
 		// Galaxy
-		std::vector<entity::Ptr> galaxies;
+		std::vector<entity::Ref> galaxies;
 	};
 }

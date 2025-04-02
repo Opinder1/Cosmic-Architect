@@ -22,7 +22,7 @@ namespace voxel_game::galaxy
 
 	void WorkerUpdate(universe::Simulation& simulation, size_t index);
 
-	entity::Ptr CreateNewSimulatedGalaxy(universe::Simulation& simulation, const godot::String& path, entity::Ptr universe_entity);
+	entity::Ref CreateNewSimulatedGalaxy(universe::Simulation& simulation, const godot::String& path, entity::WRef universe_entity);
 
-	void DestroySimulatedGalaxy(universe::Simulation& simulation, entity::Ptr galaxy);
+	void DestroySimulatedGalaxy(universe::Simulation& simulation, entity::WRef galaxy);
 }

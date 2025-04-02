@@ -28,23 +28,29 @@ private:
 		TypeID id;
 		ArchetypeT* archetype = nullptr;
 		Header* header = nullptr;
+		size_t refcount = 0;
 	};
 
-	using TypeMap = robin_hood::unordered_map<TypeID, ArchetypeEntry>;
+	using ArchetypeMap = robin_hood::unordered_map<TypeID, ArchetypeEntry>;
 	using PolyMap = robin_hood::unordered_map<UUID, PolyEntry>;
 
 	using PolyMapEntry = typename PolyMap::value_type;
 
 public:
-	class Ptr
+	class WeakRef
 	{
 	public:
-		Ptr() : m_entry(nullptr) {}
-		Ptr(PolyMapEntry* entry) : m_entry(entry) {}
+		WeakRef() : m_entry(nullptr) {}
+		WeakRef(PolyMapEntry* entry) : m_entry(entry) {}
 
 		UUID GetID()
 		{
 			return m_entry->first;
+		}
+
+		TypeID GetTypeID()
+		{
+			return m_entry->second.id;
 		}
 
 		template<class T>
@@ -100,8 +106,46 @@ public:
 			return m_entry->second.header;
 		}
 
-	private:
+	protected:
 		PolyMapEntry* m_entry;
+	};
+
+	class Ref : public WeakRef, Nocopy
+	{
+	public:
+		Ref() : WeakRef() {}
+
+		Ref(WeakRef ref) : WeakRef(ref)
+		{
+			if (m_entry != nullptr)
+			{
+				m_entry->second.refcount++;
+			}
+		}
+
+		~Ref()
+		{
+			if (m_entry != nullptr)
+			{
+				m_entry->second.refcount--;
+			}
+		}
+
+		Ref(Ref&& other) noexcept
+		{
+			std::swap(m_entry, other.m_entry);
+		}
+
+		Ref& operator=(Ref&& other) noexcept
+		{
+			std::swap(m_entry, other.m_entry);
+			return *this;
+		}
+
+		Ref Reference()
+		{
+			return Ref(m_entry);
+		}
 	};
 
 public:
@@ -117,7 +161,7 @@ public:
 		return archetype;
 	}
 
-	Ptr CreatePoly(UUID id)
+	Ref CreatePoly(UUID id)
 	{
 		auto&& [it, emplaced] = m_entries.try_emplace(id);
 
@@ -130,7 +174,7 @@ public:
 			entry.header = entry.archetype->CreatePoly();
 		}
 
-		return Ptr(&*it);
+		return Ref(&*it);
 	}
 
 	void DestroyPoly(UUID id)
@@ -279,6 +323,6 @@ private:
 	}
 
 private:
-	TypeMap m_archetypes;
+	ArchetypeMap m_archetypes;
 	PolyMap m_entries;
 };

@@ -101,15 +101,15 @@ namespace voxel_game::universe
 
 		void CreateGalaxy(spatial3d::NodeRef node, godot::Vector3 position, godot::Vector3 scale)
 		{
-			entity::Ptr galaxy = simulation.entity_factory.CreatePoly(GenerateUUID());
+			entity::Ref galaxy = simulation.entity_factory.CreatePoly(GenerateUUID());
 
 			simulation.entity_factory.AddTypes<galaxy::CWorld, physics3d::CPosition, physics3d::CScale, physics3d::CPosition, physics3d::CScale, spatial3d::CEntity>(galaxy.GetID());
 
 			galaxy->*&physics3d::CPosition::position = position;
 			galaxy->*&physics3d::CScale::scale = scale;
 
-			(node->*&spatial3d::Node::entities).insert(galaxy);
-			(node->*&Node::galaxies).push_back(galaxy);
+			(node->*&spatial3d::Node::entities).insert(galaxy.Reference());
+			(node->*&Node::galaxies).push_back(galaxy.Reference());
 		}
 
 		void LoadNodeRandomly(spatial3d::NodeRef node)
@@ -155,7 +155,7 @@ namespace voxel_game::universe
 			const uint32_t scale_step = 1 << node->*&spatial3d::Node::scale_index;
 			const uint32_t scale_node_step = scale_step * world->*&spatial3d::World::node_size;
 
-			for (entity::Ptr galaxy : node->*&Node::galaxies)
+			for (entity::WRef galaxy : node->*&Node::galaxies)
 			{
 				// galaxy.unref();
 			}
@@ -207,10 +207,10 @@ namespace voxel_game::universe
 
 	}
 
-	entity::Ptr CreateNewUniverse(Simulation& simulation, const godot::StringName& path)
+	entity::Ref CreateNewUniverse(Simulation& simulation, const godot::StringName& path)
 	{
 		// Create the universe
-		entity::Ptr universe_entity = simulation.entity_factory.CreatePoly(GenerateUUID());
+		entity::Ref universe_entity = simulation.entity_factory.CreatePoly(GenerateUUID());
 
 		simulation.entity_factory.AddTypes<
 			simulation::CPath,

@@ -59,7 +59,7 @@ namespace voxel_game::spatial3d
 
 		NodeRef neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
 
-		robin_hood::unordered_set<entity::Ptr> entities;
+		robin_hood::unordered_set<entity::Ref> entities;
 	};
 
 	using NodeMap = robin_hood::unordered_map<godot::Vector3i, NodeRef>;
@@ -71,7 +71,7 @@ namespace voxel_game::spatial3d
 
 		NodeMap nodes;
 
-		robin_hood::unordered_set<entity::Ptr> entities;
+		robin_hood::unordered_set<entity::Ref> entities;
 
 		// Commands
 		std::vector<godot::Vector3i> create_commands;
@@ -92,9 +92,9 @@ namespace voxel_game::spatial3d
 
 		Clock::duration node_keepalive = 10s;
 
-		robin_hood::unordered_set<entity::Ptr> loaders;
+		robin_hood::unordered_set<entity::Ref> loaders;
 
-		robin_hood::unordered_set<entity::Ptr> entities;
+		robin_hood::unordered_set<entity::Ref> entities;
 
 		std::array<ScaleRef, k_max_world_scale> scales;
 	};
