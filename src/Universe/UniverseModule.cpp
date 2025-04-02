@@ -101,7 +101,7 @@ namespace voxel_game::universe
 
 		void CreateGalaxy(spatial3d::NodeRef node, godot::Vector3 position, godot::Vector3 scale)
 		{
-			entity::Ref galaxy = simulation.entity_factory.CreatePoly(GenerateUUID());
+			entity::Ref galaxy = simulation.entity_factory.GetPoly(GenerateUUID());
 
 			simulation.entity_factory.AddTypes<galaxy::CWorld, physics3d::CPosition, physics3d::CScale, physics3d::CPosition, physics3d::CScale, spatial3d::CEntity>(galaxy.GetID());
 
@@ -210,7 +210,7 @@ namespace voxel_game::universe
 	entity::Ref CreateNewUniverse(Simulation& simulation, const godot::StringName& path)
 	{
 		// Create the universe
-		entity::Ref universe_entity = simulation.entity_factory.CreatePoly(GenerateUUID());
+		entity::Ref universe_entity = simulation.entity_factory.GetPoly(GenerateUUID());
 
 		simulation.entity_factory.AddTypes<
 			simulation::CPath,

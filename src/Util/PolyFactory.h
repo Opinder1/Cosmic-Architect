@@ -161,7 +161,7 @@ public:
 		return archetype;
 	}
 
-	Ref CreatePoly(UUID id)
+	Ref GetPoly(UUID id)
 	{
 		auto&& [it, emplaced] = m_entries.try_emplace(id);
 
@@ -177,22 +177,22 @@ public:
 		return Ref(&*it);
 	}
 
-	void DestroyPoly(UUID id)
+	void Cleanup()
 	{
-		auto it = m_entries.find(id);
+		std::vector<UUID> erase_list;
 
-		if (it == m_entries.end())
+		for (auto&& [id, entry] : m_entries)
 		{
-			return;
+			if (entry.refcount == 0)
+			{
+				erase_list.push_back(id);
+			}
 		}
 
-		PolyEntry& entry = it->second;
-
-		entry.archetype->DestroyPoly(entry.header);
-
-		UnrefArchetype(entry.id);
-
-		m_entries.erase(it);
+		for (UUID id : erase_list)
+		{
+			DestroyPoly(id);
+		}
 	}
 
 	void SetType(UUID id, TypeID new_type_id)
@@ -236,6 +236,24 @@ public:
 	}
 
 private:
+	void DestroyPoly(UUID id)
+	{
+		auto it = m_entries.find(id);
+
+		if (it == m_entries.end())
+		{
+			return;
+		}
+
+		PolyEntry& entry = it->second;
+
+		entry.archetype->DestroyPoly(entry.header);
+
+		UnrefArchetype(entry.id);
+
+		m_entries.erase(it);
+	}
+
 	ArchetypeT& RefArchetype(TypeID id)
 	{
 		auto&& [it, emplaced] = m_archetypes.try_emplace(id);
