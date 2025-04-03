@@ -2,6 +2,7 @@
 
 #include "Poly.h"
 #include "UUID.h"
+#include "Callback.h"
 
 #include <robin_hood/robin_hood.h>
 
@@ -13,25 +14,25 @@ class PolyFactory
 	using Header = typename ArchetypeT::Header;
 
 public:
-	using TypeID = std::bitset<ArchetypeT::k_num_types>;
+	using ArchetypeID = std::bitset<ArchetypeT::k_num_types>;
 
 private:
 	struct ArchetypeEntry
 	{
-		TypeID id;
 		ArchetypeT archetype;
 		size_t refcount = 0;
+		std::vector<Header*> polys;
 	};
 
 	struct PolyEntry
 	{
-		TypeID id;
+		ArchetypeID id;
 		ArchetypeT* archetype = nullptr;
 		Header* header = nullptr;
 		size_t refcount = 0;
 	};
 
-	using ArchetypeMap = robin_hood::unordered_map<TypeID, ArchetypeEntry>;
+	using ArchetypeMap = robin_hood::unordered_map<ArchetypeID, ArchetypeEntry>;
 	using PolyMap = robin_hood::unordered_map<UUID, PolyEntry>;
 
 	using PolyMapEntry = typename PolyMap::value_type;
@@ -48,7 +49,7 @@ public:
 			return m_entry->first;
 		}
 
-		TypeID GetTypeID()
+		ArchetypeID GetTypeID()
 		{
 			return m_entry->second.id;
 		}
@@ -152,9 +153,9 @@ public:
 	PolyFactory() {}
 
 	template<class... Types>
-	static TypeID CreateTypeID()
+	constexpr static ArchetypeID CreateTypeID()
 	{
-		TypeID archetype;
+		ArchetypeID archetype;
 
 		(archetype.set(ArchetypeT::k_type_index<Types>), ...);
 
@@ -170,11 +171,84 @@ public:
 		if (emplaced)
 		{
 			entry.id = CreateTypeID<Header>();
-			entry.archetype = &RefArchetype(entry.id);
-			entry.header = entry.archetype->CreatePoly();
+			entry.header = AllocatePoly(entry.id);
+			entry.archetype = entry.header->archetype;
+
+			entry.archetype->ConstructPoly(entry.header);
 		}
 
 		return Ref(&*it);
+	}
+
+	void SetType(UUID id, ArchetypeID new_type_id)
+	{
+		auto it = m_entries.find(id);
+
+		if (it == m_entries.end())
+		{
+			return;
+		}
+
+		PolyEntry& entry = it->second;
+
+		UpdateType(entry, new_type_id);
+	}
+
+	void AddTypes(UUID id, ArchetypeID partial_type_id)
+	{
+		auto it = m_entries.find(id);
+
+		if (it == m_entries.end())
+		{
+			return;
+		}
+
+		PolyEntry& entry = it->second;
+
+		UpdateType(entry, partial_type_id | entry.id);
+	}
+
+	void Iterate(ArchetypeID partial_type_id, cb::Callback<void(Header*)> callback)
+	{
+		for (auto&& [type_id, entry] : m_archetypes)
+		{
+			if ((type_id & partial_type_id) == partial_type_id)
+			{
+				for (Header* poly : entry.polys)
+				{
+					callback(poly);
+				}
+			}
+		}
+	}
+
+	void WorkerIterate(ArchetypeID partial_type_id, cb::Callback<void(Header*)> callback, size_t worker_index)
+	{
+
+	}
+
+	template<class... Types>
+	void SetTypes(UUID id)
+	{
+		SetTypes(id, CreateTypeID<Types...>());
+	}
+
+	template<class... Types>
+	void AddTypes(UUID id)
+	{
+		AddTypes(id, CreateTypeID<Types...>());
+	}
+
+	template<class... Types>
+	void Iterate(cb::Callback<void(Header*)> callback)
+	{
+		Iterate(CreateTypeID<Types...>(), callback);
+	}
+
+	template<class... Types>
+	void WorkerIterate(cb::Callback<void(Header*)> callback, size_t worker_index)
+	{
+		WorkerIterate(CreateTypeID<Types...>(), callback, worker_index);
 	}
 
 	void Cleanup()
@@ -195,46 +269,6 @@ public:
 		}
 	}
 
-	void SetType(UUID id, TypeID new_type_id)
-	{
-		auto it = m_entries.find(id);
-
-		if (it == m_entries.end())
-		{
-			return;
-		}
-
-		PolyEntry& entry = it->second;
-
-		UpdateType(entry, new_type_id);
-	}
-
-	void AddTypes(UUID id, TypeID type_id_mod)
-	{
-		auto it = m_entries.find(id);
-
-		if (it == m_entries.end())
-		{
-			return;
-		}
-
-		PolyEntry& entry = it->second;
-
-		UpdateType(entry, type_id_mod | entry.id);
-	}
-
-	template<class... Types>
-	void SetTypes(UUID id)
-	{
-		SetTypes(id, CreateTypeID<Types...>());
-	}
-
-	template<class... Types>
-	void AddTypes(UUID id)
-	{
-		AddTypes(id, CreateTypeID<Types...>());
-	}
-
 private:
 	void DestroyPoly(UUID id)
 	{
@@ -247,25 +281,24 @@ private:
 
 		PolyEntry& entry = it->second;
 
-		entry.archetype->DestroyPoly(entry.header);
+		entry.archetype->DestructPoly(entry.header);
 
-		UnrefArchetype(entry.id);
+		DeallocatePoly(entry.id, entry.header);
 
 		m_entries.erase(it);
 	}
 
-	ArchetypeT& RefArchetype(TypeID id)
+	Header* AllocatePoly(ArchetypeID type_id)
 	{
-		auto&& [it, emplaced] = m_archetypes.try_emplace(id);
+		auto&& [it, emplaced] = m_archetypes.try_emplace(type_id);
 
 		ArchetypeEntry& entry = it->second;
 
 		if (emplaced)
 		{
-			entry.id = id;
-			for (size_t i = 1; i < entry.id.size(); i++)
+			for (size_t i = 1; i < type_id.size(); i++)
 			{
-				if (entry.id.test(i))
+				if (type_id.test(i))
 				{
 					entry.archetype.AddType(i);
 				}
@@ -274,14 +307,22 @@ private:
 
 		entry.refcount++;
 
-		return entry.archetype;
+		Header* poly = entry.archetype.AllocatePoly();
+
+		entry.polys.push_back(poly);
+
+		return poly;
 	}
 
-	void UnrefArchetype(TypeID id)
+	void DeallocatePoly(ArchetypeID id, Header* poly)
 	{
 		auto it = m_archetypes.find(id);
 
 		ArchetypeEntry& entry = it->second;
+
+		entry.polys.erase(std::remove(entry.polys.begin(), entry.polys.end(), poly), entry.polys.end());
+
+		entry.archetype.DeallocatePoly(poly);
 
 		entry.refcount--;
 
@@ -291,16 +332,16 @@ private:
 		}
 	}
 
-	void UpdateType(PolyEntry& entry, TypeID new_type_id)
+	void UpdateType(PolyEntry& entry, ArchetypeID new_type_id)
 	{
 		if (new_type_id == entry.id)
 		{
 			return;
 		}
 
-		ArchetypeT& new_archetype = RefArchetype(new_type_id);
+		Header* new_poly = AllocatePoly(new_type_id);
 
-		Header* new_poly = new_archetype.AllocatePoly();
+		ArchetypeT& new_archetype = *new_poly->archetype;
 
 		for (size_t i = 0; i < ArchetypeT::k_num_types; i++)
 		{
@@ -331,9 +372,7 @@ private:
 			}
 		}
 
-		entry.archetype->DeallocatePoly(entry.header);
-
-		UnrefArchetype(entry.id);
+		DeallocatePoly(entry.id, entry.header);
 
 		entry.id = new_type_id;
 		entry.archetype = &new_archetype;
