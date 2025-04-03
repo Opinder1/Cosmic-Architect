@@ -74,7 +74,7 @@ private:
 
 	struct Header
 	{
-		PolyType* archetype = nullptr;
+		DerivedT* archetype = nullptr;
 	};
 
 public:
@@ -214,7 +214,7 @@ public:
 		m_created.insert(poly);
 #endif
 
-		poly->archetype = this;
+		poly->archetype = static_cast<DerivedT*>(this);
 
 		return reinterpret_cast<Header*>(poly);
 	}
