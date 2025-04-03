@@ -26,7 +26,7 @@ private:
 
 	struct PolyEntry
 	{
-		ArchetypeID id;
+		ArchetypeID type_id;
 		ArchetypeT* archetype = nullptr;
 		Header* header = nullptr;
 		size_t refcount = 0;
@@ -51,7 +51,7 @@ public:
 
 		ArchetypeID GetTypeID()
 		{
-			return m_entry->second.id;
+			return m_entry->second.type_id;
 		}
 
 		template<class T>
@@ -170,8 +170,8 @@ public:
 
 		if (emplaced)
 		{
-			entry.id = CreateTypeID<Header>();
-			entry.header = AllocatePoly(entry.id);
+			entry.type_id = CreateTypeID<Header>();
+			entry.header = AllocatePoly(entry.type_id);
 			entry.archetype = entry.header->archetype;
 
 			entry.archetype->ConstructPoly(entry.header);
@@ -205,7 +205,7 @@ public:
 
 		PolyEntry& entry = it->second;
 
-		UpdateType(entry, partial_type_id | entry.id);
+		UpdateType(entry, entry.type_id | partial_type_id);
 	}
 
 	void Iterate(ArchetypeID partial_type_id, cb::Callback<void(Header*)> callback)
@@ -283,7 +283,7 @@ private:
 
 		entry.archetype->DestructPoly(entry.header);
 
-		DeallocatePoly(entry.id, entry.header);
+		DeallocatePoly(entry.type_id, entry.header);
 
 		m_entries.erase(it);
 	}
@@ -334,7 +334,7 @@ private:
 
 	void UpdateType(PolyEntry& entry, ArchetypeID new_type_id)
 	{
-		if (new_type_id == entry.id)
+		if (new_type_id == entry.type_id)
 		{
 			return;
 		}
@@ -372,9 +372,9 @@ private:
 			}
 		}
 
-		DeallocatePoly(entry.id, entry.header);
+		DeallocatePoly(entry.type_id, entry.header);
 
-		entry.id = new_type_id;
+		entry.type_id = new_type_id;
 		entry.archetype = &new_archetype;
 		entry.header = new_poly;
 	}
