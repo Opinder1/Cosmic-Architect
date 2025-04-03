@@ -8,15 +8,19 @@
 
 #include <bitset>
 
+// A factory that handles polys of multiple archetypes of the given poly type.
+// It uses UUID values to reference individual polys.
 template<class ArchetypeT>
 class PolyFactory
 {
 	using Header = typename ArchetypeT::Header;
 
 public:
+	// Use a bitset for fast type logic
 	using ArchetypeID = std::bitset<ArchetypeT::k_num_types>;
 
 private:
+	// An archetype entry that polys will reference.
 	struct ArchetypeEntry
 	{
 		ArchetypeT archetype;
@@ -24,6 +28,7 @@ private:
 		std::vector<Header*> polys;
 	};
 
+	// A poly entry that multiple refs will reference.
 	struct PolyEntry
 	{
 		ArchetypeID type_id;
@@ -38,6 +43,7 @@ private:
 	using PolyMapEntry = typename PolyMap::value_type;
 
 public:
+	// A reference to a poly that doesn't increase the refcount. Useful for thread safe per frame iteration.
 	class WeakRef
 	{
 	public:
@@ -111,6 +117,7 @@ public:
 		PolyMapEntry* m_entry;
 	};
 
+	// A reference to a poly that increases the polys refcount. Is not thread safe to create.
 	class Ref : public WeakRef, Nocopy
 	{
 	public:
@@ -152,6 +159,7 @@ public:
 public:
 	PolyFactory() {}
 
+	// Create a type id for the given set of types.
 	template<class... Types>
 	constexpr static ArchetypeID CreateTypeID()
 	{
@@ -162,6 +170,7 @@ public:
 		return archetype;
 	}
 
+	// Get a reference to a poly with the given UUID or create one if needed.
 	Ref GetPoly(UUID id)
 	{
 		auto&& [it, emplaced] = m_entries.try_emplace(id);
@@ -180,7 +189,9 @@ public:
 		return Ref(&*it);
 	}
 
-	void SetType(UUID id, ArchetypeID new_type_id)
+	// Update the type of a poly to a new type. Any components that are in both
+	// will be moved while the rest will be destroyed/newly constructed.
+	void SetTypes(UUID id, ArchetypeID new_type_id)
 	{
 		auto it = m_entries.find(id);
 
@@ -194,6 +205,8 @@ public:
 		UpdateType(entry, new_type_id);
 	}
 
+	// Add new components if they don't already exist to a poly.
+	// The existing components will be moved.
 	void AddTypes(UUID id, ArchetypeID partial_type_id)
 	{
 		auto it = m_entries.find(id);
@@ -208,6 +221,7 @@ public:
 		UpdateType(entry, entry.type_id | partial_type_id);
 	}
 
+	// Iterate over all polys that have the given components
 	void Iterate(ArchetypeID partial_type_id, cb::Callback<void(Header*)> callback)
 	{
 		for (auto&& [type_id, entry] : m_archetypes)
@@ -222,35 +236,45 @@ public:
 		}
 	}
 
+	// Iterate over all polys that have the given components. Do only part
+	// of the work for the current worker.
 	void WorkerIterate(ArchetypeID partial_type_id, cb::Callback<void(Header*)> callback, size_t worker_index)
 	{
 
 	}
 
+	// Update the type of a poly to a new type. Any components that are in both
+	// will be moved while the rest will be destroyed/newly constructed.
 	template<class... Types>
 	void SetTypes(UUID id)
 	{
 		SetTypes(id, CreateTypeID<Types...>());
 	}
 
+	// Add new components if they don't already exist to a poly.
+	// The existing components will be moved.
 	template<class... Types>
 	void AddTypes(UUID id)
 	{
 		AddTypes(id, CreateTypeID<Types...>());
 	}
 
+	// Iterate over all polys that have the given components
 	template<class... Types>
 	void Iterate(cb::Callback<void(Header*)> callback)
 	{
 		Iterate(CreateTypeID<Types...>(), callback);
 	}
 
+	// Iterate over all polys that have the given components. Do only part
+	// of the work for the current worker.
 	template<class... Types>
 	void WorkerIterate(cb::Callback<void(Header*)> callback, size_t worker_index)
 	{
 		WorkerIterate(CreateTypeID<Types...>(), callback, worker_index);
 	}
 
+	// Cleanup any polys that no longer have any references
 	void Cleanup()
 	{
 		std::vector<UUID> erase_list;
@@ -270,6 +294,7 @@ public:
 	}
 
 private:
+	// Destroy a poly.
 	void DestroyPoly(UUID id)
 	{
 		auto it = m_entries.find(id);
@@ -288,6 +313,7 @@ private:
 		m_entries.erase(it);
 	}
 
+	// Allocate a new poly for the given archetype.
 	Header* AllocatePoly(ArchetypeID type_id)
 	{
 		auto&& [it, emplaced] = m_archetypes.try_emplace(type_id);
@@ -314,6 +340,7 @@ private:
 		return poly;
 	}
 
+	// Deallocate a poly for the given archetype.
 	void DeallocatePoly(ArchetypeID id, Header* poly)
 	{
 		auto it = m_archetypes.find(id);
@@ -332,6 +359,7 @@ private:
 		}
 	}
 
+	// Change a polys type and create/destroy components as needed.
 	void UpdateType(PolyEntry& entry, ArchetypeID new_type_id)
 	{
 		if (new_type_id == entry.type_id)
