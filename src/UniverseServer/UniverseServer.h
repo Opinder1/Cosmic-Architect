@@ -21,7 +21,7 @@
 #include <optional>
 #include <thread>
 
-namespace voxel_game::universe
+namespace voxel_game
 {
 	struct Simulation;
 }
@@ -306,15 +306,12 @@ namespace voxel_game
 		static void _cleanup_methods();
 
 	private:
-		void Progress();
-
-	private:
 		static godot::OptObj<UniverseServer> k_singleton;
 
 		// Cached string names for optimization
 		static std::optional<const SignalStrings> k_signals;
 
-		static std::optional<universe::Simulation> k_simulation;
+		static std::optional<Simulation> k_simulation;
 
 		entity::Ref m_player_entity;
 		entity::Ref m_dimension_entity;

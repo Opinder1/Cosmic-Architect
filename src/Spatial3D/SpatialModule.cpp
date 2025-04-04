@@ -2,8 +2,9 @@
 #include "SpatialComponents.h"
 #include "SpatialTraverse.h"
 
-#include "Simulation/SimulationComponents.h"
+#include "UniverseSimulation.h"
 
+#include "Simulation/SimulationComponents.h"
 #include "Physics3D/PhysicsComponents.h"
 
 #include "Util/Debug.h"
@@ -13,6 +14,53 @@
 
 namespace voxel_game::spatial3d
 {
+	void Initialize(Simulation& simulation)
+	{
+
+	}
+
+	void Uninitialize(Simulation& simulation)
+	{
+
+	}
+
+	void Update(Simulation& simulation)
+	{
+		for (WorldRef world : simulation.spatial_worlds)
+		{
+			WorldCreateNodes(world, simulation.frame_start_time);
+
+			WorldDestroyNodes(world);
+		}
+
+		DoTasks(simulation, &spatial3d::ParallelWorldUpdate, simulation.spatial_worlds.size());
+
+		DoTasks(simulation, &spatial3d::ParallelScaleUpdate, simulation.spatial_scales.size());
+	}
+
+	void WorkerUpdate(Simulation& simulation, size_t index)
+	{
+
+	}
+
+	void ParallelWorldUpdate(Simulation& simulation, size_t index)
+	{
+		WorldRef world = simulation.spatial_worlds[index];
+
+		WorldCreateNodes(world, simulation.frame_start_time);
+
+		WorldDestroyNodes(world);
+	}
+
+	void ParallelScaleUpdate(Simulation& simulation, size_t index)
+	{
+		ScaleRef scale = simulation.spatial_scales[index];
+
+		ScaleLoadNodes(scale->*&Scale::world, scale, simulation.frame_start_time);
+
+		ScaleUnloadNodes(scale->*&Scale::world, scale, simulation.frame_start_time);
+	}
+
 	/*
 	Module::Module(flecs::world& world)
 	{

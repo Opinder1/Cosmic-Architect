@@ -214,7 +214,7 @@ namespace voxel_game::spatial3d
 		world.Destroy();
 	}
 
-	void WorldCreateNodes(WorldRef world, const simulation::CFrame& frame)
+	void WorldCreateNodes(WorldRef world, Clock::time_point frame_start_time)
 	{
 		DEBUG_ASSERT(world->*&World::max_scale > 0, "The spatial world should have at least one scale");
 
@@ -242,7 +242,7 @@ namespace voxel_game::spatial3d
 				// Initialize the node
 				node->*&Node::position = pos;
 				node->*&Node::scale_index = scale_index;
-				node->*&Node::last_update_time = frame.frame_start_time;
+				node->*&Node::last_update_time = frame_start_time;
 				node->*&Node::state = NodeState::Unloaded;
 
 				InitializeNode(world, node, scale_index);
@@ -276,7 +276,7 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void LoaderLoadNodes(ScaleRef scale, entity::WRef loader, const simulation::CFrame& frame, double scale_node_step)
+	void LoaderLoadNodes(ScaleRef scale, entity::WRef loader, Clock::time_point frame_start_time, double scale_node_step)
 	{
 		EASY_BLOCK("SingleLoader");
 
@@ -299,7 +299,7 @@ namespace voxel_game::spatial3d
 			NodeRef node = it->second;
 
 			// Touch the node so it stays loaded
-			node->*&Node::last_update_time = frame.frame_start_time;
+			node->*&Node::last_update_time = frame_start_time;
 
 			// Load the node if its not loaded yet
 			switch (node->*&Node::state)
@@ -315,7 +315,7 @@ namespace voxel_game::spatial3d
 		});
 	}
 
-	void ScaleLoadNodes(WorldRef world, ScaleRef scale, const simulation::CFrame& frame)
+	void ScaleLoadNodes(WorldRef world, ScaleRef scale, Clock::time_point frame_start_time)
 	{
 		// Finish the previous load commands
 		for (NodeRef node : scale->*&Scale::load_commands)
@@ -334,11 +334,11 @@ namespace voxel_game::spatial3d
 		// For each command list that is a child of the world
 		for (entity::WRef loader : world->*&World::loaders)
 		{
-			LoaderLoadNodes(scale, loader, frame, scale_node_step);
+			LoaderLoadNodes(scale, loader, frame_start_time, scale_node_step);
 		}
 	}
 
-	void UnloadNode(ScaleRef scale, NodeRef node, const simulation::CFrame& frame)
+	void UnloadNode(ScaleRef scale, NodeRef node)
 	{
 		// Move the entity along to deletion
 		switch (node->*&Node::state)
@@ -361,7 +361,7 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void ScaleUnloadNodes(WorldRef world, ScaleRef scale, const simulation::CFrame& frame)
+	void ScaleUnloadNodes(WorldRef world, ScaleRef scale, Clock::time_point frame_start_time)
 	{
 		// Finish the previous load commands
 		for (NodeRef node : scale->*&Scale::unload_commands)
@@ -378,9 +378,9 @@ namespace voxel_game::spatial3d
 		for (auto&& [pos, node] : scale->*&Scale::nodes)
 		{
 			// Check if node hasn't been touched in too long
-			if (frame.frame_start_time - node->*&Node::last_update_time > world->*&World::node_keepalive)
+			if (frame_start_time - node->*&Node::last_update_time > world->*&World::node_keepalive)
 			{
-				UnloadNode(scale, node, frame);
+				UnloadNode(scale, node);
 			}
 		}
 	}

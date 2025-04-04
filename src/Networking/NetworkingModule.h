@@ -1,17 +1,17 @@
 #pragma once
 
-namespace voxel_game::universe
+namespace voxel_game
 {
 	struct Simulation;
 }
 
 namespace voxel_game::network
 {
-	void Initialize(universe::Simulation& simulation);
+	void Initialize(Simulation& simulation);
 
-	void Uninitialize(universe::Simulation& simulation);
+	void Uninitialize(Simulation& simulation);
 
-	void Update(universe::Simulation& simulation);
+	void Update(Simulation& simulation);
 
-	void WorkerUpdate(universe::Simulation& simulation, size_t index);
+	void WorkerUpdate(Simulation& simulation, size_t index);
 }

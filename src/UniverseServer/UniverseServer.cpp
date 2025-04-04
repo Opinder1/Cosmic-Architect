@@ -1,19 +1,10 @@
 #include "UniverseServer.h"
 #include "UniverseServer_StringNames.h"
 
-#include "Universe/UniverseSimulation.h"
+#include "UniverseSimulation.h"
 
 #include "Universe/UniverseModule.h"
 #include "Galaxy/GalaxyModule.h"
-#include "GalaxyRender/GalaxyRenderModule.h"
-#include "Player/PlayerModule.h"
-#include "Spatial3D/SpatialModule.h"
-#include "Voxel/VoxelModule.h"
-#include "VoxelRender/VoxelRenderModule.h"
-#include "Render/RenderModule.h"
-#include "Simulation/SimulationModule.h"
-#include "Physics3D/PhysicsModule.h"
-#include "Loading/LoadingModule.h"
 
 #include "Physics3D/PhysicsComponents.h"
 
@@ -40,7 +31,7 @@ namespace voxel_game
 
 	std::optional<const UniverseServer::SignalStrings> UniverseServer::k_signals;
 
-	std::optional<universe::Simulation> UniverseServer::k_simulation;
+	std::optional<Simulation> UniverseServer::k_simulation;
 
 	UniverseServer* UniverseServer::get_singleton()
 	{
@@ -64,8 +55,7 @@ namespace voxel_game
 	{
 		k_simulation.emplace();
 
-		universe::Initialize(*k_simulation);
-		galaxy::Initialize(*k_simulation);
+		Initialize(*k_simulation);
 
 		godot::String universe_path = godot::ProjectSettings::get_singleton()->get_setting("voxel_game/universe/path");
 
@@ -82,8 +72,7 @@ namespace voxel_game
 		m_info_updater.SetWriterThread(std::thread::id{}); // We may not start in thread mode next time
 #endif
 
-		galaxy::Uninitialize(*k_simulation);
-		universe::Uninitialize(*k_simulation);
+		Uninitialize(*k_simulation);
 
 		k_simulation.reset();
 	}
@@ -99,7 +88,7 @@ namespace voxel_game
 		}
 		else
 		{
-			Progress();
+			Update(*k_simulation);
 		}
 	}
 
@@ -107,7 +96,7 @@ namespace voxel_game
 	{
 		EASY_FUNCTION();
 
-		Progress();
+		Update(*k_simulation);
 
 		// Publish updates to the info caches to be read on the main thread
 		m_info_updater.PublishUpdates();
@@ -144,12 +133,6 @@ namespace voxel_game
 		}
 	}
 #endif
-
-	void UniverseServer::Progress()
-	{
-		universe::Update(*k_simulation);
-		galaxy::Update(*k_simulation);
-	}
 
 	void UniverseServer::_bind_methods()
 	{

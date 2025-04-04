@@ -1,7 +1,7 @@
 #include "GalaxyModule.h"
 #include "GalaxyComponents.h"
 
-#include "Universe/UniverseSimulation.h"
+#include "UniverseSimulation.h"
 
 #include "Spatial3D/SpatialModule.h"
 #include "Render/RenderModule.h"
@@ -18,7 +18,7 @@
 
 namespace voxel_game::galaxy
 {
-	void Initialize(universe::Simulation& simulation)
+	void Initialize(Simulation& simulation)
 	{
 		simulation.galaxy_types.node_type.AddType<spatial3d::Node>();
 		simulation.galaxy_types.node_type.AddType<Node>();
@@ -29,22 +29,44 @@ namespace voxel_game::galaxy
 		simulation.galaxy_types.world_type.AddType<spatial3d::World>();
 	}
 
-	void Uninitialize(universe::Simulation& simulation)
+	void Uninitialize(Simulation& simulation)
 	{
 
 	}
 
-	void Update(universe::Simulation& simulation)
+	void Update(Simulation& simulation)
 	{
 
 	}
 
-	void WorkerUpdate(universe::Simulation& simulation, size_t index)
+	void WorkerUpdate(Simulation& simulation, size_t index)
 	{
 
 	}
 
-	entity::Ref CreateNewSimulatedGalaxy(universe::Simulation& simulation, const godot::String& path, entity::WRef universe_entity)
+	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodeRef node, godot::Vector3 position, godot::Vector3 scale)
+	{
+		entity::Ref galaxy = simulation.entity_factory.GetPoly(GenerateUUID());
+
+		simulation.entity_factory.AddTypes<
+			galaxy::CWorld,
+			physics3d::CPosition,
+			physics3d::CScale,
+			physics3d::CPosition,
+			physics3d::CScale,
+			spatial3d::CEntity
+		>(galaxy.GetID());
+
+		galaxy->*&physics3d::CPosition::position = position;
+		galaxy->*&physics3d::CScale::scale = scale;
+
+		(node->*&spatial3d::Node::entities).insert(galaxy.Reference());
+		(node->*&universe::Node::galaxies).push_back(galaxy.Reference());
+
+		return galaxy;
+	}
+
+	entity::Ref CreateSimulatedGalaxy(Simulation& simulation, const godot::String& path, entity::WRef universe_entity)
 	{
 		// Create the simulated galaxy
 		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID());
@@ -86,7 +108,7 @@ namespace voxel_game::galaxy
 		return galaxy_entity;
 	}
 
-	void DestroySimulatedGalaxy(universe::Simulation& simulation, entity::WRef galaxy)
+	void DestroySimulatedGalaxy(Simulation& simulation, entity::WRef galaxy)
 	{
 
 	}

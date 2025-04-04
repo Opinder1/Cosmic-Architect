@@ -2,27 +2,31 @@
 
 #include "Entity/EntityPoly.h"
 
+#include "Spatial3D/SpatialPoly.h"
+
 namespace godot
 {
 	class String;
 }
 
-namespace voxel_game::universe
+namespace voxel_game
 {
 	struct Simulation;
 }
 
 namespace voxel_game::galaxy
 {
-	void Initialize(universe::Simulation& simulation);
+	void Initialize(Simulation& simulation);
 
-	void Uninitialize(universe::Simulation& simulation);
+	void Uninitialize(Simulation& simulation);
 
-	void Update(universe::Simulation& simulation);
+	void Update(Simulation& simulation);
 
-	void WorkerUpdate(universe::Simulation& simulation, size_t index);
+	void WorkerUpdate(Simulation& simulation, size_t index);
 
-	entity::Ref CreateNewSimulatedGalaxy(universe::Simulation& simulation, const godot::String& path, entity::WRef universe_entity);
+	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodeRef node, godot::Vector3 position, godot::Vector3 scale);
 
-	void DestroySimulatedGalaxy(universe::Simulation& simulation, entity::WRef galaxy);
+	entity::Ref CreateSimulatedGalaxy(Simulation& simulation, const godot::String& path, entity::WRef universe_entity);
+
+	void DestroySimulatedGalaxy(Simulation& simulation, entity::WRef galaxy);
 }

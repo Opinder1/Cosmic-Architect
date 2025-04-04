@@ -2,20 +2,18 @@
 #include "UniverseComponents.h"
 #include "UniverseSimulation.h"
 
-#include "Galaxy/GalaxyComponents.h"
-
-#include "Spatial3D/SpatialComponents.h"
 #include "Spatial3D/SpatialModule.h"
-
-#include "Physics3D/PhysicsComponents.h"
-
-#include "Loading/LoadingComponents.h"
-
-#include "Simulation/SimulationComponents.h"
 #include "Simulation/SimulationModule.h"
-
-#include "Render/RenderComponents.h"
 #include "Render/RenderModule.h"
+#include "Galaxy/GalaxyModule.h"
+
+#include "Galaxy/GalaxyComponents.h"
+#include "Spatial3D/SpatialComponents.h"
+#include "Physics3D/PhysicsComponents.h"
+#include "Loading/LoadingComponents.h"
+#include "Simulation/SimulationComponents.h"
+#include "Render/RenderComponents.h"
+
 
 #include "Util/Debug.h"
 
@@ -99,19 +97,6 @@ namespace voxel_game::universe
 		Simulation& simulation;
 		spatial3d::WorldRef world;
 
-		void CreateGalaxy(spatial3d::NodeRef node, godot::Vector3 position, godot::Vector3 scale)
-		{
-			entity::Ref galaxy = simulation.entity_factory.GetPoly(GenerateUUID());
-
-			simulation.entity_factory.AddTypes<galaxy::CWorld, physics3d::CPosition, physics3d::CScale, physics3d::CPosition, physics3d::CScale, spatial3d::CEntity>(galaxy.GetID());
-
-			galaxy->*&physics3d::CPosition::position = position;
-			galaxy->*&physics3d::CScale::scale = scale;
-
-			(node->*&spatial3d::Node::entities).insert(galaxy.Reference());
-			(node->*&Node::galaxies).push_back(galaxy.Reference());
-		}
-
 		void LoadNodeRandomly(spatial3d::NodeRef node)
 		{
 			const uint32_t entities_per_node = 4;
@@ -127,7 +112,7 @@ namespace voxel_game::universe
 				position.y += godot::UtilityFunctions::randf_range(0, scale_node_step);
 				position.z += godot::UtilityFunctions::randf_range(0, scale_node_step);
 
-				CreateGalaxy(node, position, godot::Vector3(box_size, box_size, box_size));
+				galaxy::CreateGalaxy(simulation, node, position, godot::Vector3(box_size, box_size, box_size));
 			}
 		}
 
@@ -146,7 +131,7 @@ namespace voxel_game::universe
 
 			position.y -= node->*&spatial3d::Node::scale_index - 1;
 
-			CreateGalaxy(node, position, godot::Vector3i{ scale_node_step / 4, 1, scale_node_step / 4 });
+			galaxy::CreateGalaxy(simulation, node, position, godot::Vector3i{ scale_node_step / 4, 1, scale_node_step / 4 });
 		}
 
 		void UnloadNode(spatial3d::NodeRef node)

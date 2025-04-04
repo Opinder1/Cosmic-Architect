@@ -67,6 +67,8 @@ namespace voxel_game::spatial3d
 	// A level of detail map for a world. The world will have multiple of these
 	struct Scale : Nocopy, Nomove
 	{
+		WorldRef world;
+
 		uint8_t index = 0;
 
 		NodeMap nodes;
@@ -107,13 +109,13 @@ namespace voxel_game::spatial3d
 
 	void DestroyWorld(WorldRef world);
 
-	void WorldCreateNodes(WorldRef world, const simulation::CFrame& frame);
+	void WorldCreateNodes(WorldRef world, Clock::time_point frame_start_time);
 
 	void WorldDestroyNodes(WorldRef world);
 
-	void ScaleLoadNodes(WorldRef world, ScaleRef scale, const simulation::CFrame& frame);
+	void ScaleLoadNodes(WorldRef world, ScaleRef scale, Clock::time_point frame_start_time);
 
-	void ScaleUnloadNodes(WorldRef world, ScaleRef scale, const simulation::CFrame& frame);
+	void ScaleUnloadNodes(WorldRef world, ScaleRef scale, Clock::time_point frame_start_time);
 
 	void WorldUpdateEntityScales(WorldRef world);
 

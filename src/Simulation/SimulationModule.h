@@ -7,7 +7,7 @@
 
 #include <robin_hood/robin_hood.h>
 
-namespace voxel_game::universe
+namespace voxel_game
 {
 	struct Simulation;
 }
@@ -18,13 +18,13 @@ namespace voxel_game::simulation
 
 	using ConfigDefaults = robin_hood::unordered_map<godot::String, godot::Variant>;
 
-	void Initialize(universe::Simulation& simulation);
+	void Initialize(Simulation& simulation);
 
-	void Uninitialize(universe::Simulation& simulation);
+	void Uninitialize(Simulation& simulation);
 
-	void Update(universe::Simulation& simulation);
+	void Update(Simulation& simulation);
 
-	void WorkerUpdate(universe::Simulation& simulation, size_t index);
+	void WorkerUpdate(Simulation& simulation, size_t index);
 	
 	void LoadJsonConfig(CConfig& config);
 

@@ -9,7 +9,7 @@ namespace godot
 	struct Vector3i;
 }
 
-namespace voxel_game::universe
+namespace voxel_game
 {
 	struct Simulation;
 }
@@ -18,13 +18,13 @@ namespace voxel_game::voxel
 {
 	struct Voxel;
 
-	void Initialize(universe::Simulation& simulation);
+	void Initialize(Simulation& simulation);
 
-	void Uninitialize(universe::Simulation& simulation);
+	void Uninitialize(Simulation& simulation);
 
-	void Update(universe::Simulation& simulation);
+	void Update(Simulation& simulation);
 
-	void WorkerUpdate(universe::Simulation& simulation, size_t index);
+	void WorkerUpdate(Simulation& simulation, size_t index);
 
 	Voxel GetVoxelAtScale(spatial3d::WorldRef world, godot::Vector3i pos, uint32_t scale);
 

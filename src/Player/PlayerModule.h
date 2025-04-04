@@ -4,22 +4,22 @@
 
 #include <godot_cpp/variant/string.hpp>
 
-namespace voxel_game::universe
+namespace voxel_game
 {
 	struct Simulation;
 }
 
 namespace voxel_game::player
 {
-	void Initialize(universe::Simulation& simulation);
+	void Initialize(Simulation& simulation);
 
-	void Uninitialize(universe::Simulation& simulation);
+	void Uninitialize(Simulation& simulation);
 
-	void Update(universe::Simulation& simulation);
+	void Update(Simulation& simulation);
 
-	void WorkerUpdate(universe::Simulation& simulation, size_t index);
+	void WorkerUpdate(Simulation& simulation, size_t index);
 
-	entity::Ref CreateLocalPlayer(universe::Simulation& simulation, entity::WRef server, const godot::String& name);
+	entity::Ref CreateLocalPlayer(Simulation& simulation, entity::WRef server, const godot::String& name);
 
-	entity::Ref CreatePlayerAvatar(universe::Simulation& simulation, entity::WRef player);
+	entity::Ref CreatePlayerAvatar(Simulation& simulation, entity::WRef player);
 }

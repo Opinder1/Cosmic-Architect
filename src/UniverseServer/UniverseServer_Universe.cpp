@@ -4,10 +4,9 @@
 #include "Render/RenderComponents.h"
 
 #include "Player/PlayerModule.h"
-
 #include "Galaxy/GalaxyModule.h"
 
-#include "Universe/UniverseSimulation.h"
+#include "UniverseSimulation.h"
 
 namespace voxel_game
 {
@@ -58,7 +57,7 @@ namespace voxel_game
 
 		m_universe_entity->*&rendering::CScenario::id = scenario;
 
-		m_galaxy_entity = galaxy::CreateNewSimulatedGalaxy(*k_simulation, path, m_universe_entity);
+		m_galaxy_entity = galaxy::CreateSimulatedGalaxy(*k_simulation, path, m_universe_entity);
 
 		m_player_entity = player::CreateLocalPlayer(*k_simulation, m_galaxy_entity, "localuser");
 

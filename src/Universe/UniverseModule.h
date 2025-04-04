@@ -2,10 +2,13 @@
 
 #include "Entity/EntityComponents.h"
 
-namespace voxel_game::universe
+namespace voxel_game
 {
 	struct Simulation;
+}
 
+namespace voxel_game::universe
+{
 	void Initialize(Simulation& simulation);
 
 	void Uninitialize(Simulation& simulation);

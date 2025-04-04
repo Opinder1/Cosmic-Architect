@@ -4,10 +4,19 @@
 
 #include "Entity/EntityPoly.h"
 
-namespace voxel_game::universe
+namespace voxel_game
 {
 	struct Simulation
 	{
+		// Simulation
+		uint8_t processor_count = 0;
+		bool high_priority = true;
+		bool thread_mode = false;
+		uint8_t worker_count = 1;
+
+		uint64_t frame_index = 0;
+		Clock::time_point frame_start_time;
+
 		// Entity
 		entity::Factory entity_factory;
 
@@ -48,4 +57,12 @@ namespace voxel_game::universe
 		// StarSystem
 		std::vector<entity::Ref> star_systems;
 	};
+
+	void DoTasks(Simulation& simulation, void(*callback)(Simulation&, size_t), size_t count);
+
+	void Initialize(Simulation& simulation);
+
+	void Uninitialize(Simulation& simulation);
+
+	void Update(Simulation& simulation);
 }
