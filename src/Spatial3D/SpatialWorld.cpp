@@ -156,12 +156,12 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	WorldRef CreateWorld(Types& types, uint8_t max_scale)
+	WorldRef CreateWorld(WorldType& world_type, ScaleType& scale_type, NodeType& node_type, uint8_t max_scale)
 	{
-		WorldRef world = types.world_type.CreatePoly();
+		WorldRef world = world_type.CreatePoly();
 
-		world->*&World::scale_type = &types.scale_type;
-		world->*&World::node_type = &types.node_type;
+		world->*&World::scale_type = &scale_type;
+		world->*&World::node_type = &node_type;
 
 		for (uint8_t scale_index = world->*&World::max_scale; scale_index < max_scale; scale_index++)
 		{

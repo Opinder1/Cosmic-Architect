@@ -12,16 +12,12 @@
 #include "Physics3D/PhysicsModule.h"
 #include "Loading/LoadingModule.h"
 
+#include "Util/SmallVector.h"
+
 #include <godot_cpp/classes/worker_thread_pool.hpp>
 
 namespace voxel_game
 {
-	struct TaskData
-	{
-		Simulation& simulation;
-		void(*callback)(Simulation&, size_t);
-	};
-
 	void TaskCallback(void* userdata, uint32_t element)
 	{
 		TaskData* taskdata = reinterpret_cast<TaskData*>(userdata);
@@ -29,13 +25,13 @@ namespace voxel_game
 		taskdata->callback(taskdata->simulation, element);
 	}
 
-	void DoTasks(Simulation& simulation, void(*callback)(Simulation&, size_t), size_t count)
+	void SimulationDoTasks(Simulation& simulation, TaskData& task_data)
 	{
 		if (simulation.processor_count == 0)
 		{
-			for (size_t index = 0; index < count; index++)
+			for (size_t index = 0; index < task_data.count; index++)
 			{
-				callback(simulation, index);
+				task_data.callback(simulation, index);
 			}
 		}
 		else
@@ -44,12 +40,10 @@ namespace voxel_game
 
 			godot::WorkerThreadPool* thread_pool = godot::WorkerThreadPool::get_singleton();
 
-			TaskData data{ simulation, callback };
-
 			uint64_t id = thread_pool->add_native_group_task(
 				&TaskCallback,
-				&data,
-				count,
+				&task_data,
+				task_data.count,
 				simulation.processor_count,
 				simulation.high_priority);
 
@@ -59,7 +53,151 @@ namespace voxel_game
 		}
 	}
 
-	void Initialize(Simulation& simulation)
+	void SimulationDoMultitasks(Simulation& simulation, TaskData* data, size_t count)
+	{
+		if (count == 1)
+		{
+			SimulationDoTasks(simulation, *data);
+		}
+		else if (simulation.processor_count == 0)
+		{
+			for (size_t index = 0; index < count; index++)
+			{
+				SimulationDoTasks(simulation, data[index]);
+			}
+		}
+		else
+		{
+			simulation.thread_mode = true;
+
+			godot::WorkerThreadPool* thread_pool = godot::WorkerThreadPool::get_singleton();
+
+			GrowingSmallVector<uint64_t, 16> ids;
+
+			for (size_t index = 0; index < count; index++)
+			{
+				uint64_t id = thread_pool->add_native_group_task(
+					&TaskCallback,
+					data + count,
+					data[count].count,
+					simulation.processor_count,
+					simulation.high_priority);
+
+				ids.push_back(id);
+			}
+
+			for (size_t index = 0; index < count; index++)
+			{
+				thread_pool->wait_for_group_task_completion(ids[index]);
+			}
+
+			simulation.thread_mode = false;
+		}
+	}
+
+	void SimulationUniverseWorldUpdate(Simulation& simulation, size_t index)
+	{
+		spatial3d::WorldRef world = simulation.universe_type.worlds[index];
+
+		spatial3d::WorldUpdate(simulation, world);
+		universe::WorldUpdate(simulation, world);
+	}
+
+	void SimulationUniverseScaleUpdate(Simulation& simulation, size_t index)
+	{
+		spatial3d::ScaleRef scale = simulation.universe_type.scales[index];
+
+		spatial3d::ScaleUpdate(simulation, scale);
+		universe::ScaleUpdate(simulation, scale);
+	}
+
+	void SimulationGalaxyWorldUpdate(Simulation& simulation, size_t index)
+	{
+		spatial3d::WorldRef world = simulation.universe_type.worlds[index];
+
+		spatial3d::WorldUpdate(simulation, world);
+		galaxy::WorldUpdate(simulation, world);
+	}
+
+	void SimulationGalaxyScaleUpdate(Simulation& simulation, size_t index)
+	{
+		spatial3d::ScaleRef scale = simulation.universe_type.scales[index];
+
+		spatial3d::ScaleUpdate(simulation, scale);
+		galaxy::ScaleUpdate(simulation, scale);
+	}
+
+	void SimulationStarSystemWorldUpdate(Simulation& simulation, size_t index)
+	{
+		spatial3d::WorldRef world = simulation.universe_type.worlds[index];
+
+		spatial3d::WorldUpdate(simulation, world);
+	}
+
+	void SimulationStarSystemScaleUpdate(Simulation& simulation, size_t index)
+	{
+		spatial3d::ScaleRef scale = simulation.universe_type.scales[index];
+
+		spatial3d::ScaleUpdate(simulation, scale);
+	}
+
+	void SimulationPlanetWorldUpdate(Simulation& simulation, size_t index)
+	{
+		spatial3d::WorldRef world = simulation.universe_type.worlds[index];
+
+		spatial3d::WorldUpdate(simulation, world);
+	}
+
+	void SimulationPlanetScaleUpdate(Simulation& simulation, size_t index)
+	{
+		spatial3d::ScaleRef scale = simulation.universe_type.scales[index];
+
+		spatial3d::ScaleUpdate(simulation, scale);
+	}
+
+	void SimulationSpaceStationWorldUpdate(Simulation& simulation, size_t index)
+	{
+		spatial3d::WorldRef world = simulation.universe_type.worlds[index];
+
+		spatial3d::WorldUpdate(simulation, world);
+	}
+
+	void SimulationSpaceStationScaleUpdate(Simulation& simulation, size_t index)
+	{
+		spatial3d::ScaleRef scale = simulation.universe_type.scales[index];
+
+		spatial3d::ScaleUpdate(simulation, scale);
+	}
+
+	void SimulationSpaceShipWorldUpdate(Simulation& simulation, size_t index)
+	{
+		spatial3d::WorldRef world = simulation.universe_type.worlds[index];
+
+		spatial3d::WorldUpdate(simulation, world);
+	}
+
+	void SimulationSpaceShipScaleUpdate(Simulation& simulation, size_t index)
+	{
+		spatial3d::ScaleRef scale = simulation.universe_type.scales[index];
+
+		spatial3d::ScaleUpdate(simulation, scale);
+	}
+
+	void SimulationVehicleWorldUpdate(Simulation& simulation, size_t index)
+	{
+		spatial3d::WorldRef world = simulation.universe_type.worlds[index];
+
+		spatial3d::WorldUpdate(simulation, world);
+	}
+
+	void SimulationVehicleScaleUpdate(Simulation& simulation, size_t index)
+	{
+		spatial3d::ScaleRef scale = simulation.universe_type.scales[index];
+
+		spatial3d::ScaleUpdate(simulation, scale);
+	}
+
+	void SimulationInitialize(Simulation& simulation)
 	{
 		simulation::Initialize(simulation);
 		spatial3d::Initialize(simulation);
@@ -67,7 +205,7 @@ namespace voxel_game
 		galaxy::Initialize(simulation);
 	}
 
-	void Uninitialize(Simulation& simulation)
+	void SimulationUninitialize(Simulation& simulation)
 	{
 		simulation::Uninitialize(simulation);
 		spatial3d::Uninitialize(simulation);
@@ -75,7 +213,7 @@ namespace voxel_game
 		galaxy::Uninitialize(simulation);
 	}
 	
-	void WorkerUpdate(Simulation& simulation, size_t worker_index)
+	void SimulationWorkerUpdate(Simulation& simulation, size_t worker_index)
 	{
 		simulation::WorkerUpdate(simulation, worker_index);
 		spatial3d::WorkerUpdate(simulation, worker_index);
@@ -85,16 +223,42 @@ namespace voxel_game
 
 	void WorkerUpdateTask(void* userdata, uint32_t worker_index)
 	{
-		WorkerUpdate(*(Simulation*)userdata, worker_index);
+		SimulationWorkerUpdate(*(Simulation*)userdata, worker_index);
 	}
 
-	void Update(Simulation& simulation)
+	void SimulationUpdate(Simulation& simulation)
 	{
 		simulation::Update(simulation);
 		spatial3d::Update(simulation);
 		universe::Update(simulation);
 		galaxy::Update(simulation);
 
-		DoTasks(simulation, &WorkerUpdate, simulation.worker_count);
+		TaskData worker_task{ simulation, &SimulationWorkerUpdate, simulation.worker_count };
+
+		SimulationDoTasks(simulation, worker_task);
+
+		TaskData world_tasks[7] = {
+			{ simulation, &SimulationUniverseWorldUpdate, simulation.universe_type.worlds.size() },
+			{ simulation, &SimulationGalaxyWorldUpdate, simulation.galaxy_type.worlds.size() },
+			{ simulation, &SimulationStarSystemWorldUpdate, simulation.star_system_type.worlds.size() },
+			{ simulation, &SimulationPlanetWorldUpdate, simulation.planet_type.worlds.size() },
+			{ simulation, &SimulationSpaceStationWorldUpdate, simulation.space_station_type.worlds.size() },
+			{ simulation, &SimulationSpaceShipWorldUpdate, simulation.space_ship_type.worlds.size() },
+			{ simulation, &SimulationVehicleWorldUpdate, simulation.vehicle_type.worlds.size() },
+		};
+
+		SimulationDoMultitasks(simulation, world_tasks, 7);
+
+		TaskData scale_tasks[7] = {
+			{ simulation, &SimulationUniverseScaleUpdate, simulation.universe_type.scales.size() },
+			{ simulation, &SimulationGalaxyScaleUpdate, simulation.galaxy_type.scales.size() },
+			{ simulation, &SimulationStarSystemScaleUpdate, simulation.star_system_type.scales.size() },
+			{ simulation, &SimulationPlanetScaleUpdate, simulation.planet_type.scales.size() },
+			{ simulation, &SimulationSpaceStationScaleUpdate, simulation.space_station_type.scales.size() },
+			{ simulation, &SimulationSpaceShipScaleUpdate, simulation.space_ship_type.scales.size() },
+			{ simulation, &SimulationVehicleScaleUpdate, simulation.vehicle_type.scales.size() },
+		};
+
+		SimulationDoMultitasks(simulation, scale_tasks, 7);
 	}
 }

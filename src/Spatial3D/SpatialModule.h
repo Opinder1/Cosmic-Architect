@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Spatial3D/SpatialPoly.h"
+
 namespace voxel_game
 {
 	struct Simulation;
@@ -15,7 +17,7 @@ namespace voxel_game::spatial3d
 
 	void WorkerUpdate(Simulation& simulation, size_t index);
 
-	void ParallelWorldUpdate(Simulation& simulation, size_t index);
+	void WorldUpdate(Simulation& simulation, WorldRef world);
 
-	void ParallelScaleUpdate(Simulation& simulation, size_t index);
+	void ScaleUpdate(Simulation& simulation, ScaleRef scale);
 }

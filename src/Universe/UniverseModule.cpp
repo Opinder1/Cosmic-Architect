@@ -151,14 +151,14 @@ namespace voxel_game::universe
 	{
 		InitializeConfigDefaults();
 
-		simulation.universe_types.node_type.AddType<spatial3d::Node>();
-		simulation.universe_types.node_type.AddType<Node>();
+		simulation.universe_type.node_type.AddType<spatial3d::Node>();
+		simulation.universe_type.node_type.AddType<Node>();
 
-		simulation.universe_types.scale_type.AddType<spatial3d::Scale>();
-		simulation.universe_types.scale_type.AddType<Scale>();
+		simulation.universe_type.scale_type.AddType<spatial3d::Scale>();
+		simulation.universe_type.scale_type.AddType<Scale>();
 
-		simulation.universe_types.world_type.AddType<spatial3d::World>();
-		simulation.universe_types.world_type.AddType<World>();
+		simulation.universe_type.world_type.AddType<spatial3d::World>();
+		simulation.universe_type.world_type.AddType<World>();
 	}
 
 	void Uninitialize(Simulation& simulation)
@@ -168,26 +168,32 @@ namespace voxel_game::universe
 
 	void Update(Simulation& simulation)
 	{
-		for (spatial3d::WorldRef world : simulation.universe_worlds)
+	}
+
+	void WorkerUpdate(Simulation& simulation, size_t index)
+	{
+
+	}
+
+	void WorldUpdate(Simulation& simulation, spatial3d::WorldRef world)
+	{
+		UniverseNodeLoaderTest loader{ simulation, world };
+
+		for (spatial3d::ScaleRef scale : world->*&spatial3d::World::scales)
 		{
-			UniverseNodeLoaderTest loader{ simulation, world };
-
-			for (spatial3d::ScaleRef scale : world->*&spatial3d::World::scales)
+			for (spatial3d::NodeRef node : scale->*&spatial3d::Scale::load_commands)
 			{
-				for (spatial3d::NodeRef node : scale->*&spatial3d::Scale::load_commands)
-				{
-					loader.LoadNodePlane(node);
-				}
+				loader.LoadNodePlane(node);
+			}
 
-				for (spatial3d::NodeRef node : scale->*&spatial3d::Scale::unload_commands)
-				{
-					loader.UnloadNode(node);
-				}
+			for (spatial3d::NodeRef node : scale->*&spatial3d::Scale::unload_commands)
+			{
+				loader.UnloadNode(node);
 			}
 		}
 	}
 
-	void WorkerUpdate(Simulation& simulation, size_t index)
+	void ScaleUpdate(Simulation& simulation, spatial3d::ScaleRef scale)
 	{
 
 	}
@@ -213,7 +219,11 @@ namespace voxel_game::universe
 
 		simulation::InitializeConfig(universe_entity.Get<simulation::CConfig>(), path.path_join("config.json"), config_defaults);
 
-		universe_entity->*&spatial3d::CWorld::world = spatial3d::CreateWorld(simulation.universe_types, spatial3d::k_max_world_scale);
+		universe_entity->*&spatial3d::CWorld::world = spatial3d::CreateWorld(
+			simulation.universe_type.world_type,
+			simulation.universe_type.scale_type,
+			simulation.universe_type.node_type, 
+			simulation.universe_type.max_world_scale);
 		(universe_entity->*&spatial3d::CWorld::world)->*&spatial3d::World::node_size = 16;
 		(universe_entity->*&spatial3d::CWorld::world)->*&spatial3d::World::node_keepalive = 1s;
 

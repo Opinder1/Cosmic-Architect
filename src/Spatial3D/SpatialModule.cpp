@@ -26,16 +26,7 @@ namespace voxel_game::spatial3d
 
 	void Update(Simulation& simulation)
 	{
-		for (WorldRef world : simulation.spatial_worlds)
-		{
-			WorldCreateNodes(world, simulation.frame_start_time);
 
-			WorldDestroyNodes(world);
-		}
-
-		DoTasks(simulation, &spatial3d::ParallelWorldUpdate, simulation.spatial_worlds.size());
-
-		DoTasks(simulation, &spatial3d::ParallelScaleUpdate, simulation.spatial_scales.size());
 	}
 
 	void WorkerUpdate(Simulation& simulation, size_t index)
@@ -43,111 +34,17 @@ namespace voxel_game::spatial3d
 
 	}
 
-	void ParallelWorldUpdate(Simulation& simulation, size_t index)
+	void WorldUpdate(Simulation& simulation, WorldRef world)
 	{
-		WorldRef world = simulation.spatial_worlds[index];
-
 		WorldCreateNodes(world, simulation.frame_start_time);
 
 		WorldDestroyNodes(world);
 	}
 
-	void ParallelScaleUpdate(Simulation& simulation, size_t index)
+	void ScaleUpdate(Simulation& simulation, ScaleRef scale)
 	{
-		ScaleRef scale = simulation.spatial_scales[index];
-
 		ScaleLoadNodes(scale->*&Scale::world, scale, simulation.frame_start_time);
 
 		ScaleUnloadNodes(scale->*&Scale::world, scale, simulation.frame_start_time);
 	}
-
-	/*
-	Module::Module(flecs::world& world)
-	{
-		world.module<Module>();
-
-		world.import<Components>();
-		world.import<sim::Components>();
-		world.import<physics3d::Components>();
-
-		world.observer<CLoader, CWorld>()
-			.event(flecs::OnAdd)
-			.term_at(1).up(flecs::ChildOf)
-			.each([](CLoader& loader, CWorld& world)
-		{
-			(world.world->*&World::loaders).insert(loader.loader);
-		});
-
-		world.observer<CLoader, CWorld>()
-			.event(flecs::OnRemove)
-			.term_at(1).up(flecs::ChildOf)
-			.each([](CLoader& loader, CWorld& world)
-		{
-			(world.world->*&World::loaders).erase(loader.loader);
-		});
-
-		// Systems
-
-		// System to initialize spatial nodes that have been added
-		world.system<CWorld, const sim::CFrame>(DEBUG_ONLY("WorldCreateNodes"))
-			//.multi_threaded()
-			.term_at(1).singleton()
-			.each([](CWorld& spatial_world, const sim::CFrame& frame)
-		{
-			EASY_BLOCK("WorldCreateNodes");
-
-			WorldCreateNodes(spatial_world.world, frame);
-		});
-
-		// System to delete spatial nodes that have been marked to unload
-		world.system<CWorld>(DEBUG_ONLY("WorldDestroyNodes"))
-			//.multi_threaded()
-			.each([](CWorld& spatial_world)
-		{
-			EASY_BLOCK("WorldDestroyNodes");
-
-			WorldDestroyNodes(spatial_world.world);
-		});
-
-		// Systen to create or update all nodes in the range of loaders
-		world.system<CScale, const CWorld, const sim::CFrame>(DEBUG_ONLY("LoaderTouchNodes"))
-			.multi_threaded()
-			.term_at(1).up(flecs::ChildOf)
-			.term_at(2).singleton()
-			.each([](CScale& spatial_scale, const CWorld& spatial_world, const sim::CFrame& frame)
-		{
-			EASY_BLOCK("LoaderTouchNodes");
-
-			ScaleLoadNodes(spatial_world.world, spatial_scale.scale, frame);
-		});
-
-		// System to mark any nodes that are no longer being observed to be unloaded
-		world.system<CScale, const CWorld, const sim::CFrame>(DEBUG_ONLY("ScaleUnloadUnusedNodes"))
-			.multi_threaded()
-			.term_at(1).up(flecs::ChildOf)
-			.term_at(2).singleton()
-			.each([](CScale& spatial_scale, const CWorld& spatial_world, const sim::CFrame& frame)
-		{
-			EASY_BLOCK("ScaleUnloadUnusedNodes");
-
-			ScaleUnloadNodes(spatial_world.world, spatial_scale.scale, frame);
-		});
-
-		// System to delete spatial nodes that have been marked to unload
-		world.system<const physics3d::CPosition, CLoader>(DEBUG_ONLY("LoaderUpdatePosition"))
-			.multi_threaded()
-			.each([](const physics3d::CPosition& position, CLoader& spatial_loader)
-		{
-			spatial_loader.loader->position = position.position;
-		});
-
-		// System to delete spatial nodes that have been marked to unload
-		world.system<const physics3d::CPosition, CEntity>(DEBUG_ONLY("EntityUpdatePosition"))
-			.multi_threaded()
-			.each([](const physics3d::CPosition& position, CEntity& spatial_entity)
-		{
-			//spatial_entity.entity->position = position.position;
-		});
-	}
-	*/
 }

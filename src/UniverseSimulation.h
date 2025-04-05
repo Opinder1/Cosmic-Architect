@@ -1,11 +1,34 @@
 #pragma once
 
 #include "Spatial3D/SpatialPoly.h"
+#include "Spatial3D/SpatialWorld.h"
 
 #include "Entity/EntityPoly.h"
 
 namespace voxel_game
 {
+	struct Simulation;
+
+	struct TaskData
+	{
+		Simulation& simulation;
+		void(*callback)(Simulation&, size_t);
+		size_t count;
+	};
+
+	struct SpatialTypeData
+	{
+		spatial3d::WorldType world_type;
+		spatial3d::ScaleType scale_type;
+		spatial3d::NodeType node_type;
+
+		size_t max_world_scale = spatial3d::k_max_world_scale;
+
+		std::vector<spatial3d::WorldRef> worlds;
+
+		std::vector<spatial3d::ScaleRef> scales;
+	};
+
 	struct Simulation
 	{
 		// Simulation
@@ -21,32 +44,16 @@ namespace voxel_game
 		entity::Factory entity_factory;
 
 		// Spatial
-		std::vector<spatial3d::ScaleRef> spatial_scales;
 		std::vector<spatial3d::WorldRef> spatial_worlds;
+		std::vector<spatial3d::ScaleRef> spatial_scales;
 
-		spatial3d::Types universe_types;
-		spatial3d::Types galaxy_types;
-		spatial3d::Types star_system_types;
-		spatial3d::Types planet_types;
-		spatial3d::Types space_station_types;
-		spatial3d::Types space_ship_types;
-		spatial3d::Types vehicle_types;
-
-		std::vector<spatial3d::ScaleRef> universe_scales;
-		std::vector<spatial3d::ScaleRef> galaxy_scales;
-		std::vector<spatial3d::ScaleRef> star_system_scales;
-		std::vector<spatial3d::ScaleRef> planet_scales;
-		std::vector<spatial3d::ScaleRef> space_station_scales;
-		std::vector<spatial3d::ScaleRef> space_ship_scales;
-		std::vector<spatial3d::ScaleRef> vehicle_scales;
-
-		std::vector<spatial3d::WorldRef> universe_worlds;
-		std::vector<spatial3d::WorldRef> galaxy_worlds;
-		std::vector<spatial3d::WorldRef> star_system_worlds;
-		std::vector<spatial3d::WorldRef> planet_worlds;
-		std::vector<spatial3d::WorldRef> space_station_worlds;
-		std::vector<spatial3d::WorldRef> space_ship_worlds;
-		std::vector<spatial3d::WorldRef> vehicle_worlds;
+		SpatialTypeData universe_type;
+		SpatialTypeData galaxy_type;
+		SpatialTypeData star_system_type;
+		SpatialTypeData planet_type;
+		SpatialTypeData space_station_type;
+		SpatialTypeData space_ship_type;
+		SpatialTypeData vehicle_type;
 
 		// Universe
 		entity::Ref universe;
@@ -58,11 +65,13 @@ namespace voxel_game
 		std::vector<entity::Ref> star_systems;
 	};
 
-	void DoTasks(Simulation& simulation, void(*callback)(Simulation&, size_t), size_t count);
+	void SimulationDoTasks(Simulation& simulation, TaskData& task_data);
 
-	void Initialize(Simulation& simulation);
+	void SimulationDoMultitasks(Simulation& simulation, TaskData* data, size_t count);
 
-	void Uninitialize(Simulation& simulation);
+	void SimulationInitialize(Simulation& simulation);
 
-	void Update(Simulation& simulation);
+	void SimulationUninitialize(Simulation& simulation);
+
+	void SimulationUpdate(Simulation& simulation);
 }

@@ -105,7 +105,7 @@ namespace voxel_game::spatial3d
 
 	NodeRef GetNode(WorldRef world, godot::Vector3i position, uint8_t scale_index);
 
-	WorldRef CreateWorld(Types& types, uint8_t max_scale);
+	WorldRef CreateWorld(WorldType& world_type, ScaleType& scale_type, NodeType& node_type, uint8_t max_scale);
 
 	void DestroyWorld(WorldRef world);
 

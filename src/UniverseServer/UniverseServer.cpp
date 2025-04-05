@@ -55,7 +55,7 @@ namespace voxel_game
 	{
 		k_simulation.emplace();
 
-		Initialize(*k_simulation);
+		SimulationInitialize(*k_simulation);
 
 		godot::String universe_path = godot::ProjectSettings::get_singleton()->get_setting("voxel_game/universe/path");
 
@@ -72,7 +72,7 @@ namespace voxel_game
 		m_info_updater.SetWriterThread(std::thread::id{}); // We may not start in thread mode next time
 #endif
 
-		Uninitialize(*k_simulation);
+		SimulationUninitialize(*k_simulation);
 
 		k_simulation.reset();
 	}
@@ -88,7 +88,7 @@ namespace voxel_game
 		}
 		else
 		{
-			Update(*k_simulation);
+			SimulationUpdate(*k_simulation);
 		}
 	}
 
@@ -96,7 +96,7 @@ namespace voxel_game
 	{
 		EASY_FUNCTION();
 
-		Update(*k_simulation);
+		SimulationUpdate(*k_simulation);
 
 		// Publish updates to the info caches to be read on the main thread
 		m_info_updater.PublishUpdates();

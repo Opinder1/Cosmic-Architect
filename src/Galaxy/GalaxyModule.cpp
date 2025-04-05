@@ -20,13 +20,13 @@ namespace voxel_game::galaxy
 {
 	void Initialize(Simulation& simulation)
 	{
-		simulation.galaxy_types.node_type.AddType<spatial3d::Node>();
-		simulation.galaxy_types.node_type.AddType<Node>();
+		simulation.galaxy_type.node_type.AddType<spatial3d::Node>();
+		simulation.galaxy_type.node_type.AddType<Node>();
 
-		simulation.galaxy_types.scale_type.AddType<spatial3d::Scale>();
-		simulation.galaxy_types.scale_type.AddType<Scale>();
+		simulation.galaxy_type.scale_type.AddType<spatial3d::Scale>();
+		simulation.galaxy_type.scale_type.AddType<Scale>();
 
-		simulation.galaxy_types.world_type.AddType<spatial3d::World>();
+		simulation.galaxy_type.world_type.AddType<spatial3d::World>();
 	}
 
 	void Uninitialize(Simulation& simulation)
@@ -93,7 +93,11 @@ namespace voxel_game::galaxy
 
 		galaxy_entity->*&entity::CParent::parent = universe_entity;
 
-		galaxy_entity->*&spatial3d::CWorld::world = spatial3d::CreateWorld(simulation.galaxy_types, spatial3d::k_max_world_scale);
+		galaxy_entity->*&spatial3d::CWorld::world = spatial3d::CreateWorld(
+			simulation.galaxy_type.world_type,
+			simulation.galaxy_type.scale_type,
+			simulation.galaxy_type.node_type,
+			simulation.galaxy_type.max_world_scale);
 
 		// We want the simulated galaxy to load all galaxies around it
 		galaxy_entity->*&spatial3d::CLoader::dist_per_lod = 3;
@@ -109,6 +113,16 @@ namespace voxel_game::galaxy
 	}
 
 	void DestroySimulatedGalaxy(Simulation& simulation, entity::WRef galaxy)
+	{
+
+	}
+
+	void WorldUpdate(Simulation& simulation, spatial3d::WorldRef world)
+	{
+
+	}
+
+	void ScaleUpdate(Simulation& simulation, spatial3d::ScaleRef scale)
 	{
 
 	}

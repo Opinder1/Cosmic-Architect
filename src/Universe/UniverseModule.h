@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Entity/EntityComponents.h"
+#include "Entity/EntityPoly.h"
+
+#include "Spatial3D/SpatialPoly.h"
 
 namespace voxel_game
 {
@@ -16,6 +18,10 @@ namespace voxel_game::universe
 	void Update(Simulation& simulation);
 
 	void WorkerUpdate(Simulation& simulation, size_t index);
+
+	void WorldUpdate(Simulation& simulation, spatial3d::WorldRef world);
+
+	void ScaleUpdate(Simulation& simulation, spatial3d::ScaleRef scale);
 
 	entity::Ref CreateNewUniverse(Simulation& simulation, const godot::StringName& path);
 }

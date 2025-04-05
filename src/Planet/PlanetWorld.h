@@ -12,7 +12,7 @@ namespace voxel_game::planet
 		energy::Node,
 		pathfind::Node,
 		collision::Node,
-		scriptlogic::Node
+		script::Node
 	{
 
 	};
@@ -27,7 +27,7 @@ namespace voxel_game::planet
 		energy::Scale,
 		pathfind::Scale,
 		collision::Scale,
-		scriptlogic::Scale
+		script::Scale
 	{
 
 	};
