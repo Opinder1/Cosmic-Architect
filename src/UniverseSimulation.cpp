@@ -78,8 +78,8 @@ namespace voxel_game
 			{
 				uint64_t id = thread_pool->add_native_group_task(
 					&TaskCallback,
-					data + count,
-					data[count].count,
+					data + index,
+					data[index].count,
 					simulation.processor_count,
 					simulation.high_priority);
 
