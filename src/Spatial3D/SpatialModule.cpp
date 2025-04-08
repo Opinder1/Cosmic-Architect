@@ -4,7 +4,6 @@
 
 #include "UniverseSimulation.h"
 
-#include "Simulation/SimulationComponents.h"
 #include "Physics3D/PhysicsComponents.h"
 
 #include "Util/Debug.h"

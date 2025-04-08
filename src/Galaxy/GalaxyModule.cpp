@@ -8,7 +8,6 @@
 
 #include "Universe/UniverseComponents.h"
 #include "Physics3D/PhysicsComponents.h"
-#include "Simulation/SimulationComponents.h"
 #include "Loading/LoadingComponents.h"
 #include "Spatial3D/SpatialComponents.h"
 #include "Render/RenderComponents.h"
@@ -49,7 +48,7 @@ namespace voxel_game::galaxy
 		entity::Ref galaxy = simulation.entity_factory.GetPoly(GenerateUUID());
 
 		simulation.entity_factory.AddTypes<
-			galaxy::CWorld,
+			galaxy::CGalaxy,
 			physics3d::CPosition,
 			physics3d::CScale,
 			physics3d::CPosition,
@@ -78,12 +77,11 @@ namespace voxel_game::galaxy
 
 		simulation.entity_factory.AddTypes<
 			entity::CParent,
+			CGalaxy,
 			physics3d::CPosition,
 			physics3d::CRotation,
-			CWorld,
 			spatial3d::CWorld,
-			spatial3d::CLoader,
-			simulation::CPath
+			spatial3d::CLoader
 		>(galaxy_entity.GetID());
 
 		if (rendering::IsEnabled())
@@ -92,6 +90,8 @@ namespace voxel_game::galaxy
 		}
 
 		galaxy_entity->*&entity::CParent::parent = universe_entity;
+
+		galaxy_entity->*&CGalaxy::path = path;
 
 		galaxy_entity->*&spatial3d::CWorld::world = spatial3d::CreateWorld(
 			simulation.galaxy_type.world_type,

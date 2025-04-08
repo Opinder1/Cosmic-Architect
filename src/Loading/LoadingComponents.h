@@ -8,20 +8,21 @@
 
 namespace voxel_game::loading
 {
-	struct CIdentifier
+	enum class State
 	{
-		UUID uuid;
+		Unloaded,
+		Loading,
+		Loaded,
+		Unloading
 	};
 
-	struct CSaveable
+	struct CStreamable
 	{
-		uint64_t last_load_frame = 0;
+		State state = State::Unloaded;
+	};
+
+	struct CAutosave
+	{
 		uint64_t last_save_frame = 0;
-	};
-
-	struct CEntityDatabase
-	{
-		godot::StringName path;
-		// ArchiveServer::DBHandle handle;
 	};
 }

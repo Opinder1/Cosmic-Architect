@@ -4,8 +4,6 @@
 
 #include "Entity/EntityPoly.h"
 
-#include "Simulation/SimulationComponents.h"
-
 #include "Util/Nocopy.h"
 #include "Util/Util.h"
 #include "Util/GodotHash.h"

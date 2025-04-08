@@ -4,8 +4,6 @@
 
 #include "Physics3D/PhysicsComponents.h"
 
-#include "Simulation/SimulationComponents.h"
-
 #include "Commands/CommandServer.h"
 
 #include <godot_cpp/classes/display_server.hpp>

@@ -3,7 +3,6 @@
 #include "EntityComponents.h"
 #include "Render/RenderComponents.h"
 #include "Physics3D/PhysicsComponents.h"
-#include "Simulation/SimulationComponents.h"
 #include "Networking/NetworkingComponents.h"
 #include "Loading/LoadingComponents.h"
 #include "Player/PlayerComponents.h"
@@ -37,18 +36,11 @@ template<> template<> const size_t entity::Type::k_type_index<physics3d::CGravit
 template<> template<> const size_t entity::Type::k_type_index<physics3d::CAABB> =			__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<physics3d::CBox> =			__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<physics3d::CSphere> =			__LINE__ - first;
-template<> template<> const size_t entity::Type::k_type_index<simulation::CFrame> =			__LINE__ - first;
-template<> template<> const size_t entity::Type::k_type_index<simulation::CLocalTime> =		__LINE__ - first;
-template<> template<> const size_t entity::Type::k_type_index<simulation::CPath> =			__LINE__ - first;
-template<> template<> const size_t entity::Type::k_type_index<simulation::CConfig> =		__LINE__ - first;
-template<> template<> const size_t entity::Type::k_type_index<simulation::CThreadWorker> =	__LINE__ - first;
-template<> template<> const size_t entity::Type::k_type_index<simulation::CUUID> =			__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<network::CCertificate> =		__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<network::CServer> =			__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<network::CPeer> =				__LINE__ - first;
-template<> template<> const size_t entity::Type::k_type_index<loading::CIdentifier> =		__LINE__ - first;
-template<> template<> const size_t entity::Type::k_type_index<loading::CSaveable> =			__LINE__ - first;
-template<> template<> const size_t entity::Type::k_type_index<loading::CEntityDatabase> =	__LINE__ - first;
+template<> template<> const size_t entity::Type::k_type_index<loading::CStreamable> =		__LINE__ - first;
+template<> template<> const size_t entity::Type::k_type_index<loading::CAutosave> =			__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<player::EntityPtr> =			__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<player::AvatarPath> =			__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<player::CPlayer> =			__LINE__ - first;
@@ -58,8 +50,8 @@ template<> template<> const size_t entity::Type::k_type_index<spatial3d::CLoader
 template<> template<> const size_t entity::Type::k_type_index<spatial3d::CRegion> =			__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<spatial3d::CEntity> =			__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<spatial3d::CWorld> =			__LINE__ - first;
-template<> template<> const size_t entity::Type::k_type_index<universe::CWorld> =			__LINE__ - first;
-template<> template<> const size_t entity::Type::k_type_index<galaxy::CWorld> =				__LINE__ - first;
+template<> template<> const size_t entity::Type::k_type_index<universe::CUniverse> =		__LINE__ - first;
+template<> template<> const size_t entity::Type::k_type_index<galaxy::CGalaxy> =			__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<galaxy::CStar> =				__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<galaxyrender::CWorld> =		__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<voxel::CWorld> =				__LINE__ - first;
@@ -87,18 +79,11 @@ const std::array<PolyTypeInfo, 128> PolyType<entity::Type, 128>::k_type_info =
 	MakeTypeInfo<physics3d::CAABB>(),
 	MakeTypeInfo<physics3d::CBox>(),
 	MakeTypeInfo<physics3d::CSphere>(),
-	MakeTypeInfo<simulation::CFrame>(),
-	MakeTypeInfo<simulation::CLocalTime>(),
-	MakeTypeInfo<simulation::CPath>(),
-	MakeTypeInfo<simulation::CConfig>(),
-	MakeTypeInfo<simulation::CThreadWorker>(),
-	MakeTypeInfo<simulation::CUUID>(),
 	MakeTypeInfo<network::CCertificate>(),
 	MakeTypeInfo<network::CServer>(),
 	MakeTypeInfo<network::CPeer>(),
-	MakeTypeInfo<loading::CIdentifier>(),
-	MakeTypeInfo<loading::CSaveable>(),
-	MakeTypeInfo<loading::CEntityDatabase>(),
+	MakeTypeInfo<loading::CStreamable>(),
+	MakeTypeInfo<loading::CAutosave>(),
 	MakeTypeInfo<player::EntityPtr>(),
 	MakeTypeInfo<player::AvatarPath>(),
 	MakeTypeInfo<player::CPlayer>(),
@@ -108,8 +93,8 @@ const std::array<PolyTypeInfo, 128> PolyType<entity::Type, 128>::k_type_info =
 	MakeTypeInfo<spatial3d::CRegion>(),
 	MakeTypeInfo<spatial3d::CEntity>(),
 	MakeTypeInfo<spatial3d::CWorld>(),
-	MakeTypeInfo<universe::CWorld>(),
-	MakeTypeInfo<galaxy::CWorld>(),
+	MakeTypeInfo<universe::CUniverse>(),
+	MakeTypeInfo<galaxy::CGalaxy>(),
 	MakeTypeInfo<galaxy::CStar>(),
 	MakeTypeInfo<galaxyrender::CWorld>(),
 	MakeTypeInfo<voxel::CWorld>(),

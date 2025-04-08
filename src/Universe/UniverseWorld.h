@@ -6,6 +6,8 @@
 
 namespace voxel_game::universe
 {
+	const size_t k_universe_generator_seed = 0;
+
 	// This is a specialised node for a universe
 	struct Node
 	{

@@ -10,8 +10,6 @@
 #include "Render/RenderComponents.h"
 #include "Render/RenderModule.h"
 
-#include "Simulation/SimulationComponents.h"
-
 #include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/variant/packed_vector3_array.hpp>
 #include <godot_cpp/variant/packed_color_array.hpp>

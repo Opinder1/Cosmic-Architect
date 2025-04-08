@@ -5,8 +5,6 @@
 #include "Spatial3D/SpatialComponents.h"
 #include "Spatial3D/SpatialModule.h"
 
-#include "Simulation/SimulationComponents.h"
-
 #include "Util/Debug.h"
 
 namespace voxel_game::voxel
