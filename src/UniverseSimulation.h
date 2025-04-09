@@ -25,7 +25,6 @@ namespace voxel_game
 		size_t max_world_scale = spatial3d::k_max_world_scale;
 
 		std::vector<spatial3d::WorldRef> worlds;
-
 		std::vector<spatial3d::ScaleRef> scales;
 	};
 
@@ -42,6 +41,10 @@ namespace voxel_game
 
 		// Entity
 		entity::Factory entity_factory;
+
+		entity::EventCallbacks event_callbacks;
+
+		std::vector<entity::Ref> entities;
 
 		// Spatial
 		std::vector<spatial3d::WorldRef> spatial_worlds;
