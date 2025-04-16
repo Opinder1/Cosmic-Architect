@@ -9,6 +9,7 @@
 #include <array>
 #include <vector>
 #include <memory>
+#include <bitset>
 
 #define POLY_DEBUG DEBUG_ENABLED
 
@@ -61,7 +62,7 @@ template<class DerivedT, size_t N>
 class PolyType : Nocopy, Nomove
 {
 	template<class T>
-	friend class PolyFactory;
+	friend class PolyFactoryBase;
 
 private:
 	constexpr static const uint16_t k_invalid_offset = UINT16_MAX;
@@ -72,12 +73,27 @@ private:
 
 	static const std::array<PolyTypeInfo, k_num_types> k_type_info;
 
+public:
 	struct Header
 	{
 		DerivedT* archetype = nullptr;
 	};
 
+	// Use a bitset for fast type logic
+	using ID = std::bitset<k_num_types>;
+
 public:
+	// Create a type id for the given set of types.
+	template<class... Types>
+	constexpr static ID CreateTypeID()
+	{
+		ID id;
+
+		(id.set(k_type_index<Types>), ...);
+
+		return id;
+	}
+
 	class Ref
 	{
 	public:
@@ -160,6 +176,7 @@ public:
 		DEBUG_ASSERT(m_type_offsets[index] == k_invalid_offset, "This type is clashing with another");
 
 		m_type_offsets[index] = m_total_size;
+		m_id.set(index);
 		m_total_size += k_type_info[index].size;
 	}
 
@@ -293,6 +310,7 @@ public:
 
 private:
 	std::array<uint16_t, k_num_types> m_type_offsets;
+	ID m_id;
 	uint16_t m_total_size = 0;
 
 #if defined(POLY_DEBUG)
