@@ -43,7 +43,7 @@ namespace voxel_game::galaxy
 
 	}
 
-	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodeRef node, godot::Vector3 position, godot::Vector3 scale)
+	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale)
 	{
 		entity::Ref galaxy = simulation.entity_factory.GetPoly(GenerateUUID());
 
@@ -117,12 +117,12 @@ namespace voxel_game::galaxy
 
 	}
 
-	void WorldUpdate(Simulation& simulation, spatial3d::WorldRef world)
+	void WorldUpdate(Simulation& simulation, spatial3d::WorldPtr world)
 	{
 
 	}
 
-	void ScaleUpdate(Simulation& simulation, spatial3d::ScaleRef scale)
+	void ScaleUpdate(Simulation& simulation, spatial3d::ScalePtr scale)
 	{
 
 	}

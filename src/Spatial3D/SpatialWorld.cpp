@@ -32,17 +32,17 @@ namespace voxel_game::spatial3d
 		return (pos.x & 0x1) + ((pos.y & 0x1) * 2) + ((pos.z & 0x1) * 4);
 	}
 
-	ScaleRef GetScale(WorldRef world, uint8_t scale_index)
+	ScalePtr GetScale(WorldPtr world, uint8_t scale_index)
 	{
 		DEBUG_ASSERT(scale_index < world->*&World::max_scale, "Requested scale out of range");
 		return (world->*&World::scales)[scale_index];
 	}
 
-	NodeRef GetNode(WorldRef world, godot::Vector3i position, uint8_t scale_index)
+	NodePtr GetNode(WorldPtr world, godot::Vector3i position, uint8_t scale_index)
 	{
 		DEBUG_ASSERT(scale_index < k_max_world_scale, "The coordinates scale is out of range");
 
-		ScaleRef scale = GetScale(world, scale_index);
+		ScalePtr scale = GetScale(world, scale_index);
 
 		NodeMap::const_iterator it = (scale->*&Scale::nodes).find(position);
 
@@ -54,9 +54,9 @@ namespace voxel_game::spatial3d
 		return it->second;
 	}
 
-	void InitializeNode(WorldRef world, NodeRef node, uint8_t scale_index)
+	void InitializeNode(WorldPtr world, NodePtr node, uint8_t scale_index)
 	{
-		ScaleRef scale = GetScale(world, scale_index);
+		ScalePtr scale = GetScale(world, scale_index);
 
 		for (uint8_t neighbour_index = 0; neighbour_index < 6; neighbour_index++)
 		{
@@ -66,7 +66,7 @@ namespace voxel_game::spatial3d
 
 			if (it != (scale->*&Scale::nodes).end())
 			{
-				NodeRef neighbour_node = it->second;
+				NodePtr neighbour_node = it->second;
 
 				(node->*&Node::neighbours)[neighbour_index] = neighbour_node;
 				node->*&Node::neighbour_mask |= 1 << neighbour_index;
@@ -78,7 +78,7 @@ namespace voxel_game::spatial3d
 
 		if (scale_index < world->*&World::max_scale - 1)
 		{
-			ScaleRef parent_scale = GetScale(world, scale_index + 1);
+			ScalePtr parent_scale = GetScale(world, scale_index + 1);
 
 			godot::Vector3i parent_pos = node->*&Node::position / 2;
 
@@ -86,7 +86,7 @@ namespace voxel_game::spatial3d
 
 			if (it != (parent_scale->*&Scale::nodes).end())
 			{
-				NodeRef parent_node = it->second;
+				NodePtr parent_node = it->second;
 
 				node->*&Node::parent = parent_node;
 				node->*&Node::parent_index = GetNodeParentIndex(node->*&Node::position);
@@ -100,7 +100,7 @@ namespace voxel_game::spatial3d
 
 		if (scale_index > 0)
 		{
-			ScaleRef child_scale = GetScale(world, scale_index - 1);
+			ScalePtr child_scale = GetScale(world, scale_index - 1);
 
 			for (uint8_t child_index = 0; child_index < 8; child_index++)
 			{
@@ -111,7 +111,7 @@ namespace voxel_game::spatial3d
 
 				if (it != (child_scale->*&Scale::nodes).end())
 				{
-					NodeRef child_node = it->second;
+					NodePtr child_node = it->second;
 
 					(node->*&Node::children)[child_index] = child_node;
 					node->*&Node::children_mask |= 1 << child_index;
@@ -123,11 +123,11 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void UninitializeNode(WorldRef world, NodeRef node, uint8_t scale_index)
+	void UninitializeNode(WorldPtr world, NodePtr node, uint8_t scale_index)
 	{
 		for (uint8_t neighbour_index = 0; neighbour_index < 6; neighbour_index++)
 		{
-			if (NodeRef neighbour_node = (node->*&Node::neighbours)[neighbour_index])
+			if (NodePtr neighbour_node = (node->*&Node::neighbours)[neighbour_index])
 			{
 				(neighbour_node->*&Node::neighbours)[5 - neighbour_index] = nullptr;
 				neighbour_node->*&Node::neighbour_mask &= ~(1 << (5 - neighbour_index));
@@ -136,7 +136,7 @@ namespace voxel_game::spatial3d
 
 		if (scale_index < world->*&World::max_scale - 1)
 		{
-			if (NodeRef parent_node = node->*&Node::parent)
+			if (NodePtr parent_node = node->*&Node::parent)
 			{
 				(parent_node->*&Node::children)[node->*&Node::parent_index] = nullptr;
 				parent_node->*&Node::children_mask &= ~(1 << node->*&Node::parent_index);
@@ -147,7 +147,7 @@ namespace voxel_game::spatial3d
 		{
 			for (uint8_t child_index = 0; child_index < 8; child_index++)
 			{
-				if (NodeRef child_node = (node->*&Node::children)[child_index])
+				if (NodePtr child_node = (node->*&Node::children)[child_index])
 				{
 					child_node->*&Node::parent = nullptr;
 					child_node->*&Node::parent_index = k_node_no_parent;
@@ -156,16 +156,16 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	WorldRef CreateWorld(WorldType& world_type, ScaleType& scale_type, NodeType& node_type, uint8_t max_scale)
+	WorldPtr CreateWorld(WorldType& world_type, ScaleType& scale_type, NodeType& node_type, uint8_t max_scale)
 	{
-		WorldRef world = world_type.CreatePoly();
+		WorldPtr world = world_type.CreatePoly();
 
 		world->*&World::scale_type = &scale_type;
 		world->*&World::node_type = &node_type;
 
 		for (uint8_t scale_index = world->*&World::max_scale; scale_index < max_scale; scale_index++)
 		{
-			ScaleRef scale = (world->*&World::scale_type)->CreatePoly();
+			ScalePtr scale = (world->*&World::scale_type)->CreatePoly();
 
 			scale->*&Scale::index = scale_index;
 
@@ -177,11 +177,11 @@ namespace voxel_game::spatial3d
 		return world;
 	}
 
-	void DestroyWorld(WorldRef world)
+	void DestroyWorld(WorldPtr world)
 	{
 		for (size_t scale_index = 0; scale_index < world->*&World::max_scale; scale_index++)
 		{
-			ScaleRef scale = GetScale(world, scale_index);
+			ScalePtr scale = GetScale(world, scale_index);
 
 			DEBUG_ASSERT((scale->*&Scale::create_commands).empty(), "All commands should have been destroyed before destroying the world");
 			DEBUG_ASSERT((scale->*&Scale::load_commands).empty(), "All commands should have been destroyed before destroying the world");
@@ -214,7 +214,7 @@ namespace voxel_game::spatial3d
 		world.Destroy();
 	}
 
-	void WorldCreateNodes(WorldRef world, Clock::time_point frame_start_time)
+	void WorldCreateNodes(WorldPtr world, Clock::time_point frame_start_time)
 	{
 		DEBUG_ASSERT(world->*&World::max_scale > 0, "The spatial world should have at least one scale");
 
@@ -222,7 +222,7 @@ namespace voxel_game::spatial3d
 		{
 			EASY_BLOCK("ScaleCreateNodes");
 
-			ScaleRef scale = GetScale(world, scale_index);
+			ScalePtr scale = GetScale(world, scale_index);
 
 			// For each create command
 			for (const godot::Vector3i& pos : scale->*&Scale::create_commands)
@@ -237,7 +237,7 @@ namespace voxel_game::spatial3d
 
 				it->second = (world->*&World::node_type)->CreatePoly();
 
-				NodeRef node = it->second;
+				NodePtr node = it->second;
 
 				// Initialize the node
 				node->*&Node::position = pos;
@@ -252,16 +252,16 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void WorldDestroyNodes(WorldRef world)
+	void WorldDestroyNodes(WorldPtr world)
 	{
 		for (size_t scale_index = 0; scale_index < world->*&World::max_scale; scale_index++)
 		{
 			EASY_BLOCK("ScaleDestroyNodes");
 
-			ScaleRef scale = GetScale(world, scale_index);
+			ScalePtr scale = GetScale(world, scale_index);
 
 			// For each destroy command of the scale
-			for (NodeRef node : scale->*&Scale::destroy_commands)
+			for (NodePtr node : scale->*&Scale::destroy_commands)
 			{
 				DEBUG_ASSERT(node->*&Node::state == NodeState::Deleting, "Node should be in deleting state");
 
@@ -276,7 +276,7 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void LoaderLoadNodes(ScaleRef scale, entity::WRef loader, Clock::time_point frame_start_time, double scale_node_step)
+	void LoaderLoadNodes(ScalePtr scale, entity::WRef loader, Clock::time_point frame_start_time, double scale_node_step)
 	{
 		EASY_BLOCK("SingleLoader");
 
@@ -296,7 +296,7 @@ namespace voxel_game::spatial3d
 				return;
 			}
 
-			NodeRef node = it->second;
+			NodePtr node = it->second;
 
 			// Touch the node so it stays loaded
 			node->*&Node::last_update_time = frame_start_time;
@@ -315,10 +315,10 @@ namespace voxel_game::spatial3d
 		});
 	}
 
-	void ScaleLoadNodes(WorldRef world, ScaleRef scale, Clock::time_point frame_start_time)
+	void ScaleLoadNodes(WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time)
 	{
 		// Finish the previous load commands
-		for (NodeRef node : scale->*&Scale::load_commands)
+		for (NodePtr node : scale->*&Scale::load_commands)
 		{
 			DEBUG_ASSERT(node->*&Node::state == NodeState::Loading, "Node should be in loading state");
 
@@ -338,7 +338,7 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void UnloadNode(ScaleRef scale, NodeRef node)
+	void UnloadNode(ScalePtr scale, NodePtr node)
 	{
 		// Move the entity along to deletion
 		switch (node->*&Node::state)
@@ -361,10 +361,10 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void ScaleUnloadNodes(WorldRef world, ScaleRef scale, Clock::time_point frame_start_time)
+	void ScaleUnloadNodes(WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time)
 	{
 		// Finish the previous load commands
-		for (NodeRef node : scale->*&Scale::unload_commands)
+		for (NodePtr node : scale->*&Scale::unload_commands)
 		{
 			DEBUG_ASSERT(node->*&Node::state == NodeState::Unloading, "Node should be in unloading state");
 
@@ -385,7 +385,7 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void WorldUpdateEntityScales(WorldRef world)
+	void WorldUpdateEntityScales(WorldPtr world)
 	{
 		for (entity::WRef entity : world->*&World::entities)
 		{
@@ -396,8 +396,8 @@ namespace voxel_game::spatial3d
 
 			godot::Vector3i required_node_pos = entity->*&CEntity::position / (1 >> entity->*&CEntity::scale);
 
-			ScaleRef old_scale = GetScale(world, entity->*&CEntity::last_scale);
-			ScaleRef new_scale = GetScale(world, entity->*&CEntity::scale);
+			ScalePtr old_scale = GetScale(world, entity->*&CEntity::last_scale);
+			ScalePtr new_scale = GetScale(world, entity->*&CEntity::scale);
 
 			auto old_it = (old_scale->*&Scale::nodes).find(entity->*&CEntity::last_node_pos);
 			auto new_it = (new_scale->*&Scale::nodes).find(required_node_pos);
@@ -419,7 +419,7 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void ScaleUpdateEntityNodes(WorldRef world, ScaleRef scale)
+	void ScaleUpdateEntityNodes(WorldPtr world, ScalePtr scale)
 	{
 		for (entity::WRef entity : scale->*&Scale::entities)
 		{

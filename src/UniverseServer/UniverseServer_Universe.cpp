@@ -57,9 +57,9 @@ namespace voxel_game
 
 		m_universe_entity->*&rendering::CScenario::id = scenario;
 
-		m_galaxy_entity = galaxy::CreateSimulatedGalaxy(*k_simulation, path, m_universe_entity);
+		m_galaxy_entity = galaxy::CreateSimulatedGalaxy(*m_simulation, path, m_universe_entity);
 
-		m_player_entity = player::CreateLocalPlayer(*k_simulation, m_galaxy_entity, "localuser");
+		m_player_entity = player::CreateLocalPlayer(*m_simulation, m_galaxy_entity, "localuser");
 
 		QueueSignal(k_signals->connected_to_galaxy);
 	}
@@ -79,7 +79,7 @@ namespace voxel_game
 			return;
 		}
 
-		galaxy::DestroySimulatedGalaxy(*k_simulation, m_galaxy_entity);
+		galaxy::DestroySimulatedGalaxy(*m_simulation, m_galaxy_entity);
 
 		QueueSignal(k_signals->disconnected_from_galaxy);
 	}

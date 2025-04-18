@@ -43,11 +43,11 @@ namespace voxel_game::voxelrender
 	struct VoxelRenderNodeLoader
 	{
 		flecs::entity entity;
-		spatial3d::WorldRef spatial_world;
+		spatial3d::WorldPtr spatial_world;
 		voxel::CContext& voxel_ctx;
 		CContext& render_ctx;
 
-		void LoadNode(spatial3d::NodeRef node)
+		void LoadNode(spatial3d::NodePtr node)
 		{
 			node->*&Node::mesh = rendering::AllocRID(rendering::RIDType::Mesh);
 			node->*&Node::mesh_instance = rendering::AllocRID(rendering::RIDType::Instance);
@@ -70,7 +70,7 @@ namespace voxel_game::voxelrender
 			rendering::AddCommand<&RS::mesh_surface_set_material>(node->*&Node::mesh, 0, spatial_world->*&voxelrender::World::voxel_material);
 		}
 
-		void UnloadNode(spatial3d::NodeRef node)
+		void UnloadNode(spatial3d::NodePtr node)
 		{
 			rendering::AddCommand<&RS::free_rid>(node->*&Node::mesh_instance);
 			rendering::AddCommand<&RS::free_rid>(node->*&Node::mesh);
@@ -111,12 +111,12 @@ namespace voxel_game::voxelrender
 		{
 			VoxelRenderNodeLoader loader{ entity, spatial_world.world, voxel_ctx, render_ctx };
 
-			for (spatial3d::NodeRef node : spatial_scale.scale->*&spatial3d::Scale::load_commands)
+			for (spatial3d::NodePtr node : spatial_scale.scale->*&spatial3d::Scale::load_commands)
 			{
 				loader.LoadNode(node);
 			}
 
-			for (spatial3d::NodeRef node : spatial_scale.scale->*&spatial3d::Scale::unload_commands)
+			for (spatial3d::NodePtr node : spatial_scale.scale->*&spatial3d::Scale::unload_commands)
 			{
 				loader.UnloadNode(node);
 			}

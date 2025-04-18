@@ -29,9 +29,9 @@ namespace voxel_game::voxel
 	}
 	*/
 
-	Voxel GetVoxelAtScale(spatial3d::WorldRef world, godot::Vector3i pos, uint32_t scale)
+	Voxel GetVoxelAtScale(spatial3d::WorldPtr world, godot::Vector3i pos, uint32_t scale)
 	{
-		spatial3d::NodeRef node = spatial3d::GetNode(world, pos / 16, scale);
+		spatial3d::NodePtr node = spatial3d::GetNode(world, pos / 16, scale);
 
 		if (node)
 		{
@@ -41,14 +41,14 @@ namespace voxel_game::voxel
 		return (node->*&Node::voxels)[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Voxel GetVoxelDepthFirst(spatial3d::WorldRef world, godot::Vector3i pos, uint32_t start_scale)
+	Voxel GetVoxelDepthFirst(spatial3d::WorldPtr world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		if (start_scale == spatial3d::k_max_world_scale)
 		{
 			return Voxel{};
 		}
 
-		spatial3d::NodeRef node = spatial3d::GetNode(world, pos / 16, start_scale);
+		spatial3d::NodePtr node = spatial3d::GetNode(world, pos / 16, start_scale);
 
 		if (node)
 		{
@@ -58,14 +58,14 @@ namespace voxel_game::voxel
 		return (node->*&Node::voxels)[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Voxel GetVoxelBreadthFirst(spatial3d::WorldRef world, godot::Vector3i pos, uint32_t start_scale)
+	Voxel GetVoxelBreadthFirst(spatial3d::WorldPtr world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		if (start_scale == 0)
 		{
 			return Voxel{};
 		}
 
-		spatial3d::NodeRef node = spatial3d::GetNode(world, pos / 16, start_scale);
+		spatial3d::NodePtr node = spatial3d::GetNode(world, pos / 16, start_scale);
 
 		if (node)
 		{
@@ -75,11 +75,11 @@ namespace voxel_game::voxel
 		return (node->*&Node::voxels)[pos.x % 16][pos.y % 16][pos.z % 16];
 	}
 
-	Voxel GetVoxelOctreeSearch(spatial3d::WorldRef world, godot::Vector3i pos, uint32_t start_scale)
+	Voxel GetVoxelOctreeSearch(spatial3d::WorldPtr world, godot::Vector3i pos, uint32_t start_scale)
 	{
 		godot::Vector3i node_pos = pos / 16;
 
-		spatial3d::NodeRef node = spatial3d::GetNode(world, node_pos, start_scale);
+		spatial3d::NodePtr node = spatial3d::GetNode(world, node_pos, start_scale);
 
 		if (node)
 		{
@@ -90,7 +90,7 @@ namespace voxel_game::voxel
 		{
 			godot::Vector3i child_pos = { node_pos.x & 0x1, node_pos.y & 0x1, node_pos.z & 0x1 };
 
-			spatial3d::NodeRef child_node = (node->*&spatial3d::Node::children)[(child_pos.x * 4) + (child_pos.y * 2) + child_pos.z];
+			spatial3d::NodePtr child_node = (node->*&spatial3d::Node::children)[(child_pos.x * 4) + (child_pos.y * 2) + child_pos.z];
 
 			if (child_node)
 			{

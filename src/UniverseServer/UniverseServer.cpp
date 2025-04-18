@@ -31,8 +31,6 @@ namespace voxel_game
 
 	std::optional<const UniverseServer::SignalStrings> UniverseServer::k_signals;
 
-	std::optional<Simulation> UniverseServer::k_simulation;
-
 	UniverseServer* UniverseServer::get_singleton()
 	{
 		return &k_singleton.value();
@@ -53,13 +51,13 @@ namespace voxel_game
 
 	void UniverseServer::DoSimulationLoad()
 	{
-		k_simulation.emplace();
+		m_simulation = std::make_unique<Simulation>();
 
-		SimulationInitialize(*k_simulation);
+		SimulationInitialize(*m_simulation);
 
 		godot::String universe_path = godot::ProjectSettings::get_singleton()->get_setting("voxel_game/universe/path");
 
-		m_universe_entity = universe::CreateNewUniverse(*k_simulation, universe_path);
+		m_universe_entity = universe::CreateNewUniverse(*m_simulation, universe_path);
 
 #if defined(DEBUG_ENABLED)
 		m_info_updater.SetWriterThread(std::this_thread::get_id());
@@ -72,9 +70,9 @@ namespace voxel_game
 		m_info_updater.SetWriterThread(std::thread::id{}); // We may not start in thread mode next time
 #endif
 
-		SimulationUninitialize(*k_simulation);
+		SimulationUninitialize(*m_simulation);
 
-		k_simulation.reset();
+		m_simulation.reset();
 	}
 
 	void UniverseServer::DoSimulationProgress(real_t delta)
@@ -88,7 +86,7 @@ namespace voxel_game
 		}
 		else
 		{
-			SimulationUpdate(*k_simulation);
+			SimulationUpdate(*m_simulation);
 		}
 	}
 
@@ -96,7 +94,7 @@ namespace voxel_game
 	{
 		EASY_FUNCTION();
 
-		SimulationUpdate(*k_simulation);
+		SimulationUpdate(*m_simulation);
 
 		// Publish updates to the info caches to be read on the main thread
 		m_info_updater.PublishUpdates();

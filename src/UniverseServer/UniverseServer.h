@@ -311,7 +311,7 @@ namespace voxel_game
 		// Cached string names for optimization
 		static std::optional<const SignalStrings> k_signals;
 
-		static std::optional<Simulation> k_simulation;
+		std::unique_ptr<Simulation> m_simulation;
 
 		entity::Ref m_player_entity;
 		entity::Ref m_dimension_entity;

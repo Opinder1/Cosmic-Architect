@@ -17,7 +17,7 @@ namespace voxel_game::spatial3d
 
 	void WorkerUpdate(Simulation& simulation, size_t index);
 
-	void WorldUpdate(Simulation& simulation, WorldRef world);
+	void WorldUpdate(Simulation& simulation, WorldPtr world);
 
-	void ScaleUpdate(Simulation& simulation, ScaleRef scale);
+	void ScaleUpdate(Simulation& simulation, ScalePtr scale);
 }

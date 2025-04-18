@@ -51,21 +51,21 @@ namespace voxel_game::spatial3d
 		uint32_t network_version = 0; // The version of this node. We use this to check if we should update to a newer version if there is one
 		Clock::time_point last_update_time; // Time since a loader last updated our unload timer
 
-		NodeRef parent = nullptr; // Octree parent
+		NodePtr parent = nullptr; // Octree parent
 
-		NodeRef children[8] = { nullptr }; // Octree children
+		NodePtr children[8] = { nullptr }; // Octree children
 
-		NodeRef neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
+		NodePtr neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
 
 		robin_hood::unordered_set<entity::Ref> entities;
 	};
 
-	using NodeMap = robin_hood::unordered_map<godot::Vector3i, NodeRef>;
+	using NodeMap = robin_hood::unordered_map<godot::Vector3i, NodePtr>;
 
 	// A level of detail map for a world. The world will have multiple of these
 	struct Scale : Nocopy, Nomove
 	{
-		WorldRef world;
+		WorldPtr world;
 
 		uint8_t index = 0;
 
@@ -75,9 +75,9 @@ namespace voxel_game::spatial3d
 
 		// Commands
 		std::vector<godot::Vector3i> create_commands;
-		std::vector<NodeRef> load_commands;
-		std::vector<NodeRef> unload_commands;
-		std::vector<NodeRef> destroy_commands;
+		std::vector<NodePtr> load_commands;
+		std::vector<NodePtr> unload_commands;
+		std::vector<NodePtr> destroy_commands;
 	};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
@@ -96,26 +96,26 @@ namespace voxel_game::spatial3d
 
 		robin_hood::unordered_set<entity::Ref> entities;
 
-		std::array<ScaleRef, k_max_world_scale> scales;
+		std::array<ScalePtr, k_max_world_scale> scales;
 	};
 
-	ScaleRef GetScale(WorldRef spatial_world, uint8_t scale_index);
+	ScalePtr GetScale(WorldPtr spatial_world, uint8_t scale_index);
 
-	NodeRef GetNode(WorldRef world, godot::Vector3i position, uint8_t scale_index);
+	NodePtr GetNode(WorldPtr world, godot::Vector3i position, uint8_t scale_index);
 
-	WorldRef CreateWorld(WorldType& world_type, ScaleType& scale_type, NodeType& node_type, uint8_t max_scale);
+	WorldPtr CreateWorld(WorldType& world_type, ScaleType& scale_type, NodeType& node_type, uint8_t max_scale);
 
-	void DestroyWorld(WorldRef world);
+	void DestroyWorld(WorldPtr world);
 
-	void WorldCreateNodes(WorldRef world, Clock::time_point frame_start_time);
+	void WorldCreateNodes(WorldPtr world, Clock::time_point frame_start_time);
 
-	void WorldDestroyNodes(WorldRef world);
+	void WorldDestroyNodes(WorldPtr world);
 
-	void ScaleLoadNodes(WorldRef world, ScaleRef scale, Clock::time_point frame_start_time);
+	void ScaleLoadNodes(WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time);
 
-	void ScaleUnloadNodes(WorldRef world, ScaleRef scale, Clock::time_point frame_start_time);
+	void ScaleUnloadNodes(WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time);
 
-	void WorldUpdateEntityScales(WorldRef world);
+	void WorldUpdateEntityScales(WorldPtr world);
 
-	void ScaleUpdateEntityNodes(WorldRef world, ScaleRef scale);
+	void ScaleUpdateEntityNodes(WorldPtr world, ScalePtr scale);
 }

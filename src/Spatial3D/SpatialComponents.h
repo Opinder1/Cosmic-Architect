@@ -47,6 +47,6 @@ namespace voxel_game::spatial3d
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct CWorld
 	{
-		WorldRef world = nullptr;
+		WorldPtr world = nullptr;
 	};
 }

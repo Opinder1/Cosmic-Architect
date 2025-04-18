@@ -5,6 +5,13 @@
 
 #include "Entity/EntityPoly.h"
 
+#include <godot_cpp/classes/x509_certificate.hpp>
+#include <godot_cpp/classes/crypto_key.hpp>
+#include <godot_cpp/classes/dtls_server.hpp>
+#include <godot_cpp/classes/udp_server.hpp>
+#include <godot_cpp/classes/packet_peer_udp.hpp>
+#include <godot_cpp/classes/packet_peer_dtls.hpp>
+
 namespace voxel_game
 {
 	struct Simulation;
@@ -24,8 +31,8 @@ namespace voxel_game
 
 		size_t max_world_scale = spatial3d::k_max_world_scale;
 
-		std::vector<spatial3d::WorldRef> worlds;
-		std::vector<spatial3d::ScaleRef> scales;
+		std::vector<spatial3d::WorldPtr> worlds;
+		std::vector<spatial3d::ScalePtr> scales;
 	};
 
 	struct Simulation
@@ -42,13 +49,11 @@ namespace voxel_game
 		// Entity
 		entity::Factory entity_factory;
 
-		entity::EventCallbacks event_callbacks;
-
 		std::vector<entity::Ref> entities;
 
 		// Spatial
-		std::vector<spatial3d::WorldRef> spatial_worlds;
-		std::vector<spatial3d::ScaleRef> spatial_scales;
+		std::vector<spatial3d::WorldPtr> spatial_worlds;
+		std::vector<spatial3d::ScalePtr> spatial_scales;
 
 		SpatialTypeData universe_type;
 		SpatialTypeData galaxy_type;
@@ -66,6 +71,11 @@ namespace voxel_game
 
 		// StarSystem
 		std::vector<entity::Ref> star_systems;
+
+		// Network
+		godot::Ref<godot::X509Certificate> server_certificate;
+		godot::Ref<godot::UDPServer> server_udp;
+		godot::Ref<godot::DTLSServer> server_dtls;
 	};
 
 	void SimulationDoTasks(Simulation& simulation, TaskData& task_data);

@@ -24,11 +24,11 @@ namespace voxel_game::galaxy
 
 	void WorkerUpdate(Simulation& simulation, size_t index);
 
-	void WorldUpdate(Simulation& simulation, spatial3d::WorldRef world);
+	void WorldUpdate(Simulation& simulation, spatial3d::WorldPtr world);
 
-	void ScaleUpdate(Simulation& simulation, spatial3d::ScaleRef scale);
+	void ScaleUpdate(Simulation& simulation, spatial3d::ScalePtr scale);
 
-	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodeRef node, godot::Vector3 position, godot::Vector3 scale);
+	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale);
 
 	entity::Ref CreateSimulatedGalaxy(Simulation& simulation, const godot::String& path, entity::WRef universe_entity);
 

@@ -26,11 +26,11 @@ namespace voxel_game::voxel
 
 	void WorkerUpdate(Simulation& simulation, size_t index);
 
-	Voxel GetVoxelAtScale(spatial3d::WorldRef world, godot::Vector3i pos, uint32_t scale);
+	Voxel GetVoxelAtScale(spatial3d::WorldPtr world, godot::Vector3i pos, uint32_t scale);
 
-	Voxel GetVoxelDepthFirst(spatial3d::WorldRef world, godot::Vector3i pos, uint32_t start_scale);
+	Voxel GetVoxelDepthFirst(spatial3d::WorldPtr world, godot::Vector3i pos, uint32_t start_scale);
 
-	Voxel GetVoxelBreadthFirst(spatial3d::WorldRef world, godot::Vector3i pos, uint32_t start_scale);
+	Voxel GetVoxelBreadthFirst(spatial3d::WorldPtr world, godot::Vector3i pos, uint32_t start_scale);
 
-	Voxel GetVoxelOctreeSearch(spatial3d::WorldRef world, godot::Vector3i pos, uint32_t start_scale);
+	Voxel GetVoxelOctreeSearch(spatial3d::WorldPtr world, godot::Vector3i pos, uint32_t start_scale);
 }

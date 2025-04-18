@@ -97,7 +97,7 @@ namespace voxel_game
 
 	void SimulationUniverseWorldUpdate(Simulation& simulation, size_t index)
 	{
-		spatial3d::WorldRef world = simulation.universe_type.worlds[index];
+		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
 
 		spatial3d::WorldUpdate(simulation, world);
 		universe::WorldUpdate(simulation, world);
@@ -105,7 +105,7 @@ namespace voxel_game
 
 	void SimulationUniverseScaleUpdate(Simulation& simulation, size_t index)
 	{
-		spatial3d::ScaleRef scale = simulation.universe_type.scales[index];
+		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
 
 		spatial3d::ScaleUpdate(simulation, scale);
 		universe::ScaleUpdate(simulation, scale);
@@ -113,7 +113,7 @@ namespace voxel_game
 
 	void SimulationGalaxyWorldUpdate(Simulation& simulation, size_t index)
 	{
-		spatial3d::WorldRef world = simulation.universe_type.worlds[index];
+		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
 
 		spatial3d::WorldUpdate(simulation, world);
 		galaxy::WorldUpdate(simulation, world);
@@ -121,7 +121,7 @@ namespace voxel_game
 
 	void SimulationGalaxyScaleUpdate(Simulation& simulation, size_t index)
 	{
-		spatial3d::ScaleRef scale = simulation.universe_type.scales[index];
+		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
 
 		spatial3d::ScaleUpdate(simulation, scale);
 		galaxy::ScaleUpdate(simulation, scale);
@@ -129,70 +129,70 @@ namespace voxel_game
 
 	void SimulationStarSystemWorldUpdate(Simulation& simulation, size_t index)
 	{
-		spatial3d::WorldRef world = simulation.universe_type.worlds[index];
+		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
 
 		spatial3d::WorldUpdate(simulation, world);
 	}
 
 	void SimulationStarSystemScaleUpdate(Simulation& simulation, size_t index)
 	{
-		spatial3d::ScaleRef scale = simulation.universe_type.scales[index];
+		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
 
 		spatial3d::ScaleUpdate(simulation, scale);
 	}
 
 	void SimulationPlanetWorldUpdate(Simulation& simulation, size_t index)
 	{
-		spatial3d::WorldRef world = simulation.universe_type.worlds[index];
+		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
 
 		spatial3d::WorldUpdate(simulation, world);
 	}
 
 	void SimulationPlanetScaleUpdate(Simulation& simulation, size_t index)
 	{
-		spatial3d::ScaleRef scale = simulation.universe_type.scales[index];
+		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
 
 		spatial3d::ScaleUpdate(simulation, scale);
 	}
 
 	void SimulationSpaceStationWorldUpdate(Simulation& simulation, size_t index)
 	{
-		spatial3d::WorldRef world = simulation.universe_type.worlds[index];
+		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
 
 		spatial3d::WorldUpdate(simulation, world);
 	}
 
 	void SimulationSpaceStationScaleUpdate(Simulation& simulation, size_t index)
 	{
-		spatial3d::ScaleRef scale = simulation.universe_type.scales[index];
+		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
 
 		spatial3d::ScaleUpdate(simulation, scale);
 	}
 
 	void SimulationSpaceShipWorldUpdate(Simulation& simulation, size_t index)
 	{
-		spatial3d::WorldRef world = simulation.universe_type.worlds[index];
+		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
 
 		spatial3d::WorldUpdate(simulation, world);
 	}
 
 	void SimulationSpaceShipScaleUpdate(Simulation& simulation, size_t index)
 	{
-		spatial3d::ScaleRef scale = simulation.universe_type.scales[index];
+		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
 
 		spatial3d::ScaleUpdate(simulation, scale);
 	}
 
 	void SimulationVehicleWorldUpdate(Simulation& simulation, size_t index)
 	{
-		spatial3d::WorldRef world = simulation.universe_type.worlds[index];
+		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
 
 		spatial3d::WorldUpdate(simulation, world);
 	}
 
 	void SimulationVehicleScaleUpdate(Simulation& simulation, size_t index)
 	{
-		spatial3d::ScaleRef scale = simulation.universe_type.scales[index];
+		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
 
 		spatial3d::ScaleUpdate(simulation, scale);
 	}
@@ -212,31 +212,32 @@ namespace voxel_game
 		universe::Uninitialize(simulation);
 		galaxy::Uninitialize(simulation);
 	}
-	
-	void SimulationWorkerUpdate(Simulation& simulation, size_t worker_index)
-	{
-		simulation::WorkerUpdate(simulation, worker_index);
-		spatial3d::WorkerUpdate(simulation, worker_index);
-		universe::WorkerUpdate(simulation, worker_index);
-		galaxy::WorkerUpdate(simulation, worker_index);
-	}
 
-	void WorkerUpdateTask(void* userdata, uint32_t worker_index)
-	{
-		SimulationWorkerUpdate(*(Simulation*)userdata, worker_index);
-	}
-
-	void SimulationUpdate(Simulation& simulation)
+	void SimulationSingleUpdate(Simulation& simulation)
 	{
 		simulation::Update(simulation);
 		spatial3d::Update(simulation);
 		universe::Update(simulation);
 		galaxy::Update(simulation);
+	}
+	
+	void SimulationWorkerUpdate(Simulation& simulation, size_t index)
+	{
+		simulation::WorkerUpdate(simulation, index);
+		spatial3d::WorkerUpdate(simulation, index);
+		universe::WorkerUpdate(simulation, index);
+		galaxy::WorkerUpdate(simulation, index);
+	}
 
-		TaskData worker_task{ simulation, &SimulationWorkerUpdate, simulation.worker_count };
+	void SimulationEntityUpdate(Simulation& simulation, size_t index)
+	{
+		entity::WRef entity = simulation.entities[index];
 
-		SimulationDoTasks(simulation, worker_task);
+		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Update);
+	}
 
+	void SimulationUpdate(Simulation& simulation)
+	{
 		TaskData world_tasks[7] = {
 			{ simulation, &SimulationUniverseWorldUpdate, simulation.universe_type.worlds.size() },
 			{ simulation, &SimulationGalaxyWorldUpdate, simulation.galaxy_type.worlds.size() },
@@ -260,5 +261,15 @@ namespace voxel_game
 		};
 
 		SimulationDoMultitasks(simulation, scale_tasks, 7);
+
+		TaskData entity_task{ simulation, &SimulationEntityUpdate, simulation.entities.size() };
+
+		SimulationDoTasks(simulation, entity_task);
+
+		TaskData worker_task{ simulation, &SimulationWorkerUpdate, simulation.worker_count };
+
+		SimulationDoTasks(simulation, worker_task);
+
+		SimulationSingleUpdate(simulation);
 	}
 }
