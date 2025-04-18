@@ -21,7 +21,7 @@ namespace voxel_game::spatial3d
 		using PolyType::PolyType;
 	};
 
-	using WorldRef = WorldType::Ref;
-	using ScaleRef = ScaleType::Ref;
-	using NodeRef = NodeType::Ref;
+	using WorldPtr = WorldType::Ptr;
+	using ScalePtr = ScaleType::Ptr;
+	using NodePtr = NodeType::Ptr;
 }

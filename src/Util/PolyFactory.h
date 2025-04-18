@@ -1,16 +1,17 @@
 #pragma once
 
 #include "Poly.h"
-#include "UUID.h"
 #include "Callback.h"
 
 #include <robin_hood/robin_hood.h>
 
 template<class ArchetypeT>
-class PolyFactoryBase
+class PolyArchetypeRegistry
 {
+public:
 	using Header = typename ArchetypeT::Header;
 	using TypeID = typename ArchetypeT::ID;
+	using Ptr = typename ArchetypeT::Ptr;
 
 private:
 	// An archetype entry that polys will reference.
@@ -24,6 +25,8 @@ private:
 	using ArchetypeMap = robin_hood::unordered_node_map<TypeID, ArchetypeEntry>;
 
 public:
+	PolyArchetypeRegistry() {}
+
 	// Allocate a new poly for the given archetype.
 	Header* AllocatePoly(TypeID type_id)
 	{
@@ -33,13 +36,7 @@ public:
 
 		if (emplaced)
 		{
-			for (size_t i = 1; i < type_id.size(); i++)
-			{
-				if (type_id.test(i))
-				{
-					entry.archetype.AddType(i);
-				}
-			}
+			entry.archetype.InitType(*this, type_id);
 		}
 
 		entry.refcount++;
@@ -47,11 +44,6 @@ public:
 		Header* poly = entry.archetype.AllocatePoly();
 
 		entry.polys.push_back(poly);
-
-		ArchetypeT* t = &entry.archetype;
-		ArchetypeT* t2 = poly->archetype;
-
-		printf("%p\n", t, t2);
 
 		return poly;
 	}
@@ -121,13 +113,25 @@ public:
 		return new_poly;
 	}
 
-	// Iterate over all polys that have the given components
 	template<class CallbackT>
-	void Iterate(TypeID partial_type_id, CallbackT callback)
+	void TypeIterate(TypeID types, CallbackT callback)
 	{
 		for (auto&& [type_id, entry] : m_archetypes)
 		{
-			if ((type_id & partial_type_id) == partial_type_id)
+			if ((type_id & types) == types)
+			{
+				callback(entry.archetype);
+			}
+		}
+	}
+
+	// Iterate over all polys that have the given components
+	template<class CallbackT>
+	void Iterate(TypeID types, CallbackT callback)
+	{
+		for (auto&& [type_id, entry] : m_archetypes)
+		{
+			if ((type_id & types) == types)
 			{
 				for (Header* poly : entry.polys)
 				{
@@ -140,11 +144,11 @@ public:
 	// Iterate over all polys that have the given components. Do only part
 	// of the work for the current worker.
 	template<class CallbackT>
-	void WorkerIterate(TypeID partial_type_id, size_t worker_count, size_t worker_index, CallbackT callback)
+	void WorkerIterate(TypeID types, size_t worker_count, size_t worker_index, CallbackT callback)
 	{
 		for (auto&& [type_id, entry] : m_archetypes)
 		{
-			if ((type_id & partial_type_id) == partial_type_id)
+			if ((type_id & types) == types)
 			{
 				size_t len = entry.polys.end() - entry.polys.begin();
 				size_t len_per_worker = len / worker_count;
@@ -165,13 +169,10 @@ private:
 };
 
 // A factory that handles polys of multiple archetypes of the given poly type.
-// It uses UUID values to reference individual polys.
-template<class ArchetypeT>
-class PolyFactory : private PolyFactoryBase<ArchetypeT>
+// It uses PolyID values to reference individual polys.
+template<class ArchetypeT, class PolyID>
+class PolyFactory : protected PolyArchetypeRegistry<ArchetypeT>
 {
-	using Header = typename ArchetypeT::Header;
-	using TypeID = typename ArchetypeT::ID;
-
 	// A poly entry that multiple refs will reference.
 	struct PolyEntry
 	{
@@ -181,7 +182,7 @@ class PolyFactory : private PolyFactoryBase<ArchetypeT>
 		size_t refcount = 0;
 	};
 
-	using PolyMap = robin_hood::unordered_node_map<UUID, PolyEntry>;
+	using PolyMap = robin_hood::unordered_node_map<PolyID, PolyEntry>;
 
 	using PolyMapEntry = typename PolyMap::value_type;
 
@@ -193,7 +194,7 @@ public:
 		WeakRef() : m_entry(nullptr) {}
 		WeakRef(PolyMapEntry* entry) : m_entry(entry) {}
 
-		UUID GetID()
+		PolyID GetID()
 		{
 			return m_entry->first;
 		}
@@ -201,6 +202,16 @@ public:
 		TypeID GetTypeID()
 		{
 			return m_entry->second.type_id;
+		}
+
+		ArchetypeT* GetType() const
+		{
+			return m_entry->second.archetype;
+		}
+
+		Ptr GetPtr() const
+		{
+			return Ptr{ GetHeader() };
 		}
 
 		template<class T>
@@ -246,11 +257,6 @@ public:
 		}
 
 	private:
-		ArchetypeT* GetType() const
-		{
-			return m_entry->second.archetype;
-		}
-
 		Header* GetHeader() const
 		{
 			return m_entry->second.header;
@@ -302,8 +308,8 @@ public:
 public:
 	PolyFactory() {}
 
-	// Get a reference to a poly with the given UUID or create one if needed.
-	Ref GetPoly(UUID id)
+	// Get a reference to a poly with the given PolyID or create one if needed.
+	Ref GetPoly(PolyID id)
 	{
 		auto&& [it, emplaced] = m_entries.try_emplace(id);
 
@@ -322,7 +328,7 @@ public:
 	}
 
 	// Destroy a poly.
-	void DestroyPoly(UUID id)
+	void DestroyPoly(PolyID id)
 	{
 		auto it = m_entries.find(id);
 
@@ -344,7 +350,7 @@ public:
 
 	// Update the type of a poly to a new type. Any components that are in both
 	// will be moved while the rest will be destroyed/newly constructed.
-	void SetTypes(UUID id, TypeID new_type_id)
+	void SetTypes(PolyID id, TypeID new_types)
 	{
 		auto it = m_entries.find(id);
 
@@ -355,7 +361,7 @@ public:
 
 		PolyEntry& entry = it->second;
 
-		Header* new_poly = UpdatePolyType(entry.header, entry.type_id, new_type_id);
+		Header* new_poly = UpdatePolyType(entry.header, entry.type_id, new_types);
 
 		entry.type_id = new_type_id;
 		entry.archetype = new_poly->archetype;
@@ -364,7 +370,7 @@ public:
 
 	// Add new components if they don't already exist to a poly.
 	// The existing components will be moved.
-	void AddTypes(UUID id, TypeID partial_type_id)
+	void AddTypes(PolyID id, TypeID new_types)
 	{
 		auto it = m_entries.find(id);
 
@@ -375,7 +381,7 @@ public:
 
 		PolyEntry& entry = it->second;
 
-		TypeID new_type_id = entry.type_id | partial_type_id;
+		TypeID new_type_id = entry.type_id | new_types;
 		
 		Header* new_poly = UpdatePolyType(entry.header, entry.type_id, new_type_id);
 
@@ -387,7 +393,7 @@ public:
 	// Update the type of a poly to a new type. Any components that are in both
 	// will be moved while the rest will be destroyed/newly constructed.
 	template<class... Types>
-	void SetTypes(UUID id)
+	void SetTypes(PolyID id)
 	{
 		SetTypes(id, ArchetypeT::CreateTypeID<Types...>());
 	}
@@ -395,7 +401,7 @@ public:
 	// Add new components if they don't already exist to a poly.
 	// The existing components will be moved.
 	template<class... Types>
-	void AddTypes(UUID id)
+	void AddTypes(PolyID id)
 	{
 		AddTypes(id, ArchetypeT::CreateTypeID<Types...>());
 	}
@@ -418,7 +424,7 @@ public:
 	// Cleanup any polys that no longer have any references
 	void Cleanup()
 	{
-		std::vector<UUID> erase_list;
+		std::vector<PolyID> erase_list;
 
 		for (auto&& [id, entry] : m_entries)
 		{
@@ -428,13 +434,11 @@ public:
 			}
 		}
 
-		for (UUID id : erase_list)
+		for (PolyID id : erase_list)
 		{
 			DestroyPoly(id);
 		}
 	}
-
-private:
 
 private:
 	PolyMap m_entries;

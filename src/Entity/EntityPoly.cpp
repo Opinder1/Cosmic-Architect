@@ -13,6 +13,8 @@
 #include "Voxel/VoxelComponents.h"
 #include "VoxelRender/VoxelRenderComponents.h"
 
+#include "UniverseSimulation.h"
+
 using namespace voxel_game;
 
 const size_t first = __LINE__ + 1;
@@ -100,6 +102,65 @@ const std::array<PolyTypeInfo, 128> PolyType<entity::Type, 128>::k_type_info =
 	MakeTypeInfo<voxel::CWorld>(),
 	MakeTypeInfo<voxelrender::CWorld>(),
 };
+
+namespace voxel_game::entity
+{
+	Type::Type() : PolyType<Type, 128>() {}
+
+	void Type::InitType(PolyArchetypeRegistry<Type>& factory, ID type_id)
+	{
+		for (size_t i = 1; i < type_id.size(); i++)
+		{
+			if (type_id.test(i))
+			{
+				AddType(i);
+			}
+		}
+
+		for (auto&& [types, entries] : static_cast<Factory&>(factory).m_callbacks)
+		{
+			if ((type_id & types) == types)
+			{
+				for (Factory::CallbackEntry& entry : entries)
+				{
+					AddCallback(entry.event, entry.callback);
+				}
+			}
+		}
+	}
+
+	void Type::AddCallback(Event event, EventCallback callback)
+	{
+		m_type_callbacks[to_underlying(event)].push_back(callback);
+	}
+	
+	void Type::DoEvent(Simulation& simulation, Ptr poly, Event event)
+	{
+		for (const EventCallback& callback : m_type_callbacks[to_underlying(event)])
+		{
+			callback(simulation, poly);
+		}
+	}
+
+	Factory::Factory() {}
+
+	void Factory::AddCallback(TypeID types, Event event, EventCallback callback)
+	{
+		// Add to future archetypes
+		m_callbacks[types].push_back({ event, callback });
+
+		// Add to existing archetypes
+		TypeIterate(types, [event, &callback](Type& type)
+		{
+			type.AddCallback(event, callback);
+		});
+	}
+
+	void Factory::DoEvent(Simulation& simulation, WeakRef poly, Event event) const
+	{
+		poly.GetType()->DoEvent(simulation, poly.GetPtr(), event);
+	}
+}
 
 size_t std::hash<voxel_game::entity::WRef>::operator()(const voxel_game::entity::WRef& wref) const noexcept
 {

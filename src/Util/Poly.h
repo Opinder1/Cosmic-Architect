@@ -62,7 +62,7 @@ template<class DerivedT, size_t N>
 class PolyType : Nocopy, Nomove
 {
 	template<class T>
-	friend class PolyFactoryBase;
+	friend class PolyArchetypeRegistry;
 
 private:
 	constexpr static const uint16_t k_invalid_offset = UINT16_MAX;
@@ -94,11 +94,11 @@ public:
 		return id;
 	}
 
-	class Ref
+	class Ptr
 	{
 	public:
-		Ref() : m_poly(nullptr) {}
-		Ref(Header* poly) : m_poly(poly) {}
+		Ptr() : m_poly(nullptr) {}
+		Ptr(Header* poly) : m_poly(poly) {}
 
 		template<class T>
 		T& Get() const
