@@ -204,7 +204,7 @@ public:
 			return m_entry->second.type_id;
 		}
 
-		ArchetypeT* GetType() const
+		const ArchetypeT* GetType() const
 		{
 			return m_entry->second.archetype;
 		}

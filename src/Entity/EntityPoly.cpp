@@ -134,7 +134,7 @@ namespace voxel_game::entity
 		m_type_callbacks[to_underlying(event)].push_back(callback);
 	}
 	
-	void Type::DoEvent(Simulation& simulation, Ptr poly, Event event)
+	void Type::DoEvent(Simulation& simulation, Ptr poly, Event event) const
 	{
 		for (const EventCallback& callback : m_type_callbacks[to_underlying(event)])
 		{

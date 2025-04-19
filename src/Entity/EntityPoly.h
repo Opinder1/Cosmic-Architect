@@ -36,7 +36,7 @@ namespace voxel_game::entity
 
 		void AddCallback(Event event, EventCallback callback);
 
-		void DoEvent(Simulation& simulation, Ptr poly, Event event);
+		void DoEvent(Simulation& simulation, Ptr poly, Event event) const;
 
 	private:
 		TypeCallbacks m_type_callbacks;
