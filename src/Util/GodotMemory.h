@@ -9,6 +9,8 @@
 
 #include <godot_cpp/core/memory.hpp>
 
+// 
+
 namespace godot
 {
 	// Object container that stores a godot object in place
@@ -61,7 +63,7 @@ namespace godot
 		alignas(alignof(T)) std::byte m_memory[sizeof(T)];
 	};
 
-	// unique_ptr for godot objects that allocates the object on the heap
+	// std::unique_ptr for godot objects that allocates the object on the heap
 	template<class T>
 	class ObjPtr : Nocopy
 	{
@@ -149,7 +151,7 @@ namespace godot
 		T* m_ptr;
 	};
 
-	// In place godot object that optionally has a value
+	// std::optional for godot object that stores object in place
 	template<class T>
 	class OptObj
 	{

@@ -45,6 +45,7 @@ constexpr std::underlying_type_t<E> to_underlying(E e)
 	return static_cast<std::underlying_type_t<E>>(e);
 }
 
+// Erase an item from a vector fast but only if we don't care about the order
 template<class T>
 void unordered_erase_it(std::vector<T>& vector, typename std::vector<T>::iterator it)
 {

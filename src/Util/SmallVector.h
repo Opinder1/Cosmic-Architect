@@ -313,6 +313,7 @@ protected:
     size_t m_size = 0;
 };
 
+// A small vector with a static size
 template<class DataT, size_t k_capacity>
 class SmallVector : public SmallVectorBase<DataT, SmallVector<DataT, k_capacity>>
 {
@@ -370,6 +371,7 @@ private:
     alignas(DataT) std::byte m_storage[k_capacity * sizeof(DataT)];
 };
 
+// A small vector with a growing size. Uses a static buffer until its filled.
 template<class DataT, size_t k_capacity>
 class GrowingSmallVector : public SmallVectorBase<DataT, GrowingSmallVector<DataT, k_capacity>>
 {

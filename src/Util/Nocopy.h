@@ -1,5 +1,7 @@
 #pragma once
 
+// structs that can be inherited from to make objects non copyable or movable
+
 struct Nocopy
 {
 	Nocopy() {}

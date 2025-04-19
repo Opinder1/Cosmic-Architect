@@ -38,11 +38,12 @@
 
 #endif // DEBUG
 
-#if defined(DEBUG_THREAD_CHECK)
+#if defined(DEBUG_THREAD_CHECK) 
 void DebugThreadCheckRead(const void* group, const void* object);
 void DebugThreadCheckWrite(const void* group, const void* object);
 void DebugThreadCheckSync(const void* group);
 
+// Macros that can be used to help fix multithreading issues
 #define DEBUG_THREAD_CHECK_READ(group, object) DebugThreadCheckRead(static_cast<const void*>(group), static_cast<const void*>(object))
 #define DEBUG_THREAD_CHECK_WRITE(group, object) DebugThreadCheckWrite(static_cast<const void*>(group), static_cast<const void*>(object))
 #define DEBUG_THREAD_CHECK_SYNC(group) DebugThreadCheckSync(static_cast<const void*>(group))

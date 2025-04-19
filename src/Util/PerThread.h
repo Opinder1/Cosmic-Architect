@@ -8,6 +8,8 @@
 #include <thread>
 #include <atomic>
 
+// Utilities for storing per thread data that is safe and avoids false sharing
+
 constexpr static const size_t k_cache_line = std::hardware_destructive_interference_size;
 
 constexpr static const size_t k_worker_thread_max = 16;

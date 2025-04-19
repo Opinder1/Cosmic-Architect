@@ -23,12 +23,14 @@
 
 #include <type_traits>
 
+// Hash functions for godot types
+
 template<class T>
 struct ByteHash
 {
-    size_t operator()(const T& vector) const noexcept
+    size_t operator()(const T& value) const noexcept
     {
-        return robin_hood::hash_bytes(&vec, sizeof(T));
+        return robin_hood::hash_bytes(&value, sizeof(T));
     }
 };
 

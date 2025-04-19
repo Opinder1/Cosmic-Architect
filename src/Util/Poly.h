@@ -11,6 +11,9 @@
 #include <memory>
 #include <bitset>
 
+// A type that can be described as a runtime struct. One block of memory is allocated for each poly
+// but the memory is made up of multiple structs that are easily accessed
+
 #define POLY_DEBUG DEBUG_ENABLED
 
 template<class T>
@@ -97,6 +100,7 @@ public:
 		return id;
 	}
 
+	// A wrapper around the poly pointer
 	class Ptr
 	{
 	public:
@@ -312,6 +316,7 @@ private:
 	uint16_t m_total_size = 0;
 
 #if defined(POLY_DEBUG)
+	// A list of all polys created to check we own polys
 	robin_hood::unordered_set<const Header*> m_created;
 #endif
 };

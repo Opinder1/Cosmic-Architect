@@ -5,6 +5,8 @@
 
 #include <robin_hood/robin_hood.h>
 
+// A registry that manages creating polys of multiple archetypes of the same base type.
+// It also supports quick iteration of all polys that have a certain set of components.
 template<class ArchetypeT>
 class PolyArchetypeRegistry
 {
@@ -330,27 +332,6 @@ public:
 		return Ref(&*it);
 	}
 
-	// Destroy a poly.
-	void DestroyPoly(PolyID id)
-	{
-		auto it = m_entries.find(id);
-
-		if (it == m_entries.end())
-		{
-			return;
-		}
-
-		PolyEntry& entry = it->second;
-
-		DEBUG_ASSERT(entry.refcount == 0, "This poly still has references");
-
-		entry.archetype->DestructPoly(entry.header);
-
-		DeallocatePoly(entry.type_id, entry.header);
-
-		m_entries.erase(it);
-	}
-
 	// Update the type of a poly to a new type. Any components that are in both
 	// will be moved while the rest will be destroyed/newly constructed.
 	void SetTypes(PolyID id, TypeID new_types)
@@ -441,6 +422,28 @@ public:
 		{
 			DestroyPoly(id);
 		}
+	}
+
+private:
+	// Destroy a poly
+	void DestroyPoly(PolyID id)
+	{
+		auto it = m_entries.find(id);
+
+		if (it == m_entries.end())
+		{
+			return;
+		}
+
+		PolyEntry& entry = it->second;
+
+		DEBUG_ASSERT(entry.refcount == 0, "This poly still has references");
+
+		entry.archetype->DestructPoly(entry.header);
+
+		DeallocatePoly(entry.type_id, entry.header);
+
+		m_entries.erase(it);
 	}
 
 private:
