@@ -35,6 +35,26 @@ namespace voxel_game::spatial3d
 		Deleting, // Has a delete command
 	};
 
+	struct NodeCreateCommand
+	{
+		godot::Vector3i pos;
+	};
+
+	struct NodeLoadCommand
+	{
+		NodePtr node;
+	};
+
+	struct NodeUnloadCommand
+	{
+		NodePtr node;
+	};
+
+	struct NodeDestroyCommand
+	{
+		NodePtr node;
+	};
+
 	// A single node in a spatial world. This is meant to be inherited from for custom data
 	struct Node : Nocopy, Nomove
 	{
@@ -74,10 +94,10 @@ namespace voxel_game::spatial3d
 		robin_hood::unordered_set<entity::Ref> entities;
 
 		// Commands
-		std::vector<godot::Vector3i> create_commands;
-		std::vector<NodePtr> load_commands;
-		std::vector<NodePtr> unload_commands;
-		std::vector<NodePtr> destroy_commands;
+		std::vector<NodeCreateCommand> create_commands;
+		std::vector<NodeLoadCommand> load_commands;
+		std::vector<NodeUnloadCommand> unload_commands;
+		std::vector<NodeDestroyCommand> destroy_commands;
 	};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 

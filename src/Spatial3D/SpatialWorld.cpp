@@ -225,10 +225,10 @@ namespace voxel_game::spatial3d
 			ScalePtr scale = GetScale(world, scale_index);
 
 			// For each create command
-			for (const godot::Vector3i& pos : scale->*&Scale::create_commands)
+			for (const NodeCreateCommand& command : scale->*&Scale::create_commands)
 			{
 				// Try and create the node
-				auto&& [it, emplaced] = (scale->*&Scale::nodes).try_emplace(pos, nullptr);
+				auto&& [it, emplaced] = (scale->*&Scale::nodes).try_emplace(command.pos, nullptr);
 
 				if (!emplaced) // Node already exists
 				{
@@ -240,7 +240,7 @@ namespace voxel_game::spatial3d
 				NodePtr node = it->second;
 
 				// Initialize the node
-				node->*&Node::position = pos;
+				node->*&Node::position = command.pos;
 				node->*&Node::scale_index = scale_index;
 				node->*&Node::last_update_time = frame_start_time;
 				node->*&Node::state = NodeState::Unloaded;
@@ -261,15 +261,15 @@ namespace voxel_game::spatial3d
 			ScalePtr scale = GetScale(world, scale_index);
 
 			// For each destroy command of the scale
-			for (NodePtr node : scale->*&Scale::destroy_commands)
+			for (const NodeDestroyCommand& command : scale->*&Scale::destroy_commands)
 			{
-				DEBUG_ASSERT(node->*&Node::state == NodeState::Deleting, "Node should be in deleting state");
+				DEBUG_ASSERT(command.node->*&Node::state == NodeState::Deleting, "Node should be in deleting state");
 
-				UninitializeNode(world, node, scale_index);
+				UninitializeNode(world, command.node, scale_index);
 
-				(scale->*&Scale::nodes).erase(node->*&Node::position);
+				(scale->*&Scale::nodes).erase(command.node->*&Node::position);
 
-				node.Destroy();
+				NodePtr(command.node).Destroy();
 			}
 
 			(scale->*&Scale::destroy_commands).clear();
@@ -292,7 +292,7 @@ namespace voxel_game::spatial3d
 
 			if (it == (scale->*&Scale::nodes).end())
 			{
-				(scale->*&Scale::create_commands).push_back(pos); // Create commands should immediately be executed this frame so don't worry about duplicates
+				(scale->*&Scale::create_commands).push_back(NodeCreateCommand{ pos }); // Create commands should immediately be executed this frame so don't worry about duplicates
 				return;
 			}
 
@@ -307,7 +307,7 @@ namespace voxel_game::spatial3d
 			case NodeState::Unloaded:
 				if ((scale->*&Scale::load_commands).size() < k_max_frame_load_commands)
 				{
-					(scale->*&Scale::load_commands).push_back(node);
+					(scale->*&Scale::load_commands).push_back(NodeLoadCommand{ node });
 					node->*&Node::state = NodeState::Loading;
 				}
 				break;
@@ -318,11 +318,11 @@ namespace voxel_game::spatial3d
 	void ScaleLoadNodes(WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time)
 	{
 		// Finish the previous load commands
-		for (NodePtr node : scale->*&Scale::load_commands)
+		for (const NodeLoadCommand& command : scale->*&Scale::load_commands)
 		{
-			DEBUG_ASSERT(node->*&Node::state == NodeState::Loading, "Node should be in loading state");
+			DEBUG_ASSERT(command.node->*&Node::state == NodeState::Loading, "Node should be in loading state");
 
-			node->*&Node::state = NodeState::Loaded;
+			command.node->*&Node::state = NodeState::Loaded;
 		}
 
 		// Clear previous commands. If you didn't handle them then too bad
@@ -346,7 +346,7 @@ namespace voxel_game::spatial3d
 		case NodeState::Unloaded:
 			if ((scale->*&Scale::destroy_commands).size() < k_max_frame_destroy_commands)
 			{
-				(scale->*&Scale::destroy_commands).push_back(node);
+				(scale->*&Scale::destroy_commands).push_back(NodeDestroyCommand{ node });
 				node->*&Node::state = NodeState::Deleting;
 			}
 			break;
@@ -354,7 +354,7 @@ namespace voxel_game::spatial3d
 		case NodeState::Loaded:
 			if ((scale->*&Scale::unload_commands).size() < k_max_frame_unload_commands)
 			{
-				(scale->*&Scale::unload_commands).push_back(node);
+				(scale->*&Scale::unload_commands).push_back(NodeUnloadCommand{ node });
 				node->*&Node::state = NodeState::Unloading;
 			}
 			break;
@@ -364,11 +364,11 @@ namespace voxel_game::spatial3d
 	void ScaleUnloadNodes(WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time)
 	{
 		// Finish the previous load commands
-		for (NodePtr node : scale->*&Scale::unload_commands)
+		for (const NodeUnloadCommand& command : scale->*&Scale::unload_commands)
 		{
-			DEBUG_ASSERT(node->*&Node::state == NodeState::Unloading, "Node should be in unloading state");
+			DEBUG_ASSERT(command.node->*&Node::state == NodeState::Unloading, "Node should be in unloading state");
 
-			node->*&Node::state = NodeState::Unloaded;
+			command.node->*&Node::state = NodeState::Unloaded;
 		}
 
 		// Clear previous commands. If you didn't handle them then too bad
