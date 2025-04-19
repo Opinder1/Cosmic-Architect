@@ -10,7 +10,7 @@ namespace voxel_game::simulation
 {
 	struct Config
 	{
-		godot::StringName path;
+		godot::String path;
 		godot::Dictionary values;
 	};
 

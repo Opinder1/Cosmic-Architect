@@ -194,7 +194,7 @@ namespace voxel_game::universe
 		}
 	}
 
-	entity::Ref CreateNewUniverse(Simulation& simulation, const godot::StringName& path)
+	entity::Ref CreateNewUniverse(Simulation& simulation, const godot::String& path)
 	{
 		// Create the universe
 		entity::Ref universe_entity = simulation.entity_factory.GetPoly(GenerateUUID());
