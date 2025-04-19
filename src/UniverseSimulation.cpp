@@ -207,10 +207,10 @@ namespace voxel_game
 
 	void SimulationUninitialize(Simulation& simulation)
 	{
-		simulation::Uninitialize(simulation);
-		spatial3d::Uninitialize(simulation);
-		universe::Uninitialize(simulation);
 		galaxy::Uninitialize(simulation);
+		universe::Uninitialize(simulation);
+		spatial3d::Uninitialize(simulation);
+		simulation::Uninitialize(simulation);
 	}
 
 	void SimulationSingleUpdate(Simulation& simulation)
