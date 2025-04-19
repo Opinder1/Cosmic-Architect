@@ -146,31 +146,6 @@ namespace voxel_game::universe
 		}
 	};
 
-	void WorldUpdate(Simulation& simulation, spatial3d::WorldPtr world)
-	{
-
-	}
-
-	void ScaleUpdate(Simulation& simulation, spatial3d::ScalePtr scale)
-	{
-		UniverseNodeLoaderTest loader{ simulation, scale->*&spatial3d::Scale::world };
-
-		for (spatial3d::NodePtr node : scale->*&spatial3d::Scale::load_commands)
-		{
-			loader.LoadNodePlane(node);
-		}
-
-		for (spatial3d::NodePtr node : scale->*&spatial3d::Scale::unload_commands)
-		{
-			loader.UnloadNode(node);
-		}
-	}
-
-	void WorkerUpdate(Simulation& simulation, size_t index)
-	{
-
-	}
-
 	void UpdateUniverseEntity(Simulation& simulation, entity::Ptr universe_entity)
 	{
 		if (simulation.frame_start_time - universe_entity->*&CUniverse::last_config_save > 10s)
@@ -197,7 +172,7 @@ namespace voxel_game::universe
 	entity::Ref CreateNewUniverse(Simulation& simulation, const godot::String& path)
 	{
 		// Create the universe
-		entity::Ref universe_entity = simulation.entity_factory.GetPoly(GenerateUUID());
+		entity::Ref universe_entity = entity::CreateEntity(simulation);
 
 		simulation.entity_factory.AddTypes<
 			universe::CUniverse,
@@ -230,6 +205,13 @@ namespace voxel_game::universe
 		return universe_entity;
 	}
 
+	void DestroyUniverse(Simulation& simulation, entity::WRef universe)
+	{
+		simulation.universe = entity::Ref();
+
+		entity::DestroyEntity(simulation, universe);
+	}
+
 	void Initialize(Simulation& simulation)
 	{
 		InitializeConfigDefaults();
@@ -248,11 +230,39 @@ namespace voxel_game::universe
 
 	void Uninitialize(Simulation& simulation)
 	{
-
+		if (simulation.universe)
+		{
+			DestroyUniverse(simulation, simulation.universe);
+		}
 	}
 
 	void Update(Simulation& simulation)
 	{
 
+	}
+
+	void WorkerUpdate(Simulation& simulation, size_t index)
+	{
+
+	}
+
+	void WorldUpdate(Simulation& simulation, spatial3d::WorldPtr world)
+	{
+
+	}
+
+	void ScaleUpdate(Simulation& simulation, spatial3d::ScalePtr scale)
+	{
+		UniverseNodeLoaderTest loader{ simulation, scale->* & spatial3d::Scale::world };
+
+		for (spatial3d::NodePtr node : scale->*& spatial3d::Scale::load_commands)
+		{
+			loader.LoadNodePlane(node);
+		}
+
+		for (spatial3d::NodePtr node : scale->*& spatial3d::Scale::unload_commands)
+		{
+			loader.UnloadNode(node);
+		}
 	}
 }
