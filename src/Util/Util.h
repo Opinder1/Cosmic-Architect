@@ -2,12 +2,7 @@
 
 #include <type_traits>
 #include <chrono>
-
-template<class E>
-constexpr std::underlying_type_t<E> to_underlying(E e)
-{
-	return static_cast<std::underlying_type_t<E>>(e);
-}
+#include <vector>
 
 template<class Type>
 struct get_method_class;
@@ -43,3 +38,27 @@ using Clock = std::chrono::steady_clock;
 using SystemClock = std::chrono::system_clock;
 
 using namespace std::chrono_literals;
+
+template<class E>
+constexpr std::underlying_type_t<E> to_underlying(E e)
+{
+	return static_cast<std::underlying_type_t<E>>(e);
+}
+
+template<class T>
+void unordered_erase_it(std::vector<T>& vector, typename std::vector<T>::iterator it)
+{
+	*it = std::move(vector.back());
+	vector.pop_back();
+}
+
+template<class T, class ItemT>
+void unordered_erase(std::vector<T>& vector, ItemT&& item)
+{
+	auto it = std::find(vector.begin(), vector.end(), item);
+
+	if (it != vector.end())
+	{
+		unordered_erase_it(vector, it);
+	}
+}
