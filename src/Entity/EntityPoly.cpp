@@ -160,6 +160,20 @@ namespace voxel_game::entity
 	{
 		poly.GetType()->DoEvent(simulation, poly.GetPtr(), event);
 	}
+
+	Ref CreateEntity(Simulation& simulation)
+	{
+		Ref entity = simulation.entity_factory.GetPoly(GenerateUUID());
+
+		simulation.entities.push_back(entity.Reference());
+
+		return entity;
+	}
+
+	void DestroyEntity(Simulation& simulation, WRef entity)
+	{
+		unordered_erase(simulation.entities, entity);
+	}
 }
 
 size_t std::hash<voxel_game::entity::WRef>::operator()(const voxel_game::entity::WRef& wref) const noexcept
