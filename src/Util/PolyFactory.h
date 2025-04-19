@@ -176,7 +176,7 @@ class PolyFactory : protected PolyArchetypeRegistry<ArchetypeT>
 	// A poly entry that multiple refs will reference.
 	struct PolyEntry
 	{
-		TypeID type_id;
+		TypeID type_id; // The archetype has the type id but this avoids double indirection for a Ref
 		ArchetypeT* archetype = nullptr;
 		Header* header = nullptr;
 		size_t refcount = 0;
@@ -194,12 +194,12 @@ public:
 		WeakRef() : m_entry(nullptr) {}
 		WeakRef(PolyMapEntry* entry) : m_entry(entry) {}
 
-		PolyID GetID()
+		PolyID GetID() const
 		{
 			return m_entry->first;
 		}
 
-		TypeID GetTypeID()
+		TypeID GetTypeID() const
 		{
 			return m_entry->second.type_id;
 		}
@@ -215,21 +215,22 @@ public:
 		}
 
 		template<class T>
+		bool Has() const
+		{
+			return GetTypeID().test(ArchetypeT::k_type_index<T>);
+		}
+
+		template<class T>
 		T& Get() const
 		{
-			return GetType()->Get<T>(*GetHeader());
+			DEBUG_ASSERT(Has<T>(), "We should have this type");
+			return *GetType()->Get<T>(GetHeader());
 		}
 
 		template<class T>
 		T* TryGet() const
 		{
-			return GetType()->Get<T>(GetHeader());
-		}
-
-		template<class T>
-		bool Has() const
-		{
-			return GetTypeID().test(ArchetypeT::k_type_index<T>);
+			return Has<T>() ? &Get<T>() : nullptr;
 		}
 
 		template<auto Member,
@@ -237,13 +238,13 @@ public:
 			class Class = get_member_class<decltype(Member)>::type>
 		Ret& Var() const
 		{
-			return GetType()->Get<Class>(GetHeader())->*Member;
+			return Get<Class>().*Member;
 		}
 
 		template<class T, class Ret>
 		Ret& operator->*(Ret T::* Member) const
 		{
-			return GetType()->Get<T>(GetHeader())->*Member;
+			return Get<T>().*Member;
 		}
 
 		operator bool() const
@@ -320,6 +321,8 @@ public:
 			entry.type_id = ArchetypeT::CreateTypeID<Header>();
 			entry.header = AllocatePoly(entry.type_id);
 			entry.archetype = entry.header->archetype;
+
+			DEBUG_ASSERT(entry.type_id == entry.archetype->GetID(), "The archetype we got doesn't have the right type");
 
 			entry.archetype->ConstructPoly(entry.header);
 		}

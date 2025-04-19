@@ -64,6 +64,9 @@ class PolyType : Nocopy, Nomove
 	template<class T>
 	friend class PolyArchetypeRegistry;
 
+	template<class T, class T2>
+	friend class PolyFactory;
+
 private:
 	constexpr static const uint16_t k_invalid_offset = UINT16_MAX;
 	constexpr static const size_t k_num_types = N;
@@ -101,21 +104,22 @@ public:
 		Ptr(Header* poly) : m_poly(poly) {}
 
 		template<class T>
+		bool Has() const
+		{
+			return m_poly->archetype->Has<T>();
+		}
+
+		template<class T>
 		T& Get() const
 		{
-			return m_poly->archetype->Get<T>(*m_poly);
+			DEBUG_ASSERT(Has<T>(), "We should have this type");
+			return *m_poly->archetype->Get<T>(m_poly);
 		}
 
 		template<class T>
 		T* TryGet() const
 		{
-			return m_poly->archetype->Get<T>(m_poly);
-		}
-
-		template<class T>
-		bool Has() const
-		{
-			return m_poly->archetype->Get<T>(m_poly) != nullptr;
+			return Has<T>() ? &Get<T>() : nullptr;
 		}
 
 		template<auto Member,
@@ -123,13 +127,13 @@ public:
 			class Class = get_member_class<decltype(Member)>::type>
 		Ret& Var() const
 		{
-			return m_poly->archetype->Get<Class>(m_poly)->*Member;
+			return Get<T>().*Member;
 		}
 
 		template<class T, class Ret>
 		Ret& operator->*(Ret T::* Member) const
 		{
-			return m_poly->archetype->Get<T>(m_poly)->*Member;
+			return Get<T>().*Member;
 		}
 
 		void Destroy()
@@ -188,8 +192,20 @@ public:
 		AddType(k_type_index<T>);
 	}
 
+	ID GetID()
+	{
+		return m_id;
+	}
+
 	template<class T>
-	const T* Get(const Header* poly) const
+	bool Has() const
+	{
+		DEBUG_ASSERT(k_type_index<T> < k_num_types, "This types index is too large");
+		return m_id.test(k_type_index<T>);
+	}
+
+	template<class T>
+	T* Get(Header* poly) const
 	{
 		DEBUG_ASSERT(k_type_index<T> < k_num_types, "This types index is too large");
 		DEBUG_ASSERT(m_type_offsets[k_type_index<T>] != 0, "Either T == HeaderT or this poly doesn't have this type");
@@ -198,27 +214,9 @@ public:
 		DEBUG_ASSERT(m_created.contains(poly), "We didn't create this poly");
 #endif
 
-		const std::byte* ptr = reinterpret_cast<const std::byte*>(poly);
+		std::byte* ptr = reinterpret_cast<std::byte*>(poly);
 
-		return reinterpret_cast<const T*>(ptr + m_type_offsets[k_type_index<T>]);
-	}
-
-	template<class T>
-	T* Get(Header* poly) const
-	{
-		return const_cast<T*>(Get<T>(const_cast<const Header*>(poly)));
-	}
-
-	template<class T>
-	const T& Get(const Header& poly) const
-	{
-		return *Get<T>(&poly);
-	}
-
-	template<class T>
-	T& Get(Header& poly) const
-	{
-		return *Get<T>(&poly);
+		return reinterpret_cast<T*>(ptr + m_type_offsets[k_type_index<T>]);
 	}
 
 	Header* AllocatePoly()
@@ -309,8 +307,8 @@ public:
 	}
 
 private:
-	std::array<uint16_t, k_num_types> m_type_offsets;
 	ID m_id;
+	std::array<uint16_t, k_num_types> m_type_offsets;
 	uint16_t m_total_size = 0;
 
 #if defined(POLY_DEBUG)
