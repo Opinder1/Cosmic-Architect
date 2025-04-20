@@ -183,10 +183,10 @@ namespace voxel_game::spatial3d
 		{
 			ScalePtr scale = GetScale(world, scale_index);
 
-			DEBUG_ASSERT((scale->*&Scale::create_commands).empty(), "All commands should have been destroyed before destroying the world");
-			DEBUG_ASSERT((scale->*&Scale::load_commands).empty(), "All commands should have been destroyed before destroying the world");
-			DEBUG_ASSERT((scale->*&Scale::unload_commands).empty(), "All commands should have been destroyed before destroying the world");
-			DEBUG_ASSERT((scale->*&Scale::destroy_commands).empty(), "All commands should have been destroyed before destroying the world");
+			DEBUG_ASSERT((scale->*&PartialScale::create_commands).empty(), "All commands should have been destroyed before destroying the world");
+			DEBUG_ASSERT((scale->*&PartialScale::load_commands).empty(), "All commands should have been destroyed before destroying the world");
+			DEBUG_ASSERT((scale->*&PartialScale::unload_commands).empty(), "All commands should have been destroyed before destroying the world");
+			DEBUG_ASSERT((scale->*&PartialScale::destroy_commands).empty(), "All commands should have been destroyed before destroying the world");
 			DEBUG_ASSERT((scale->*&Scale::nodes).empty(), "All nodes should have been destroyed before destroying the world");
 
 			// For each node in the scale
@@ -214,7 +214,7 @@ namespace voxel_game::spatial3d
 		world.Destroy();
 	}
 
-	void WorldCreateNodes(WorldPtr world, Clock::time_point frame_start_time)
+	void WorldDoNodeCreateCommands(Simulation& simulation, WorldPtr world, Clock::time_point frame_start_time)
 	{
 		DEBUG_ASSERT(world->*&World::max_scale > 0, "The spatial world should have at least one scale");
 
@@ -225,7 +225,7 @@ namespace voxel_game::spatial3d
 			ScalePtr scale = GetScale(world, scale_index);
 
 			// For each create command
-			for (const NodeCreateCommand& command : scale->*&Scale::create_commands)
+			for (const NodeCreateCommand& command : scale->*&PartialScale::create_commands)
 			{
 				// Try and create the node
 				auto&& [it, emplaced] = (scale->*&Scale::nodes).try_emplace(command.pos, nullptr);
@@ -248,11 +248,11 @@ namespace voxel_game::spatial3d
 				InitializeNode(world, node, scale_index);
 			}
 
-			(scale->*&Scale::create_commands).clear();
+			(scale->*&PartialScale::create_commands).clear();
 		}
 	}
 
-	void WorldDestroyNodes(WorldPtr world)
+	void WorldDoNodeDestroyCommands(Simulation& simulation, WorldPtr world)
 	{
 		for (size_t scale_index = 0; scale_index < world->*&World::max_scale; scale_index++)
 		{
@@ -261,7 +261,7 @@ namespace voxel_game::spatial3d
 			ScalePtr scale = GetScale(world, scale_index);
 
 			// For each destroy command of the scale
-			for (const NodeDestroyCommand& command : scale->*&Scale::destroy_commands)
+			for (const NodeDestroyCommand& command : scale->*&PartialScale::destroy_commands)
 			{
 				DEBUG_ASSERT(command.node->*&Node::state == NodeState::Deleting, "Node should be in deleting state");
 
@@ -272,7 +272,7 @@ namespace voxel_game::spatial3d
 				NodePtr(command.node).Destroy();
 			}
 
-			(scale->*&Scale::destroy_commands).clear();
+			(scale->*&PartialScale::destroy_commands).clear();
 		}
 	}
 
@@ -292,7 +292,7 @@ namespace voxel_game::spatial3d
 
 			if (it == (scale->*&Scale::nodes).end())
 			{
-				(scale->*&Scale::create_commands).push_back(NodeCreateCommand{ pos }); // Create commands should immediately be executed this frame so don't worry about duplicates
+				(scale->*&PartialScale::create_commands).push_back(NodeCreateCommand{ pos }); // Create commands should immediately be executed this frame so don't worry about duplicates
 				return;
 			}
 
@@ -305,9 +305,9 @@ namespace voxel_game::spatial3d
 			switch (node->*&Node::state)
 			{
 			case NodeState::Unloaded:
-				if ((scale->*&Scale::load_commands).size() < k_max_frame_load_commands)
+				if ((scale->*&PartialScale::load_commands).size() < k_max_frame_load_commands)
 				{
-					(scale->*&Scale::load_commands).push_back(NodeLoadCommand{ node });
+					(scale->*&PartialScale::load_commands).push_back(NodeLoadCommand{ node });
 					node->*&Node::state = NodeState::Loading;
 				}
 				break;
@@ -315,10 +315,10 @@ namespace voxel_game::spatial3d
 		});
 	}
 
-	void ScaleLoadNodes(WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time)
+	void ScaleLoadNodesAroundLoaders(Simulation& simulation, WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time)
 	{
 		// Finish the previous load commands
-		for (const NodeLoadCommand& command : scale->*&Scale::load_commands)
+		for (const NodeLoadCommand& command : scale->*&PartialScale::load_commands)
 		{
 			DEBUG_ASSERT(command.node->*&Node::state == NodeState::Loading, "Node should be in loading state");
 
@@ -326,13 +326,13 @@ namespace voxel_game::spatial3d
 		}
 
 		// Clear previous commands. If you didn't handle them then too bad
-		(scale->*&Scale::load_commands).clear();
+		(scale->*&PartialScale::load_commands).clear();
 
 		const uint32_t scale_step = 1 << scale->*&Scale::index;
 		const double scale_node_step = scale_step * world->*&World::node_size;
 
 		// For each command list that is a child of the world
-		for (entity::WRef loader : world->*&World::loaders)
+		for (entity::WRef loader : world->*&PartialWorld::loaders)
 		{
 			LoaderLoadNodes(scale, loader, frame_start_time, scale_node_step);
 		}
@@ -344,27 +344,27 @@ namespace voxel_game::spatial3d
 		switch (node->*&Node::state)
 		{
 		case NodeState::Unloaded:
-			if ((scale->*&Scale::destroy_commands).size() < k_max_frame_destroy_commands)
+			if ((scale->*&PartialScale::destroy_commands).size() < k_max_frame_destroy_commands)
 			{
-				(scale->*&Scale::destroy_commands).push_back(NodeDestroyCommand{ node });
+				(scale->*&PartialScale::destroy_commands).push_back(NodeDestroyCommand{ node });
 				node->*&Node::state = NodeState::Deleting;
 			}
 			break;
 
 		case NodeState::Loaded:
-			if ((scale->*&Scale::unload_commands).size() < k_max_frame_unload_commands)
+			if ((scale->*&PartialScale::unload_commands).size() < k_max_frame_unload_commands)
 			{
-				(scale->*&Scale::unload_commands).push_back(NodeUnloadCommand{ node });
+				(scale->*&PartialScale::unload_commands).push_back(NodeUnloadCommand{ node });
 				node->*&Node::state = NodeState::Unloading;
 			}
 			break;
 		}
 	}
 
-	void ScaleUnloadNodes(WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time)
+	void ScaleUnloadUnutilizedNodes(Simulation& simulation, WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time)
 	{
 		// Finish the previous load commands
-		for (const NodeUnloadCommand& command : scale->*&Scale::unload_commands)
+		for (const NodeUnloadCommand& command : scale->*&PartialScale::unload_commands)
 		{
 			DEBUG_ASSERT(command.node->*&Node::state == NodeState::Unloading, "Node should be in unloading state");
 
@@ -372,20 +372,20 @@ namespace voxel_game::spatial3d
 		}
 
 		// Clear previous commands. If you didn't handle them then too bad
-		(scale->*&Scale::unload_commands).clear();
+		(scale->*&PartialScale::unload_commands).clear();
 
 		// For each node in the scale
 		for (auto&& [pos, node] : scale->*&Scale::nodes)
 		{
 			// Check if node hasn't been touched in too long
-			if (frame_start_time - node->*&Node::last_update_time > world->*&World::node_keepalive)
+			if (frame_start_time - node->*&Node::last_update_time > world->*&PartialWorld::node_keepalive)
 			{
 				UnloadNode(scale, node);
 			}
 		}
 	}
 
-	void WorldUpdateEntityScales(WorldPtr world)
+	void WorldUpdateEntityScales(Simulation& simulation, WorldPtr world)
 	{
 		for (entity::WRef entity : world->*&World::entities)
 		{
@@ -419,7 +419,7 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void ScaleUpdateEntityNodes(WorldPtr world, ScalePtr scale)
+	void ScaleUpdateEntityNodes(Simulation& simulation, WorldPtr world, ScalePtr scale)
 	{
 		for (entity::WRef entity : scale->*&Scale::entities)
 		{

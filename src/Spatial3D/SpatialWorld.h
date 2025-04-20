@@ -16,6 +16,11 @@
 #include <array>
 #include <vector>
 
+namespace voxel_game
+{
+	struct Simulation;
+}
+
 namespace voxel_game::spatial3d
 {
 	// The max scale that a world can have
@@ -80,6 +85,15 @@ namespace voxel_game::spatial3d
 		robin_hood::unordered_set<entity::Ref> entities;
 	};
 
+	struct WorldGenerator
+	{
+		void (*create_node)(Simulation&, WorldPtr, ScalePtr, NodePtr);
+		void (*destroy_node)(Simulation&, WorldPtr, ScalePtr, NodePtr);
+
+		void (*load_node)(Simulation&, WorldPtr, ScalePtr, NodePtr);
+		void (*unload_node)(Simulation&, WorldPtr, ScalePtr, NodePtr);
+	};
+
 	using NodeMap = robin_hood::unordered_map<godot::Vector3i, NodePtr>;
 
 	// A level of detail map for a world. The world will have multiple of these
@@ -92,7 +106,10 @@ namespace voxel_game::spatial3d
 		NodeMap nodes;
 
 		robin_hood::unordered_set<entity::Ref> entities;
+	};
 
+	struct PartialScale : Nocopy, Nomove
+	{
 		// Commands
 		std::vector<NodeCreateCommand> create_commands;
 		std::vector<NodeLoadCommand> load_commands;
@@ -106,36 +123,64 @@ namespace voxel_game::spatial3d
 		ScaleType* scale_type = nullptr;
 		NodeType* node_type = nullptr;
 
-		godot::AABB bounds;
 		uint8_t max_scale = 0;
 		uint8_t node_size = 1;
 
-		Clock::duration node_keepalive = 10s;
-
-		robin_hood::unordered_set<entity::Ref> loaders;
+		std::array<ScalePtr, k_max_world_scale> scales;
 
 		robin_hood::unordered_set<entity::Ref> entities;
-
-		std::array<ScalePtr, k_max_world_scale> scales;
 	};
 
+	struct BoundedWorld : Nocopy, Nomove
+	{
+		godot::AABB bounds;
+	};
+
+	struct PartialWorld : Nocopy, Nomove
+	{
+		Clock::duration node_keepalive = 10s;
+
+		// Optional entities that act as areas where nodes are loaded around
+		robin_hood::unordered_set<entity::Ref> loaders;
+	};
+
+	// Get a scale in a world given a position
 	ScalePtr GetScale(WorldPtr spatial_world, uint8_t scale_index);
 
+	// Get a node in a world at a position and scale
 	NodePtr GetNode(WorldPtr world, godot::Vector3i position, uint8_t scale_index);
 
+	// Create a new spatial world given provided types
 	WorldPtr CreateWorld(WorldType& world_type, ScaleType& scale_type, NodeType& node_type, uint8_t max_scale);
 
+	// Destroy a spatial world
 	void DestroyWorld(WorldPtr world);
 
-	void WorldCreateNodes(WorldPtr world, Clock::time_point frame_start_time);
+	void WorldSetGenerator(WorldPtr world, WorldGenerator generator);
 
-	void WorldDestroyNodes(WorldPtr world);
+	void AddLoader(WorldPtr world, entity::Ref loader);
 
-	void ScaleLoadNodes(WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time);
+	void RemoveLoader(WorldPtr world, entity::Ref loader);
 
-	void ScaleUnloadNodes(WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time);
+	void AddEntity(WorldPtr world, entity::Ref entity);
 
-	void WorldUpdateEntityScales(WorldPtr world);
+	void RemoveEntity(WorldPtr world, entity::Ref entity);
 
-	void ScaleUpdateEntityNodes(WorldPtr world, ScalePtr scale);
+	// Execute all node create commands a world has. Thread safe for that world
+	void WorldDoNodeCreateCommands(Simulation& simulation, WorldPtr world, Clock::time_point frame_start_time);
+
+	// Execute all node destroy commands a world has. Thread safe for that world
+	void WorldDoNodeDestroyCommands(Simulation& simulation, WorldPtr world);
+
+	// Add commands to load all nodes around loaders. Thread safe for that scale
+	void ScaleLoadNodesAroundLoaders(Simulation& simulation, WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time);
+
+	// Add commands to unload nodes that are not near loaders. Thread safe for that scale
+	void ScaleUnloadUnutilizedNodes(Simulation& simulation, WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time);
+
+	// Update the scale entities should be in based on their position. Thread safe for that world
+	void WorldUpdateEntityScales(Simulation& simulation, WorldPtr world);
+
+	// Update the node entities should be in based on their position. Thread safe for that scale
+	void ScaleUpdateEntityNodes(Simulation& simulation, WorldPtr world, ScalePtr scale);
 }
