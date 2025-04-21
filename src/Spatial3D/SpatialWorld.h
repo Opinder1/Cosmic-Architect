@@ -85,15 +85,6 @@ namespace voxel_game::spatial3d
 		robin_hood::unordered_set<entity::Ref> entities;
 	};
 
-	struct WorldGenerator
-	{
-		void (*create_node)(Simulation&, WorldPtr, ScalePtr, NodePtr);
-		void (*destroy_node)(Simulation&, WorldPtr, ScalePtr, NodePtr);
-
-		void (*load_node)(Simulation&, WorldPtr, ScalePtr, NodePtr);
-		void (*unload_node)(Simulation&, WorldPtr, ScalePtr, NodePtr);
-	};
-
 	using NodeMap = robin_hood::unordered_map<godot::Vector3i, NodePtr>;
 
 	// A level of detail map for a world. The world will have multiple of these
@@ -155,8 +146,6 @@ namespace voxel_game::spatial3d
 
 	// Destroy a spatial world
 	void DestroyWorld(WorldPtr world);
-
-	void WorldSetGenerator(WorldPtr world, WorldGenerator generator);
 
 	void AddLoader(WorldPtr world, entity::Ref loader);
 
