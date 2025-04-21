@@ -1,0 +1,1 @@
+scons platform=windows target=template_debug precision=double use_static_cpp=true dev_build=true debug_symbols=true profile=true

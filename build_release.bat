@@ -1,0 +1,1 @@
+scons platform=windows target=template_release precision=double use_static_cpp=true optimize=speed lto=full
