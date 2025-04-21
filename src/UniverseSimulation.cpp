@@ -100,6 +100,7 @@ namespace voxel_game
 		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
 
 		spatial3d::WorldUpdate(simulation, world);
+		loading::WorldUpdate(simulation, world);
 		universe::WorldUpdate(simulation, world);
 	}
 
@@ -108,6 +109,7 @@ namespace voxel_game
 		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
 
 		spatial3d::ScaleUpdate(simulation, scale);
+		loading::ScaleUpdate(simulation, scale);
 		universe::ScaleUpdate(simulation, scale);
 	}
 
@@ -116,6 +118,7 @@ namespace voxel_game
 		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
 
 		spatial3d::WorldUpdate(simulation, world);
+		loading::WorldUpdate(simulation, world);
 		galaxy::WorldUpdate(simulation, world);
 	}
 
@@ -124,6 +127,7 @@ namespace voxel_game
 		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
 
 		spatial3d::ScaleUpdate(simulation, scale);
+		loading::ScaleUpdate(simulation, scale);
 		galaxy::ScaleUpdate(simulation, scale);
 	}
 
@@ -132,6 +136,7 @@ namespace voxel_game
 		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
 
 		spatial3d::WorldUpdate(simulation, world);
+		loading::WorldUpdate(simulation, world);
 	}
 
 	void SimulationStarSystemScaleUpdate(Simulation& simulation, size_t index)
@@ -139,6 +144,7 @@ namespace voxel_game
 		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
 
 		spatial3d::ScaleUpdate(simulation, scale);
+		loading::ScaleUpdate(simulation, scale);
 	}
 
 	void SimulationPlanetWorldUpdate(Simulation& simulation, size_t index)
@@ -146,6 +152,7 @@ namespace voxel_game
 		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
 
 		spatial3d::WorldUpdate(simulation, world);
+		loading::WorldUpdate(simulation, world);
 	}
 
 	void SimulationPlanetScaleUpdate(Simulation& simulation, size_t index)
@@ -153,6 +160,7 @@ namespace voxel_game
 		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
 
 		spatial3d::ScaleUpdate(simulation, scale);
+		loading::ScaleUpdate(simulation, scale);
 	}
 
 	void SimulationSpaceStationWorldUpdate(Simulation& simulation, size_t index)
@@ -160,6 +168,7 @@ namespace voxel_game
 		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
 
 		spatial3d::WorldUpdate(simulation, world);
+		loading::WorldUpdate(simulation, world);
 	}
 
 	void SimulationSpaceStationScaleUpdate(Simulation& simulation, size_t index)
@@ -167,6 +176,7 @@ namespace voxel_game
 		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
 
 		spatial3d::ScaleUpdate(simulation, scale);
+		loading::ScaleUpdate(simulation, scale);
 	}
 
 	void SimulationSpaceShipWorldUpdate(Simulation& simulation, size_t index)
@@ -174,6 +184,7 @@ namespace voxel_game
 		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
 
 		spatial3d::WorldUpdate(simulation, world);
+		loading::WorldUpdate(simulation, world);
 	}
 
 	void SimulationSpaceShipScaleUpdate(Simulation& simulation, size_t index)
@@ -181,6 +192,7 @@ namespace voxel_game
 		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
 
 		spatial3d::ScaleUpdate(simulation, scale);
+		loading::ScaleUpdate(simulation, scale);
 	}
 
 	void SimulationVehicleWorldUpdate(Simulation& simulation, size_t index)
@@ -188,6 +200,7 @@ namespace voxel_game
 		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
 
 		spatial3d::WorldUpdate(simulation, world);
+		loading::WorldUpdate(simulation, world);
 	}
 
 	void SimulationVehicleScaleUpdate(Simulation& simulation, size_t index)
@@ -195,11 +208,13 @@ namespace voxel_game
 		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
 
 		spatial3d::ScaleUpdate(simulation, scale);
+		loading::ScaleUpdate(simulation, scale);
 	}
 
 	void SimulationInitialize(Simulation& simulation)
 	{
 		simulation::Initialize(simulation);
+		loading::Initialize(simulation);
 		spatial3d::Initialize(simulation);
 		universe::Initialize(simulation);
 		galaxy::Initialize(simulation);
@@ -210,12 +225,14 @@ namespace voxel_game
 		galaxy::Uninitialize(simulation);
 		universe::Uninitialize(simulation);
 		spatial3d::Uninitialize(simulation);
+		loading::Uninitialize(simulation);
 		simulation::Uninitialize(simulation);
 	}
 
 	void SimulationSingleUpdate(Simulation& simulation)
 	{
 		simulation::Update(simulation);
+		loading::Update(simulation);
 		spatial3d::Update(simulation);
 		universe::Update(simulation);
 		galaxy::Update(simulation);
@@ -224,6 +241,7 @@ namespace voxel_game
 	void SimulationWorkerUpdate(Simulation& simulation, size_t index)
 	{
 		simulation::WorkerUpdate(simulation, index);
+		loading::WorkerUpdate(simulation, index);
 		spatial3d::WorkerUpdate(simulation, index);
 		universe::WorkerUpdate(simulation, index);
 		galaxy::WorkerUpdate(simulation, index);
