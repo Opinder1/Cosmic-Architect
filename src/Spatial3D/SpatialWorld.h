@@ -173,14 +173,14 @@ namespace voxel_game::spatial3d
 	void WorldDoNodeDestroyCommands(Simulation& simulation, WorldPtr world);
 
 	// Add commands to load all nodes around loaders. Thread safe for that scale
-	void ScaleLoadNodesAroundLoaders(Simulation& simulation, WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time);
+	void ScaleLoadNodesAroundLoaders(Simulation& simulation, ScalePtr scale, Clock::time_point frame_start_time);
 
 	// Add commands to unload nodes that are not near loaders. Thread safe for that scale
-	void ScaleUnloadUnutilizedNodes(Simulation& simulation, WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time);
+	void ScaleUnloadUnutilizedNodes(Simulation& simulation, ScalePtr scale, Clock::time_point frame_start_time);
 
 	// Update the scale entities should be in based on their position. Thread safe for that world
 	void WorldUpdateEntityScales(Simulation& simulation, WorldPtr world);
 
 	// Update the node entities should be in based on their position. Thread safe for that scale
-	void ScaleUpdateEntityNodes(Simulation& simulation, WorldPtr world, ScalePtr scale);
+	void ScaleUpdateEntityNodes(Simulation& simulation, ScalePtr scale);
 }

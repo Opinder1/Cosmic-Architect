@@ -42,8 +42,10 @@ namespace voxel_game::spatial3d
 
 	void ScaleUpdate(Simulation& simulation, ScalePtr scale)
 	{
-		ScaleLoadNodesAroundLoaders(simulation, scale->*&Scale::world, scale, simulation.frame_start_time);
+		ScaleLoadNodesAroundLoaders(simulation, scale, simulation.frame_start_time);
 
-		ScaleUnloadUnutilizedNodes(simulation, scale->*&Scale::world, scale, simulation.frame_start_time);
+		ScaleUnloadUnutilizedNodes(simulation, scale, simulation.frame_start_time);
+
+		ScaleUpdateEntityNodes(simulation, scale);
 	}
 }

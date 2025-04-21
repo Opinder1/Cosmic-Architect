@@ -315,8 +315,10 @@ namespace voxel_game::spatial3d
 		});
 	}
 
-	void ScaleLoadNodesAroundLoaders(Simulation& simulation, WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time)
+	void ScaleLoadNodesAroundLoaders(Simulation& simulation, ScalePtr scale, Clock::time_point frame_start_time)
 	{
+		WorldPtr world = scale->*&Scale::world;
+
 		// Finish the previous load commands
 		for (const NodeLoadCommand& command : scale->*&PartialScale::load_commands)
 		{
@@ -361,8 +363,10 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void ScaleUnloadUnutilizedNodes(Simulation& simulation, WorldPtr world, ScalePtr scale, Clock::time_point frame_start_time)
+	void ScaleUnloadUnutilizedNodes(Simulation& simulation, ScalePtr scale, Clock::time_point frame_start_time)
 	{
+		WorldPtr world = scale->*&Scale::world;
+
 		// Finish the previous load commands
 		for (const NodeUnloadCommand& command : scale->*&PartialScale::unload_commands)
 		{
@@ -419,7 +423,7 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void ScaleUpdateEntityNodes(Simulation& simulation, WorldPtr world, ScalePtr scale)
+	void ScaleUpdateEntityNodes(Simulation& simulation, ScalePtr scale)
 	{
 		for (entity::WRef entity : scale->*&Scale::entities)
 		{
