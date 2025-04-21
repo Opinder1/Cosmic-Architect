@@ -202,6 +202,8 @@ namespace voxel_game::universe
 		universe_entity->*&spatial3d::CWorld::world->*&spatial3d::World::node_size = 16;
 		universe_entity->*&spatial3d::CWorld::world->*&spatial3d::PartialWorld::node_keepalive = 1s;
 
+		loading::WorldOpenDatabase(simulation, universe_entity->*&spatial3d::CWorld::world, path.path_join("galaxies.db"));
+
 		return universe_entity;
 	}
 

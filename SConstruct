@@ -41,6 +41,9 @@ sources = SourcesRecursive(["src", "lib"])
 env.Append(CPPPATH=["src", "lib"])
 env.Append(CPPDEFINES=["FLECS_CPP_NO_AUTO_REGISTRATION", "ecs_ftime_t=double"])
 
+# Problem with link errors?
+# env.Append(LINKFLAGS=["/verbose"])
+
 # Optional profiler (windows x64 only)
 if ARGUMENTS.get("profile"):
     env.Append(CPPDEFINES=["USING_EASY_PROFILER", "FLECS_PERF_TRACE"])
