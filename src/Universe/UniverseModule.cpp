@@ -199,8 +199,8 @@ namespace voxel_game::universe
 			simulation.universe_type.node_type,
 			simulation.universe_type.max_world_scale);
 
-		(universe_entity->*&spatial3d::CWorld::world)->*&spatial3d::World::node_size = 16;
-		(universe_entity->*&spatial3d::CWorld::world)->*&spatial3d::World::node_keepalive = 1s;
+		universe_entity->*&spatial3d::CWorld::world->*&spatial3d::World::node_size = 16;
+		universe_entity->*&spatial3d::CWorld::world->*&spatial3d::PartialWorld::node_keepalive = 1s;
 
 		return universe_entity;
 	}
@@ -257,16 +257,16 @@ namespace voxel_game::universe
 
 	void ScaleUpdate(Simulation& simulation, spatial3d::ScalePtr scale)
 	{
-		UniverseNodeLoaderTest loader{ simulation, scale->* & spatial3d::Scale::world };
+		UniverseNodeLoaderTest loader{ simulation, scale->*&spatial3d::Scale::world };
 
-		for (spatial3d::NodePtr node : scale->*& spatial3d::Scale::load_commands)
+		for (const spatial3d::NodeLoadCommand& command : scale->*&spatial3d::PartialScale::load_commands)
 		{
-			loader.LoadNodePlane(node);
+			loader.LoadNodePlane(command.node);
 		}
 
-		for (spatial3d::NodePtr node : scale->*& spatial3d::Scale::unload_commands)
+		for (const spatial3d::NodeUnloadCommand& command : scale->*&spatial3d::PartialScale::unload_commands)
 		{
-			loader.UnloadNode(node);
+			loader.UnloadNode(command.node);
 		}
 	}
 }
