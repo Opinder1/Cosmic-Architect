@@ -11,12 +11,12 @@ namespace voxel_game::spatial3d
 		using PolyType::PolyType;
 	};
 
-	struct ScaleType : PolyType<ScaleType, 7>
+	struct ScaleType : PolyType<ScaleType, 8>
 	{
 		using PolyType::PolyType;
 	};
 
-	struct WorldType : PolyType<WorldType, 8>
+	struct WorldType : PolyType<WorldType, 9>
 	{
 		using PolyType::PolyType;
 	};

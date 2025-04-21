@@ -1,18 +1,18 @@
 #include "UniverseModule.h"
-#include "UniverseComponents.h"
 #include "UniverseSimulation.h"
 
-#include "Spatial3D/SpatialModule.h"
-#include "Simulation/SimulationModule.h"
 #include "Render/RenderModule.h"
 #include "Galaxy/GalaxyModule.h"
 
+#include "UniverseComponents.h"
 #include "Galaxy/GalaxyComponents.h"
 #include "Spatial3D/SpatialComponents.h"
 #include "Physics3D/PhysicsComponents.h"
 #include "Loading/LoadingComponents.h"
 #include "Render/RenderComponents.h"
 
+#include "UniverseWorld.h"
+#include "Loading/LoadingWorld.h"
 
 #include "Util/Debug.h"
 
@@ -220,9 +220,13 @@ namespace voxel_game::universe
 		simulation.universe_type.node_type.AddType<Node>();
 
 		simulation.universe_type.scale_type.AddType<spatial3d::Scale>();
+		simulation.universe_type.scale_type.AddType<spatial3d::PartialScale>();
+		simulation.universe_type.scale_type.AddType<loading::Scale>();
 		simulation.universe_type.scale_type.AddType<Scale>();
 
 		simulation.universe_type.world_type.AddType<spatial3d::World>();
+		simulation.universe_type.world_type.AddType<spatial3d::PartialWorld>();
+		simulation.universe_type.world_type.AddType<loading::World>();
 		simulation.universe_type.world_type.AddType<World>();
 
 		simulation.entity_factory.AddCallback(entity::Type::CreateTypeID<CUniverse, loading::CStreamable>(), entity::Event::Update, cb::Bind<&UpdateUniverseEntity>());
