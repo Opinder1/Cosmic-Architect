@@ -11,12 +11,10 @@ namespace voxel_game
 
 namespace voxel_game::player
 {
+	// Module functions
 	void Initialize(Simulation& simulation);
-
 	void Uninitialize(Simulation& simulation);
-
 	void Update(Simulation& simulation);
-
 	void WorkerUpdate(Simulation& simulation, size_t index);
 
 	entity::Ref CreateLocalPlayer(Simulation& simulation, entity::WRef server, const godot::String& name);

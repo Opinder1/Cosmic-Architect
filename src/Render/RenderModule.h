@@ -9,12 +9,10 @@ namespace voxel_game
 
 namespace voxel_game::rendering
 {
+	// Module functions
 	void Initialize(Simulation& simulation);
-
 	void Uninitialize(Simulation& simulation);
-
 	void Update(Simulation& simulation);
-
 	void WorkerUpdate(Simulation& simulation, size_t index);
 
 	bool IsEnabled();

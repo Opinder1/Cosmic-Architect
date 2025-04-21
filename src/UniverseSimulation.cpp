@@ -18,6 +18,7 @@
 
 namespace voxel_game
 {
+	// The simulation task callback executor
 	void TaskCallback(void* userdata, uint32_t element)
 	{
 		TaskData* taskdata = reinterpret_cast<TaskData*>(userdata);
@@ -25,6 +26,7 @@ namespace voxel_game
 		taskdata->callback(taskdata->simulation, element);
 	}
 
+	// Run a single task group and wait for it after
 	void SimulationDoTasks(Simulation& simulation, TaskData& task_data)
 	{
 		if (simulation.processor_count == 0)
@@ -53,6 +55,7 @@ namespace voxel_game
 		}
 	}
 
+	// Run multiple task groups at the same time and wait for them all after all have been started
 	void SimulationDoMultitasks(Simulation& simulation, TaskData* data, size_t count)
 	{
 		if (count == 1)
@@ -282,12 +285,12 @@ namespace voxel_game
 
 		SimulationDoMultitasks(simulation, scale_tasks, 7);
 
-		// Do parallel entity tasks
+		// Run all entities in parallel doing entity specific code
 		TaskData entity_task{ simulation, &SimulationEntityUpdate, simulation.entities.size() };
 
 		SimulationDoTasks(simulation, entity_task);
 
-		// Do generic parallel worker tasks
+		// Run worker tasks in parallel for systems that need them. There is usually one per CPU core
 		TaskData worker_task{ simulation, &SimulationWorkerUpdate, simulation.worker_count };
 
 		SimulationDoTasks(simulation, worker_task);

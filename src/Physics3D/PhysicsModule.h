@@ -7,11 +7,9 @@ namespace voxel_game
 
 namespace voxel_game::physics3d
 {
+	// Module functions
 	void Initialize(Simulation& simulation);
-
 	void Uninitialize(Simulation& simulation);
-
 	void Update(Simulation& simulation);
-
 	void WorkerUpdate(Simulation& simulation, size_t index);
 }

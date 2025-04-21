@@ -16,16 +16,12 @@ namespace voxel_game
 
 namespace voxel_game::galaxy
 {
+	// Module functions
 	void Initialize(Simulation& simulation);
-
 	void Uninitialize(Simulation& simulation);
-
 	void Update(Simulation& simulation);
-
 	void WorkerUpdate(Simulation& simulation, size_t index);
-
 	void WorldUpdate(Simulation& simulation, spatial3d::WorldPtr world);
-
 	void ScaleUpdate(Simulation& simulation, spatial3d::ScalePtr scale);
 
 	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale);
