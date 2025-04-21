@@ -1,7 +1,5 @@
 #pragma once
 
-#include "GalaxyWorld.h"
-
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/color.hpp>
 

@@ -13,6 +13,9 @@
 #include "Render/RenderComponents.h"
 #include "Entity/EntityComponents.h"
 
+#include "GalaxyWorld.h"
+#include "Universe/UniverseWorld.h"
+
 #include "Util/Debug.h"
 
 namespace voxel_game::galaxy
