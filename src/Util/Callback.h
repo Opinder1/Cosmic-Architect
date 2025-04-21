@@ -11,24 +11,6 @@ namespace cb
 		return Func(std::forward<Args>(args)...);
 	}
 
-	// A callback to a function pointer
-	template<auto Func, class Param, class Ret, class... Args>
-	Ret FuncPtrParamCallback(void* data, Args... args)
-	{
-		Param* param = reinterpret_cast<Param*>(data);
-
-		return Func(param, std::forward<Args>(args)...);
-	}
-
-	// A callback to a function pointer
-	template<auto Func, class Param, class Ret, class... Args>
-	Ret FuncRefParamCallback(void* data, Args... args)
-	{
-		Param& param = *reinterpret_cast<Param*>(data);
-
-		return Func(param, std::forward<Args>(args)...);
-	}
-
 	// A callback to a method of a class
 	template<auto Method, class Class, class Ret, class... Args>
 	Ret MethodCallback(void* data, Args... args)
@@ -36,6 +18,15 @@ namespace cb
 		Class* instance = reinterpret_cast<Class*>(data);
 
 		return (instance->*Method)(std::forward<Args>(args)...);
+	}
+
+	// A callback to a method of a class
+	template<class Class, class Ret, class... Args>
+	Ret TypeCallback(void* data, Args... args)
+	{
+		Class* instance = reinterpret_cast<Class*>(data);
+
+		return (*instance)(std::forward<Args>(args)...);
 	}
 
 	// Forward definition required
@@ -58,21 +49,28 @@ namespace cb
 			m_data(nullptr)
 		{}
 
+		// Bind a function pointer that takes data
+		explicit Callback(CallbackType callback, void* data) :
+			m_callback(callback),
+			m_data(data)
+		{}
+
+		template<class Type, std::enable_if_t<!std::is_same_v<Type, Callback>> = 0>
+		Callback(Type&& type) :
+			m_callback(TypeCallback<Type, Ret, Args...>),
+			m_data(&type)
+		{}
+
 		Callback(std::nullptr_t) :
 			m_callback(nullptr),
 			m_data(nullptr)
-		{}
+		{
+		}
 
 		// Bind a function pointer that doesn't take data
 		Callback(PtrType callback) :
 			m_callback(PtrCallback),
 			m_data(callback)
-		{}
-
-		// Bind a function pointer that takes data
-		explicit Callback(CallbackType callback, void* data) :
-			m_callback(callback),
-			m_data(data)
 		{}
 
 		bool operator==(const Callback& other) const
@@ -109,18 +107,6 @@ namespace cb
 		return Callback<Ret(Args...)>(FuncCallback<Func, Ret, Args...>, nullptr);
 	}
 
-	template<auto Func, class Param, class Ret, class... Args>
-	auto BindHelperParam(Ret(*)(Param&, Args...), Param& param)
-	{
-		return Callback<Ret(Args...)>(FuncRefParamCallback<Func, Param, Ret, Args...>, reinterpret_cast<void*>(&param));
-	}
-
-	template<auto Func, class Param, class Ret, class... Args>
-	auto BindHelperParam(Ret(*)(Param*, Args...), Param* param)
-	{
-		return Callback<Ret(Args...)>(FuncPtrParamCallback<Func, Param, Ret, Args...>, reinterpret_cast<void*>(param));
-	}
-
 	template<auto Method, class Class, class Ret, class... Args>
 	auto BindHelper(Ret(Class::*)(Args...), Class* instance)
 	{
@@ -147,26 +133,5 @@ namespace cb
 	auto Bind(Class& instance)
 	{
 		return BindHelper<Method, std::remove_cv_t<Class>>(Method, const_cast<std::remove_cv_t<Class>*>(&instance));
-	}
-
-	// Bind the method of a class
-	template<auto Method, class Class>
-	auto Bind(Class* instance)
-	{
-		return BindHelper<Method, std::remove_cv_t<Class>>(Method, const_cast<std::remove_cv_t<Class>*>(instance));
-	}
-
-	// Bind a function with a parameter
-	template<auto Func, class Param>
-	auto BindParam(Param* param)
-	{
-		return BindHelperParam<Func, Param>(Func, param);
-	}
-
-	// Bind a function with a parameter
-	template<auto Func, class Param>
-	auto BindParam(Param& param)
-	{
-		return BindHelperParam<Func, Param>(Func, param);
 	}
 }
