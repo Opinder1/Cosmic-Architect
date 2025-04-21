@@ -256,6 +256,7 @@ namespace voxel_game
 
 	void SimulationUpdate(Simulation& simulation)
 	{
+		// Do parallel spatial world updates
 		TaskData world_tasks[7] = {
 			{ simulation, &SimulationUniverseWorldUpdate, simulation.universe_type.worlds.size() },
 			{ simulation, &SimulationGalaxyWorldUpdate, simulation.galaxy_type.worlds.size() },
@@ -267,7 +268,8 @@ namespace voxel_game
 		};
 
 		SimulationDoMultitasks(simulation, world_tasks, 7);
-
+		
+		// Do parallel spatial scale updates
 		TaskData scale_tasks[7] = {
 			{ simulation, &SimulationUniverseScaleUpdate, simulation.universe_type.scales.size() },
 			{ simulation, &SimulationGalaxyScaleUpdate, simulation.galaxy_type.scales.size() },
@@ -280,14 +282,17 @@ namespace voxel_game
 
 		SimulationDoMultitasks(simulation, scale_tasks, 7);
 
+		// Do parallel entity tasks
 		TaskData entity_task{ simulation, &SimulationEntityUpdate, simulation.entities.size() };
 
 		SimulationDoTasks(simulation, entity_task);
 
+		// Do generic parallel worker tasks
 		TaskData worker_task{ simulation, &SimulationWorkerUpdate, simulation.worker_count };
 
 		SimulationDoTasks(simulation, worker_task);
 
+		// Do singlethreaded update
 		SimulationSingleUpdate(simulation);
 	}
 }
