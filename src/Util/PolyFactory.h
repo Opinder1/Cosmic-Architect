@@ -216,10 +216,11 @@ public:
 			return Ptr{ GetHeader() };
 		}
 
-		template<class T>
+		template<class... Types>
 		bool Has() const
 		{
-			return GetTypeID().test(ArchetypeT::k_type_index<T>);
+			TypeID partial_id = ArchetypeT::CreateTypeID<Types...>();
+			return (GetTypeID() & partial_id) == partial_id;
 		}
 
 		template<class T>

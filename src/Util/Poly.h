@@ -107,10 +107,10 @@ public:
 		Ptr() : m_poly(nullptr) {}
 		Ptr(Header* poly) : m_poly(poly) {}
 
-		template<class T>
+		template<class... Types>
 		bool Has() const
 		{
-			return m_poly->archetype->Has<T>();
+			return m_poly->archetype->Has<Types...>();
 		}
 
 		template<class T>
@@ -201,11 +201,11 @@ public:
 		return m_id;
 	}
 
-	template<class T>
+	template<class... Types>
 	bool Has() const
 	{
-		DEBUG_ASSERT(k_type_index<T> < k_num_types, "This types index is too large");
-		return m_id.test(k_type_index<T>);
+		ID partial_id = CreateTypeID<Types...>();
+		return (m_id & partial_id) == partial_id;
 	}
 
 	template<class T>
