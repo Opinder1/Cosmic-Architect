@@ -2,7 +2,7 @@
 
 #include "Debug.h"
 #include "Nocopy.h"
-#include "Util/Util.h"
+#include "Util.h"
 
 #include <robin_hood/robin_hood.h>
 
@@ -140,6 +140,18 @@ public:
 			return Get<T>().*Member;
 		}
 
+		template<class T>
+		size_t OffsetOf() const
+		{
+			return m_poly->archetype->OffsetOf<T>();
+		}
+
+		template<class T, class Class>
+		size_t OffsetOf(T Class::* member) const
+		{
+			return m_poly->archetype->OffsetOf<T, Class>(member);
+		}
+
 		void Destroy()
 		{
 			m_poly->archetype->DestroyPoly(m_poly);
@@ -211,7 +223,6 @@ public:
 	template<class T>
 	T* Get(Header* poly) const
 	{
-		DEBUG_ASSERT(k_type_index<T> < k_num_types, "This types index is too large");
 		DEBUG_ASSERT(m_type_offsets[k_type_index<T>] != 0, "Either T == HeaderT or this poly doesn't have this type");
 
 #if defined(POLY_DEBUG)
@@ -221,6 +232,18 @@ public:
 		std::byte* ptr = reinterpret_cast<std::byte*>(poly);
 
 		return reinterpret_cast<T*>(ptr + m_type_offsets[k_type_index<T>]);
+	}
+
+	template<class T>
+	size_t OffsetOf() const
+	{
+		return m_type_offsets[k_type_index<T>];
+	}
+
+	template<class T, class Class>
+	size_t OffsetOf(T Class::*member) const
+	{
+		return OffsetOf<Class>() + offsetof_member(member);
 	}
 
 	Header* AllocatePoly()

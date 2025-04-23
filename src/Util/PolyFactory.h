@@ -250,6 +250,18 @@ public:
 			return Get<T>().*Member;
 		}
 
+		template<class T>
+		size_t OffsetOf() const
+		{
+			return GetType()->OffsetOf<T>();
+		}
+
+		template<class T, class Class>
+		size_t OffsetOf(T Class::* member) const
+		{
+			return GetType()->OffsetOf<T, Class>(member);
+		}
+
 		operator bool() const
 		{
 			return m_entry != nullptr;
