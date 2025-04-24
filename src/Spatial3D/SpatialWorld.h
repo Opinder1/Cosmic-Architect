@@ -16,15 +16,11 @@
 #include <array>
 #include <vector>
 
-namespace voxel_game
-{
-	struct Simulation;
-}
-
 namespace voxel_game::spatial3d
 {
 	// The max scale that a world can have
 	constexpr const uint8_t k_max_world_scale = 16;
+	constexpr const size_t k_max_frame_create_commands = 4;
 	constexpr const size_t k_max_frame_load_commands = 4;
 	constexpr const size_t k_max_frame_unload_commands = 4;
 	constexpr const size_t k_max_frame_destroy_commands = 4;
@@ -32,30 +28,17 @@ namespace voxel_game::spatial3d
 
 	enum class NodeState : uint8_t
 	{
-		Unloaded, // Created but not loaded
-		Loaded, // Fully loaded
-
+		Invalid,
+		Creating, // Has a create command
 		Loading, // Has a load command
+		Loaded, // Fully loaded
 		Unloading, // Has a unload command
 		Deleting, // Has a delete command
 	};
 
-	struct NodeCreateCommand
-	{
-		godot::Vector3i pos;
-	};
+	using NodeCallback = cb::Callback<void(ScalePtr, NodePtr)>;
 
-	struct NodeLoadCommand
-	{
-		NodePtr node;
-	};
-
-	struct NodeUnloadCommand
-	{
-		NodePtr node;
-	};
-
-	struct NodeDestroyCommand
+	struct NodeCommand
 	{
 		NodePtr node;
 	};
@@ -66,7 +49,7 @@ namespace voxel_game::spatial3d
 		godot::Vector3i position;
 		uint8_t scale_index = 0;
 
-		NodeState state = NodeState::Unloaded;
+		NodeState state = NodeState::Invalid;
 
 		uint8_t parent_index = k_node_no_parent; // The index we are in our parent
 		uint8_t children_mask = 0; // Each bit determines a child [0-7]
@@ -101,11 +84,11 @@ namespace voxel_game::spatial3d
 
 	struct PartialScale : Nocopy, Nomove
 	{
-		// Commands
-		std::vector<NodeCreateCommand> create_commands;
-		std::vector<NodeLoadCommand> load_commands;
-		std::vector<NodeUnloadCommand> unload_commands;
-		std::vector<NodeDestroyCommand> destroy_commands;
+		// Command lists. We use these to limit operations currently in progress
+		std::vector<NodeCommand> create_commands;
+		std::vector<NodeCommand> load_commands;
+		std::vector<NodeCommand> unload_commands;
+		std::vector<NodeCommand> destroy_commands;
 	};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
@@ -135,6 +118,8 @@ namespace voxel_game::spatial3d
 		robin_hood::unordered_set<entity::Ref> loaders;
 	};
 
+	WorldPtr GetWorld(ScalePtr scale);
+
 	// Get a scale in a world given a position
 	ScalePtr GetScale(WorldPtr spatial_world, uint8_t scale_index);
 
@@ -155,21 +140,23 @@ namespace voxel_game::spatial3d
 
 	void RemoveEntity(WorldPtr world, entity::Ref entity);
 
+	void WorldDoNodeCreateCommands(spatial3d::WorldPtr world, NodeCallback callback);
+
 	// Execute all node create commands a world has. Thread safe for that world
-	void WorldDoNodeCreateCommands(Simulation& simulation, WorldPtr world, Clock::time_point frame_start_time);
+	void WorldDoNodeCreateCommands(WorldPtr world, Clock::time_point frame_start_time);
 
 	// Execute all node destroy commands a world has. Thread safe for that world
-	void WorldDoNodeDestroyCommands(Simulation& simulation, WorldPtr world);
+	void WorldDoNodeDestroyCommands(WorldPtr world);
 
 	// Add commands to load all nodes around loaders. Thread safe for that scale
-	void ScaleLoadNodesAroundLoaders(Simulation& simulation, ScalePtr scale, Clock::time_point frame_start_time);
+	void ScaleLoadNodesAroundLoaders(ScalePtr scale, Clock::time_point frame_start_time);
 
 	// Add commands to unload nodes that are not near loaders. Thread safe for that scale
-	void ScaleUnloadUnutilizedNodes(Simulation& simulation, ScalePtr scale, Clock::time_point frame_start_time);
+	void ScaleUnloadUnutilizedNodes(ScalePtr scale, Clock::time_point frame_start_time);
 
 	// Update the scale entities should be in based on their position. Thread safe for that world
-	void WorldUpdateEntityScales(Simulation& simulation, WorldPtr world);
+	void WorldUpdateEntityScales(WorldPtr world);
 
 	// Update the node entities should be in based on their position. Thread safe for that scale
-	void ScaleUpdateEntityNodes(Simulation& simulation, ScalePtr scale);
+	void ScaleUpdateEntityNodes(ScalePtr scale);
 }
