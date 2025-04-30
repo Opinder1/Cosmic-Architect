@@ -31,6 +31,21 @@ struct get_member_type<Type Class::*>
 	using type = Type;
 };
 
+template<class Type>
+struct get_method_decl;
+
+template<class Class, class Ret, class... Args>
+struct get_method_decl<Ret(Class::*)(Args...)>
+{
+	using type = Ret(Args...);
+};
+
+template<class Class, class Ret, class... Args>
+struct get_method_decl<Ret(Class::*)(Args...) const>
+{
+	using type = Ret(Args...);
+};
+
 // Use this clock for timings that should not be effected if the user changes their system time
 using Clock = std::chrono::steady_clock;
 

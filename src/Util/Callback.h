@@ -49,23 +49,36 @@ namespace cb
 			m_data(nullptr)
 		{}
 
+		Callback(std::nullptr_t) :
+			m_callback(nullptr),
+			m_data(nullptr)
+		{}
+
+		Callback(const Callback& other) :
+			m_callback(other.m_callback),
+			m_data(other.m_data)
+		{}
+
+		template<class Type>
+		Callback(Type&& type)
+		{
+			if constexpr (!std::is_same_v<std::remove_reference_t<std::remove_cv_t<Type>>, Callback>)
+			{
+				m_callback = TypeCallback<Type, Ret, Args...>;
+				m_data = &type;
+			}
+			else
+			{
+				m_callback = type.m_callback;
+				m_data = type.m_data;
+			}
+		}
+
 		// Bind a function pointer that takes data
 		explicit Callback(CallbackType callback, void* data) :
 			m_callback(callback),
 			m_data(data)
 		{}
-
-		template<class Type, std::enable_if_t<!std::is_same_v<Type, Callback>> = 0>
-		Callback(Type&& type) :
-			m_callback(TypeCallback<Type, Ret, Args...>),
-			m_data(&type)
-		{}
-
-		Callback(std::nullptr_t) :
-			m_callback(nullptr),
-			m_data(nullptr)
-		{
-		}
 
 		// Bind a function pointer that doesn't take data
 		Callback(PtrType callback) :
@@ -98,6 +111,9 @@ namespace cb
 		CallbackType m_callback;
 		void* m_data;
 	};
+
+	template<class T>
+	Callback(T) -> Callback<typename get_method_decl<decltype(&T::operator())>::type>;
 
 	/* Helpers for the actual functions. These can't be used by themselves */
 
