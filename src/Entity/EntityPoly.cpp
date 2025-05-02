@@ -121,7 +121,7 @@ namespace voxel_game::entity
 		{
 			if ((type_id & types) == types)
 			{
-				for (Factory::CallbackEntry& entry : entries)
+				for (const Factory::CallbackEntry& entry : entries)
 				{
 					AddCallback(entry.event, entry.callback);
 				}
