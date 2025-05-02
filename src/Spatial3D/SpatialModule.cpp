@@ -35,9 +35,9 @@ namespace voxel_game::spatial3d
 
 	void WorldUpdate(Simulation& simulation, WorldPtr world)
 	{
-		WorldDoNodeCreateCommands(world, simulation.frame_start_time);
+		WorldDoNodeLoadCommands(world, simulation.frame_start_time);
 
-		WorldDoNodeDestroyCommands(world);
+		WorldDoNodeUnloadCommands(world);
 	}
 
 	void ScaleUpdate(Simulation& simulation, ScalePtr scale)

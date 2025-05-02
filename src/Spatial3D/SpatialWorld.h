@@ -20,27 +20,22 @@ namespace voxel_game::spatial3d
 {
 	// The max scale that a world can have
 	constexpr const uint8_t k_max_world_scale = 16;
-	constexpr const size_t k_max_frame_create_commands = 4;
-	constexpr const size_t k_max_frame_load_commands = 4;
-	constexpr const size_t k_max_frame_unload_commands = 4;
-	constexpr const size_t k_max_frame_destroy_commands = 4;
 	constexpr const uint8_t k_node_no_parent = UINT8_MAX;
 
 	enum class NodeState : uint8_t
 	{
 		Invalid,
-		Creating, // Has a create command
 		Loading, // Has a load command
+		Merging, // Has a merge command
 		Loaded, // Fully loaded
+		Unmerging, // Has a unmerge command
 		Unloading, // Has a unload command
-		Deleting, // Has a delete command
 	};
-
-	using NodeCallback = cb::Callback<void(ScalePtr, NodePtr)>;
 
 	struct NodeCommand
 	{
 		NodePtr node;
+		uint16_t task_count = 0;
 	};
 
 	// A single node in a spatial world. This is meant to be inherited from for custom data
@@ -85,10 +80,10 @@ namespace voxel_game::spatial3d
 	struct PartialScale : Nocopy, Nomove
 	{
 		// Command lists. We use these to limit operations currently in progress
-		std::vector<NodeCommand> create_commands;
 		std::vector<NodeCommand> load_commands;
+		std::vector<NodeCommand> merge_commands;
+		std::vector<NodeCommand> unmerge_commands;
 		std::vector<NodeCommand> unload_commands;
-		std::vector<NodeCommand> destroy_commands;
 	};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
@@ -118,6 +113,9 @@ namespace voxel_game::spatial3d
 		robin_hood::unordered_set<entity::Ref> loaders;
 	};
 
+	using ScaleCB = cb::Callback<void(ScalePtr)>;
+	using NodeCommandCB = cb::Callback<void(NodePtr, uint16_t&)>;
+
 	WorldPtr GetWorld(ScalePtr scale);
 
 	// Get a scale in a world given a position
@@ -140,13 +138,15 @@ namespace voxel_game::spatial3d
 
 	void RemoveEntity(WorldPtr world, entity::Ref entity);
 
-	void WorldDoNodeCreateCommands(spatial3d::WorldPtr world, NodeCallback callback);
+	void WorldForEachScale(WorldPtr world, ScaleCB callback);
+
+	void ScaleDoNodeCommands(ScalePtr scale, NodeState state, NodeCommandCB callback);
 
 	// Execute all node create commands a world has. Thread safe for that world
-	void WorldDoNodeCreateCommands(WorldPtr world, Clock::time_point frame_start_time);
+	void WorldDoNodeLoadCommands(WorldPtr world, Clock::time_point frame_start_time);
 
 	// Execute all node destroy commands a world has. Thread safe for that world
-	void WorldDoNodeDestroyCommands(WorldPtr world);
+	void WorldDoNodeUnloadCommands(WorldPtr world);
 
 	// Add commands to load all nodes around loaders. Thread safe for that scale
 	void ScaleLoadNodesAroundLoaders(ScalePtr scale, Clock::time_point frame_start_time);
