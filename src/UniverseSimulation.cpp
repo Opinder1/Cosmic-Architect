@@ -233,7 +233,18 @@ namespace voxel_game
 
 		simulation.entities.clear();
 
-		simulation.entity_factory.Cleanup();
+		// Call Cleanup() multiple times to unwind dependency chains
+		size_t entity_count = SIZE_MAX;
+		while (entity_count > 0)
+		{
+			simulation.entity_factory.Cleanup();
+
+			size_t new_entity_count = simulation.entity_factory.GetCount();
+
+			DEBUG_ASSERT(new_entity_count != entity_count, "We should have removed entities. Cyclic references?");
+
+			entity_count = new_entity_count;
+		}
 	}
 
 	void SimulationSingleUpdate(Simulation& simulation)
