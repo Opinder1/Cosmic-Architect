@@ -115,8 +115,7 @@ public:
 		return new_poly;
 	}
 
-	template<class CallbackT>
-	void TypeIterate(TypeID types, CallbackT callback)
+	void TypeIterate(TypeID types, cb::Callback<void(ArchetypeT&)> callback)
 	{
 		for (auto&& [type_id, entry] : m_archetypes)
 		{
@@ -128,14 +127,13 @@ public:
 	}
 
 	// Iterate over all polys that have the given components
-	template<class CallbackT>
-	void Iterate(TypeID types, CallbackT callback)
+	void Iterate(TypeID types, cb::Callback<void(Ptr)> callback) const
 	{
 		for (auto&& [type_id, entry] : m_archetypes)
 		{
 			if ((type_id & types) == types)
 			{
-				for (Header* poly : entry.polys)
+				for (Ptr poly : entry.polys)
 				{
 					callback(poly);
 				}
@@ -145,8 +143,7 @@ public:
 
 	// Iterate over all polys that have the given components. Do only part
 	// of the work for the current worker.
-	template<class CallbackT>
-	void WorkerIterate(TypeID types, size_t worker_count, size_t worker_index, CallbackT callback)
+	void WorkerIterate(TypeID types, size_t worker_count, size_t worker_index, cb::Callback<void(Ptr)> callback) const
 	{
 		for (auto&& [type_id, entry] : m_archetypes)
 		{
@@ -405,17 +402,22 @@ public:
 
 	// Iterate over all polys that have the given components
 	template<class... Types>
-	void Iterate(cb::Callback<void(Header*)> callback)
+	void Iterate(cb::Callback<void(Ptr)> callback) const
 	{
-		Iterate(ArchetypeT::CreateTypeID<Types...>(), callback);
+		PolyArchetypeRegistry::Iterate(ArchetypeT::CreateTypeID<Types...>(), callback);
 	}
 
 	// Iterate over all polys that have the given components. Do only part
 	// of the work for the current worker.
 	template<class... Types>
-	void WorkerIterate(cb::Callback<void(Header*)> callback, size_t worker_index)
+	void WorkerIterate(size_t worker_count, size_t worker_index, cb::Callback<void(Ptr)> callback) const
 	{
-		WorkerIterate(ArchetypeT::CreateTypeID<Types...>(), callback, worker_index);
+		PolyArchetypeRegistry::WorkerIterate(ArchetypeT::CreateTypeID<Types...>(), worker_count, worker_index, callback);
+	}
+
+	size_t GetCount() const
+	{
+		return m_entries.size();
 	}
 
 	// Cleanup any polys that no longer have any references
