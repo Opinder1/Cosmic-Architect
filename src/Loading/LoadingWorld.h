@@ -16,16 +16,50 @@ namespace voxel_game::loading
 {
 	using LoadFunc = void(*)(Simulation& simulation, spatial3d::WorldPtr world, spatial3d::NodePtr node);
 
-	struct LoadTask : tkrzw::DBM::RecordProcessor
+	struct Task : tkrzw::DBM::RecordProcessor
+	{
+		bool finished = false;
+	};
+
+	struct LoadTask : Task
 	{
 		std::string_view ProcessFull(std::string_view key, std::string_view value) override;
 
 		std::string_view ProcessEmpty(std::string_view key) override;
 	};
 
+	struct SaveTask : Task
+	{
+		std::string_view ProcessFull(std::string_view key, std::string_view value) override;
+
+		std::string_view ProcessEmpty(std::string_view key) override;
+	};
+
+	struct UnloadTask : Task
+	{
+		std::string_view ProcessFull(std::string_view key, std::string_view value) override;
+
+		std::string_view ProcessEmpty(std::string_view key) override;
+	};
+
+	enum class NodeState
+	{
+		Unloaded,
+		Loaded,
+		Loading,
+		Saving,
+		Unloading
+	};
+
+	struct Node
+	{
+		NodeState state = NodeState::Unloaded;
+		std::unique_ptr<Task> task;
+	};
+
 	struct Scale
 	{
-		std::deque<LoadTask> node_load_tasks;
+
 	};
 
 	// This is a specialised world that loads nodes from a database
@@ -36,9 +70,7 @@ namespace voxel_game::loading
 		std::vector<LoadFunc> node_post_read_func; // Functions to intepret node data by each node component
 	};
 
-	void WorldOpenDatabase(Simulation& simulation, spatial3d::WorldPtr world, const godot::String path);
+	void WorldOpenDatabase(Simulation& simulation, spatial3d::WorldPtr world, const godot::String& path);
 
-	void WorldDoCreateCommands(Simulation& simulation, spatial3d::WorldPtr world);
-
-	void WorldDoLoadCommands(Simulation& simulation, spatial3d::ScalePtr scale);
+	void ScaleDoLoadCommands(Simulation& simulation, spatial3d::ScalePtr scale);
 }

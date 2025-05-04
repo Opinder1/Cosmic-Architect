@@ -27,11 +27,11 @@ namespace voxel_game::loading
 
 	void WorldUpdate(Simulation& simulation, spatial3d::WorldPtr world)
 	{
-		WorldDoCreateCommands(simulation, world);
+
 	}
 
 	void ScaleUpdate(Simulation& simulation, spatial3d::ScalePtr scale)
 	{
-		WorldDoLoadCommands(simulation, scale);
+		ScaleDoLoadCommands(simulation, scale);
 	}
 }

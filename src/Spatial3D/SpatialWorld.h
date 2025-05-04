@@ -7,6 +7,7 @@
 #include "Util/Nocopy.h"
 #include "Util/Util.h"
 #include "Util/GodotHash.h"
+#include "Util/Callback.h"
 
 #include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/variant/vector3i.hpp>
