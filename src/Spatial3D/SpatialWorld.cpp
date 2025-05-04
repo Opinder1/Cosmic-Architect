@@ -59,6 +59,48 @@ namespace voxel_game::spatial3d
 		return it->second;
 	}
 
+	std::vector<NodeCommand> spatial3d::PartialScale::* GetStateCommands(NodeState state)
+	{
+		switch (state)
+		{
+		case NodeState::Loading:
+			return &spatial3d::PartialScale::load_commands;
+
+		case NodeState::Merging:
+			return &spatial3d::PartialScale::merge_commands;
+
+		case NodeState::Unmerging:
+			return &spatial3d::PartialScale::unmerge_commands;
+
+		case NodeState::Unloading:
+			return &spatial3d::PartialScale::unload_commands;
+
+		default:
+			return nullptr;
+		}
+	}
+
+	void WorldForEachScale(WorldPtr world, ScaleCB callback)
+	{
+		DEBUG_ASSERT(world->*&spatial3d::World::max_scale > 0, "The spatial world should have at least one scale");
+
+		for (size_t scale_index = 0; scale_index < world->*&spatial3d::World::max_scale; scale_index++)
+		{
+			spatial3d::ScalePtr scale = spatial3d::GetScale(world, scale_index);
+
+			callback(scale);
+		}
+	}
+
+	void ScaleDoNodeCommands(ScalePtr scale, NodeState state, NodeCommandCB callback)
+	{
+		// For each create command
+		for (spatial3d::NodeCommand& command : scale->*GetStateCommands(state))
+		{
+			callback(command.node, command.task_count);
+		}
+	}
+
 	void LinkNode(WorldPtr world, NodePtr node, uint8_t scale_index)
 	{
 		ScalePtr scale = GetScale(world, scale_index);
@@ -184,13 +226,14 @@ namespace voxel_game::spatial3d
 
 	void DestroyWorld(WorldPtr world)
 	{
-		for (size_t scale_index = 0; scale_index < world->*&World::max_scale; scale_index++)
+		WorldForEachScale(world, [](ScalePtr scale)
 		{
-			ScalePtr scale = GetScale(world, scale_index);
-
-			DEBUG_ASSERT((scale->*&PartialScale::load_commands).empty(), "All commands should have been destroyed before destroying the world");
-			DEBUG_ASSERT((scale->*&PartialScale::unload_commands).empty(), "All commands should have been destroyed before destroying the world");
 			DEBUG_ASSERT((scale->*&Scale::nodes).empty(), "All nodes should have been destroyed before destroying the world");
+			if (scale.Has<PartialScale>())
+			{
+				DEBUG_ASSERT((scale->*&PartialScale::load_commands).empty(), "All commands should have been destroyed before destroying the world");
+				DEBUG_ASSERT((scale->*&PartialScale::unload_commands).empty(), "All commands should have been destroyed before destroying the world");
+			}
 
 			// For each node in the scale
 			for (auto&& [pos, node] : scale->*&Scale::nodes)
@@ -211,51 +254,9 @@ namespace voxel_game::spatial3d
 			}
 
 			scale.Destroy();
-		}
+		});
 
 		world.Destroy();
-	}
-
-	std::vector<NodeCommand> spatial3d::PartialScale::* GetStateCommands(NodeState state)
-	{
-		switch (state)
-		{
-		case NodeState::Loading:
-			return &spatial3d::PartialScale::load_commands;
-
-		case NodeState::Merging:
-			return &spatial3d::PartialScale::merge_commands;
-
-		case NodeState::Unmerging:
-			return &spatial3d::PartialScale::unmerge_commands;
-
-		case NodeState::Unloading:
-			return &spatial3d::PartialScale::unload_commands;
-
-		default:
-			return nullptr;
-		}
-	}
-
-	void WorldForEachScale(WorldPtr world, ScaleCB callback)
-	{
-		DEBUG_ASSERT(world->*&spatial3d::World::max_scale > 0, "The spatial world should have at least one scale");
-
-		for (size_t scale_index = 0; scale_index < world->*&spatial3d::World::max_scale; scale_index++)
-		{
-			spatial3d::ScalePtr scale = spatial3d::GetScale(world, scale_index);
-
-			callback(scale);
-		}
-	}
-
-	void ScaleDoNodeCommands(ScalePtr scale, NodeState state, NodeCommandCB callback)
-	{
-		// For each create command
-		for (spatial3d::NodeCommand& command : scale->*GetStateCommands(state))
-		{
-			callback(command.node, command.task_count);
-		}
 	}
 
 	void WorldDoNodeLoadCommands(WorldPtr world, Clock::time_point frame_start_time)
