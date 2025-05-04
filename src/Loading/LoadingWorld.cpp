@@ -4,16 +4,6 @@
 
 namespace voxel_game::loading
 {
-	std::string_view UUIDToData(const UUID& id)
-	{
-		return std::string_view((const char*)&id, sizeof(UUID));
-	}
-
-	std::string_view NodePosToData(const godot::Vector3i pos)
-	{
-		return std::string_view((const char*)&pos, sizeof(godot::Vector3i));
-	}
-
 	std::string_view LoadTask::ProcessFull(std::string_view key, std::string_view value)
 	{
 		return NOOP;

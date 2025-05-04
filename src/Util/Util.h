@@ -1,8 +1,9 @@
 #pragma once
 
-#include <type_traits>
-#include <chrono>
+#include <string_view>
 #include <vector>
+#include <chrono>
+#include <type_traits>
 
 template<class Type>
 struct get_method_class;
@@ -63,7 +64,7 @@ constexpr std::underlying_type_t<E> to_underlying(E e)
 template<class T, typename U>
 std::ptrdiff_t offsetof_member(U T::* member)
 {
-	return reinterpret_cast<std::ptrdiff_t>(&(reinterpret_cast<T const volatile*>(NULL)->*member));
+	return reinterpret_cast<std::ptrdiff_t>(&(reinterpret_cast<const volatile T*>(NULL)->*member));
 }
 
 // Erase an item from a vector fast but only if we don't care about the order
@@ -83,4 +84,10 @@ void unordered_erase(std::vector<T>& vector, ItemT&& item)
 	{
 		unordered_erase_it(vector, it);
 	}
+}
+
+template<class T>
+std::string_view UUIDToData(const T& data)
+{
+	return std::string_view(reinterpret_cast<const char*>(&data), sizeof(T));
 }
