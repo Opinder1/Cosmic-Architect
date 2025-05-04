@@ -70,6 +70,20 @@ namespace voxel_game
 		m_info_updater.SetWriterThread(std::thread::id{}); // We may not start in thread mode next time
 #endif
 
+		m_player_entity = entity::Ref();
+		m_dimension_entity = entity::Ref();
+
+		m_universe_entity = entity::Ref();
+		m_galaxy_entity = entity::Ref();
+		m_starsystem_entity = entity::Ref();
+
+		m_world_entity = entity::Ref();
+		m_spacestation_entity = entity::Ref();
+		m_spaceship_entity = entity::Ref();
+		m_vehicle_entity = entity::Ref();
+
+		m_avatar_entity = entity::Ref();
+
 		SimulationUninitialize(*m_simulation);
 
 		m_simulation.reset();

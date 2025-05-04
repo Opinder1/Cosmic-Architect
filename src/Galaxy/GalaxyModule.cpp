@@ -20,35 +20,11 @@
 
 namespace voxel_game::galaxy
 {
-	void Initialize(Simulation& simulation)
-	{
-		simulation.galaxy_type.node_type.AddType<spatial3d::Node>();
-		simulation.galaxy_type.node_type.AddType<Node>();
-
-		simulation.galaxy_type.scale_type.AddType<spatial3d::Scale>();
-		simulation.galaxy_type.scale_type.AddType<Scale>();
-
-		simulation.galaxy_type.world_type.AddType<spatial3d::World>();
-	}
-
-	void Uninitialize(Simulation& simulation)
-	{
-
-	}
-
-	void Update(Simulation& simulation)
-	{
-
-	}
-
-	void WorkerUpdate(Simulation& simulation, size_t index)
-	{
-
-	}
-
 	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale)
 	{
 		entity::Ref galaxy = simulation.entity_factory.GetPoly(GenerateUUID());
+
+		simulation.galaxies.push_back(galaxy.Reference());
 
 		simulation.entity_factory.AddTypes<
 			galaxy::CGalaxy,
@@ -73,6 +49,8 @@ namespace voxel_game::galaxy
 		// Create the simulated galaxy
 		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID());
 
+		simulation.galaxies.push_back(galaxy_entity.Reference());
+
 #if defined(DEBUG_ENABLED)
 		simulation.entity_factory.AddTypes<entity::CName>(galaxy_entity.GetID());
 		galaxy_entity->*&entity::CName::name = "SimulatedGalaxy";
@@ -96,11 +74,13 @@ namespace voxel_game::galaxy
 
 		galaxy_entity->*&CGalaxy::path = path;
 
-		galaxy_entity->*&spatial3d::CWorld::world = spatial3d::CreateWorld(
+		spatial3d::WorldPtr world = spatial3d::CreateWorld(
 			simulation.galaxy_type.world_type,
 			simulation.galaxy_type.scale_type,
 			simulation.galaxy_type.node_type,
 			simulation.galaxy_type.max_world_scale);
+
+		galaxy_entity->*& spatial3d::CWorld::world = world;
 
 		// We want the simulated galaxy to load all galaxies around it
 		galaxy_entity->*&spatial3d::CLoader::dist_per_lod = 3;
@@ -116,6 +96,39 @@ namespace voxel_game::galaxy
 	}
 
 	void DestroySimulatedGalaxy(Simulation& simulation, entity::WRef galaxy)
+	{
+		spatial3d::DestroyWorld(galaxy->*&spatial3d::CWorld::world);
+
+		entity::DestroyEntity(simulation, galaxy);
+	}
+
+	void Initialize(Simulation& simulation)
+	{
+		simulation.galaxy_type.node_type.AddType<spatial3d::Node>();
+		simulation.galaxy_type.node_type.AddType<Node>();
+
+		simulation.galaxy_type.scale_type.AddType<spatial3d::Scale>();
+		simulation.galaxy_type.scale_type.AddType<Scale>();
+
+		simulation.galaxy_type.world_type.AddType<spatial3d::World>();
+	}
+
+	void Uninitialize(Simulation& simulation)
+	{
+		for (entity::WRef galaxy : simulation.galaxies)
+		{
+			DestroySimulatedGalaxy(simulation, galaxy);
+		};
+
+		simulation.galaxies.clear();
+	}
+
+	void Update(Simulation& simulation)
+	{
+
+	}
+
+	void WorkerUpdate(Simulation& simulation, size_t index)
 	{
 
 	}

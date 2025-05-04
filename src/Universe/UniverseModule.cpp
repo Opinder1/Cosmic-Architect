@@ -174,6 +174,8 @@ namespace voxel_game::universe
 		// Create the universe
 		entity::Ref universe_entity = entity::CreateEntity(simulation);
 
+		simulation.universe = universe_entity.Reference();
+
 		simulation.entity_factory.AddTypes<
 			universe::CUniverse,
 			spatial3d::CWorld,
@@ -194,23 +196,25 @@ namespace voxel_game::universe
 		simulation::InitializeConfig(universe_entity->*&CUniverse::config, path.path_join("config.json"), config_defaults);
 		universe_entity->*&CUniverse::last_config_save = simulation.frame_start_time;
 
-		universe_entity->*&spatial3d::CWorld::world = spatial3d::CreateWorld(
+		spatial3d::WorldPtr world = spatial3d::CreateWorld(
 			simulation.universe_type.world_type,
 			simulation.universe_type.scale_type,
 			simulation.universe_type.node_type,
 			simulation.universe_type.max_world_scale);
 
-		universe_entity->*&spatial3d::CWorld::world->*&spatial3d::World::node_size = 16;
-		universe_entity->*&spatial3d::CWorld::world->*&spatial3d::PartialWorld::node_keepalive = 1s;
+		world->*&spatial3d::World::node_size = 16;
+		world->*&spatial3d::PartialWorld::node_keepalive = 1s;
 
-		loading::WorldOpenDatabase(simulation, universe_entity->*&spatial3d::CWorld::world, path.path_join("galaxies.db"));
+		loading::WorldOpenDatabase(simulation, world, path.path_join("galaxies.db"));
+
+		universe_entity->*&spatial3d::CWorld::world = world;
 
 		return universe_entity;
 	}
 
 	void DestroyUniverse(Simulation& simulation, entity::WRef universe)
 	{
-		simulation.universe = entity::Ref();
+		spatial3d::DestroyWorld(universe->*&spatial3d::CWorld::world);
 
 		entity::DestroyEntity(simulation, universe);
 	}
@@ -241,6 +245,8 @@ namespace voxel_game::universe
 		if (simulation.universe)
 		{
 			DestroyUniverse(simulation, simulation.universe);
+
+			simulation.universe = entity::Ref();
 		}
 	}
 

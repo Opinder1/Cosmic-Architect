@@ -230,6 +230,10 @@ namespace voxel_game
 		spatial3d::Uninitialize(simulation);
 		loading::Uninitialize(simulation);
 		simulation::Uninitialize(simulation);
+
+		simulation.entities.clear();
+
+		simulation.entity_factory.Cleanup();
 	}
 
 	void SimulationSingleUpdate(Simulation& simulation)
