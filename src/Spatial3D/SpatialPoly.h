@@ -6,7 +6,7 @@
 
 namespace voxel_game::spatial3d
 {
-	struct NodeType : PolyType<NodeType, 6>
+	struct NodeType : PolyType<NodeType, 7>
 	{
 		using PolyType::PolyType;
 	};
