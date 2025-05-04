@@ -178,7 +178,8 @@ namespace voxel_game::universe
 			universe::CUniverse,
 			spatial3d::CWorld,
 			loading::CStreamable,
-			loading::CAutosave
+			loading::CAutosave,
+			rendering::CScenario
 		>(universe_entity.GetID());
 
 		if (rendering::IsEnabled())
