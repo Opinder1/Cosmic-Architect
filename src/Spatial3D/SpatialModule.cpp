@@ -15,7 +15,7 @@ namespace voxel_game::spatial3d
 {
 	void OnUnloadSpatialEntity(Simulation& simulation, entity::Ptr entity)
 	{
-		spatial3d::DestroyWorld(entity->*&spatial3d::CWorld::world);
+		UnloadWorld(entity->*&CWorld::world);
 	}
 
 	void Initialize(Simulation& simulation)
@@ -41,12 +41,23 @@ namespace voxel_game::spatial3d
 
 	void WorldUpdate(Simulation& simulation, WorldPtr world)
 	{
-		if (simulation.uninitializing)
+		if (IsWorldUnloading(world))
 		{
-			UnloadWorld(world);
+			WorldDoNodeUnloadCommands(world);
+
+			if (false) // World is empty
+			{
+				spatial3d::DestroyWorld(world);
+			}
 		}
 		else
 		{
+			if (simulation.uninitializing)
+			{
+				UnloadWorld(world);
+				return;
+			}
+
 			WorldDoNodeLoadCommands(world, simulation.frame_start_time);
 
 			WorldDoNodeUnloadCommands(world);
@@ -55,13 +66,17 @@ namespace voxel_game::spatial3d
 
 	void ScaleUpdate(Simulation& simulation, ScalePtr scale)
 	{
-		if (!simulation.uninitializing)
+		if (IsWorldUnloading(GetWorld(scale)))
+		{
+			ScaleUnloadUnutilizedNodes(scale, simulation.frame_start_time);
+		}
+		else
 		{
 			ScaleLoadNodesAroundLoaders(scale, simulation.frame_start_time);
 
+			ScaleUnloadUnutilizedNodes(scale, simulation.frame_start_time);
+
 			ScaleUpdateEntityNodes(scale);
 		}
-
-		ScaleUnloadUnutilizedNodes(scale, simulation.frame_start_time);
 	}
 }
