@@ -14,9 +14,9 @@ namespace voxel_game::entity
 {
 	enum class Event : uint32_t
 	{
-		Update,
 		Create,
 		Destroy,
+		Update,
 		LoadStep,
 		UnloadStep,
 		Count,
@@ -60,6 +60,12 @@ namespace voxel_game::entity
 		Factory();
 
 		void AddCallback(TypeID types, Event event, EventCallback callback);
+
+		template<class... Types>
+		void AddCallback(Event event, EventCallback callback)
+		{
+			AddCallback(Type::CreateTypeID<Types...>(), event, callback);
+		}
 
 		void DoEvent(Simulation& simulation, WeakRef poly, Event event) const;
 
