@@ -13,14 +13,20 @@
 
 namespace voxel_game::spatial3d
 {
-	void Initialize(Simulation& simulation)
+	void OnDestroySpatialEntity(Simulation& simulation, entity::Ptr entity)
 	{
 
 	}
 
+	void Initialize(Simulation& simulation)
+	{
+		simulation.entity_factory.AddCallback<CWorld>(entity::Event::Destroy, cb::Bind<OnDestroySpatialEntity>());
+	}
+
 	void Uninitialize(Simulation& simulation)
 	{
-
+		DEBUG_ASSERT(simulation.spatial_worlds.empty(), "All worlds should have been destroyed");
+		DEBUG_ASSERT(simulation.spatial_scales.empty(), "All scales should have been destroyed");
 	}
 
 	void Update(Simulation& simulation)
@@ -35,17 +41,27 @@ namespace voxel_game::spatial3d
 
 	void WorldUpdate(Simulation& simulation, WorldPtr world)
 	{
-		WorldDoNodeLoadCommands(world, simulation.frame_start_time);
+		if (simulation.uninitializing)
+		{
+			UnloadWorld(world);
+		}
+		else
+		{
+			WorldDoNodeLoadCommands(world, simulation.frame_start_time);
 
-		WorldDoNodeUnloadCommands(world);
+			WorldDoNodeUnloadCommands(world);
+		}
 	}
 
 	void ScaleUpdate(Simulation& simulation, ScalePtr scale)
 	{
-		ScaleLoadNodesAroundLoaders(scale, simulation.frame_start_time);
+		if (!simulation.uninitializing)
+		{
+			ScaleLoadNodesAroundLoaders(scale, simulation.frame_start_time);
+
+			ScaleUpdateEntityNodes(scale);
+		}
 
 		ScaleUnloadUnutilizedNodes(scale, simulation.frame_start_time);
-
-		ScaleUpdateEntityNodes(scale);
 	}
 }

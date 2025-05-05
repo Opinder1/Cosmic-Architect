@@ -96,6 +96,8 @@ namespace voxel_game::spatial3d
 		uint8_t max_scale = 0;
 		uint8_t node_size = 1;
 
+		bool unloading = false;
+
 		std::array<ScalePtr, k_max_world_scale> scales;
 
 		robin_hood::unordered_set<entity::Ref> entities;
@@ -117,6 +119,7 @@ namespace voxel_game::spatial3d
 	using ScaleCB = cb::Callback<void(ScalePtr)>;
 	using NodeCommandCB = cb::Callback<void(NodePtr, uint16_t&)>;
 
+	// Get the scale of a world
 	WorldPtr GetWorld(ScalePtr scale);
 
 	// Get a scale in a world given a position
@@ -128,8 +131,12 @@ namespace voxel_game::spatial3d
 	// Create a new spatial world given provided types
 	WorldPtr CreateWorld(WorldType& world_type, ScaleType& scale_type, NodeType& node_type, uint8_t max_scale);
 
+	void UnloadWorld(WorldPtr world);
+
 	// Destroy a spatial world
 	void DestroyWorld(WorldPtr world);
+
+	bool IsWorldUnloading(WorldPtr world);
 
 	void AddLoader(WorldPtr world, entity::Ref loader);
 

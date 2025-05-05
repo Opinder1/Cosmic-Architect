@@ -224,6 +224,11 @@ namespace voxel_game::spatial3d
 		return world;
 	}
 
+	void UnloadWorld(WorldPtr world)
+	{
+		world->*&World::unloading = true;
+	}
+
 	void DestroyWorld(WorldPtr world)
 	{
 		WorldForEachScale(world, [](ScalePtr scale)
@@ -232,31 +237,40 @@ namespace voxel_game::spatial3d
 			if (scale.Has<PartialScale>())
 			{
 				DEBUG_ASSERT((scale->*&PartialScale::load_commands).empty(), "All commands should have been destroyed before destroying the world");
+				DEBUG_ASSERT((scale->*&PartialScale::merge_commands).empty(), "All commands should have been destroyed before destroying the world");
+				DEBUG_ASSERT((scale->*&PartialScale::unmerge_commands).empty(), "All commands should have been destroyed before destroying the world");
 				DEBUG_ASSERT((scale->*&PartialScale::unload_commands).empty(), "All commands should have been destroyed before destroying the world");
-			}
-
-			// For each node in the scale
-			for (auto&& [pos, node] : scale->*&Scale::nodes)
-			{
-				switch (node->*&Node::state)
-				{
-				case NodeState::Loading:
-				case NodeState::Merging:
-					break;
-
-				case NodeState::Loaded:
-					break;
-
-				case NodeState::Unmerging:
-				case NodeState::Unloading:
-					break;
-				}
 			}
 
 			scale.Destroy();
 		});
 
 		world.Destroy();
+	}
+
+	bool IsWorldUnloading(WorldPtr world)
+	{
+		return world->*&World::unloading;
+	}
+
+	void AddLoader(WorldPtr world, entity::Ref loader)
+	{
+
+	}
+
+	void RemoveLoader(WorldPtr world, entity::Ref loader)
+	{
+
+	}
+
+	void AddEntity(WorldPtr world, entity::Ref entity)
+	{
+
+	}
+
+	void RemoveEntity(WorldPtr world, entity::Ref entity)
+	{
+
 	}
 
 	void WorldDoNodeLoadCommands(WorldPtr world, Clock::time_point frame_start_time)
@@ -430,7 +444,9 @@ namespace voxel_game::spatial3d
 			}
 
 			// Check if node hasn't been touched in too long
-			if (frame_start_time - node->*&Node::last_update_time > world->*&PartialWorld::node_keepalive)
+			bool node_untouched = frame_start_time - node->*&Node::last_update_time > world->*&PartialWorld::node_keepalive;
+
+			if (world->*&World::unloading || node_untouched)
 			{
 				// Move the entity along to deletion
 				switch (node->*&Node::state)
