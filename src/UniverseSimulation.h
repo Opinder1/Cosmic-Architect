@@ -46,10 +46,7 @@ namespace voxel_game
 		uint64_t frame_index = 0;
 		Clock::time_point frame_start_time;
 
-		// Entity
-		entity::Factory entity_factory;
-
-		std::vector<entity::Ref> entities;
+		bool uninitializing = false;
 
 		// Spatial
 		std::vector<spatial3d::WorldPtr> spatial_worlds;
@@ -63,7 +60,13 @@ namespace voxel_game
 		SpatialTypeData space_ship_type;
 		SpatialTypeData vehicle_type;
 
+		// Entity
+		entity::Factory entity_factory;
+
+		std::vector<entity::Ref> entities;
+
 		// Universe
+		godot::String universe_path;
 		entity::Ref universe;
 
 		// Galaxy
@@ -79,12 +82,12 @@ namespace voxel_game
 	};
 
 	void SimulationDoTasks(Simulation& simulation, TaskData& task_data);
-
 	void SimulationDoMultitasks(Simulation& simulation, TaskData* data, size_t count);
 
 	void SimulationInitialize(Simulation& simulation);
-
 	void SimulationUninitialize(Simulation& simulation);
-
 	void SimulationUpdate(Simulation& simulation);
+
+	entity::Ref SimulationCreateEntity(Simulation& simulation, UUID id);
+	void SimulationDestroyEntity(Simulation& simulation);
 }
