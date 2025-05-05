@@ -15,7 +15,7 @@ namespace voxel_game::spatial3d
 {
 	void OnDestroySpatialEntity(Simulation& simulation, entity::Ptr entity)
 	{
-
+		spatial3d::DestroyWorld(entity->*&spatial3d::CWorld::world);
 	}
 
 	void Initialize(Simulation& simulation)

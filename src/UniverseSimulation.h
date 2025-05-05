@@ -46,6 +46,7 @@ namespace voxel_game
 		uint64_t frame_index = 0;
 		Clock::time_point frame_start_time;
 
+		godot::String path;
 		bool uninitializing = false;
 
 		// Spatial
@@ -66,7 +67,6 @@ namespace voxel_game
 		std::vector<entity::Ref> entities;
 
 		// Universe
-		godot::String universe_path;
 		entity::Ref universe;
 
 		// Galaxy
@@ -89,5 +89,4 @@ namespace voxel_game
 	void SimulationUpdate(Simulation& simulation);
 
 	entity::Ref SimulationCreateEntity(Simulation& simulation, UUID id);
-	void SimulationDestroyEntity(Simulation& simulation);
 }

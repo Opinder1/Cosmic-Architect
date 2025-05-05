@@ -1,20 +1,28 @@
 #include "SimulationModule.h"
 
+#include "Entity/EntityComponents.h"
+
 #include "UniverseSimulation.h"
 
 #include <godot_cpp/classes/os.hpp>
 
 namespace voxel_game::simulation
 {
+	void OnDestroyChildEntity(Simulation& simulation, entity::Ptr entity)
+	{
+		entity->*&entity::CParent::parent = entity::Ref();
+	}
+
 	void Initialize(Simulation& simulation)
 	{
 		simulation.processor_count = godot::OS::get_singleton()->get_processor_count();
 		simulation.worker_count = simulation.processor_count;
+
+		simulation.entity_factory.AddCallback<entity::CParent>(entity::Event::Destroy, cb::Bind<OnDestroyChildEntity>());
 	}
 
 	void Uninitialize(Simulation& simulation)
 	{
-
 	}
 
 	void Update(Simulation& simulation)

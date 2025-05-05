@@ -19,6 +19,11 @@ namespace voxel_game::loading
 	void WorldOpenDatabase(Simulation& simulation, spatial3d::WorldPtr world, const godot::String& path)
 	{
 		tkrzw::Status status = (world->*&World::database).Open(std::string(path.utf8()), true, tkrzw::File::OPEN_NO_WAIT | tkrzw::File::OPEN_SYNC_HARD);
+
+		if (status == tkrzw::Status::SUCCESS)
+		{
+
+		}
 	}
 
 	void ScaleDoLoadCommands(Simulation& simulation, spatial3d::ScalePtr scale)

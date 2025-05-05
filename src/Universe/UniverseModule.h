@@ -20,5 +20,4 @@ namespace voxel_game::universe
 	void ScaleUpdate(Simulation& simulation, spatial3d::ScalePtr scale);
 
 	entity::Ref CreateNewUniverse(Simulation& simulation, const godot::String& path);
-	void DestroyUniverse(Simulation& simulation, entity::WRef universe);
 }

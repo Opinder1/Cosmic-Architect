@@ -299,7 +299,7 @@ namespace voxel_game
 	{
 		simulation.uninitializing = true;
 
-		// Unload all spatial worlds which we can do in parallel
+		// First unload all spatial worlds which we can do in parallel
 		while (simulation.spatial_worlds.size() > 0)
 		{
 			SimulationWorldUpdate(simulation);
@@ -307,16 +307,22 @@ namespace voxel_game
 		}
 		DEBUG_ASSERT(simulation.spatial_scales.size() == 0, "All scales should have been cleared as well");
 
+		// Destroy all entities in the world. The entities memory still exists while there are references
+		for (entity::WRef entity : simulation.entities)
+		{
+			simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Destroy);
+		}
+
+		// Unload modules
 		galaxy::Uninitialize(simulation);
 		universe::Uninitialize(simulation);
 		loading::Uninitialize(simulation);
 		spatial3d::Uninitialize(simulation);
 		simulation::Uninitialize(simulation);
 
-		DEBUG_ASSERT(simulation.entities.empty(), "All entities should have been removed");
-
+		// Finally cleanup the entity factory after all references should have been removed
+		simulation.entities.clear();
 		simulation.entity_factory.Cleanup();
-
 		DEBUG_ASSERT(simulation.entity_factory.GetCount() == 0, "We should have destroyed all entities");
 
 		simulation.uninitializing = false;
@@ -340,10 +346,5 @@ namespace voxel_game
 		simulation.entities.push_back(entity.Reference());
 
 		return entity;
-	}
-
-	void SimulationDestroyEntity(Simulation& simulation)
-	{
-
 	}
 }

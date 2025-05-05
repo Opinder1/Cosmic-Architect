@@ -215,15 +215,6 @@ namespace voxel_game::universe
 		return universe_entity;
 	}
 
-	void DestroyUniverse(Simulation& simulation, entity::WRef universe)
-	{
-		spatial3d::DestroyWorld(universe->*&spatial3d::CWorld::world);
-
-		simulation.entity_factory.DoEvent(simulation, universe, entity::Event::Destroy);
-
-		unordered_erase(simulation.entities, universe);
-	}
-
 	void Initialize(Simulation& simulation)
 	{
 		InitializeConfigDefaults();
@@ -243,9 +234,9 @@ namespace voxel_game::universe
 		simulation.universe_type.world_type.AddType<World>();
 
 		simulation.entity_factory.AddCallback<CUniverse, loading::CStreamable>(entity::Event::Update, cb::Bind<&OnUpdateUniverseEntity>());
-		simulation.entity_factory.AddCallback<CUniverse, loading::CStreamable>(entity::Event::Destroy, cb::Bind<&OnDestroyUniverseEntity>());
+		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::Destroy, cb::Bind<&OnDestroyUniverseEntity>());
 
-		simulation.universe = CreateNewUniverse(simulation, simulation.universe_path);
+		simulation.universe = CreateNewUniverse(simulation, simulation.path);
 	}
 
 	void Uninitialize(Simulation& simulation)

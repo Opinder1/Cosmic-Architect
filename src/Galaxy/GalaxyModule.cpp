@@ -97,11 +97,7 @@ namespace voxel_game::galaxy
 
 	void DestroySimulatedGalaxy(Simulation& simulation, entity::WRef galaxy)
 	{
-		spatial3d::DestroyWorld(galaxy->*&spatial3d::CWorld::world);
-
-		simulation.entity_factory.DoEvent(simulation, galaxy, entity::Event::Destroy);
-
-		unordered_erase(simulation.entities, galaxy);
+		galaxy->*&loading::CStreamable::state = loading::State::Unloading;
 	}
 
 	void Initialize(Simulation& simulation)
@@ -117,11 +113,6 @@ namespace voxel_game::galaxy
 
 	void Uninitialize(Simulation& simulation)
 	{
-		for (entity::WRef galaxy : simulation.galaxies)
-		{
-			DestroySimulatedGalaxy(simulation, galaxy);
-		};
-
 		simulation.galaxies.clear();
 	}
 
