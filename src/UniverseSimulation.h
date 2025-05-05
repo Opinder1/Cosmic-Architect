@@ -38,16 +38,17 @@ namespace voxel_game
 	struct Simulation
 	{
 		// Simulation
-		uint8_t processor_count = 0;
 		bool high_priority = true;
 		bool thread_mode = false;
+		bool uninitializing = false;
+
+		uint8_t processor_count = 0;
 		uint8_t worker_count = 1;
 
 		uint64_t frame_index = 0;
 		Clock::time_point frame_start_time;
 
 		godot::String path;
-		bool uninitializing = false;
 
 		// Spatial
 		std::vector<spatial3d::WorldPtr> spatial_worlds;
@@ -65,6 +66,9 @@ namespace voxel_game
 		entity::Factory entity_factory;
 
 		std::vector<entity::Ref> entities;
+
+		// Loading
+		std::vector<entity::Ref> unloading_entities; // These entities no longer are alive but are having their resources unloaded
 
 		// Universe
 		entity::Ref universe;
