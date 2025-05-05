@@ -13,14 +13,14 @@
 
 namespace voxel_game::spatial3d
 {
-	void OnDestroySpatialEntity(Simulation& simulation, entity::Ptr entity)
+	void OnUnloadSpatialEntity(Simulation& simulation, entity::Ptr entity)
 	{
 		spatial3d::DestroyWorld(entity->*&spatial3d::CWorld::world);
 	}
 
 	void Initialize(Simulation& simulation)
 	{
-		simulation.entity_factory.AddCallback<CWorld>(entity::Event::Destroy, cb::Bind<OnDestroySpatialEntity>());
+		simulation.entity_factory.AddCallback<CWorld>(entity::Event::Unload, cb::Bind<OnUnloadSpatialEntity>());
 	}
 
 	void Uninitialize(Simulation& simulation)

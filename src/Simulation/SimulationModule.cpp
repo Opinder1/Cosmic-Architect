@@ -8,7 +8,7 @@
 
 namespace voxel_game::simulation
 {
-	void OnDestroyChildEntity(Simulation& simulation, entity::Ptr entity)
+	void OnUnloadChildEntity(Simulation& simulation, entity::Ptr entity)
 	{
 		entity->*&entity::CParent::parent = entity::Ref();
 	}
@@ -18,7 +18,7 @@ namespace voxel_game::simulation
 		simulation.processor_count = godot::OS::get_singleton()->get_processor_count();
 		simulation.worker_count = simulation.processor_count;
 
-		simulation.entity_factory.AddCallback<entity::CParent>(entity::Event::Destroy, cb::Bind<OnDestroyChildEntity>());
+		simulation.entity_factory.AddCallback<entity::CParent>(entity::Event::Unload, cb::Bind<OnUnloadChildEntity>());
 	}
 
 	void Uninitialize(Simulation& simulation)

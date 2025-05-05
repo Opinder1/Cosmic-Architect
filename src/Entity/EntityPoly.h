@@ -15,7 +15,7 @@ namespace voxel_game::entity
 	enum class Event : uint32_t
 	{
 		Create,
-		Destroy,
+		Unload,
 		Update,
 		LoadStep,
 		UnloadStep,

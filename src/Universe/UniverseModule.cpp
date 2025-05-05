@@ -169,7 +169,7 @@ namespace voxel_game::universe
 		}
 	}
 
-	void OnDestroyUniverseEntity(Simulation& simulation, entity::Ptr universe_entity)
+	void OnUnloadUniverseEntity(Simulation& simulation, entity::Ptr universe_entity)
 	{
 
 	}
@@ -234,7 +234,7 @@ namespace voxel_game::universe
 		simulation.universe_type.world_type.AddType<World>();
 
 		simulation.entity_factory.AddCallback<CUniverse, loading::CStreamable>(entity::Event::Update, cb::Bind<&OnUpdateUniverseEntity>());
-		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::Destroy, cb::Bind<&OnDestroyUniverseEntity>());
+		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::Unload, cb::Bind<&OnUnloadUniverseEntity>());
 
 		simulation.universe = CreateNewUniverse(simulation, simulation.path);
 	}
