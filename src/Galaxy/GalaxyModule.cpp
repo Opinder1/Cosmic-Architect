@@ -80,7 +80,7 @@ namespace voxel_game::galaxy
 			simulation.galaxy_type.node_type,
 			simulation.galaxy_type.max_world_scale);
 
-		galaxy_entity->*& spatial3d::CWorld::world = world;
+		galaxy_entity->*&spatial3d::CWorld::world = world;
 
 		// We want the simulated galaxy to load all galaxies around it
 		galaxy_entity->*&spatial3d::CLoader::dist_per_lod = 3;
@@ -99,7 +99,9 @@ namespace voxel_game::galaxy
 	{
 		spatial3d::DestroyWorld(galaxy->*&spatial3d::CWorld::world);
 
-		entity::DestroyEntity(simulation, galaxy);
+		simulation.entity_factory.DoEvent(simulation, galaxy, entity::Event::Destroy);
+
+		unordered_erase(simulation.entities, galaxy);
 	}
 
 	void Initialize(Simulation& simulation)

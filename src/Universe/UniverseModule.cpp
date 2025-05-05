@@ -146,7 +146,7 @@ namespace voxel_game::universe
 		}
 	};
 
-	void UpdateUniverseEntity(Simulation& simulation, entity::Ptr universe_entity)
+	void OnUpdateUniverseEntity(Simulation& simulation, entity::Ptr universe_entity)
 	{
 		if (simulation.frame_start_time - universe_entity->*&CUniverse::last_config_save > 10s)
 		{
@@ -169,12 +169,15 @@ namespace voxel_game::universe
 		}
 	}
 
+	void OnDestroyUniverseEntity(Simulation& simulation, entity::Ptr universe_entity)
+	{
+
+	}
+
 	entity::Ref CreateNewUniverse(Simulation& simulation, const godot::String& path)
 	{
 		// Create the universe
-		entity::Ref universe_entity = entity::CreateEntity(simulation);
-
-		simulation.universe = universe_entity.Reference();
+		entity::Ref universe_entity = SimulationCreateEntity(simulation, GenerateUUID());
 
 		simulation.entity_factory.AddTypes<
 			universe::CUniverse,
@@ -216,7 +219,9 @@ namespace voxel_game::universe
 	{
 		spatial3d::DestroyWorld(universe->*&spatial3d::CWorld::world);
 
-		entity::DestroyEntity(simulation, universe);
+		simulation.entity_factory.DoEvent(simulation, universe, entity::Event::Destroy);
+
+		unordered_erase(simulation.entities, universe);
 	}
 
 	void Initialize(Simulation& simulation)
@@ -237,17 +242,15 @@ namespace voxel_game::universe
 		simulation.universe_type.world_type.AddType<loading::World>();
 		simulation.universe_type.world_type.AddType<World>();
 
-		simulation.entity_factory.AddCallback(entity::Type::CreateTypeID<CUniverse, loading::CStreamable>(), entity::Event::Update, cb::Bind<&UpdateUniverseEntity>());
+		simulation.entity_factory.AddCallback<CUniverse, loading::CStreamable>(entity::Event::Update, cb::Bind<&OnUpdateUniverseEntity>());
+		simulation.entity_factory.AddCallback<CUniverse, loading::CStreamable>(entity::Event::Destroy, cb::Bind<&OnDestroyUniverseEntity>());
+
+		simulation.universe = CreateNewUniverse(simulation, simulation.universe_path);
 	}
 
 	void Uninitialize(Simulation& simulation)
 	{
-		if (simulation.universe)
-		{
-			DestroyUniverse(simulation, simulation.universe);
-
-			simulation.universe = entity::Ref();
-		}
+		simulation.universe = entity::Ref();
 	}
 
 	void Update(Simulation& simulation)

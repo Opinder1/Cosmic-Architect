@@ -76,10 +76,6 @@ namespace voxel_game::entity
 	using Ptr = Type::Ptr;
 	using WRef = Factory::WeakRef;
 	using Ref = Factory::Ref;
-
-	Ref CreateEntity(Simulation& simulation);
-
-	void DestroyEntity(Simulation& simulation, WRef entity);
 }
 
 namespace std
