@@ -45,9 +45,9 @@ namespace voxel_game::spatial3d
 		{
 			WorldDoNodeUnloadCommands(world);
 
-			if (false) // World is empty
+			if (GetNodeCount(world) == 0) // World is empty
 			{
-				spatial3d::DestroyWorld(world);
+				DestroyWorld(world);
 			}
 		}
 		else

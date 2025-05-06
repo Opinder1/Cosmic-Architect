@@ -253,6 +253,16 @@ namespace voxel_game::spatial3d
 		return world->*&World::unloading;
 	}
 
+	size_t GetNodeCount(WorldPtr world)
+	{
+		size_t nodes = 0;
+		WorldForEachScale(world, [&nodes](ScalePtr scale)
+		{
+			nodes += (scale->*&Scale::nodes).size();
+		});
+		return nodes;
+	}
+
 	void AddLoader(WorldPtr world, entity::Ref loader)
 	{
 

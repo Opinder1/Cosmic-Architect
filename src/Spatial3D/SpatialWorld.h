@@ -138,6 +138,8 @@ namespace voxel_game::spatial3d
 
 	bool IsWorldUnloading(WorldPtr world);
 
+	size_t GetNodeCount(WorldPtr world);
+
 	void AddLoader(WorldPtr world, entity::Ref loader);
 
 	void RemoveLoader(WorldPtr world, entity::Ref loader);
