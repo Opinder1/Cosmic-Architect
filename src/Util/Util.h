@@ -76,13 +76,18 @@ void unordered_erase_it(VectorT& vector, typename VectorT::iterator it)
 }
 
 template<class VectorT, class ItemT>
-void unordered_erase(VectorT& vector, ItemT&& item)
+bool unordered_erase(VectorT& vector, ItemT&& item)
 {
 	typename VectorT::iterator it = std::find(vector.begin(), vector.end(), item);
 
 	if (it != vector.end())
 	{
 		unordered_erase_it<VectorT>(vector, it);
+		return true;
+	}
+	else
+	{
+		return false;
 	}
 }
 
