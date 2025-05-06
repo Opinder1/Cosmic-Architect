@@ -13,8 +13,6 @@
 #include "Voxel/VoxelComponents.h"
 #include "VoxelRender/VoxelRenderComponents.h"
 
-#include "UniverseSimulation.h"
-
 using namespace voxel_game;
 
 const size_t first = __LINE__ + 1;
