@@ -56,17 +56,17 @@ namespace voxel_game
 	}
 
 	// Run multiple task groups at the same time and wait for them all after all have been started
-	void SimulationDoMultitasks(Simulation& simulation, TaskData* data, size_t count)
+	void SimulationDoMultitasks(Simulation& simulation, Span<TaskData> task_data)
 	{
-		if (count == 1)
+		if (task_data.Size() == 1)
 		{
-			SimulationDoTasks(simulation, *data);
+			SimulationDoTasks(simulation, *task_data.Data());
 		}
 		else if (simulation.processor_count == 0)
 		{
-			for (size_t index = 0; index < count; index++)
+			for (TaskData& data : task_data)
 			{
-				SimulationDoTasks(simulation, data[index]);
+				SimulationDoTasks(simulation, data);
 			}
 		}
 		else
@@ -77,19 +77,19 @@ namespace voxel_game
 
 			GrowingSmallVector<uint64_t, 16> ids;
 
-			for (size_t index = 0; index < count; index++)
+			for (TaskData& data : task_data)
 			{
 				uint64_t id = thread_pool->add_native_group_task(
 					&TaskCallback,
-					data + index,
-					data[index].count,
+					&data,
+					data.count,
 					simulation.processor_count,
 					simulation.high_priority);
 
 				ids.push_back(id);
 			}
 
-			for (size_t index = 0; index < count; index++)
+			for (size_t index = 0; index < task_data.Size(); index++)
 			{
 				thread_pool->wait_for_group_task_completion(ids[index]);
 			}
@@ -227,7 +227,7 @@ namespace voxel_game
 			{ simulation, &SimulationVehicleWorldUpdateTask, simulation.vehicle_type.worlds.size() },
 		};
 
-		SimulationDoMultitasks(simulation, world_tasks, 7);
+		SimulationDoMultitasks(simulation, world_tasks);
 	}
 
 	// Do parallel spatial scale updates
@@ -243,7 +243,7 @@ namespace voxel_game
 			{ simulation, &SimulationVehicleScaleUpdateTask, simulation.vehicle_type.scales.size() },
 		};
 
-		SimulationDoMultitasks(simulation, scale_tasks, 7);
+		SimulationDoMultitasks(simulation, scale_tasks);
 	}
 
 	void SimulationEntityUpdateTask(Simulation& simulation, size_t index)

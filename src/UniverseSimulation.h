@@ -5,6 +5,8 @@
 
 #include "Entity/EntityPoly.h"
 
+#include "Util/Span.h"
+
 #include <godot_cpp/classes/x509_certificate.hpp>
 #include <godot_cpp/classes/crypto_key.hpp>
 #include <godot_cpp/classes/dtls_server.hpp>
@@ -86,7 +88,7 @@ namespace voxel_game
 	};
 
 	void SimulationDoTasks(Simulation& simulation, TaskData& task_data);
-	void SimulationDoMultitasks(Simulation& simulation, TaskData* data, size_t count);
+	void SimulationDoMultitasks(Simulation& simulation, Span<TaskData> task_data);
 
 	void SimulationInitialize(Simulation& simulation);
 	void SimulationUninitialize(Simulation& simulation);
