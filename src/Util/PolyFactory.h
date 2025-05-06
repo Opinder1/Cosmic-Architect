@@ -213,6 +213,11 @@ public:
 			return Ptr{ GetHeader() };
 		}
 
+		void* Data()
+		{
+			return reinterpret_cast<void*>(GetHeader());
+		}
+
 		template<class... Types>
 		bool Has() const
 		{

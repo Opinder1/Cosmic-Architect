@@ -113,6 +113,11 @@ public:
 			return m_poly->archetype->Has<Types...>();
 		}
 
+		void* Data()
+		{
+			return reinterpret_cast<void*>(m_poly);
+		}
+
 		template<class T>
 		T& Get() const
 		{
