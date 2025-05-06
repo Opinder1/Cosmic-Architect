@@ -194,8 +194,6 @@ namespace voxel_game::universe
 
 		universe_entity->*&CUniverse::path = path;
 
-		universe_entity->*&loading::CStreamable::state = loading::State::Loading;
-
 		simulation::InitializeConfig(universe_entity->*&CUniverse::config, path.path_join("config.json"), config_defaults);
 		universe_entity->*&CUniverse::last_config_save = simulation.frame_start_time;
 

@@ -97,7 +97,7 @@ namespace voxel_game::galaxy
 
 	void DestroySimulatedGalaxy(Simulation& simulation, entity::WRef galaxy)
 	{
-		galaxy->*&loading::CStreamable::state = loading::State::Unloading;
+		SimulationUnloadEntity(simulation, galaxy);
 	}
 
 	void Initialize(Simulation& simulation)

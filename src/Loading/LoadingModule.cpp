@@ -3,6 +3,7 @@
 #include "LoadingComponents.h"
 
 #include "Entity/EntityPoly.h"
+#include "Entity/EntityComponents.h"
 
 #include "UniverseSimulation.h"
 
@@ -10,34 +11,62 @@
 
 namespace voxel_game::loading
 {
+	void OnLoadStreamableEntity(Simulation& simulation, entity::Ptr entity)
+	{
+		entity->*&CStreamable::state = State::Loading;
+	}
+
+	void OnUnloadStreamableEntity(Simulation& simulation, entity::Ptr entity)
+	{
+		entity->*&CStreamable::state = State::Unloading;
+	}
+
+	void OnUpdateStreamableEntity(Simulation& simulation, entity::Ptr entity)
+	{
+		switch (entity->*&CStreamable::state)
+		{
+		case State::Loading:
+			if (entity->*&loading::CStreamable::tasks == 0)
+			{
+				entity->*&CStreamable::state = State::Loaded;
+			}
+			break;
+
+		case State::Unloading:
+			if (entity->*&loading::CStreamable::tasks == 0)
+			{
+				entity->*&CStreamable::state = State::Unloaded;
+			}
+			break;
+		}
+	}
+
 	void Initialize(Simulation& simulation)
 	{
-
+		simulation.entity_factory.AddCallback<CStreamable>(entity::Event::Load, cb::Bind<OnLoadStreamableEntity>());
+		simulation.entity_factory.AddCallback<CStreamable>(entity::Event::Unload, cb::Bind<OnUnloadStreamableEntity>());
+		simulation.entity_factory.AddCallback<CStreamable>(entity::Event::Update, cb::Bind<OnUpdateStreamableEntity>());
 	}
 
 	void Uninitialize(Simulation& simulation)
 	{
-		for (entity::WRef entity : simulation.entities)
-		{
-			if (entity.Has<CStreamable>())
-			{
-				DEBUG_ASSERT(entity->*&loading::CStreamable::state == loading::State::Unloaded, "Entity should have been unloaded");
-			}
-		};
+		DEBUG_ASSERT(simulation.unloading_entities.empty(), "We should have unloaded all entities in uninitialize loop");
 	}
 
 	void Update(Simulation& simulation)
 	{
-		for (entity::WRef entity : simulation.entities)
+		for (auto it = simulation.unloading_entities.begin(); it != simulation.unloading_entities.end();)
 		{
-			if (entity.Has<CStreamable>())
-			{
-				if (entity->*&loading::CStreamable::state == loading::State::Unloaded)
-				{
-					simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Destroy);
+			entity::WRef entity = *it;
 
-					unordered_erase(simulation.entities, entity);
-				}
+			if (!entity.Has<CStreamable>() || entity->*&CStreamable::state == State::Unloaded)
+			{
+				it = simulation.unloading_entities.erase(it);
+				unordered_erase(simulation.entities, entity);
+			}
+			else
+			{
+				it++;
 			}
 		}
 	}

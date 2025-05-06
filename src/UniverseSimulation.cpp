@@ -280,7 +280,7 @@ namespace voxel_game
 
 		DEBUG_THREAD_CHECK_WRITE(entity.Data());
 
-		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Update);
+		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::TaskUpdate);
 	}
 
 	// Run all entities in parallel doing entity specific code
@@ -310,7 +310,7 @@ namespace voxel_game
 
 	bool IsSimulationUnloadDone(Simulation& simulation)
 	{
-		return true;
+		return simulation.entities.size() == 0;
 		/*
 		return	simulation::IsUnloadDone(simulation) &&
 				spatial3d::IsUnloadDone(simulation) &&
@@ -328,6 +328,11 @@ namespace voxel_game
 		loading::Update(simulation);
 		universe::Update(simulation);
 		galaxy::Update(simulation);
+
+		for (entity::WRef entity : simulation.entities)
+		{
+			simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Update);
+		}
 	}
 
 	void SimulationInitialize(Simulation& simulation)
@@ -344,10 +349,9 @@ namespace voxel_game
 		simulation.uninitializing = true;
 
 		// Unload all entities in the world. The entities memory still exists while there are references
-		std::vector<entity::Ref> entities = std::move(simulation.entities);
-		for (entity::WRef entity : entities)
+		for (entity::WRef entity : simulation.entities)
 		{
-			simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Unload);
+			SimulationUnloadEntity(simulation, entity);
 		}
 
 		// Loop update while unloading
@@ -386,10 +390,19 @@ namespace voxel_game
 
 	entity::Ref SimulationCreateEntity(Simulation& simulation, UUID id)
 	{
+		DEBUG_ASSERT(!simulation.uninitializing, "We shouldn't create an entity while uninitializing");
+
 		entity::Ref entity = simulation.entity_factory.GetPoly(id);
 
 		simulation.entities.push_back(entity.Reference());
 
 		return entity;
+	}
+
+	void SimulationUnloadEntity(Simulation& simulation, entity::WRef entity)
+	{
+		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Unload);
+
+		simulation.unloading_entities.push_back(entity);
 	}
 }

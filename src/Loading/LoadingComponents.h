@@ -19,6 +19,7 @@ namespace voxel_game::loading
 	struct CStreamable
 	{
 		State state = State::Unloaded;
+		size_t tasks = 0;
 	};
 
 	struct CAutosave
