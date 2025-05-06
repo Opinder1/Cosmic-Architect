@@ -68,21 +68,21 @@ std::ptrdiff_t offsetof_member(U T::* member)
 }
 
 // Erase an item from a vector fast but only if we don't care about the order
-template<class T>
-void unordered_erase_it(std::vector<T>& vector, typename std::vector<T>::iterator it)
+template<class VectorT>
+void unordered_erase_it(VectorT& vector, typename VectorT::iterator it)
 {
 	*it = std::move(vector.back());
 	vector.pop_back();
 }
 
-template<class T, class ItemT>
-void unordered_erase(std::vector<T>& vector, ItemT&& item)
+template<class VectorT, class ItemT>
+void unordered_erase(VectorT& vector, ItemT&& item)
 {
-	auto it = std::find(vector.begin(), vector.end(), item);
+	typename VectorT::iterator it = std::find(vector.begin(), vector.end(), item);
 
 	if (it != vector.end())
 	{
-		unordered_erase_it(vector, it);
+		unordered_erase_it<VectorT>(vector, it);
 	}
 }
 
