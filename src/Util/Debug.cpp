@@ -1,5 +1,7 @@
 #include "Debug.h"
 #include "Nocopy.h"
+#include "SmallVector.h"
+#include "Util.h"
 
 #include <robin_hood/robin_hood.h>
 
@@ -10,93 +12,85 @@
 #if defined(DEBUG_THREAD_CHECK)
 namespace
 {
-	struct CheckGroup : Nocopy
+	struct ThreadObject
 	{
-		CheckGroup() noexcept {}
-
-		CheckGroup(CheckGroup&& other) noexcept
-		{
-			std::shared_lock read_lock(other.mutex);
-
-			objects = std::move(other.objects);
-		}
-
-		tkrzw::SpinSharedMutex mutex;
-		robin_hood::unordered_map<const void*, std::thread::id> objects;
+		std::thread::id write;
+		size_t write_recursion = 0;
+		SmallVector<std::thread::id, 16> read;
 	};
 
 	struct ThreadObjectMap
 	{
 		tkrzw::SpinSharedMutex mutex;
-		robin_hood::unordered_map<const void*, CheckGroup> groups;
+		robin_hood::unordered_map<const void*, ThreadObject> objects;
 	}
 	thread_object_map;
-
-	CheckGroup& GetCheckGroup(const void* key)
-	{
-		{
-			std::shared_lock read_lock(thread_object_map.mutex);
-
-			auto it = thread_object_map.groups.find(key);
-
-			if (it != thread_object_map.groups.end())
-			{
-				return it->second;
-			}
-		}
-
-		{
-			std::unique_lock write_lock(thread_object_map.mutex);
-
-			auto&& [it, emplaced] = thread_object_map.groups.emplace(key, CheckGroup{});
-
-			DEBUG_ASSERT(emplaced, "We just checked that this key doesn't exist so this shouldn't happen");
-
-			return it->second;
-		}
-	}
-
-	bool CheckGroupObject(CheckGroup& group, const void* object)
-	{
-		std::shared_lock read_lock(group.mutex);
-
-		auto it = group.objects.find(object);
-
-		if (it != group.objects.end())
-		{
-			DEBUG_ASSERT(it->second == std::this_thread::get_id(), "Only one thread should write to this between each sync");
-			return true;
-		}
-
-		return false;
-	}
 }
 
-void DebugThreadCheckRead(const void* group, const void* object)
+DebugThreadChecker::DebugThreadChecker(const void* object, bool write) :
+	m_object(object),
+	m_write(write)
 {
-	CheckGroup& check_group = GetCheckGroup(group);
+	std::unique_lock write_lock(thread_object_map.mutex);
 
-	CheckGroupObject(check_group, object);
-}
+	ThreadObject& object_data = thread_object_map.objects[object];
 
-void DebugThreadCheckWrite(const void* group, const void* object)
-{
-	CheckGroup& check_group = GetCheckGroup(group);
+	std::thread::id thread_id = std::this_thread::get_id();
 
-	if (!CheckGroupObject(check_group, object))
+	if (write)
 	{
-		std::unique_lock write_lock(check_group.mutex);
+		if (!(object_data.read.size() == 1 && object_data.read.back() == thread_id)) // If we are the only one reading then we can write
+		{
+			DEBUG_ASSERT(object_data.read.size() == 0, "No other thread should be reading if we want to write");
+		}
 
-		check_group.objects.emplace(object, std::this_thread::get_id()).first;
+		if (object_data.write_recursion++ == 0)
+		{
+			object_data.write = thread_id;
+		}
+	}
+	else
+	{
+		if (object_data.write == thread_id) // If we are already writing then just continue writing
+		{
+			object_data.write_recursion++;
+			m_write = true;
+		}
+		else
+		{
+			DEBUG_ASSERT(object_data.write == std::thread::id{}, "No other thread should be writing if we want to read");
+
+			object_data.read.push_back(thread_id);
+		}
 	}
 }
 
-void DebugThreadCheckSync(const void* group)
+DebugThreadChecker::~DebugThreadChecker()
 {
-	CheckGroup& check_group = GetCheckGroup(group);
+	std::unique_lock write_lock(thread_object_map.mutex);
 
-	std::unique_lock write_lock(check_group.mutex);
+	auto it = thread_object_map.objects.find(m_object);
 
-	check_group.objects.clear();
+	DEBUG_ASSERT(it != thread_object_map.objects.end(), "The object should exist in the map");
+
+	ThreadObject& object_data = it->second;
+
+	if (m_write)
+	{
+		if (object_data.write_recursion-- == 0)
+		{
+			object_data.write = std::thread::id{};
+		}
+	}
+	else
+	{
+		unordered_erase(object_data.read, std::this_thread::get_id());
+	}
+
+	if (object_data.read.is_empty() && object_data.write == std::thread::id{})
+	{
+		thread_object_map.objects.erase(it);
+	}
 }
+
 #endif // DEBUG_THREAD_CHECK

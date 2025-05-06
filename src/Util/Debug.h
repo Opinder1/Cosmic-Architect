@@ -38,17 +38,26 @@
 
 #endif // DEBUG
 
-#if defined(DEBUG_THREAD_CHECK) 
-void DebugThreadCheckRead(const void* group, const void* object);
-void DebugThreadCheckWrite(const void* group, const void* object);
-void DebugThreadCheckSync(const void* group);
+#if defined(DEBUG_THREAD_CHECK)
+struct DebugThreadChecker
+{
+public:
+	DebugThreadChecker(const void* object, bool write);
+	~DebugThreadChecker();
+
+private:
+	const void* m_object;
+	bool m_write;
+};
+
+#define CONCAT_INNER(a, b) a ## b
+#define CONCAT(a, b) CONCAT_INNER(a, b)
 
 // Macros that can be used to help fix multithreading issues
-#define DEBUG_THREAD_CHECK_READ(group, object) DebugThreadCheckRead(static_cast<const void*>(group), static_cast<const void*>(object))
-#define DEBUG_THREAD_CHECK_WRITE(group, object) DebugThreadCheckWrite(static_cast<const void*>(group), static_cast<const void*>(object))
-#define DEBUG_THREAD_CHECK_SYNC(group) DebugThreadCheckSync(static_cast<const void*>(group))
+#define DEBUG_THREAD_CHECK_READ(object) DebugThreadChecker CONCAT(threadcheck, __LINE__)(static_cast<const void*>(object), false)
+#define DEBUG_THREAD_CHECK_WRITE(object) DebugThreadChecker CONCAT(threadcheck, __LINE__)(static_cast<const void*>(object), true)
 #else
-#define DEBUG_THREAD_CHECK_READ(group, object)
-#define DEBUG_THREAD_CHECK_WRITE(group, object)
+#define DEBUG_THREAD_CHECK_READ(object)
+#define DEBUG_THREAD_CHECK_WRITE(object)
 #define DEBUG_THREAD_CHECK_SYNC(group)
 #endif // DEBUG_THREAD_CHECK
