@@ -428,42 +428,23 @@ public:
 	// Cleanup any polys that no longer have any references
 	void Cleanup()
 	{
-		std::vector<PolyID> erase_list;
-
-		for (auto&& [id, entry] : m_entries)
+		for (auto it = m_entries.begin(); it != m_entries.end();)
 		{
+			PolyEntry& entry = it->second;
+
 			if (entry.refcount == 0)
 			{
-				erase_list.push_back(id);
+				entry.archetype->DestructPoly(entry.header);
+
+				DeallocatePoly(entry.type_id, entry.header);
+
+				it = m_entries.erase(it);
 			}
-		}
-
-		for (PolyID id : erase_list)
+			else
 		{
-			DestroyPoly(id);
-		}
+				it++;
 	}
-
-private:
-	// Destroy a poly
-	void DestroyPoly(PolyID id)
-	{
-		auto it = m_entries.find(id);
-
-		if (it == m_entries.end())
-		{
-			return;
 		}
-
-		PolyEntry& entry = it->second;
-
-		DEBUG_ASSERT(entry.refcount == 0, "This poly still has references");
-
-		entry.archetype->DestructPoly(entry.header);
-
-		DeallocatePoly(entry.type_id, entry.header);
-
-		m_entries.erase(it);
 	}
 
 private:
