@@ -364,6 +364,6 @@ private:
 	uint8_t m_x_mask = 0;
 	uint8_t m_y_mask = 0;
 	uint8_t m_z_mask = 0;
-	Item m_single_item = k_invalid_item;
+	Item m_single_item = Item(k_invalid_item);
 	std::vector<uint8_t> m_data;
 };

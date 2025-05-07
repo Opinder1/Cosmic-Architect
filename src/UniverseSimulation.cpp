@@ -403,6 +403,6 @@ namespace voxel_game
 	{
 		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Unload);
 
-		simulation.unloading_entities.push_back(entity);
+		simulation.unloading_entities.push_back(entity::Ref(entity));
 	}
 }

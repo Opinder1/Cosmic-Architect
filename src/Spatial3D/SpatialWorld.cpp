@@ -493,11 +493,11 @@ namespace voxel_game::spatial3d
 			// If the required node is not loaded then wait until it is loaded
 			if (new_it != (new_scale->*&Scale::nodes).end())
 			{
-				(old_scale->*&Scale::entities).erase(entity);
-				(new_scale->*&Scale::entities).insert(entity);
+				(old_scale->*&Scale::entities).erase(entity::Ref(entity));
+				(new_scale->*&Scale::entities).insert(entity::Ref(entity));
 
-				(old_it->second->*&Node::entities).erase(entity);
-				(new_it->second->*&Node::entities).insert(entity);
+				(old_it->second->*&Node::entities).erase(entity::Ref(entity));
+				(new_it->second->*&Node::entities).insert(entity::Ref(entity));
 
 				entity->*&CEntity::scale = entity->*&CEntity::last_scale;
 				entity->*&CEntity::last_node_pos = required_node_pos;
@@ -524,8 +524,8 @@ namespace voxel_game::spatial3d
 			// If the required node is not loaded then wait until it is loaded
 			if (new_it != (scale->*&Scale::nodes).end())
 			{
-				(old_it->second->*&Node::entities).erase(entity);
-				(new_it->second->*&Node::entities).insert(entity);
+				(old_it->second->*&Node::entities).erase(entity::Ref(entity));
+				(new_it->second->*&Node::entities).insert(entity::Ref(entity));
 
 				entity->*&CEntity::last_node_pos = required_node_pos;
 			}

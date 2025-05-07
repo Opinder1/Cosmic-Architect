@@ -70,7 +70,7 @@ namespace voxel_game::galaxy
 			simulation.entity_factory.AddTypes<rendering::CTransform>(galaxy_entity.GetID());
 		}
 
-		galaxy_entity->*&entity::CParent::parent = universe_entity;
+		galaxy_entity->*&entity::CParent::parent = entity::Ref(universe_entity);
 
 		galaxy_entity->*&CGalaxy::path = path;
 

@@ -290,7 +290,7 @@ public:
 	public:
 		Ref() : WeakRef() {}
 
-		Ref(WeakRef ref) : WeakRef(ref)
+		explicit Ref(WeakRef ref) : WeakRef(ref)
 		{
 			if (m_entry != nullptr)
 			{
