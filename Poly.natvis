@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
-  <Type Name="PolyType&lt;voxel_game::spatial3d::NodeType,6&gt;::Header">
+  <Type Name="PolyType&lt;voxel_game::spatial3d::NodeType,*&gt;::Header">
     <DisplayString>size={archetype->m_total_size}</DisplayString>
     <Expand>
-      <Item Name="header"       Condition="archetype->m_type_offsets[0] != 65535">(voxel_game::spatial3d::NodeType::Header* )((uint8_t*)this + archetype->m_type_offsets[0])</Item>
       <Item Name="spatial3d"    Condition="archetype->m_type_offsets[1] != 65535">(voxel_game::spatial3d::Node*             )((uint8_t*)this + archetype->m_type_offsets[1])</Item>
       <Item Name="universe"     Condition="archetype->m_type_offsets[2] != 65535">(voxel_game::universe::Node*              )((uint8_t*)this + archetype->m_type_offsets[2])</Item>
       <Item Name="galaxy"       Condition="archetype->m_type_offsets[3] != 65535">(voxel_game::galaxy::Node*                )((uint8_t*)this + archetype->m_type_offsets[3])</Item>
@@ -12,10 +11,9 @@
     </Expand>
   </Type>
   
-  <Type Name="PolyType&lt;voxel_game::spatial3d::ScaleType,6&gt;::Header">
+  <Type Name="PolyType&lt;voxel_game::spatial3d::ScaleType,*&gt;::Header">
     <DisplayString>size={archetype->m_total_size}</DisplayString>
     <Expand>
-      <Item Name="header"       Condition="archetype->m_type_offsets[0] != 65535">(voxel_game::spatial3d::ScaleType::Header*)((uint8_t*)this + archetype->m_type_offsets[0])</Item>
       <Item Name="spatial3d"    Condition="archetype->m_type_offsets[1] != 65535">(voxel_game::spatial3d::Scale*            )((uint8_t*)this + archetype->m_type_offsets[1])</Item>
       <Item Name="universe"     Condition="archetype->m_type_offsets[2] != 65535">(voxel_game::universe::Scale*             )((uint8_t*)this + archetype->m_type_offsets[2])</Item>
       <Item Name="galaxy"       Condition="archetype->m_type_offsets[3] != 65535">(voxel_game::galaxy::Scale*               )((uint8_t*)this + archetype->m_type_offsets[3])</Item>
@@ -24,10 +22,9 @@
     </Expand>
   </Type>
   
-  <Type Name="PolyType&lt;voxel_game::spatial3d::WorldType,6&gt;::Header">
+  <Type Name="PolyType&lt;voxel_game::spatial3d::WorldType,*&gt;::Header">
     <DisplayString>size={archetype->m_total_size}</DisplayString>
     <Expand>
-      <Item Name="header"       Condition="archetype->m_type_offsets[0] != 65535">(voxel_game::spatial3d::WorldType::Header*)((uint8_t*)this + archetype->m_type_offsets[0])</Item>
       <Item Name="spatial3d"    Condition="archetype->m_type_offsets[1] != 65535">(voxel_game::spatial3d::World*            )((uint8_t*)this + archetype->m_type_offsets[1])</Item>
       <Item Name="universe"     Condition="archetype->m_type_offsets[2] != 65535">(voxel_game::universe::World*             )((uint8_t*)this + archetype->m_type_offsets[2])</Item>
       <Item Name="galaxy"       Condition="archetype->m_type_offsets[3] != 65535">(voxel_game::galaxy::World*               )((uint8_t*)this + archetype->m_type_offsets[3])</Item>
@@ -36,10 +33,9 @@
     </Expand>
   </Type>
 
-  <Type Name="PolyType&lt;voxel_game::entity::Type,128&gt;::Header">
+  <Type Name="PolyType&lt;voxel_game::entity::Type,*&gt;::Header">
     <DisplayString>size={archetype->m_total_size}</DisplayString>
     <Expand>
-      <Item Name="header"       Condition="archetype->m_type_offsets[0 ] != 65535">(voxel_game::spatial3d::WorldType::Header* )((uint8_t*)this + archetype->m_type_offsets[0 ])</Item>
       <Item Name="name"         Condition="archetype->m_type_offsets[1 ] != 65535">(voxel_game::entity::CName*                )((uint8_t*)this + archetype->m_type_offsets[1 ])</Item>
       <Item Name="parent"       Condition="archetype->m_type_offsets[2 ] != 65535">(voxel_game::entity::CParent*              )((uint8_t*)this + archetype->m_type_offsets[2 ])</Item>
       <Item Name="context"      Condition="archetype->m_type_offsets[3 ] != 65535">(voxel_game::rendering::CContext*          )((uint8_t*)this + archetype->m_type_offsets[3 ])</Item>
@@ -81,27 +77,29 @@
       <Item Name="entity"       Condition="archetype->m_type_offsets[39] != 65535">(voxel_game::spatial3d::CEntity*           )((uint8_t*)this + archetype->m_type_offsets[39])</Item>
       <Item Name="scale"        Condition="archetype->m_type_offsets[40] != 65535">(voxel_game::spatial3d::CScale*            )((uint8_t*)this + archetype->m_type_offsets[40])</Item>
       <Item Name="world"        Condition="archetype->m_type_offsets[41] != 65535">(voxel_game::spatial3d::CWorld*            )((uint8_t*)this + archetype->m_type_offsets[41])</Item>
-      <Item Name="world"        Condition="archetype->m_type_offsets[42] != 65535">(voxel_game::universe::CWorld*             )((uint8_t*)this + archetype->m_type_offsets[42])</Item>
-      <Item Name="world"        Condition="archetype->m_type_offsets[43] != 65535">(voxel_game::galaxy::CWorld*               )((uint8_t*)this + archetype->m_type_offsets[43])</Item>
       <Item Name="star"         Condition="archetype->m_type_offsets[44] != 65535">(voxel_game::galaxy::CStar*                )((uint8_t*)this + archetype->m_type_offsets[44])</Item>
-      <Item Name="world"        Condition="archetype->m_type_offsets[45] != 65535">(voxel_game::galaxyrender::CWorld*         )((uint8_t*)this + archetype->m_type_offsets[45])</Item>
-      <Item Name="world"        Condition="archetype->m_type_offsets[46] != 65535">(voxel_game::voxel::CWorld*                )((uint8_t*)this + archetype->m_type_offsets[46])</Item>
-      <Item Name="world"        Condition="archetype->m_type_offsets[47] != 65535">(voxel_game::voxelrender::CWorld*          )((uint8_t*)this + archetype->m_type_offsets[47])</Item>
     </Expand>
   </Type>
 
-  <Type Name="PolyType&lt;*,*&gt;::Ref">
-    <DisplayString Condition="m_poly == nullptr">null</DisplayString>
-    <DisplayString Condition="m_poly != nullptr">{{{*m_poly} components={$T2}}}</DisplayString>
+  <Type Name="PolyType&lt;*,*&gt;::Ptr">
+    <DisplayString Condition="m_poly == nullptr">{{ empty poly }}</DisplayString>
+    <DisplayString Condition="m_poly != nullptr">{{ {*m_poly} }}</DisplayString>
     <Expand>
+      <Item Name="[archetype]" Condition="m_poly != nullptr">m_poly</Item>
       <ExpandedItem Condition="m_poly != nullptr">*m_poly</ExpandedItem>
     </Expand>
   </Type>
 
-  <Type Name="PolyFactory&lt;*&gt;::Ptr">
-    <DisplayString Condition="m_entry == nullptr">null</DisplayString>
-    <DisplayString Condition="m_entry != nullptr">{{{*m_entry} components={0}}}</DisplayString>
+  <Type Name="UUID">
+    <DisplayString>{data[0],nvoxb}{data[1],nvoxb}</DisplayString>
+  </Type>
+
+  <Type Name="PolyFactory&lt;*&gt;::WeakRef">
+    <DisplayString Condition="m_entry == nullptr">{{ empty entity }}</DisplayString>
+    <DisplayString Condition="m_entry != nullptr">{{ id={m_entry->first} }}</DisplayString>
     <Expand>
+      <Item Name="[uuid]" Condition="m_entry != nullptr">m_entry->first</Item>
+      <Item Name="[archetype]" Condition="m_entry != nullptr">m_entry->second.archetype</Item>
       <ExpandedItem Condition="m_entry != nullptr">m_entry->second.header</ExpandedItem>
     </Expand>
   </Type>
