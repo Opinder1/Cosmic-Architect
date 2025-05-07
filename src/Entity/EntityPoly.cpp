@@ -57,7 +57,7 @@ template<> template<> const size_t entity::Type::k_type_index<galaxyrender::CWor
 template<> template<> const size_t entity::Type::k_type_index<voxel::CWorld> =				__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<voxelrender::CWorld> =		__LINE__ - first;
 
-const std::array<PolyTypeInfo, 128> PolyType<entity::Type, 128>::k_type_info =
+const std::array<PolyTypeInfo, 40> PolyType<entity::Type, 40>::k_type_info =
 {
 	MakeTypeInfo<entity::Type::Header>(),
 	MakeTypeInfo<entity::CName>(),
@@ -103,7 +103,7 @@ const std::array<PolyTypeInfo, 128> PolyType<entity::Type, 128>::k_type_info =
 
 namespace voxel_game::entity
 {
-	Type::Type() : PolyType<Type, 128>() {}
+	Type::Type() : PolyType() {}
 
 	void Type::InitType(PolyArchetypeRegistry<Type>& factory, ID type_id)
 	{

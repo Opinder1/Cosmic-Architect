@@ -21,11 +21,10 @@ namespace voxel_game::entity
 		Count,
 	};
 
-	class Type : public PolyType<Type, 128>
+	class Type : public PolyType<Type, 40>
 	{
 	public:
 		using EventCallback = cb::Callback<void(Simulation&, Ptr)>;
-
 		using EventCallbacks = std::vector<EventCallback>;
 		using TypeCallbacks = std::array<EventCallbacks, to_underlying(Event::Count)>;
 
