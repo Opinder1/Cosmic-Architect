@@ -337,6 +337,8 @@ namespace voxel_game
 
 	void SimulationInitialize(Simulation& simulation)
 	{
+		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
+
 		simulation::Initialize(simulation);
 		spatial3d::Initialize(simulation);
 		loading::Initialize(simulation);
@@ -346,6 +348,8 @@ namespace voxel_game
 
 	void SimulationUninitialize(Simulation& simulation)
 	{
+		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
+
 		simulation.uninitializing = true;
 
 		// Unload all entities in the world. The entities memory still exists while there are references
@@ -379,6 +383,8 @@ namespace voxel_game
 
 	void SimulationUpdate(Simulation& simulation)
 	{
+		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
+
 		SimulationWorldUpdate(simulation);
 		SimulationScaleUpdate(simulation);
 		SimulationEntityUpdate(simulation);
@@ -390,6 +396,7 @@ namespace voxel_game
 
 	entity::Ref SimulationCreateEntity(Simulation& simulation, UUID id)
 	{
+		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
 		DEBUG_ASSERT(!simulation.uninitializing, "We shouldn't create an entity while uninitializing");
 
 		entity::Ref entity = simulation.entity_factory.GetPoly(id);
@@ -401,6 +408,8 @@ namespace voxel_game
 
 	void SimulationUnloadEntity(Simulation& simulation, entity::WRef entity)
 	{
+		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
+
 		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Unload);
 
 		simulation.unloading_entities.push_back(entity::Ref(entity));
