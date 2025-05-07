@@ -281,7 +281,7 @@ public:
 		}
 
 	protected:
-		PolyMapEntry* m_entry;
+		PolyMapEntry* m_entry = nullptr;
 	};
 
 	// A reference to a poly that increases the polys refcount. Is not thread safe to create.
@@ -308,12 +308,19 @@ public:
 
 		Ref(Ref&& other) noexcept
 		{
-			std::swap(m_entry, other.m_entry);
+			m_entry = other.m_entry;
+			other.m_entry = nullptr;
 		}
 
 		Ref& operator=(Ref&& other) noexcept
 		{
-			std::swap(m_entry, other.m_entry);
+			if (m_entry != nullptr)
+			{
+				m_entry->second.refcount--;
+			}
+
+			m_entry = other.m_entry;
+			other.m_entry = nullptr;
 			return *this;
 		}
 
@@ -441,9 +448,9 @@ public:
 				it = m_entries.erase(it);
 			}
 			else
-		{
+			{
 				it++;
-	}
+			}
 		}
 	}
 
