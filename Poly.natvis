@@ -100,6 +100,7 @@
     <Expand>
       <Item Name="[uuid]" Condition="m_entry != nullptr">m_entry->first</Item>
       <Item Name="[archetype]" Condition="m_entry != nullptr">m_entry->second.archetype</Item>
+      <Item Name="[refcount]" Condition="m_entry != nullptr">m_entry->second.refcount</Item>
       <ExpandedItem Condition="m_entry != nullptr">m_entry->second.header</ExpandedItem>
     </Expand>
   </Type>
