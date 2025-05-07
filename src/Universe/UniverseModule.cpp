@@ -210,6 +210,8 @@ namespace voxel_game::universe
 
 		universe_entity->*&spatial3d::CWorld::world = world;
 
+		simulation.entity_factory.DoEvent(simulation, universe_entity, entity::Event::Load);
+
 		return universe_entity;
 	}
 

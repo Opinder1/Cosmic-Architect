@@ -22,9 +22,9 @@ namespace voxel_game::galaxy
 {
 	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale)
 	{
-		entity::Ref galaxy = simulation.entity_factory.GetPoly(GenerateUUID());
+		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID());
 
-		simulation.galaxies.push_back(galaxy.Reference());
+		simulation.galaxies.push_back(galaxy_entity.Reference());
 
 		simulation.entity_factory.AddTypes<
 			galaxy::CGalaxy,
@@ -33,15 +33,17 @@ namespace voxel_game::galaxy
 			physics3d::CPosition,
 			physics3d::CScale,
 			spatial3d::CEntity
-		>(galaxy.GetID());
+		>(galaxy_entity.GetID());
 
-		galaxy->*&physics3d::CPosition::position = position;
-		galaxy->*&physics3d::CScale::scale = scale;
+		galaxy_entity->*&physics3d::CPosition::position = position;
+		galaxy_entity->*&physics3d::CScale::scale = scale;
 
-		(node->*&spatial3d::Node::entities).insert(galaxy.Reference());
-		(node->*&universe::Node::galaxies).push_back(galaxy.Reference());
+		(node->*&spatial3d::Node::entities).insert(galaxy_entity.Reference());
+		(node->*&universe::Node::galaxies).push_back(galaxy_entity.Reference());
 
-		return galaxy;
+		simulation.entity_factory.DoEvent(simulation, galaxy_entity, entity::Event::Load);
+
+		return galaxy_entity;
 	}
 
 	entity::Ref CreateSimulatedGalaxy(Simulation& simulation, const godot::String& path, entity::WRef universe_entity)
@@ -91,6 +93,8 @@ namespace voxel_game::galaxy
 
 		//entity_loader.emplace<loading::CEntityDatabase>(path.path_join("entities.db"));
 		//entity_loader.child_of(galaxy_entity);
+
+		simulation.entity_factory.DoEvent(simulation, galaxy_entity, entity::Event::Load);
 
 		return galaxy_entity;
 	}
