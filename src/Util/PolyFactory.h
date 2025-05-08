@@ -208,6 +208,11 @@ public:
 			return m_entry->second.archetype;
 		}
 
+		Header* GetHeader() const
+		{
+			return m_entry->second.header;
+		}
+
 		Ptr GetPtr() const
 		{
 			return Ptr{ GetHeader() };
@@ -272,12 +277,6 @@ public:
 		uint64_t Hash() const
 		{
 			return reinterpret_cast<uint64_t>(m_entry);
-		}
-
-	private:
-		Header* GetHeader() const
-		{
-			return m_entry->second.header;
 		}
 
 	protected:

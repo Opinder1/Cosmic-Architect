@@ -113,6 +113,11 @@ public:
 			return m_poly->archetype->Has<Types...>();
 		}
 
+		Header* GetHeader()
+		{
+			return m_poly;
+		}
+
 		void* Data()
 		{
 			return reinterpret_cast<void*>(m_poly);
@@ -155,12 +160,6 @@ public:
 		size_t OffsetOf(T Class::* member) const
 		{
 			return m_poly->archetype->OffsetOf<T, Class>(member);
-		}
-
-		void Destroy()
-		{
-			m_poly->archetype->DestroyPoly(m_poly);
-			m_poly = nullptr;
 		}
 
 		operator bool() const
@@ -315,7 +314,7 @@ public:
 	}
 
 	// Create a poly of this type
-	Header* CreatePoly()
+	Ptr CreatePoly()
 	{
 		Header* poly = AllocatePoly();
 
@@ -325,11 +324,11 @@ public:
 	}
 
 	// Destroy a poly of this type
-	void DestroyPoly(Header* poly)
+	void DestroyPoly(Ptr poly)
 	{
-		DestructPoly(poly);
+		DestructPoly(poly.GetHeader());
 
-		DeallocatePoly(poly);
+		DeallocatePoly(poly.GetHeader());
 	}
 
 	// Get the size of the whole poly type
