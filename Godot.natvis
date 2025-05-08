@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="godot::CowData&lt;*&gt;">
+    <DisplayString Condition="($T1**)this != nullptr">{*($T1**)this}</DisplayString>
+    <DisplayString Condition="($T1**)this == nullptr">null string</DisplayString>
+    <Expand>
+      <Item Name="[refcount]" Condition="($T1**)this != nullptr">*(USize*)(*(char**)this - 16)</Item>
+      <Item Name="[size]" Condition="($T1**)this != nullptr">*(USize*)(*(char**)this - 8)</Item>
+      <Item Name="[data]" Condition="($T1**)this != nullptr">*($T1**)this</Item>
+    </Expand>
+  </Type>
+  
+  <Type Name="godot::String">
+    <DisplayString>{*(godot::CowData&lt;char32_t&gt;*)this}</DisplayString>
+    <Expand>
+      <ExpandedItem>(godot::CowData&lt;char32_t&gt;*)this</ExpandedItem>
+    </Expand>
+  </Type>
+</AutoVisualizer>
