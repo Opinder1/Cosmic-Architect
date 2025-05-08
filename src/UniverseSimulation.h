@@ -25,18 +25,6 @@ namespace voxel_game
 		size_t count;
 	};
 
-	struct SpatialTypeData
-	{
-		spatial3d::WorldType world_type;
-		spatial3d::ScaleType scale_type;
-		spatial3d::NodeType node_type;
-
-		size_t max_world_scale = spatial3d::k_max_world_scale;
-
-		std::vector<spatial3d::WorldPtr> worlds;
-		std::vector<spatial3d::ScalePtr> scales;
-	};
-
 	struct Simulation
 	{
 		// Simulation
@@ -56,13 +44,13 @@ namespace voxel_game
 		std::vector<spatial3d::WorldPtr> spatial_worlds;
 		std::vector<spatial3d::ScalePtr> spatial_scales;
 
-		SpatialTypeData universe_type;
-		SpatialTypeData galaxy_type;
-		SpatialTypeData star_system_type;
-		SpatialTypeData planet_type;
-		SpatialTypeData space_station_type;
-		SpatialTypeData space_ship_type;
-		SpatialTypeData vehicle_type;
+		spatial3d::TypeData universe_type;
+		spatial3d::TypeData galaxy_type;
+		spatial3d::TypeData star_system_type;
+		spatial3d::TypeData planet_type;
+		spatial3d::TypeData space_station_type;
+		spatial3d::TypeData space_ship_type;
+		spatial3d::TypeData vehicle_type;
 
 		// Entity
 		entity::Factory entity_factory;

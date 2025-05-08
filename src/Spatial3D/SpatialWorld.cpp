@@ -203,23 +203,28 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	WorldPtr CreateWorld(WorldType& world_type, ScaleType& scale_type, NodeType& node_type, uint8_t max_scale)
+	WorldPtr CreateWorld(TypeData& type)
 	{
-		WorldPtr world = world_type.CreatePoly();
+		WorldPtr world = type.world_type.CreatePoly();
 
-		world->*&World::scale_type = &scale_type;
-		world->*&World::node_type = &node_type;
+		world->*&World::type = &type;
 
-		for (uint8_t scale_index = world->*&World::max_scale; scale_index < max_scale; scale_index++)
+		type.worlds.push_back(world);
+
+		for (uint8_t scale_index = world->*&World::max_scale; scale_index < type.max_scale; scale_index++)
 		{
-			ScalePtr scale = (world->*&World::scale_type)->CreatePoly();
+			ScalePtr scale = (world->*&World::type)->scale_type.CreatePoly();
+
+			scale->*&Scale::world = world;
 
 			scale->*&Scale::index = scale_index;
 
 			(world->*&World::scales)[scale_index] = scale;
+
+			type.scales.push_back(scale);
 		}
 
-		world->*&World::max_scale = max_scale;
+		world->*&World::max_scale = type.max_scale;
 
 		return world;
 	}
@@ -231,7 +236,9 @@ namespace voxel_game::spatial3d
 
 	void DestroyWorld(WorldPtr world)
 	{
-		WorldForEachScale(world, [](ScalePtr scale)
+		TypeData& type = *(world->*&World::type);
+
+		WorldForEachScale(world, [&](ScalePtr scale)
 		{
 			DEBUG_ASSERT((scale->*&Scale::nodes).empty(), "All nodes should have been destroyed before destroying the world");
 			if (scale.Has<PartialScale>())
@@ -242,10 +249,14 @@ namespace voxel_game::spatial3d
 				DEBUG_ASSERT((scale->*&PartialScale::unload_commands).empty(), "All commands should have been destroyed before destroying the world");
 			}
 
-			scale.Destroy();
+			unordered_erase(type.scales, scale);
+
+			type.scale_type.DestroyPoly(scale);
 		});
 
-		world.Destroy();
+		unordered_erase(type.worlds, world);
+
+		type.world_type.DestroyPoly(world);
 	}
 
 	bool IsWorldUnloading(WorldPtr world)
@@ -322,6 +333,8 @@ namespace voxel_game::spatial3d
 	{
 		EASY_BLOCK("WorldDoNodeUnloadCommands");
 
+		TypeData& type = *(world->*&World::type);
+
 		WorldForEachScale(world, [&](ScalePtr scale)
 		{
 			// For each destroy command of the scale
@@ -338,7 +351,7 @@ namespace voxel_game::spatial3d
 
 				(scale->*&Scale::nodes).erase(node->*&Node::position);
 
-				NodePtr(node).Destroy();
+				type.node_type.DestroyPoly(node);
 			});
 
 			(scale->*&PartialScale::unload_commands).clear();
@@ -349,12 +362,14 @@ namespace voxel_game::spatial3d
 	{
 		EASY_BLOCK("SingleLoader");
 
-		WorldPtr world = scale->*&Scale::world;
-
 		if (scale->*&Scale::index < loader->*&CLoader::min_lod || scale->*&Scale::index > loader->*&CLoader::max_lod)
 		{
 			return;
 		}
+
+		WorldPtr world = scale->*&Scale::world;
+
+		TypeData& type = *(world->*&World::type);
 
 		// For each node in the sphere of the loader
 		ForEachCoordInSphere(loader->*&physics3d::CPosition::position / scale_node_step, loader->*&CLoader::dist_per_lod, [&](godot::Vector3i pos)
@@ -364,7 +379,7 @@ namespace voxel_game::spatial3d
 
 			if (emplaced) // Node didn't already exist
 			{
-				NodePtr node = (world->*&World::node_type)->CreatePoly();
+				NodePtr node = type.node_type.CreatePoly();
 
 				node->*&Node::position = pos;
 				node->*&Node::scale_index = scale->*&Scale::index;

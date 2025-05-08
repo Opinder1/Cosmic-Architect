@@ -197,11 +197,7 @@ namespace voxel_game::universe
 		simulation::InitializeConfig(universe_entity->*&CUniverse::config, path.path_join("config.json"), config_defaults);
 		universe_entity->*&CUniverse::last_config_save = simulation.frame_start_time;
 
-		spatial3d::WorldPtr world = spatial3d::CreateWorld(
-			simulation.universe_type.world_type,
-			simulation.universe_type.scale_type,
-			simulation.universe_type.node_type,
-			simulation.universe_type.max_world_scale);
+		spatial3d::WorldPtr world = spatial3d::CreateWorld(simulation.universe_type);
 
 		world->*&spatial3d::World::node_size = 16;
 		world->*&spatial3d::PartialWorld::node_keepalive = 1s;

@@ -19,6 +19,8 @@
 
 namespace voxel_game::spatial3d
 {
+	struct TypeData;
+
 	// The max scale that a world can have
 	constexpr const uint8_t k_max_world_scale = 16;
 	constexpr const uint8_t k_node_no_parent = UINT8_MAX;
@@ -90,8 +92,7 @@ namespace voxel_game::spatial3d
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct World : Nocopy, Nomove
 	{
-		ScaleType* scale_type = nullptr;
-		NodeType* node_type = nullptr;
+		TypeData* type = nullptr;
 
 		uint8_t max_scale = 0;
 		uint8_t node_size = 1;
@@ -116,6 +117,19 @@ namespace voxel_game::spatial3d
 		robin_hood::unordered_set<entity::Ref> loaders;
 	};
 
+	struct TypeData
+	{
+		WorldType world_type;
+		ScaleType scale_type;
+		NodeType node_type;
+
+		size_t max_scale = k_max_world_scale;
+		size_t node_size = 0;
+
+		std::vector<WorldPtr> worlds;
+		std::vector<ScalePtr> scales;
+	};
+
 	using ScaleCB = cb::Callback<void(ScalePtr)>;
 	using NodeCommandCB = cb::Callback<void(NodePtr, uint16_t&)>;
 
@@ -129,7 +143,7 @@ namespace voxel_game::spatial3d
 	NodePtr GetNode(WorldPtr world, godot::Vector3i position, uint8_t scale_index);
 
 	// Create a new spatial world given provided types
-	WorldPtr CreateWorld(WorldType& world_type, ScaleType& scale_type, NodeType& node_type, uint8_t max_scale);
+	WorldPtr CreateWorld(TypeData& type);
 
 	void UnloadWorld(WorldPtr world);
 
