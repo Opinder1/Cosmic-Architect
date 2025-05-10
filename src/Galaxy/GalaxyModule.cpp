@@ -23,7 +23,9 @@ namespace voxel_game::galaxy
 {
 	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale)
 	{
-		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID());
+		DEBUG_THREAD_CHECK_WRITE(&simulation);
+
+		entity::Ref galaxy_entity = SimulationCreateEntity(simulation, GenerateUUID());
 
 		simulation.galaxies.push_back(galaxy_entity.Reference());
 
@@ -49,8 +51,10 @@ namespace voxel_game::galaxy
 
 	entity::Ref CreateSimulatedGalaxy(Simulation& simulation, const godot::String& path, entity::WRef universe_entity)
 	{
+		DEBUG_THREAD_CHECK_WRITE(&simulation);
+
 		// Create the simulated galaxy
-		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID());
+		entity::Ref galaxy_entity = SimulationCreateEntity(simulation, GenerateUUID());
 
 		simulation.galaxies.push_back(galaxy_entity.Reference());
 
@@ -110,10 +114,12 @@ namespace voxel_game::galaxy
 		simulation.galaxy_type.node_type.AddType<Node>();
 
 		simulation.galaxy_type.scale_type.AddType<spatial3d::Scale>();
+		simulation.galaxy_type.scale_type.AddType<spatial3d::PartialScale>();
 		simulation.galaxy_type.scale_type.AddType<loading::Scale>();
 		simulation.galaxy_type.scale_type.AddType<Scale>();
 
 		simulation.galaxy_type.world_type.AddType<spatial3d::World>();
+		simulation.galaxy_type.world_type.AddType<spatial3d::PartialWorld>();
 		simulation.galaxy_type.world_type.AddType<loading::World>();
 		simulation.galaxy_type.world_type.AddType<World>();
 	}
