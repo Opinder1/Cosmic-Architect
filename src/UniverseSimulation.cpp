@@ -111,7 +111,7 @@ namespace voxel_game
 
 	void SimulationGalaxyWorldUpdateTask(Simulation& simulation, size_t index)
 	{
-		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
+		spatial3d::WorldPtr world = simulation.galaxy_type.worlds[index];
 
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 
@@ -122,7 +122,7 @@ namespace voxel_game
 
 	void SimulationStarSystemWorldUpdateTask(Simulation& simulation, size_t index)
 	{
-		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
+		spatial3d::WorldPtr world = simulation.star_system_type.worlds[index];
 
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 
@@ -132,7 +132,7 @@ namespace voxel_game
 
 	void SimulationPlanetWorldUpdateTask(Simulation& simulation, size_t index)
 	{
-		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
+		spatial3d::WorldPtr world = simulation.planet_type.worlds[index];
 
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 
@@ -142,7 +142,7 @@ namespace voxel_game
 
 	void SimulationSpaceStationWorldUpdateTask(Simulation& simulation, size_t index)
 	{
-		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
+		spatial3d::WorldPtr world = simulation.space_station_type.worlds[index];
 
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 
@@ -152,7 +152,7 @@ namespace voxel_game
 
 	void SimulationSpaceShipWorldUpdateTask(Simulation& simulation, size_t index)
 	{
-		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
+		spatial3d::WorldPtr world = simulation.space_ship_type.worlds[index];
 
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 
@@ -162,7 +162,7 @@ namespace voxel_game
 
 	void SimulationVehicleWorldUpdateTask(Simulation& simulation, size_t index)
 	{
-		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
+		spatial3d::WorldPtr world = simulation.vehicle_type.worlds[index];
 
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 
@@ -199,7 +199,7 @@ namespace voxel_game
 
 	void SimulationGalaxyScaleUpdateTask(Simulation& simulation, size_t index)
 	{
-		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
+		spatial3d::ScalePtr scale = simulation.galaxy_type.scales[index];
 
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 
@@ -210,7 +210,7 @@ namespace voxel_game
 
 	void SimulationStarSystemScaleUpdateTask(Simulation& simulation, size_t index)
 	{
-		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
+		spatial3d::ScalePtr scale = simulation.star_system_type.scales[index];
 
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 
@@ -220,7 +220,7 @@ namespace voxel_game
 
 	void SimulationPlanetScaleUpdateTask(Simulation& simulation, size_t index)
 	{
-		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
+		spatial3d::ScalePtr scale = simulation.planet_type.scales[index];
 
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 
@@ -230,7 +230,7 @@ namespace voxel_game
 
 	void SimulationSpaceStationScaleUpdateTask(Simulation& simulation, size_t index)
 	{
-		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
+		spatial3d::ScalePtr scale = simulation.space_station_type.scales[index];
 
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 
@@ -240,7 +240,7 @@ namespace voxel_game
 
 	void SimulationSpaceShipScaleUpdateTask(Simulation& simulation, size_t index)
 	{
-		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
+		spatial3d::ScalePtr scale = simulation.space_ship_type.scales[index];
 
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 
@@ -250,7 +250,7 @@ namespace voxel_game
 
 	void SimulationVehicleScaleUpdateTask(Simulation& simulation, size_t index)
 	{
-		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
+		spatial3d::ScalePtr scale = simulation.vehicle_type.scales[index];
 
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 
