@@ -40,6 +40,7 @@ namespace voxel_game::spatial3d
 	ScalePtr GetScale(WorldPtr world, uint8_t scale_index)
 	{
 		DEBUG_ASSERT(scale_index < world->*&World::max_scale, "Requested scale out of range");
+
 		return (world->*&World::scales)[scale_index];
 	}
 
@@ -82,6 +83,8 @@ namespace voxel_game::spatial3d
 
 	void WorldForEachScale(WorldPtr world, ScaleCB callback)
 	{
+		DEBUG_THREAD_CHECK_READ(world.Data());
+
 		DEBUG_ASSERT(world->*&spatial3d::World::max_scale > 0, "The spatial world should have at least one scale");
 
 		for (size_t scale_index = 0; scale_index < world->*&spatial3d::World::max_scale; scale_index++)
@@ -94,6 +97,8 @@ namespace voxel_game::spatial3d
 
 	void ScaleDoNodeCommands(ScalePtr scale, NodeState state, NodeCommandCB callback)
 	{
+		DEBUG_THREAD_CHECK_WRITE(scale.Data());
+
 		// For each create command
 		for (spatial3d::NodeCommand& command : scale->*GetStateCommands(state))
 		{
@@ -103,6 +108,8 @@ namespace voxel_game::spatial3d
 
 	void LinkNode(WorldPtr world, NodePtr node, uint8_t scale_index)
 	{
+		DEBUG_THREAD_CHECK_WRITE(world.Data());
+
 		ScalePtr scale = GetScale(world, scale_index);
 
 		for (uint8_t neighbour_index = 0; neighbour_index < 6; neighbour_index++)
@@ -172,6 +179,8 @@ namespace voxel_game::spatial3d
 
 	void UnlinkNode(WorldPtr world, NodePtr node, uint8_t scale_index)
 	{
+		DEBUG_THREAD_CHECK_WRITE(world.Data());
+
 		for (uint8_t neighbour_index = 0; neighbour_index < 6; neighbour_index++)
 		{
 			if (NodePtr neighbour_node = (node->*&Node::neighbours)[neighbour_index])
@@ -205,6 +214,8 @@ namespace voxel_game::spatial3d
 
 	WorldPtr CreateWorld(TypeData& type)
 	{
+		DEBUG_THREAD_CHECK_WRITE(&type);
+
 		WorldPtr world = type.world_type.CreatePoly();
 
 		world->*&World::type = &type;
@@ -231,12 +242,18 @@ namespace voxel_game::spatial3d
 
 	void UnloadWorld(WorldPtr world)
 	{
+		DEBUG_THREAD_CHECK_WRITE(world.Data());
+
 		world->*&World::unloading = true;
 	}
 
 	void DestroyWorld(WorldPtr world)
 	{
+		DEBUG_THREAD_CHECK_WRITE(world.Data());
+
 		TypeData& type = *(world->*&World::type);
+
+		DEBUG_THREAD_CHECK_WRITE(&type);
 
 		WorldForEachScale(world, [&](ScalePtr scale)
 		{
@@ -261,11 +278,15 @@ namespace voxel_game::spatial3d
 
 	bool IsWorldUnloading(WorldPtr world)
 	{
+		DEBUG_THREAD_CHECK_READ(world.Data());
+
 		return world->*&World::unloading;
 	}
 
 	size_t GetNodeCount(WorldPtr world)
 	{
+		DEBUG_THREAD_CHECK_READ(world.Data());
+
 		size_t nodes = 0;
 		WorldForEachScale(world, [&nodes](ScalePtr scale)
 		{
@@ -296,7 +317,9 @@ namespace voxel_game::spatial3d
 
 	void WorldDoNodeLoadCommands(WorldPtr world, Clock::time_point frame_start_time)
 	{
+		DEBUG_THREAD_CHECK_WRITE(world.Data());
 		EASY_BLOCK("WorldDoNodeLoadCommands");
+
 		DEBUG_ASSERT(world->*&World::max_scale > 0, "The spatial world should have at least one scale");
 
 		WorldForEachScale(world, [&](ScalePtr scale)
@@ -331,6 +354,7 @@ namespace voxel_game::spatial3d
 
 	void WorldDoNodeUnloadCommands(WorldPtr world)
 	{
+		DEBUG_THREAD_CHECK_WRITE(world.Data());
 		EASY_BLOCK("WorldDoNodeUnloadCommands");
 
 		TypeData& type = *(world->*&World::type);
@@ -360,6 +384,7 @@ namespace voxel_game::spatial3d
 
 	void LoaderLoadNodes(ScalePtr scale, entity::WRef loader, Clock::time_point frame_start_time, double scale_node_step)
 	{
+		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 		EASY_BLOCK("SingleLoader");
 
 		if (scale->*&Scale::index < loader->*&CLoader::min_lod || scale->*&Scale::index > loader->*&CLoader::max_lod)
@@ -405,6 +430,8 @@ namespace voxel_game::spatial3d
 
 	void ScaleLoadNodesAroundLoaders(ScalePtr scale, Clock::time_point frame_start_time)
 	{
+		DEBUG_THREAD_CHECK_WRITE(scale.Data());
+
 		WorldPtr world = scale->*&Scale::world;
 
 		// Finish the previous merge commands
@@ -435,6 +462,8 @@ namespace voxel_game::spatial3d
 
 	void ScaleUnloadUnutilizedNodes(ScalePtr scale, Clock::time_point frame_start_time)
 	{
+		DEBUG_THREAD_CHECK_WRITE(scale.Data());
+
 		WorldPtr world = scale->*&Scale::world;
 
 		// Finish the previous unmerge commands
@@ -488,6 +517,8 @@ namespace voxel_game::spatial3d
 
 	void WorldUpdateEntityScales(WorldPtr world)
 	{
+		DEBUG_THREAD_CHECK_WRITE(world.Data());
+
 		for (entity::WRef entity : world->*&World::entities)
 		{
 			if (entity->*&CEntity::last_scale == entity->*&CEntity::scale)
@@ -522,6 +553,8 @@ namespace voxel_game::spatial3d
 
 	void ScaleUpdateEntityNodes(ScalePtr scale)
 	{
+		DEBUG_THREAD_CHECK_WRITE(scale.Data());
+
 		for (entity::WRef entity : scale->*&Scale::entities)
 		{
 			godot::Vector3i required_node_pos = entity->*&CEntity::position / (1 >> scale->*&Scale::index);
