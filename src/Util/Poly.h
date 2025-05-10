@@ -31,6 +31,20 @@ static void ComponentDestruct(std::byte* ptr)
 template<class T>
 static void ComponentMove(std::byte* from, std::byte* to)
 {
+	if constexpr (std::is_move_constructible_v<T>)
+	{
+		new(reinterpret_cast<T*>(to)) T(std::move(*reinterpret_cast<T*>(from)));
+	}
+	else
+	{
+		DEBUG_PRINT_ERROR("Can't move type");
+		DEBUG_CRASH();
+	}
+}
+
+template<class T>
+static void ComponentMoveAssign(std::byte* from, std::byte* to)
+{
 	if constexpr (std::is_move_assignable_v<T>)
 	{
 		*reinterpret_cast<T*>(to) = std::move(*reinterpret_cast<T*>(from));
