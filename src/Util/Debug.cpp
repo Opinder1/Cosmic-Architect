@@ -77,7 +77,7 @@ DebugThreadChecker::~DebugThreadChecker()
 
 	if (m_write)
 	{
-		if (object_data.write_recursion-- == 0)
+		if (--object_data.write_recursion == 0)
 		{
 			object_data.write = std::thread::id{};
 		}
