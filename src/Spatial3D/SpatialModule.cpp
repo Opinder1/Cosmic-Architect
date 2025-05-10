@@ -42,7 +42,27 @@ namespace voxel_game::spatial3d
 
 	void Update(Simulation& simulation)
 	{
+		// Remove worlds that have finished unloading
+		for (auto it = simulation.spatial_worlds.begin(); it != simulation.spatial_worlds.end();)
+		{
+			WorldPtr world = *it;
 
+			if (IsWorldUnloading(world) && GetNodeCount(world) == 0)
+			{
+				WorldForEachScale(world, [&simulation](ScalePtr scale)
+				{
+					unordered_erase(simulation.spatial_scales, scale);
+				});
+
+				unordered_erase_it(simulation.spatial_worlds, it);
+
+				DestroyWorld(world);
+			}
+			else
+			{
+				it++;
+			}
+		}
 	}
 
 	void WorkerUpdate(Simulation& simulation, size_t index)
@@ -52,43 +72,27 @@ namespace voxel_game::spatial3d
 
 	void WorldUpdate(Simulation& simulation, WorldPtr world)
 	{
-		if (IsWorldUnloading(world))
+		WorldDoNodeUnloadCommands(world);
+
+		if (simulation.uninitializing)
 		{
-			WorldDoNodeUnloadCommands(world);
-
-			if (GetNodeCount(world) == 0) // World is empty
-			{
-				WorldForEachScale(world, [&simulation](ScalePtr scale)
-				{
-					unordered_erase(simulation.spatial_scales, scale);
-				});
-
-				unordered_erase(simulation.spatial_worlds, world);
-
-				DestroyWorld(world);
-			}
+			return;
 		}
-		else if (!simulation.uninitializing)
-		{
-			WorldDoNodeLoadCommands(world, simulation.frame_start_time);
 
-			WorldDoNodeUnloadCommands(world);
-		}
+		WorldDoNodeLoadCommands(world, simulation.frame_start_time);
 	}
 
 	void ScaleUpdate(Simulation& simulation, ScalePtr scale)
 	{
-		if (IsWorldUnloading(GetWorld(scale)))
-		{
-			ScaleUnloadUnutilizedNodes(scale, simulation.frame_start_time);
-		}
-		else
-		{
-			ScaleLoadNodesAroundLoaders(scale, simulation.frame_start_time);
+		ScaleUnloadUnutilizedNodes(scale, simulation.frame_start_time);
 
-			ScaleUnloadUnutilizedNodes(scale, simulation.frame_start_time);
-
-			ScaleUpdateEntityNodes(scale);
+		if (simulation.uninitializing)
+		{
+			return;
 		}
+
+		ScaleLoadNodesAroundLoaders(scale, simulation.frame_start_time);
+
+		ScaleUpdateEntityNodes(scale);
 	}
 }
