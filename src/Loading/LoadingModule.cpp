@@ -60,6 +60,11 @@ namespace voxel_game::loading
 		DEBUG_ASSERT(simulation.unloading_entities.empty(), "We should have unloaded all entities in uninitialize loop");
 	}
 
+	bool IsUnloadDone(Simulation& simulation)
+	{
+		return true;
+	}
+
 	void Update(Simulation& simulation)
 	{
 		for (auto it = simulation.unloading_entities.begin(); it != simulation.unloading_entities.end();)

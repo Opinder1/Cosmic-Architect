@@ -12,6 +12,7 @@ namespace voxel_game::loading
 	// Module functions
 	void Initialize(Simulation& simulation);
 	void Uninitialize(Simulation& simulation);
+	bool IsUnloadDone(Simulation& simulation);
 	void Update(Simulation& simulation);
 	void WorkerUpdate(Simulation& simulation, size_t index);
 	void WorldUpdate(Simulation& simulation, spatial3d::WorldPtr world);
