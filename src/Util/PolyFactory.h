@@ -355,7 +355,7 @@ public:
 
 	// Update the type of a poly to a new type. Any components that are in both
 	// will be moved while the rest will be destroyed/newly constructed.
-	void SetTypes(PolyID id, TypeID new_types)
+	void SetTypes(PolyID id, TypeID new_type_id)
 	{
 		auto it = m_entries.find(id);
 
@@ -366,7 +366,7 @@ public:
 
 		PolyEntry& entry = it->second;
 
-		Header* new_poly = UpdatePolyType(entry.header, entry.type_id, new_types);
+		Header* new_poly = UpdatePolyType(entry.header, entry.type_id, new_type_id);
 
 		entry.type_id = new_type_id;
 		entry.archetype = new_poly->archetype;
