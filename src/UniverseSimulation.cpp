@@ -394,14 +394,19 @@ namespace voxel_game
 		simulation.entity_factory.Cleanup();
 	}
 
-	entity::Ref SimulationCreateEntity(Simulation& simulation, UUID id)
+	entity::Ref SimulationCreateEntity(Simulation& simulation, UUID id, entity::Type::ID type_id)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
 		DEBUG_ASSERT(!simulation.uninitializing, "We shouldn't create an entity while uninitializing");
 
 		entity::Ref entity = simulation.entity_factory.GetPoly(id);
 
-		simulation.entities.push_back(entity.Reference());
+		if ((entity.GetTypeID() | entity::Type::ID()) == entity::Type::ID())
+		{
+			simulation.entity_factory.SetTypes(entity.GetID(), type_id);
+
+			simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Load);
+		}
 
 		return entity;
 	}
@@ -411,7 +416,5 @@ namespace voxel_game
 		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
 
 		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Unload);
-
-		simulation.unloading_entities.push_back(entity::Ref(entity));
 	}
 }

@@ -151,20 +151,20 @@ namespace voxel_game::universe
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
 
 		// Create the universe
-		entity::Ref universe_entity = SimulationCreateEntity(simulation, GenerateUUID());
-
-		simulation.entity_factory.AddTypes<
+		entity::Type::ID type_id = entity::Type::CreateTypeID<
 			universe::CUniverse,
 			spatial3d::CWorld,
 			loading::CStreamable,
 			loading::CAutosave,
 			rendering::CScenario
-		>(universe_entity.GetID());
+		>();
 
 		if (rendering::IsEnabled())
 		{
-			simulation.entity_factory.AddTypes<rendering::CTransform>(universe_entity.GetID());
+			type_id |= entity::Type::CreateTypeID<rendering::CTransform>();
 		}
+
+		entity::Ref universe_entity = SimulationCreateEntity(simulation, GenerateUUID(), type_id);
 
 		universe_entity->*&CUniverse::path = path;
 
@@ -183,11 +183,6 @@ namespace voxel_game::universe
 		simulation.entity_factory.DoEvent(simulation, universe_entity, entity::Event::Load);
 
 		return universe_entity;
-	}
-
-	void OnLoadSpatialUniverseEntity(Simulation& simulation, entity::EventData& data)
-	{
-
 	}
 
 	void OnUpdateUniverseEntity(Simulation& simulation, entity::EventData& data)
@@ -213,11 +208,6 @@ namespace voxel_game::universe
 		}
 	}
 
-	void OnUnloadSpatialUniverseEntity(Simulation& simulation, entity::EventData& data)
-	{
-
-	}
-
 	void OnUnloadUniverseEntity(Simulation& simulation, entity::EventData& data)
 	{
 
@@ -241,9 +231,7 @@ namespace voxel_game::universe
 		simulation.universe_type.world_type.AddType<loading::World>();
 		simulation.universe_type.world_type.AddType<World>();
 
-		simulation.entity_factory.AddCallback<CUniverse, spatial3d::CWorld>(entity::Event::Load, cb::Bind<&OnLoadSpatialUniverseEntity>());
 		simulation.entity_factory.AddCallback<CUniverse, loading::CStreamable>(entity::Event::Update, cb::Bind<&OnUpdateUniverseEntity>());
-		simulation.entity_factory.AddCallback<CUniverse, spatial3d::CWorld>(entity::Event::Unload, cb::Bind<&OnUnloadSpatialUniverseEntity>());
 		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::Unload, cb::Bind<&OnUnloadUniverseEntity>());
 
 		simulation.universe = CreateNewUniverse(simulation, simulation.path);

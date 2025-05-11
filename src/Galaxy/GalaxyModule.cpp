@@ -25,18 +25,16 @@ namespace voxel_game::galaxy
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
 
-		entity::Ref galaxy_entity = SimulationCreateEntity(simulation, GenerateUUID());
-
-		simulation.galaxies.push_back(galaxy_entity.Reference());
-
-		simulation.entity_factory.AddTypes<
-			galaxy::CGalaxy,
+		entity::Type::ID type_id = entity::Type::CreateTypeID<
+			CGalaxy,
 			physics3d::CPosition,
 			physics3d::CScale,
 			physics3d::CPosition,
 			physics3d::CScale,
 			spatial3d::CEntity
-		>(galaxy_entity.GetID());
+		>();
+
+		entity::Ref galaxy_entity = SimulationCreateEntity(simulation, GenerateUUID(), type_id);
 
 		galaxy_entity->*&physics3d::CPosition::position = position;
 		galaxy_entity->*&physics3d::CScale::scale = scale;
@@ -53,29 +51,28 @@ namespace voxel_game::galaxy
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
 
-		// Create the simulated galaxy
-		entity::Ref galaxy_entity = SimulationCreateEntity(simulation, GenerateUUID());
-
-		simulation.galaxies.push_back(galaxy_entity.Reference());
-
-#if defined(DEBUG_ENABLED)
-		simulation.entity_factory.AddTypes<entity::CName>(galaxy_entity.GetID());
-		galaxy_entity->*&entity::CName::name = "SimulatedGalaxy";
-#endif
-
-		simulation.entity_factory.AddTypes<
+		entity::Type::ID type_id = entity::Type::CreateTypeID<
 			entity::CParent,
 			CGalaxy,
 			physics3d::CPosition,
 			physics3d::CRotation,
 			spatial3d::CWorld,
 			spatial3d::CLoader
-		>(galaxy_entity.GetID());
+		>();
 
 		if (rendering::IsEnabled())
 		{
-			simulation.entity_factory.AddTypes<rendering::CTransform>(galaxy_entity.GetID());
+			type_id |= entity::Type::CreateTypeID<rendering::CTransform>();
 		}
+
+		// Create the simulated galaxy
+		entity::Ref galaxy_entity = SimulationCreateEntity(simulation, GenerateUUID(), type_id);
+
+#if defined(DEBUG_ENABLED)
+		simulation.entity_factory.AddTypes<entity::CName>(galaxy_entity.GetID());
+		galaxy_entity->*&entity::CName::name = "SimulatedGalaxy";
+#endif
+
 
 		galaxy_entity->*&entity::CParent::parent = entity::Ref(universe_entity);
 
@@ -102,6 +99,16 @@ namespace voxel_game::galaxy
 		return galaxy_entity;
 	}
 
+	void OnLoadGalaxyEntity(Simulation& simulation, entity::EventData& data)
+	{
+		simulation.galaxies.push_back(entity::Ref(data.entity));
+	}
+
+	void OnUnloadGalaxyEntity(Simulation& simulation, entity::EventData& data)
+	{
+		unordered_erase(simulation.galaxies, entity::Ref(data.entity));
+	}
+
 	void DestroySimulatedGalaxy(Simulation& simulation, entity::WRef galaxy)
 	{
 		SimulationUnloadEntity(simulation, galaxy);
@@ -122,6 +129,9 @@ namespace voxel_game::galaxy
 		simulation.galaxy_type.world_type.AddType<spatial3d::PartialWorld>();
 		simulation.galaxy_type.world_type.AddType<loading::World>();
 		simulation.galaxy_type.world_type.AddType<World>();
+
+		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::Load, cb::Bind<&OnLoadGalaxyEntity>());
+		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::Unload, cb::Bind<&OnUnloadGalaxyEntity>());
 	}
 
 	void Uninitialize(Simulation& simulation)

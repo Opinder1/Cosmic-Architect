@@ -10,7 +10,7 @@ namespace voxel_game::simulation
 {
 	void OnLoadEntity(Simulation& simulation, entity::EventData& data)
 	{
-
+		simulation.entities.push_back(entity::Ref(data.entity));
 	}
 
 	void OnUnloadChildEntity(Simulation& simulation, entity::EventData& data)
