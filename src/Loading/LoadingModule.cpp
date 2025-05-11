@@ -40,7 +40,6 @@ namespace voxel_game::loading
 		case State::Unloading:
 			if (data.entity->*&loading::CStreamable::tasks == 0)
 			{
-				entity->*&CStreamable::state = State::Unloaded;
 				data.entity->*&CStreamable::state = State::Unloaded;
 			}
 			break;
