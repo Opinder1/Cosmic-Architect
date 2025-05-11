@@ -24,17 +24,18 @@ namespace voxel_game::galaxy
 	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale, entity::WRef universe_entity)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
+		DEBUG_ASSERT(!simulation.uninitializing, "We shouldn't create an entity while uninitializing");
 
-		entity::Type::ID type_id = entity::Type::CreateTypeID<
+		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID());
+
+		simulation.entity_factory.AddTypes<
 			CGalaxy,
 			entity::CParent,
 			physics3d::CPosition,
 			physics3d::CScale,
 			physics3d::CRotation,
 			spatial3d::CEntity
-		>();
-
-		entity::Ref galaxy_entity = SimulationCreateEntity(simulation, GenerateUUID(), type_id);
+		>(galaxy_entity.GetID());
 
 		galaxy_entity->*&physics3d::CPosition::position = position;
 		galaxy_entity->*&physics3d::CScale::scale = scale;
@@ -48,8 +49,12 @@ namespace voxel_game::galaxy
 	entity::Ref CreateSimulatedGalaxy(Simulation& simulation, const godot::String& path, entity::WRef universe_entity)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
+		DEBUG_ASSERT(!simulation.uninitializing, "We shouldn't create an entity while uninitializing");
 
-		entity::Type::ID type_id = entity::Type::CreateTypeID<
+		// Create the simulated galaxy
+		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID());
+
+		simulation.entity_factory.AddTypes<
 			CGalaxy,
 			entity::CParent,
 			physics3d::CPosition,
@@ -57,15 +62,12 @@ namespace voxel_game::galaxy
 			spatial3d::CEntity,
 			spatial3d::CWorld,
 			spatial3d::CLoader
-		>();
+		>(galaxy_entity.GetID());
 
 		if (rendering::IsEnabled())
 		{
-			type_id |= entity::Type::CreateTypeID<rendering::CTransform>();
+			simulation.entity_factory.AddTypes<rendering::CTransform>(galaxy_entity.GetID());
 		}
-
-		// Create the simulated galaxy
-		entity::Ref galaxy_entity = SimulationCreateEntity(simulation, GenerateUUID(), type_id);
 
 #if defined(DEBUG_ENABLED)
 		simulation.entity_factory.AddTypes<entity::CName>(galaxy_entity.GetID());

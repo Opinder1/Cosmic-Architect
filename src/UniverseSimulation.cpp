@@ -394,21 +394,6 @@ namespace voxel_game
 		simulation.entity_factory.Cleanup();
 	}
 
-	entity::Ref SimulationCreateEntity(Simulation& simulation, UUID id, entity::Type::ID type_id)
-	{
-		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
-		DEBUG_ASSERT(!simulation.uninitializing, "We shouldn't create an entity while uninitializing");
-
-		entity::Ref entity = simulation.entity_factory.GetPoly(id);
-
-		if (entity::Type::IsIDEmpty(entity.GetTypeID()))
-		{
-			simulation.entity_factory.SetTypes(entity.GetID(), type_id);
-		}
-
-		return entity;
-		}
-
 	void SimulationLoadEntity(Simulation& simulation, entity::WRef entity)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded

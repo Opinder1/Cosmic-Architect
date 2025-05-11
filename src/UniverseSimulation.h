@@ -82,7 +82,6 @@ namespace voxel_game
 	void SimulationUninitialize(Simulation& simulation);
 	void SimulationUpdate(Simulation& simulation);
 
-	entity::Ref SimulationCreateEntity(Simulation& simulation, UUID id, entity::Type::ID type_id);
 	void SimulationLoadEntity(Simulation& simulation, entity::WRef entity);
 	void SimulationUnloadEntity(Simulation& simulation, entity::WRef entity);
 }
