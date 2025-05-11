@@ -48,7 +48,7 @@
               <Exec>itKeyVals += inc / 8</Exec>
             <!-- Fast forward -->
             <Break Condition="(void*)itKeyVals == itEndKeyVals" />
-            <Item Name="[{itKeyVals-&gt;mData->first}]">itKeyVals-&gt;mData->second</Item>
+            <Item Name="[{itKeyVals-&gt;mData-&gt;first}]">itKeyVals-&gt;mData-&gt;second</Item>
             <!-- <Item>itKeyVals-&gt;mData</Item> -->
             <Exec>itInfo++   </Exec>
             <Exec>itKeyVals++</Exec>
