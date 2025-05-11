@@ -24,7 +24,7 @@ private:
 		std::vector<Header*> polys;
 	};
 
-	using ArchetypeMap = robin_hood::unordered_node_map<TypeID, ArchetypeEntry>;
+	using ArchetypeMap = robin_hood::unordered_map<TypeID, ArchetypeEntry>;
 
 public:
 	PolyArchetypeRegistry() {}
