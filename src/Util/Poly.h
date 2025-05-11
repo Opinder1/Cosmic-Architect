@@ -114,6 +114,11 @@ public:
 		return id;
 	}
 
+	static bool IsIDEmpty(ID type_id)
+	{
+		return type_id == CreateTypeID<Header>();
+	}
+
 	// A wrapper around the poly pointer
 	class Ptr
 	{

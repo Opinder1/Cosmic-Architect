@@ -401,7 +401,7 @@ namespace voxel_game
 
 		entity::Ref entity = simulation.entity_factory.GetPoly(id);
 
-		if ((entity.GetTypeID() | entity::Type::ID()) == entity::Type::ID())
+		if (entity::Type::IsIDEmpty(entity.GetTypeID()))
 		{
 			simulation.entity_factory.SetTypes(entity.GetID(), type_id);
 
