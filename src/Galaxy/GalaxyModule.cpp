@@ -21,16 +21,16 @@
 
 namespace voxel_game::galaxy
 {
-	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale)
+	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale, entity::WRef universe_entity)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
 
 		entity::Type::ID type_id = entity::Type::CreateTypeID<
 			CGalaxy,
+			entity::CParent,
 			physics3d::CPosition,
 			physics3d::CScale,
-			physics3d::CPosition,
-			physics3d::CScale,
+			physics3d::CRotation,
 			spatial3d::CEntity
 		>();
 
@@ -42,8 +42,6 @@ namespace voxel_game::galaxy
 		(node->*&spatial3d::Node::entities).insert(galaxy_entity.Reference());
 		(node->*&universe::Node::galaxies).push_back(galaxy_entity.Reference());
 
-		simulation.entity_factory.DoEvent(simulation, galaxy_entity, entity::Event::Load);
-
 		return galaxy_entity;
 	}
 
@@ -52,10 +50,11 @@ namespace voxel_game::galaxy
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
 
 		entity::Type::ID type_id = entity::Type::CreateTypeID<
-			entity::CParent,
 			CGalaxy,
+			entity::CParent,
 			physics3d::CPosition,
 			physics3d::CRotation,
+			spatial3d::CEntity,
 			spatial3d::CWorld,
 			spatial3d::CLoader
 		>();
@@ -73,7 +72,6 @@ namespace voxel_game::galaxy
 		galaxy_entity->*&entity::CName::name = "SimulatedGalaxy";
 #endif
 
-
 		galaxy_entity->*&entity::CParent::parent = entity::Ref(universe_entity);
 
 		galaxy_entity->*&CGalaxy::path = path;
@@ -89,13 +87,6 @@ namespace voxel_game::galaxy
 		galaxy_entity->*&spatial3d::CLoader::min_lod = 0;
 		galaxy_entity->*&spatial3d::CLoader::max_lod = spatial3d::k_max_world_scale;
 
-		//flecs::entity entity_loader = world.entity();
-
-		//entity_loader.emplace<loading::CEntityDatabase>(path.path_join("entities.db"));
-		//entity_loader.child_of(galaxy_entity);
-
-		simulation.entity_factory.DoEvent(simulation, galaxy_entity, entity::Event::Load);
-
 		return galaxy_entity;
 	}
 
@@ -107,11 +98,6 @@ namespace voxel_game::galaxy
 	void OnUnloadGalaxyEntity(Simulation& simulation, entity::EventData& data)
 	{
 		unordered_erase(simulation.galaxies, entity::Ref(data.entity));
-	}
-
-	void DestroySimulatedGalaxy(Simulation& simulation, entity::WRef galaxy)
-	{
-		SimulationUnloadEntity(simulation, galaxy);
 	}
 
 	void Initialize(Simulation& simulation)

@@ -11,6 +11,11 @@
 
 namespace voxel_game::loading
 {
+	void OnUnloadEntity(Simulation& simulation, entity::EventData& data)
+	{
+		simulation.unloading_entities.push_back(entity::Ref(data.entity));
+	}
+
 	void OnLoadStreamableEntity(Simulation& simulation, entity::EventData& data)
 	{
 		data.entity->*&CStreamable::state = State::Loading;
@@ -44,6 +49,8 @@ namespace voxel_game::loading
 
 	void Initialize(Simulation& simulation)
 	{
+		simulation.entity_factory.AddCallback(entity::Event::Unload, cb::Bind<OnUnloadEntity>());
+
 		simulation.entity_factory.AddCallback<CStreamable>(entity::Event::Load, cb::Bind<OnLoadStreamableEntity>());
 		simulation.entity_factory.AddCallback<CStreamable>(entity::Event::Unload, cb::Bind<OnUnloadStreamableEntity>());
 		simulation.entity_factory.AddCallback<CStreamable>(entity::Event::Update, cb::Bind<OnUpdateStreamableEntity>());

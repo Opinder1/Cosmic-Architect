@@ -111,7 +111,7 @@ namespace voxel_game::universe
 				position.y += godot::UtilityFunctions::randf_range(0, scale_node_step);
 				position.z += godot::UtilityFunctions::randf_range(0, scale_node_step);
 
-				galaxy::CreateGalaxy(simulation, node, position, godot::Vector3(box_size, box_size, box_size));
+				galaxy::CreateGalaxy(simulation, node, position, godot::Vector3(box_size, box_size, box_size), entity::Ref());
 			}
 		}
 
@@ -130,7 +130,7 @@ namespace voxel_game::universe
 
 			position.y -= node->*&spatial3d::Node::scale_index - 1;
 
-			galaxy::CreateGalaxy(simulation, node, position, godot::Vector3i{ scale_node_step / 4, 1, scale_node_step / 4 });
+			galaxy::CreateGalaxy(simulation, node, position, godot::Vector3i{ scale_node_step / 4, 1, scale_node_step / 4 }, entity::Ref());
 		}
 
 		void UnloadNode(spatial3d::NodePtr node)
@@ -179,8 +179,6 @@ namespace voxel_game::universe
 		loading::WorldOpenDatabase(simulation, world, path.path_join("galaxies.db"));
 
 		universe_entity->*&spatial3d::CWorld::world = world;
-
-		simulation.entity_factory.DoEvent(simulation, universe_entity, entity::Event::Load);
 
 		return universe_entity;
 	}

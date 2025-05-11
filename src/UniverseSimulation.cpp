@@ -404,11 +404,16 @@ namespace voxel_game
 		if (entity::Type::IsIDEmpty(entity.GetTypeID()))
 		{
 			simulation.entity_factory.SetTypes(entity.GetID(), type_id);
-
-			simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Load);
 		}
 
 		return entity;
+		}
+
+	void SimulationLoadEntity(Simulation& simulation, entity::WRef entity)
+	{
+		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
+
+		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Load);
 	}
 
 	void SimulationUnloadEntity(Simulation& simulation, entity::WRef entity)

@@ -79,7 +79,7 @@ namespace voxel_game
 			return;
 		}
 
-		galaxy::DestroySimulatedGalaxy(*m_simulation, m_galaxy_entity);
+		SimulationUnloadEntity(*m_simulation, m_galaxy_entity);
 
 		QueueSignal(k_signals->disconnected_from_galaxy);
 	}

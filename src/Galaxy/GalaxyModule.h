@@ -24,9 +24,7 @@ namespace voxel_game::galaxy
 	void WorldUpdate(Simulation& simulation, spatial3d::WorldPtr world);
 	void ScaleUpdate(Simulation& simulation, spatial3d::ScalePtr scale);
 
-	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale);
+	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale, entity::WRef universe_entity);
 
 	entity::Ref CreateSimulatedGalaxy(Simulation& simulation, const godot::String& path, entity::WRef universe_entity);
-
-	void DestroySimulatedGalaxy(Simulation& simulation, entity::WRef galaxy);
 }
