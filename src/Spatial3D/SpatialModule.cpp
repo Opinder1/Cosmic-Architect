@@ -74,7 +74,7 @@ namespace voxel_game::spatial3d
 	{
 		WorldDoNodeUnloadCommands(world);
 
-		if (simulation.uninitializing)
+		if (simulation.unloading)
 		{
 			return;
 		}
@@ -86,7 +86,7 @@ namespace voxel_game::spatial3d
 	{
 		ScaleUnloadUnutilizedNodes(scale, simulation.frame_start_time);
 
-		if (simulation.uninitializing)
+		if (simulation.unloading)
 		{
 			return;
 		}

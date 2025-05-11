@@ -346,11 +346,11 @@ namespace voxel_game
 		galaxy::Initialize(simulation);
 	}
 
-	void SimulationUninitialize(Simulation& simulation)
+	void SimulationUnload(Simulation& simulation)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
 
-		simulation.uninitializing = true;
+		simulation.unloading = true;
 
 		// Unload all entities in the world. The entities memory still exists while there are references
 		for (entity::WRef entity : simulation.entities)
@@ -361,12 +361,15 @@ namespace voxel_game
 		// Loop update while unloading
 		while (!IsSimulationUnloadDone(simulation))
 		{
-			SimulationWorldUpdate(simulation);
-			SimulationScaleUpdate(simulation);
-			SimulationEntityUpdate(simulation);
-			SimulationWorkerUpdate(simulation);
-			SimulationSingleUpdate(simulation);
+			SimulationUpdate(simulation);
 		}
+
+		simulation.unloading = false;
+		}
+
+	void SimulationUninitialize(Simulation& simulation)
+	{
+		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
 
 		// Unload modules
 		galaxy::Uninitialize(simulation);
@@ -378,8 +381,6 @@ namespace voxel_game
 		// Finally cleanup the entity factory after all references should have been removed
 		simulation.entity_factory.Cleanup();
 		DEBUG_ASSERT(simulation.entity_factory.GetCount() == 0, "We should have destroyed all entities");
-
-		simulation.uninitializing = false;
 	}
 
 	void SimulationUpdate(Simulation& simulation)

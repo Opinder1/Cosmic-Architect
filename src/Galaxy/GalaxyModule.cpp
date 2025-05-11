@@ -24,7 +24,7 @@ namespace voxel_game::galaxy
 	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale, entity::WRef universe_entity)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
-		DEBUG_ASSERT(!simulation.uninitializing, "We shouldn't create an entity while uninitializing");
+		DEBUG_ASSERT(!simulation.unloading, "We shouldn't create an entity while unloading");
 
 		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID());
 
@@ -49,7 +49,7 @@ namespace voxel_game::galaxy
 	entity::Ref CreateSimulatedGalaxy(Simulation& simulation, const godot::String& path, entity::WRef universe_entity)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
-		DEBUG_ASSERT(!simulation.uninitializing, "We shouldn't create an entity while uninitializing");
+		DEBUG_ASSERT(!simulation.unloading, "We shouldn't create an entity while unloading");
 
 		// Create the simulated galaxy
 		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID());

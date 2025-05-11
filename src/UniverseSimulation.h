@@ -30,7 +30,7 @@ namespace voxel_game
 		// Simulation
 		bool high_priority = true;
 		bool thread_mode = false;
-		bool uninitializing = false;
+		bool unloading = false;
 
 		uint8_t processor_count = 0;
 		uint8_t worker_count = 1;
@@ -58,6 +58,7 @@ namespace voxel_game
 		std::vector<entity::Ref> entities;
 
 		// Loading
+		std::vector<entity::Ref> loading_entities;
 		std::vector<entity::Ref> unloading_entities; // These entities no longer are alive but are having their resources unloaded
 
 		// Universe
@@ -79,6 +80,7 @@ namespace voxel_game
 	void SimulationDoMultitasks(Simulation& simulation, Span<TaskData> task_data);
 
 	void SimulationInitialize(Simulation& simulation);
+	void SimulationUnload(Simulation& simulation);
 	void SimulationUninitialize(Simulation& simulation);
 	void SimulationUpdate(Simulation& simulation);
 

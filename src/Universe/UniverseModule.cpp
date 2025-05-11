@@ -149,7 +149,7 @@ namespace voxel_game::universe
 	entity::Ref CreateNewUniverse(Simulation& simulation, const godot::String& path)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
-		DEBUG_ASSERT(!simulation.uninitializing, "We shouldn't create an entity while uninitializing");
+		DEBUG_ASSERT(!simulation.unloading, "We shouldn't create an entity while unloading");
 
 		entity::Ref universe_entity = simulation.entity_factory.GetPoly(GenerateUUID());
 
