@@ -40,6 +40,11 @@ namespace voxel_game::spatial3d
 		DEBUG_ASSERT(simulation.spatial_scales.empty(), "All scales should have been destroyed");
 	}
 
+	bool IsUnloadDone(Simulation& simulation)
+	{
+		return simulation.spatial_worlds.empty();
+	}
+
 	void Update(Simulation& simulation)
 	{
 		// Remove worlds that have finished unloading

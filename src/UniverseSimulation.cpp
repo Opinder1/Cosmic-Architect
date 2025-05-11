@@ -310,14 +310,11 @@ namespace voxel_game
 
 	bool IsSimulationUnloadDone(Simulation& simulation)
 	{
-		return simulation.entities.size() == 0;
-		/*
 		return	simulation::IsUnloadDone(simulation) &&
 				spatial3d::IsUnloadDone(simulation) &&
 				loading::IsUnloadDone(simulation) &&
 				universe::IsUnloadDone(simulation) &&
 				galaxy::IsUnloadDone(simulation);
-				*/
 	}
 
 	// Do singlethreaded update
@@ -365,7 +362,7 @@ namespace voxel_game
 		}
 
 		simulation.unloading = false;
-		}
+	}
 
 	void SimulationUninitialize(Simulation& simulation)
 	{

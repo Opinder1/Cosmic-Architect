@@ -241,6 +241,11 @@ namespace voxel_game::universe
 		simulation.universe = entity::Ref();
 	}
 
+	bool IsUnloadDone(Simulation& simulation)
+	{
+		return simulation.universe->*&loading::CStreamable::state == loading::State::Unloaded;
+	}
+
 	void Update(Simulation& simulation)
 	{
 

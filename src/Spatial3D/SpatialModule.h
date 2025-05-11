@@ -12,6 +12,7 @@ namespace voxel_game::spatial3d
 	// Module functions
 	void Initialize(Simulation& simulation);
 	void Uninitialize(Simulation& simulation);
+	bool IsUnloadDone(Simulation& simulation);
 	void Update(Simulation& simulation);
 	void WorkerUpdate(Simulation& simulation, size_t index);
 	void WorldUpdate(Simulation& simulation, WorldPtr world);

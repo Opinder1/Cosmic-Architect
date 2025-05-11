@@ -127,6 +127,11 @@ namespace voxel_game::galaxy
 		simulation.galaxies.clear();
 	}
 
+	bool IsUnloadDone(Simulation& simulation)
+	{
+		return true;
+	}
+
 	void Update(Simulation& simulation)
 	{
 

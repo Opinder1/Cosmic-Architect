@@ -30,6 +30,11 @@ namespace voxel_game::simulation
 	{
 	}
 
+	bool IsUnloadDone(Simulation& simulation)
+	{
+		return simulation.entities.empty();
+	}
+
 	void Update(Simulation& simulation)
 	{
 		simulation.frame_index++;
