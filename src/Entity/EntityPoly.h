@@ -23,6 +23,7 @@ namespace voxel_game::entity
 
 	struct EventData;
 
+	// An entity archetype that also stores all callbacks that listen for a subset of this archetypes types
 	class Type : public PolyType<Type, 40>
 	{
 	public:
@@ -39,9 +40,11 @@ namespace voxel_game::entity
 		void DoEvent(Simulation& simulation, EventData& data, Event event) const;
 
 	private:
+		// Callbacks that are listening to types that this archetype has
 		TypeCallbacks m_type_callbacks;
 	};
 
+	// A factory that creates entities and manages changing their archetype when types are added/removed
 	class Factory : public PolyFactory<Type, UUID>
 	{
 		friend class Type;
@@ -70,6 +73,7 @@ namespace voxel_game::entity
 		void DoEvent(Simulation& simulation, WeakRef poly, Event event) const;
 
 	private:
+		// Callbacks that will be added to archetypes based on what types they have
 		robin_hood::unordered_map<TypeID, CallbackEntries> m_callbacks;
 	};
 
@@ -77,6 +81,7 @@ namespace voxel_game::entity
 	using WRef = Factory::WeakRef;
 	using Ref = Factory::Ref;
 
+	// Data that is passed for an event. Derive from this class for event specific data
 	struct EventData
 	{
 		WRef entity;
