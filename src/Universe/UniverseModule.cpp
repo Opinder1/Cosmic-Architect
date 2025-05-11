@@ -146,36 +146,10 @@ namespace voxel_game::universe
 		}
 	};
 
-	void OnUpdateUniverseEntity(Simulation& simulation, entity::Ptr universe_entity)
-	{
-		if (simulation.frame_start_time - universe_entity->*&CUniverse::last_config_save > 10s)
-		{
-			simulation::SaveJsonConfig(universe_entity->*&CUniverse::config);
-		}
-
-		switch (universe_entity->*&loading::CStreamable::state)
-		{
-		case loading::State::Unloaded:
-			break;
-
-		case loading::State::Loading:
-			break;
-
-		case loading::State::Loaded:
-			break;
-
-		case loading::State::Unloading:
-			break;
-		}
-	}
-
-	void OnUnloadUniverseEntity(Simulation& simulation, entity::Ptr universe_entity)
-	{
-
-	}
-
 	entity::Ref CreateNewUniverse(Simulation& simulation, const godot::String& path)
 	{
+		DEBUG_THREAD_CHECK_WRITE(&simulation);
+
 		// Create the universe
 		entity::Ref universe_entity = SimulationCreateEntity(simulation, GenerateUUID());
 
@@ -211,6 +185,44 @@ namespace voxel_game::universe
 		return universe_entity;
 	}
 
+	void OnLoadSpatialUniverseEntity(Simulation& simulation, entity::EventData& data)
+	{
+
+	}
+
+	void OnUpdateUniverseEntity(Simulation& simulation, entity::EventData& data)
+	{
+		if (simulation.frame_start_time - data.entity->*&CUniverse::last_config_save > 10s)
+		{
+			simulation::SaveJsonConfig(data.entity->*&CUniverse::config);
+		}
+
+		switch (data.entity->*&loading::CStreamable::state)
+		{
+		case loading::State::Unloaded:
+			break;
+
+		case loading::State::Loading:
+			break;
+
+		case loading::State::Loaded:
+			break;
+
+		case loading::State::Unloading:
+			break;
+		}
+	}
+
+	void OnUnloadSpatialUniverseEntity(Simulation& simulation, entity::EventData& data)
+	{
+
+	}
+
+	void OnUnloadUniverseEntity(Simulation& simulation, entity::EventData& data)
+	{
+
+	}
+
 	void Initialize(Simulation& simulation)
 	{
 		InitializeConfigDefaults();
@@ -229,7 +241,9 @@ namespace voxel_game::universe
 		simulation.universe_type.world_type.AddType<loading::World>();
 		simulation.universe_type.world_type.AddType<World>();
 
+		simulation.entity_factory.AddCallback<CUniverse, spatial3d::CWorld>(entity::Event::Load, cb::Bind<&OnLoadSpatialUniverseEntity>());
 		simulation.entity_factory.AddCallback<CUniverse, loading::CStreamable>(entity::Event::Update, cb::Bind<&OnUpdateUniverseEntity>());
+		simulation.entity_factory.AddCallback<CUniverse, spatial3d::CWorld>(entity::Event::Unload, cb::Bind<&OnUnloadSpatialUniverseEntity>());
 		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::Unload, cb::Bind<&OnUnloadUniverseEntity>());
 
 		simulation.universe = CreateNewUniverse(simulation, simulation.path);

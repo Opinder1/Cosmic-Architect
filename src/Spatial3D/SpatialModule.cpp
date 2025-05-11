@@ -13,19 +13,19 @@
 
 namespace voxel_game::spatial3d
 {
-	void OnLoadSpatialEntity(Simulation& simulation, entity::Ptr entity)
+	void OnLoadSpatialEntity(Simulation& simulation, entity::EventData& data)
 	{
-		simulation.spatial_worlds.push_back(entity->*&CWorld::world);
+		simulation.spatial_worlds.push_back(data.entity->*&CWorld::world);
 
-		WorldForEachScale(entity->*&CWorld::world, [&simulation](ScalePtr scale)
+		WorldForEachScale(data.entity->*&CWorld::world, [&simulation](ScalePtr scale)
 		{
 			simulation.spatial_scales.push_back(scale);
 		});
 	}
 
-	void OnUnloadSpatialEntity(Simulation& simulation, entity::Ptr entity)
+	void OnUnloadSpatialEntity(Simulation& simulation, entity::EventData& data)
 	{
-		UnloadWorld(entity->*&CWorld::world);
+		UnloadWorld(data.entity->*&CWorld::world);
 	}
 
 	void Initialize(Simulation& simulation)

@@ -11,31 +11,32 @@
 
 namespace voxel_game::loading
 {
-	void OnLoadStreamableEntity(Simulation& simulation, entity::Ptr entity)
+	void OnLoadStreamableEntity(Simulation& simulation, entity::EventData& data)
 	{
-		entity->*&CStreamable::state = State::Loading;
+		data.entity->*&CStreamable::state = State::Loading;
 	}
 
-	void OnUnloadStreamableEntity(Simulation& simulation, entity::Ptr entity)
+	void OnUnloadStreamableEntity(Simulation& simulation, entity::EventData& data)
 	{
-		entity->*&CStreamable::state = State::Unloading;
+		data.entity->*&CStreamable::state = State::Unloading;
 	}
 
-	void OnUpdateStreamableEntity(Simulation& simulation, entity::Ptr entity)
+	void OnUpdateStreamableEntity(Simulation& simulation, entity::EventData& data)
 	{
-		switch (entity->*&CStreamable::state)
+		switch (data.entity->*&CStreamable::state)
 		{
 		case State::Loading:
-			if (entity->*&loading::CStreamable::tasks == 0)
+			if (data.entity->*&loading::CStreamable::tasks == 0)
 			{
-				entity->*&CStreamable::state = State::Loaded;
+				data.entity->*&CStreamable::state = State::Loaded;
 			}
 			break;
 
 		case State::Unloading:
-			if (entity->*&loading::CStreamable::tasks == 0)
+			if (data.entity->*&loading::CStreamable::tasks == 0)
 			{
 				entity->*&CStreamable::state = State::Unloaded;
+				data.entity->*&CStreamable::state = State::Unloaded;
 			}
 			break;
 		}

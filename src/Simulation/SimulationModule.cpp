@@ -8,9 +8,14 @@
 
 namespace voxel_game::simulation
 {
-	void OnUnloadChildEntity(Simulation& simulation, entity::Ptr entity)
+	void OnLoadEntity(Simulation& simulation, entity::EventData& data)
 	{
-		entity->*&entity::CParent::parent = entity::Ref();
+
+	}
+
+	void OnUnloadChildEntity(Simulation& simulation, entity::EventData& data)
+	{
+		data.entity->*&entity::CParent::parent = entity::Ref();
 	}
 
 	void Initialize(Simulation& simulation)

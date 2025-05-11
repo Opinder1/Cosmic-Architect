@@ -21,10 +21,12 @@ namespace voxel_game::entity
 		Count,
 	};
 
+	struct EventData;
+
 	class Type : public PolyType<Type, 40>
 	{
 	public:
-		using EventCallback = cb::Callback<void(Simulation&, Ptr)>;
+		using EventCallback = cb::Callback<void(Simulation&, EventData&)>;
 		using EventCallbacks = std::vector<EventCallback>;
 		using TypeCallbacks = std::array<EventCallbacks, to_underlying(Event::Count)>;
 
@@ -34,7 +36,7 @@ namespace voxel_game::entity
 
 		void AddCallback(Event event, EventCallback callback);
 
-		void DoEvent(Simulation& simulation, Ptr poly, Event event) const;
+		void DoEvent(Simulation& simulation, EventData& data, Event event) const;
 
 	private:
 		TypeCallbacks m_type_callbacks;
@@ -74,6 +76,11 @@ namespace voxel_game::entity
 	using Ptr = Type::Ptr;
 	using WRef = Factory::WeakRef;
 	using Ref = Factory::Ref;
+
+	struct EventData
+	{
+		WRef entity;
+	};
 }
 
 namespace std
