@@ -363,6 +363,7 @@ namespace voxel_game
 		{
 			SimulationWorldUpdate(simulation);
 			SimulationScaleUpdate(simulation);
+			SimulationEntityUpdate(simulation);
 			SimulationWorkerUpdate(simulation);
 			SimulationSingleUpdate(simulation);
 		}
