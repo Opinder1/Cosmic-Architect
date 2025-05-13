@@ -57,7 +57,7 @@ namespace voxel_game
 
 		SimulationInitialize(*m_simulation);
 
-		m_universe_entity = m_simulation->universe.Reference();
+		m_universe_entity = universe::GetUniverse(*m_simulation);
 
 #if defined(DEBUG_ENABLED)
 		m_info_updater.SetWriterThread(std::this_thread::get_id());
