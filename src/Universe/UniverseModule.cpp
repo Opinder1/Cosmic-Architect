@@ -18,16 +18,18 @@
 
 namespace voxel_game::universe
 {
-	simulation::ConfigDefaults config_defaults;
+	simulation::ConfigDefaults g_config_defaults;
+
+	UUID g_universe_uuid = UUID{ 0, 0 };
 
 	void InitializeConfigDefaults()
 	{
-		if (!config_defaults.empty())
+		if (!g_config_defaults.empty())
 		{
 			return;
 		}
 
-		config_defaults =
+		g_config_defaults =
 		{
 			// General
 			{ "campaign_script", "" },
@@ -146,13 +148,22 @@ namespace voxel_game::universe
 		}
 	};
 
-	entity::Ref CreateNewUniverse(Simulation& simulation, const godot::String& path)
+	entity::Ref GetUniverse(Simulation& simulation)
+	{
+		DEBUG_THREAD_CHECK_WRITE(&simulation);
+
+		return simulation.entity_factory.GetPoly(g_universe_uuid);
+	}
+
+	void LoadUniverse(Simulation& simulation, const godot::String& path)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
 		DEBUG_ASSERT(!simulation.unloading, "We shouldn't create an entity while unloading");
 
-		entity::Ref universe_entity = simulation.entity_factory.GetPoly(GenerateUUID());
+		entity::Ref universe_entity = GetUniverse(simulation);
 
+		if (entity::Type::IsIDEmpty(universe_entity.GetTypeID()))
+		{
 		// Create the universe
 		simulation.entity_factory.AddTypes<
 			universe::CUniverse,
@@ -169,7 +180,7 @@ namespace voxel_game::universe
 
 		universe_entity->*&CUniverse::path = path;
 
-		simulation::InitializeConfig(universe_entity->*&CUniverse::config, path.path_join("config.json"), config_defaults);
+			simulation::InitializeConfig(universe_entity->*&CUniverse::config, path.path_join("config.json"), g_config_defaults);
 		universe_entity->*&CUniverse::last_config_save = simulation.frame_start_time;
 
 		spatial3d::WorldPtr world = spatial3d::CreateWorld(simulation.universe_type);
@@ -181,7 +192,8 @@ namespace voxel_game::universe
 
 		universe_entity->*&spatial3d::CWorld::world = world;
 
-		return universe_entity;
+			SimulationLoadEntity(simulation, universe_entity);
+		}
 	}
 
 	void OnUpdateUniverseEntity(Simulation& simulation, entity::EventData& data)
@@ -233,7 +245,7 @@ namespace voxel_game::universe
 		simulation.entity_factory.AddCallback<CUniverse, loading::CStreamable>(entity::Event::Update, cb::Bind<&OnUpdateUniverseEntity>());
 		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::Unload, cb::Bind<&OnUnloadUniverseEntity>());
 
-		simulation.universe = CreateNewUniverse(simulation, simulation.path);
+		simulation.universe = GetUniverse(simulation);
 	}
 
 	void Uninitialize(Simulation& simulation)
