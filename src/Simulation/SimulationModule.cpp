@@ -23,6 +23,7 @@ namespace voxel_game::simulation
 		simulation.processor_count = godot::OS::get_singleton()->get_processor_count();
 		simulation.worker_count = simulation.processor_count;
 
+		simulation.entity_factory.AddCallback<>(entity::Event::Load, cb::Bind<OnLoadEntity>());
 		simulation.entity_factory.AddCallback<entity::CParent>(entity::Event::Unload, cb::Bind<OnUnloadChildEntity>());
 	}
 
