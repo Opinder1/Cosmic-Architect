@@ -164,33 +164,33 @@ namespace voxel_game::universe
 
 		if (entity::Type::IsIDEmpty(universe_entity.GetTypeID()))
 		{
-		// Create the universe
-		simulation.entity_factory.AddTypes<
-			universe::CUniverse,
-			spatial3d::CWorld,
-			loading::CStreamable,
-			loading::CAutosave,
-			rendering::CScenario
-		>(universe_entity.GetID());
+			// Create the universe
+			simulation.entity_factory.AddTypes<
+				universe::CUniverse,
+				spatial3d::CWorld,
+				loading::CStreamable,
+				loading::CAutosave,
+				rendering::CScenario
+			>(universe_entity.GetID());
 
-		if (rendering::IsEnabled())
-		{
-			simulation.entity_factory.AddTypes<rendering::CTransform>(universe_entity.GetID());
-		}
+			if (rendering::IsEnabled())
+			{
+				simulation.entity_factory.AddTypes<rendering::CTransform>(universe_entity.GetID());
+			}
 
-		universe_entity->*&CUniverse::path = path;
+			universe_entity->*&CUniverse::path = path;
 
 			simulation::InitializeConfig(universe_entity->*&CUniverse::config, path.path_join("config.json"), g_config_defaults);
-		universe_entity->*&CUniverse::last_config_save = simulation.frame_start_time;
+			universe_entity->*&CUniverse::last_config_save = simulation.frame_start_time;
 
-		spatial3d::WorldPtr world = spatial3d::CreateWorld(simulation.universe_type);
+			spatial3d::WorldPtr world = spatial3d::CreateWorld(simulation.universe_type);
 
-		world->*&spatial3d::World::node_size = 16;
-		world->*&spatial3d::PartialWorld::node_keepalive = 1s;
+			world->*&spatial3d::World::node_size = 16;
+			world->*&spatial3d::PartialWorld::node_keepalive = 1s;
 
-		loading::WorldOpenDatabase(simulation, world, path.path_join("galaxies.db"));
+			loading::WorldOpenDatabase(simulation, world, path.path_join("galaxies.db"));
 
-		universe_entity->*&spatial3d::CWorld::world = world;
+			universe_entity->*&spatial3d::CWorld::world = world;
 
 			SimulationLoadEntity(simulation, universe_entity);
 		}

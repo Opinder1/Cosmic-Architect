@@ -43,6 +43,8 @@ namespace voxel_game::galaxy
 		(node->*&spatial3d::Node::entities).insert(galaxy_entity.Reference());
 		(node->*&universe::Node::galaxies).push_back(galaxy_entity.Reference());
 
+		SimulationLoadEntity(simulation, galaxy_entity);
+
 		return galaxy_entity;
 	}
 
@@ -88,6 +90,8 @@ namespace voxel_game::galaxy
 		galaxy_entity->*&spatial3d::CLoader::dist_per_lod = 3;
 		galaxy_entity->*&spatial3d::CLoader::min_lod = 0;
 		galaxy_entity->*&spatial3d::CLoader::max_lod = spatial3d::k_max_world_scale;
+
+		SimulationLoadEntity(simulation, galaxy_entity);
 
 		return galaxy_entity;
 	}
