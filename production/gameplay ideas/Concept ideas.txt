@@ -1,40 +1,9 @@
-<<< Resource management >>>
+<<< Factions >>>
 
-[Resource]
-A resource is any file data that is needed by the client and not the server.
-
-[Mods]
-When mods are loaded each one should have an id.
-If there two mods have the same id, the second one should have a number added to the end. This makes sure all mods are loaded since collisions can easily be avoided this way.
-
-[ID table]
-All the objects added by mods and the base vanilla objects will be put into an ordered table. Then ids will be given to each object and this will give an id table.
-If a mod is added then its objects will be added to the end. If a mod is removed then the ids will become blank.
-If a mod or the base is updated then any new ids will be added to the end which for older tables may cause lots of fragmentation but it should be handled.
-The ids will only be visible internally and will allow mods to easily add new content as well as modify existing content.
-
-The id table also holds the handle for the object as well as its internal id. This handle dictates the behavior of that object and related info like the mod that its from.
-The handle can be overriden by another mod. "override" can be used to replace the functionality and "extend" can be used to add additional functionality.
-
-There will be an id table generated for each galaxy based on the mods that are active on them.
-This id table will be valid for all planets in the galaxy since clients will need the mods loaded when connecting to the galaxy.
-
-
-
-<<< Scene >>>
-
-[Scene]
-A scene is an existence where entities are based. Clients can connect to a scene and they can navigate it by their avatar entity called a player.
-All entities near or within set contitions of the player will be visible to the player and will be sent via a network socket.
-
-[Entity stream types]
-There are three main categories of entity: Static, Dynamic and Stream.
-These are based off of the OpenGL buffer types and state how objects should be sent to clients.
-
-Static means that the object should be sent once and does not need to be resent.       (Example: a planets public seed)
-Dynamic means that the object will need to be resent occasionally.                     (Example: chunks nearby the player)
-Stream means the object will need to be resent frequently which is usually every tick. (Example: players and entities around player)
-
+family, religion, friend group,
+planet, city, town, tribe, animal pack,
+civilization, council, politics_group, company, department,
+army, army_division, army_fleet,
 
 
 <<< World Gen >>>
@@ -88,6 +57,11 @@ They can have towns and cities which have citizens that live there.
 A structure that is more or less a city in space.
 Can do many functions like act as a starship port, house citizens and hold farms.
 
+[Space ship]
+A structure that can easily fly. It can land on a planet, space station or even another larger space ship
+
+[Vehicle]
+A non space ship that is effected by gravity. Can be on a planet, space station or large space ship
 
 
 <<< Galaxy politics >>>

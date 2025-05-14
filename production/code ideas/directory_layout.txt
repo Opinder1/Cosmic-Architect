@@ -1,4 +1,5 @@
 app.exe
+universe.json
 local_galaxies.db
 remote_galaxies.db
 galaxies/
