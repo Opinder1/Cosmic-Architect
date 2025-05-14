@@ -75,11 +75,12 @@
       <Item Name="region"       Condition="archetype->m_type_offsets[31] != 65535">(voxel_game::spatial3d::CRegion*           )((uint8_t*)this + archetype->m_type_offsets[31])</Item>
       <Item Name="entity"       Condition="archetype->m_type_offsets[32] != 65535">(voxel_game::spatial3d::CEntity*           )((uint8_t*)this + archetype->m_type_offsets[32])</Item>
       <Item Name="world"        Condition="archetype->m_type_offsets[33] != 65535">(voxel_game::spatial3d::CWorld*            )((uint8_t*)this + archetype->m_type_offsets[33])</Item>
-      <Item Name="galaxy"       Condition="archetype->m_type_offsets[34] != 65535">(voxel_game::galaxy::CGalaxy*              )((uint8_t*)this + archetype->m_type_offsets[34])</Item>
-      <Item Name="star"         Condition="archetype->m_type_offsets[35] != 65535">(voxel_game::galaxy::CStar*                )((uint8_t*)this + archetype->m_type_offsets[35])</Item>
-      <Item Name="galaxyrender" Condition="archetype->m_type_offsets[36] != 65535">(voxel_game::galaxyrender::CWorld*         )((uint8_t*)this + archetype->m_type_offsets[36])</Item>
-      <Item Name="voxel"        Condition="archetype->m_type_offsets[37] != 65535">(voxel_game::voxel::CWorld*                )((uint8_t*)this + archetype->m_type_offsets[37])</Item>
-      <Item Name="voxelrender"  Condition="archetype->m_type_offsets[38] != 65535">(voxel_game::voxelrender::CWorld*          )((uint8_t*)this + archetype->m_type_offsets[38])</Item>
+      <Item Name="universe"     Condition="archetype->m_type_offsets[34] != 65535">(voxel_game::universe::CUniverse*          )((uint8_t*)this + archetype->m_type_offsets[34])</Item>
+      <Item Name="galaxy"       Condition="archetype->m_type_offsets[35] != 65535">(voxel_game::galaxy::CGalaxy*              )((uint8_t*)this + archetype->m_type_offsets[35])</Item>
+      <Item Name="star"         Condition="archetype->m_type_offsets[36] != 65535">(voxel_game::galaxy::CStar*                )((uint8_t*)this + archetype->m_type_offsets[36])</Item>
+      <Item Name="galaxyrender" Condition="archetype->m_type_offsets[37] != 65535">(voxel_game::galaxyrender::CWorld*         )((uint8_t*)this + archetype->m_type_offsets[37])</Item>
+      <Item Name="voxel"        Condition="archetype->m_type_offsets[38] != 65535">(voxel_game::voxel::CWorld*                )((uint8_t*)this + archetype->m_type_offsets[38])</Item>
+      <Item Name="voxelrender"  Condition="archetype->m_type_offsets[39] != 65535">(voxel_game::voxelrender::CWorld*          )((uint8_t*)this + archetype->m_type_offsets[39])</Item>
     </Expand>
   </Type>
 
