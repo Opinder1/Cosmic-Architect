@@ -53,13 +53,13 @@ namespace voxel_game
 		spatial3d::TypeData vehicle_type;
 
 		// Entity
-		entity::Factory entity_factory;
+		entity::Factory entity_factory; // These entities are being updated every frame
 
-		std::vector<entity::Ref> entities;
+		std::vector<entity::Ref> updating_entities;
 
 		// Loading
-		std::vector<entity::Ref> loading_entities;
-		std::vector<entity::Ref> unloading_entities; // These entities no longer are alive but are having their resources unloaded
+		std::vector<entity::Ref> loading_entities; // These entities are being loaded first before being updated normally
+		std::vector<entity::Ref> unloading_entities; // These entities no longer being updated and are having their resources unloaded
 
 		// Universe
 		entity::Ref universe;

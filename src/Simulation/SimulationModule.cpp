@@ -10,7 +10,12 @@ namespace voxel_game::simulation
 {
 	void OnLoadEntity(Simulation& simulation, entity::EventData& data)
 	{
-		simulation.entities.push_back(entity::Ref(data.entity));
+		simulation.updating_entities.push_back(entity::Ref(data.entity));
+	}
+
+	void OnUnloadEntity(Simulation& simulation, entity::EventData& data)
+	{
+		unordered_erase(simulation.updating_entities, data.entity);
 	}
 
 	void OnUnloadChildEntity(Simulation& simulation, entity::EventData& data)
@@ -23,8 +28,9 @@ namespace voxel_game::simulation
 		simulation.processor_count = godot::OS::get_singleton()->get_processor_count();
 		simulation.worker_count = simulation.processor_count;
 
-		simulation.entity_factory.AddCallback<>(entity::Event::Load, cb::Bind<OnLoadEntity>());
-		simulation.entity_factory.AddCallback<entity::CParent>(entity::Event::Unload, cb::Bind<OnUnloadChildEntity>());
+		simulation.entity_factory.AddCallback<>(entity::Event::BeginLoad, cb::Bind<OnLoadEntity>());
+		simulation.entity_factory.AddCallback<>(entity::Event::BeginUnload, cb::Bind<OnUnloadEntity>());
+		simulation.entity_factory.AddCallback<entity::CParent>(entity::Event::BeginUnload, cb::Bind<OnUnloadChildEntity>());
 	}
 
 	void Uninitialize(Simulation& simulation)
@@ -33,7 +39,7 @@ namespace voxel_game::simulation
 
 	bool IsUnloadDone(Simulation& simulation)
 	{
-		return simulation.entities.empty();
+		return simulation.updating_entities.empty();
 	}
 
 	void Update(Simulation& simulation)

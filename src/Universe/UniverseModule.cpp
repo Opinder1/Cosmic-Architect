@@ -201,6 +201,7 @@ namespace voxel_game::universe
 		if (simulation.frame_start_time - data.entity->*&CUniverse::last_config_save > 10s)
 		{
 			simulation::SaveJsonConfig(data.entity->*&CUniverse::config);
+			data.entity->*&CUniverse::last_config_save = simulation.frame_start_time;
 		}
 
 		switch (data.entity->*&loading::CStreamable::state)
@@ -243,7 +244,7 @@ namespace voxel_game::universe
 		simulation.universe_type.world_type.AddType<World>();
 
 		simulation.entity_factory.AddCallback<CUniverse, loading::CStreamable>(entity::Event::Update, cb::Bind<&OnUpdateUniverseEntity>());
-		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::Unload, cb::Bind<&OnUnloadUniverseEntity>());
+		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::BeginUnload, cb::Bind<&OnUnloadUniverseEntity>());
 
 		simulation.universe = GetUniverse(simulation);
 	}

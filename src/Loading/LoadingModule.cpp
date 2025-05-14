@@ -11,11 +11,6 @@
 
 namespace voxel_game::loading
 {
-	void OnUnloadEntity(Simulation& simulation, entity::EventData& data)
-	{
-		simulation.unloading_entities.push_back(entity::Ref(data.entity));
-	}
-
 	void OnLoadStreamableEntity(Simulation& simulation, entity::EventData& data)
 	{
 		data.entity->*&CStreamable::state = State::Loading;
@@ -24,6 +19,7 @@ namespace voxel_game::loading
 	void OnUnloadStreamableEntity(Simulation& simulation, entity::EventData& data)
 	{
 		data.entity->*&CStreamable::state = State::Unloading;
+		simulation.unloading_entities.push_back(entity::Ref(data.entity));
 	}
 
 	void OnUpdateStreamableEntity(Simulation& simulation, entity::EventData& data)
@@ -48,11 +44,10 @@ namespace voxel_game::loading
 
 	void Initialize(Simulation& simulation)
 	{
-		simulation.entity_factory.AddCallback(entity::Event::Unload, cb::Bind<OnUnloadEntity>());
-
-		simulation.entity_factory.AddCallback<CStreamable>(entity::Event::Load, cb::Bind<OnLoadStreamableEntity>());
-		simulation.entity_factory.AddCallback<CStreamable>(entity::Event::Unload, cb::Bind<OnUnloadStreamableEntity>());
-		simulation.entity_factory.AddCallback<CStreamable>(entity::Event::Update, cb::Bind<OnUpdateStreamableEntity>());
+		simulation.entity_factory.AddCallback<CStreamable>(entity::Event::BeginLoad, cb::Bind<OnLoadStreamableEntity>());
+		simulation.entity_factory.AddCallback<CStreamable>(entity::Event::BeginUnload, cb::Bind<OnUnloadStreamableEntity>());
+		simulation.entity_factory.AddCallback<CStreamable>(entity::Event::UpdateTask, cb::Bind<OnUpdateStreamableEntity>());
+		simulation.entity_factory.AddCallback<CStreamable>(entity::Event::UnloadTask, cb::Bind<OnUpdateStreamableEntity>());
 	}
 
 	void Uninitialize(Simulation& simulation)
@@ -67,6 +62,15 @@ namespace voxel_game::loading
 
 	void Update(Simulation& simulation)
 	{
+		if (simulation.unloading)
+		{
+			// Unload all entities in the world. The entities memory still exists while there are references
+			for (entity::WRef entity : simulation.loading_entities)
+			{
+				SimulationUnloadEntity(simulation, entity);
+			}
+		}
+
 		for (auto it = simulation.unloading_entities.begin(); it != simulation.unloading_entities.end();)
 		{
 			entity::WRef entity = *it;
@@ -74,7 +78,6 @@ namespace voxel_game::loading
 			if (!entity.Has<CStreamable>() || entity->*&CStreamable::state == State::Unloaded)
 			{
 				it = simulation.unloading_entities.erase(it);
-				unordered_erase(simulation.entities, entity);
 			}
 			else
 			{

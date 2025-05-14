@@ -122,8 +122,8 @@ namespace voxel_game::galaxy
 		simulation.galaxy_type.world_type.AddType<loading::World>();
 		simulation.galaxy_type.world_type.AddType<World>();
 
-		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::Load, cb::Bind<&OnLoadGalaxyEntity>());
-		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::Unload, cb::Bind<&OnUnloadGalaxyEntity>());
+		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::BeginLoad, cb::Bind<&OnLoadGalaxyEntity>());
+		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::BeginUnload, cb::Bind<&OnUnloadGalaxyEntity>());
 	}
 
 	void Uninitialize(Simulation& simulation)

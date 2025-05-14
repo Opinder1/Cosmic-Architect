@@ -276,19 +276,41 @@ namespace voxel_game
 
 	void SimulationEntityUpdateTask(Simulation& simulation, size_t index)
 	{
-		entity::WRef entity = simulation.entities[index];
+		entity::WRef entity = simulation.updating_entities[index];
 
 		DEBUG_THREAD_CHECK_WRITE(entity.Data());
 
-		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::TaskUpdate);
+		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::UpdateTask);
+	}
+
+	void SimulationEntityLoadTask(Simulation& simulation, size_t index)
+	{
+		entity::WRef entity = simulation.loading_entities[index];
+
+		DEBUG_THREAD_CHECK_WRITE(entity.Data());
+
+		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::LoadTask);
+	}
+
+	void SimulationEntityUnloadTask(Simulation& simulation, size_t index)
+	{
+		entity::WRef entity = simulation.unloading_entities[index];
+
+		DEBUG_THREAD_CHECK_WRITE(entity.Data());
+
+		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::UnloadTask);
 	}
 
 	// Run all entities in parallel doing entity specific code
 	void SimulationEntityUpdate(Simulation& simulation)
 	{
-		TaskData entity_task{ simulation, &SimulationEntityUpdateTask, simulation.entities.size() };
+		TaskData entity_tasks[3] = {
+			{ simulation, &SimulationEntityUpdateTask, simulation.updating_entities.size() },
+			{ simulation, &SimulationEntityLoadTask, simulation.loading_entities.size() },
+			{ simulation, &SimulationEntityUnloadTask, simulation.unloading_entities.size() },
+		};
 
-		SimulationDoTasks(simulation, entity_task);
+		SimulationDoMultitasks(simulation, entity_tasks);
 	}
 	
 	void SimulationWorkerUpdateTask(Simulation& simulation, size_t index)
@@ -326,7 +348,7 @@ namespace voxel_game
 		universe::Update(simulation);
 		galaxy::Update(simulation);
 
-		for (entity::WRef entity : simulation.entities)
+		for (entity::WRef entity : simulation.updating_entities)
 		{
 			simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Update);
 		}
@@ -352,10 +374,12 @@ namespace voxel_game
 		simulation.unloading = true;
 
 		// Unload all entities in the world. The entities memory still exists while there are references
-		for (entity::WRef entity : simulation.entities)
+		std::vector<entity::Ref> updating_entities = std::move(simulation.updating_entities);
+		for (entity::WRef entity : updating_entities)
 		{
 			SimulationUnloadEntity(simulation, entity);
 		}
+		updating_entities.clear();
 
 		// Loop update while unloading
 		while (!IsSimulationUnloadDone(simulation))
@@ -399,13 +423,13 @@ namespace voxel_game
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
 
-		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Load);
+		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::BeginLoad);
 	}
 
 	void SimulationUnloadEntity(Simulation& simulation, entity::WRef entity)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
 
-		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Unload);
+		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::BeginUnload);
 	}
 }
