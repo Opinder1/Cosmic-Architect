@@ -333,13 +333,14 @@ public:
 	PolyFactory() {}
 
 	// Get a reference to a poly with the given PolyID or create one if needed.
-	Ref GetPoly(PolyID id)
+	Ref GetPoly(PolyID id, bool& created)
 	{
-		auto&& [it, emplaced] = m_entries.try_emplace(id);
+		PolyMap::iterator it;
+		std::tie(it, created) = m_entries.try_emplace(id);
 
 		PolyEntry& entry = it->second;
 
-		if (emplaced)
+		if (created)
 		{
 			entry.type_id = ArchetypeT::CreateTypeID<Header>();
 			entry.header = AllocatePoly(entry.type_id);

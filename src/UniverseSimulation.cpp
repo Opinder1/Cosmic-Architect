@@ -363,8 +363,6 @@ namespace voxel_game
 		loading::Initialize(simulation);
 		universe::Initialize(simulation);
 		galaxy::Initialize(simulation);
-
-		universe::LoadUniverse(simulation, simulation.path);
 	}
 
 	void SimulationUnload(Simulation& simulation)

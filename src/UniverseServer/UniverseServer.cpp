@@ -27,6 +27,8 @@ namespace voxel_game
 {
 	const size_t k_simulation_ticks_per_second = 20;
 
+	const UUID g_universe_uuid = UUID{ 0, 0 };
+
 	godot::OptObj<UniverseServer> UniverseServer::k_singleton;
 
 	std::optional<const UniverseServer::SignalStrings> UniverseServer::k_signals;
@@ -53,11 +55,9 @@ namespace voxel_game
 	{
 		m_simulation = std::make_unique<Simulation>();
 
-		m_simulation->path = godot::ProjectSettings::get_singleton()->get_setting("voxel_game/universe/path");
-
 		SimulationInitialize(*m_simulation);
 
-		m_universe_entity = universe::GetUniverse(*m_simulation);
+		m_universe_entity = universe::LoadUniverse(*m_simulation, g_universe_uuid, godot::ProjectSettings::get_singleton()->get_setting("voxel_game/universe/path"));
 
 #if defined(DEBUG_ENABLED)
 		m_info_updater.SetWriterThread(std::this_thread::get_id());

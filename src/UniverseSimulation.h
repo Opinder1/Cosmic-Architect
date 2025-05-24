@@ -38,8 +38,6 @@ namespace voxel_game
 		uint64_t frame_index = 0;
 		Clock::time_point frame_start_time;
 
-		godot::String path;
-
 		// Spatial
 		std::vector<spatial3d::WorldPtr> spatial_worlds;
 		std::vector<spatial3d::ScalePtr> spatial_scales;
@@ -62,7 +60,7 @@ namespace voxel_game
 		std::vector<entity::Ref> unloading_entities; // These entities no longer being updated and are having their resources unloaded
 
 		// Universe
-		entity::Ref universe;
+		std::vector<entity::Ref> universes;
 
 		// Galaxy
 		std::vector<entity::Ref> galaxies;

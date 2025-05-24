@@ -26,7 +26,13 @@ namespace voxel_game::galaxy
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
 		DEBUG_ASSERT(!simulation.unloading, "We shouldn't create an entity while unloading");
 
-		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID());
+		bool created;
+		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID(), created);
+
+		if (!created)
+		{
+			return galaxy_entity;
+		}
 
 		simulation.entity_factory.AddTypes<
 			CGalaxy,
@@ -54,7 +60,13 @@ namespace voxel_game::galaxy
 		DEBUG_ASSERT(!simulation.unloading, "We shouldn't create an entity while unloading");
 
 		// Create the simulated galaxy
-		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID());
+		bool created;
+		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID(), created);
+
+		if (!created)
+		{
+			return galaxy_entity;
+		}
 
 		simulation.entity_factory.AddTypes<
 			CGalaxy,
