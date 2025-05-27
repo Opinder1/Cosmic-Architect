@@ -119,10 +119,10 @@
 #define _TKRZW_APPLIBS      ""
 #endif
 #if !defined(_TKRZW_PKG_VERSION)
-#define _TKRZW_PKG_VERSION  "0.0.0"
+#define _TKRZW_PKG_VERSION  "1.0.27"
 #endif
 #if !defined(_TKRZW_LIB_VERSION)
-#define _TKRZW_LIB_VERSION  "0.0.0"
+#define _TKRZW_LIB_VERSION  "1.0.27"
 #endif
 
 #include <algorithm>
