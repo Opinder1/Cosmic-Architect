@@ -28,11 +28,9 @@ namespace voxel_game::spatial3d
 	enum class NodeState : uint8_t
 	{
 		Invalid,
-		Loading, // Has a load command
-		Merging, // Has a merge command
+		Loading, // Node is taken up its space in the world but is not accessable yet
 		Loaded, // Fully loaded
-		Unmerging, // Has a unmerge command
-		Unloading, // Has a unload command
+		Unloading, // Node is taking up space in the world but is no longer accessible
 	};
 
 	struct NodeCommand
@@ -47,15 +45,9 @@ namespace voxel_game::spatial3d
 		godot::Vector3i position;
 		uint8_t scale_index = 0;
 
-		NodeState state = NodeState::Invalid;
-
 		uint8_t parent_index = k_node_no_parent; // The index we are in our parent
 		uint8_t children_mask = 0; // Each bit determines a child [0-7]
 		uint8_t neighbour_mask = 0; // Each bit determines a neighbour [0-5]
-
-		uint32_t num_observers = 0; // Number of observers looking at me (1 for write, more than 1 means shared read)
-		uint32_t network_version = 0; // The version of this node. We use this to check if we should update to a newer version if there is one
-		Clock::time_point last_update_time; // Time since a loader last updated our unload timer
 
 		NodePtr parent = nullptr; // Octree parent
 
@@ -64,6 +56,18 @@ namespace voxel_game::spatial3d
 		NodePtr neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
 
 		robin_hood::unordered_set<entity::Ref> entities;
+	};
+
+	struct PartialNode
+	{
+		NodeState state = NodeState::Invalid;
+		uint32_t num_observers = 0; // Number of observers looking at me (1 for write, more than 1 means shared read)
+		Clock::time_point last_update_time; // Time since a loader last updated our unload timer
+	};
+
+	struct NetworkNode
+	{
+		uint32_t network_version = 0; // The version of this node. We use this to check if we should update to a newer version if there is one
 	};
 
 	using NodeMap = robin_hood::unordered_map<godot::Vector3i, NodePtr>;
@@ -84,8 +88,6 @@ namespace voxel_game::spatial3d
 	{
 		// Command lists. We use these to limit operations currently in progress
 		std::vector<NodeCommand> load_commands;
-		std::vector<NodeCommand> merge_commands;
-		std::vector<NodeCommand> unmerge_commands;
 		std::vector<NodeCommand> unload_commands;
 	};
 

@@ -230,6 +230,7 @@ namespace voxel_game::universe
 		InitializeConfigDefaults();
 
 		simulation.universe_type.node_type.AddType<spatial3d::Node>();
+		simulation.universe_type.node_type.AddType<spatial3d::PartialNode>();
 		simulation.universe_type.node_type.AddType<loading::Node>();
 		simulation.universe_type.node_type.AddType<Node>();
 

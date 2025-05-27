@@ -67,12 +67,6 @@ namespace voxel_game::spatial3d
 		case NodeState::Loading:
 			return &spatial3d::PartialScale::load_commands;
 
-		case NodeState::Merging:
-			return &spatial3d::PartialScale::merge_commands;
-
-		case NodeState::Unmerging:
-			return &spatial3d::PartialScale::unmerge_commands;
-
 		case NodeState::Unloading:
 			return &spatial3d::PartialScale::unload_commands;
 
@@ -261,8 +255,6 @@ namespace voxel_game::spatial3d
 			if (scale.Has<PartialScale>())
 			{
 				DEBUG_ASSERT((scale->*&PartialScale::load_commands).empty(), "All commands should have been destroyed before destroying the world");
-				DEBUG_ASSERT((scale->*&PartialScale::merge_commands).empty(), "All commands should have been destroyed before destroying the world");
-				DEBUG_ASSERT((scale->*&PartialScale::unmerge_commands).empty(), "All commands should have been destroyed before destroying the world");
 				DEBUG_ASSERT((scale->*&PartialScale::unload_commands).empty(), "All commands should have been destroyed before destroying the world");
 			}
 
@@ -327,7 +319,7 @@ namespace voxel_game::spatial3d
 			// For each create command
 			ScaleDoNodeCommands(scale, NodeState::Loading, [&](NodePtr node, uint16_t& task_count)
 			{
-				DEBUG_ASSERT(node->*&Node::state == NodeState::Loading, "Node should be in loading state");
+				DEBUG_ASSERT(node->*&PartialNode::state == NodeState::Loading, "Node should be in loading state");
 
 				if (task_count > 0)
 				{
@@ -335,8 +327,8 @@ namespace voxel_game::spatial3d
 				}
 
 				// Initialize the node
-				node->*&Node::state = NodeState::Merging;
-				node->*&Node::last_update_time = frame_start_time;
+				node->*&PartialNode::state = NodeState::Loaded;
+				node->*&PartialNode::last_update_time = frame_start_time;
 
 				NodeMap::iterator it = (scale->*&Scale::nodes).find(node->*&Node::position);
 				DEBUG_ASSERT(it != (scale->*&Scale::nodes).end(), "The node doesn't exist");
@@ -344,8 +336,6 @@ namespace voxel_game::spatial3d
 				it->second = node;
 
 				LinkNode(world, node, scale->*&Scale::index);
-
-				(scale->*&PartialScale::merge_commands).push_back(NodeCommand{ node });
 			});
 
 			(scale->*&PartialScale::load_commands).clear();
@@ -364,7 +354,7 @@ namespace voxel_game::spatial3d
 			// For each destroy command of the scale
 			ScaleDoNodeCommands(scale, NodeState::Unloading, [&](NodePtr node, uint16_t& task_count)
 			{
-				DEBUG_ASSERT(node->*&Node::state == NodeState::Unloading, "Node should be in unloading state");
+				DEBUG_ASSERT(node->*&PartialNode::state == NodeState::Unloading, "Node should be in unloading state");
 
 				if (task_count > 0)
 				{
@@ -408,8 +398,8 @@ namespace voxel_game::spatial3d
 
 				node->*&Node::position = pos;
 				node->*&Node::scale_index = scale->*&Scale::index;
-				node->*&Node::state = NodeState::Loading;
-				node->*&Node::last_update_time = frame_start_time;
+				node->*&PartialNode::state = NodeState::Loading;
+				node->*&PartialNode::last_update_time = frame_start_time;
 
 				(scale->*&PartialScale::load_commands).push_back(NodeCommand{ node });
 				return;
@@ -424,7 +414,7 @@ namespace voxel_game::spatial3d
 			}
 
 			// Touch the node so it stays loaded
-			node->*&Node::last_update_time = frame_start_time;
+			node->*&PartialNode::last_update_time = frame_start_time;
 		});
 	}
 
@@ -433,22 +423,6 @@ namespace voxel_game::spatial3d
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 
 		WorldPtr world = scale->*&Scale::world;
-
-		// Finish the previous merge commands
-		ScaleDoNodeCommands(scale, NodeState::Merging, [&](NodePtr node, uint16_t& task_count)
-		{
-			DEBUG_ASSERT(node->*&Node::state == NodeState::Merging, "Node should be in merging state");
-
-			if (task_count > 0)
-			{
-				return;
-			}
-
-			node->*&Node::state = NodeState::Loaded;
-		});
-
-		// Clear previous commands. If you didn't handle them then too bad
-		(scale->*&PartialScale::merge_commands).clear();
 
 		const uint32_t scale_step = 1 << scale->*&Scale::index;
 		const double scale_node_step = scale_step * world->*&World::node_size;
@@ -466,29 +440,6 @@ namespace voxel_game::spatial3d
 
 		WorldPtr world = scale->*&Scale::world;
 
-		// Finish the previous unmerge commands
-		ScaleDoNodeCommands(scale, NodeState::Unmerging, [&](NodePtr node, uint16_t& task_count)
-		{
-			DEBUG_ASSERT(node->*&Node::state == NodeState::Unmerging, "Node should be in unloading state");
-
-			if (task_count > 0)
-			{
-				return;
-			}
-
-			node->*&Node::state = NodeState::Unloading;
-
-			NodeMap::iterator it = (scale->*&Scale::nodes).find(node->*&Node::position);
-			DEBUG_ASSERT(it != (scale->*&Scale::nodes).end(), "The node doesn't exist");
-
-			it->second = nullptr;
-
-			(scale->*&PartialScale::unload_commands).push_back(NodeCommand{ node });
-		});
-
-		// Clear previous commands. If you didn't handle them then too bad
-		(scale->*&PartialScale::unmerge_commands).clear();
-
 		// For each node in the scale
 		for (auto&& [pos, node] : scale->*&Scale::nodes)
 		{
@@ -498,17 +449,19 @@ namespace voxel_game::spatial3d
 			}
 
 			// Check if node hasn't been touched in too long
-			bool node_untouched = frame_start_time - node->*&Node::last_update_time > world->*&PartialWorld::node_keepalive;
+			bool node_untouched = frame_start_time - node->*&PartialNode::last_update_time > world->*&PartialWorld::node_keepalive;
 
 			if (world->*&World::unloading || node_untouched)
 			{
 				// Move the entity along to deletion
-				switch (node->*&Node::state)
+				switch (node->*&PartialNode::state)
 				{
 				case NodeState::Loaded:
-					node->*&Node::state = NodeState::Unloading;
+					node->*&PartialNode::state = NodeState::Unloading;
 
-					(scale->*&PartialScale::unmerge_commands).push_back(NodeCommand{ node });
+					node = nullptr;
+
+					(scale->*&PartialScale::unload_commands).push_back(NodeCommand{ node });
 					break;
 				}
 			}

@@ -4,11 +4,12 @@
     <DisplayString>size={archetype->m_total_size}</DisplayString>
     <Expand>
       <Item Name="spatial3d"    Condition="archetype->m_type_offsets[1] != 65535">(voxel_game::spatial3d::Node*             )((uint8_t*)this + archetype->m_type_offsets[1])</Item>
-      <Item Name="loading"      Condition="archetype->m_type_offsets[2] != 65535">(voxel_game::loading::Node*               )((uint8_t*)this + archetype->m_type_offsets[2])</Item>
-      <Item Name="universe"     Condition="archetype->m_type_offsets[3] != 65535">(voxel_game::universe::Node*              )((uint8_t*)this + archetype->m_type_offsets[3])</Item>
-      <Item Name="galaxy"       Condition="archetype->m_type_offsets[4] != 65535">(voxel_game::galaxy::Node*                )((uint8_t*)this + archetype->m_type_offsets[4])</Item>
-      <Item Name="voxel"        Condition="archetype->m_type_offsets[5] != 65535">(voxel_game::voxel::Node*                 )((uint8_t*)this + archetype->m_type_offsets[5])</Item>
-      <Item Name="voxelrender"  Condition="archetype->m_type_offsets[6] != 65535">(voxel_game::voxelrender::Node*           )((uint8_t*)this + archetype->m_type_offsets[6])</Item>
+      <Item Name="spatial3d"    Condition="archetype->m_type_offsets[2] != 65535">(voxel_game::spatial3d::PartialNode*      )((uint8_t*)this + archetype->m_type_offsets[2])</Item>
+      <Item Name="loading"      Condition="archetype->m_type_offsets[3] != 65535">(voxel_game::loading::Node*               )((uint8_t*)this + archetype->m_type_offsets[3])</Item>
+      <Item Name="universe"     Condition="archetype->m_type_offsets[4] != 65535">(voxel_game::universe::Node*              )((uint8_t*)this + archetype->m_type_offsets[4])</Item>
+      <Item Name="galaxy"       Condition="archetype->m_type_offsets[5] != 65535">(voxel_game::galaxy::Node*                )((uint8_t*)this + archetype->m_type_offsets[5])</Item>
+      <Item Name="voxel"        Condition="archetype->m_type_offsets[6] != 65535">(voxel_game::voxel::Node*                 )((uint8_t*)this + archetype->m_type_offsets[6])</Item>
+      <Item Name="voxelrender"  Condition="archetype->m_type_offsets[7] != 65535">(voxel_game::voxelrender::Node*           )((uint8_t*)this + archetype->m_type_offsets[7])</Item>
     </Expand>
   </Type>
   

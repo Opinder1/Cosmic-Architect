@@ -12,16 +12,18 @@ using namespace voxel_game;
 const size_t node_first = __LINE__ + 1;
 template<> template<> const size_t spatial3d::NodeType::k_type_index<spatial3d::NodeType::Header>	= __LINE__ - node_first;
 template<> template<> const size_t spatial3d::NodeType::k_type_index<spatial3d::Node>				= __LINE__ - node_first;
+template<> template<> const size_t spatial3d::NodeType::k_type_index<spatial3d::PartialNode>		= __LINE__ - node_first;
 template<> template<> const size_t spatial3d::NodeType::k_type_index<loading::Node>					= __LINE__ - node_first;
 template<> template<> const size_t spatial3d::NodeType::k_type_index<universe::Node>				= __LINE__ - node_first;
 template<> template<> const size_t spatial3d::NodeType::k_type_index<galaxy::Node>					= __LINE__ - node_first;
 template<> template<> const size_t spatial3d::NodeType::k_type_index<voxel::Node>					= __LINE__ - node_first;
 template<> template<> const size_t spatial3d::NodeType::k_type_index<voxelrender::Node>				= __LINE__ - node_first;
 
-const std::array<PolyTypeInfo, 7> PolyType<spatial3d::NodeType, 7>::k_type_info =
+const std::array<PolyTypeInfo, 8> PolyType<spatial3d::NodeType, 8>::k_type_info =
 {
 	MakeTypeInfo<spatial3d::NodeType::Header>(),
 	MakeTypeInfo<spatial3d::Node>(),
+	MakeTypeInfo<spatial3d::PartialNode>(),
 	MakeTypeInfo<loading::Node>(),
 	MakeTypeInfo<universe::Node>(),
 	MakeTypeInfo<galaxy::Node>(),

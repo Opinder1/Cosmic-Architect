@@ -121,6 +121,7 @@ namespace voxel_game::galaxy
 	void Initialize(Simulation& simulation)
 	{
 		simulation.galaxy_type.node_type.AddType<spatial3d::Node>();
+		simulation.galaxy_type.node_type.AddType<spatial3d::PartialNode>();
 		simulation.galaxy_type.node_type.AddType<loading::Node>();
 		simulation.galaxy_type.node_type.AddType<Node>();
 
