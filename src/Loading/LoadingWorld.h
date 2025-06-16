@@ -72,5 +72,7 @@ namespace voxel_game::loading
 
 	void WorldOpenDatabase(Simulation& simulation, spatial3d::WorldPtr world, const godot::String& path);
 
+	void WorldCloseDatabase(Simulation& simulation, spatial3d::WorldPtr world);
+
 	void ScaleDoLoadCommands(Simulation& simulation, spatial3d::ScalePtr scale);
 }

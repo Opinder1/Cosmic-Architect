@@ -2,6 +2,8 @@
 
 #include "Spatial3D/SpatialWorld.h"
 
+#include <godot_cpp/classes/project_settings.hpp>
+
 namespace voxel_game::loading
 {
 	std::string_view LoadTask::ProcessFull(std::string_view key, std::string_view value)
@@ -18,12 +20,26 @@ namespace voxel_game::loading
 
 	void WorldOpenDatabase(Simulation& simulation, spatial3d::WorldPtr world, const godot::String& path)
 	{
-		tkrzw::Status status = (world->*&World::database).Open(std::string(path.utf8()), true, tkrzw::File::OPEN_NO_WAIT | tkrzw::File::OPEN_SYNC_HARD);
+		std::map<std::string, std::string> params;
 
-		if (status == tkrzw::Status::SUCCESS)
+		params.emplace("num_shards", "4");
+		params.emplace("dbm", "HashDBM");
+
+		int32_t options = tkrzw::File::OPEN_NO_WAIT | tkrzw::File::OPEN_SYNC_HARD;
+
+		std::string os_path = godot::ProjectSettings::get_singleton()->globalize_path(path).utf8();
+
+		tkrzw::Status status = (world->*&World::database).OpenAdvanced(os_path, true, options, params);
+
+		if (status != tkrzw::Status::SUCCESS)
 		{
 
 		}
+	}
+
+	void WorldCloseDatabase(Simulation& simulation, spatial3d::WorldPtr world)
+	{
+		(world->*&World::database).Close();
 	}
 
 	void ScaleDoLoadCommands(Simulation& simulation, spatial3d::ScalePtr scale)
@@ -35,6 +51,8 @@ namespace voxel_game::loading
 		spatial3d::ScaleDoNodeCommands(scale, spatial3d::NodeState::Loading,
 			[&](spatial3d::NodePtr node, uint16_t& task_count)
 		{
+			Task& task = *(node->*&Node::task);
+
 			switch(node->*&Node::state)
 			{
 			case NodeState::Unloaded:
@@ -43,7 +61,7 @@ namespace voxel_game::loading
 				break;
 
 			case NodeState::Loading:
-				if ((node->*&Node::task)->finished == true)
+				if (task.finished == true)
 				{
 					task_count--;
 					node->*&Node::state = NodeState::Loaded;
