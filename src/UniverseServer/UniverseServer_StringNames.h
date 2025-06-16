@@ -10,6 +10,7 @@ namespace voxel_game
 
 		// ####### Universe #######
 
+		godot::StringName update_debug_info;
 		godot::StringName connected_to_galaxy_list;
 		godot::StringName disconnected_from_galaxy_list;
 		godot::StringName galaxy_list_query_response;

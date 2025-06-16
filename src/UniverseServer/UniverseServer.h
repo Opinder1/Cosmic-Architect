@@ -306,6 +306,9 @@ namespace voxel_game
 		static void _cleanup_methods();
 
 	private:
+		godot::String GenerateDebugInfo();
+
+	private:
 		static godot::OptObj<UniverseServer> k_singleton;
 
 		// Cached string names for optimization

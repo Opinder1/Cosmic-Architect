@@ -14,6 +14,7 @@
 
 #include <godot_cpp/classes/display_server.hpp>
 #include <godot_cpp/classes/os.hpp>
+#include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
 
 #include <godot_cpp/core/class_db.hpp>
@@ -103,6 +104,8 @@ namespace voxel_game
 		else
 		{
 			SimulationUpdate(*m_simulation);
+
+			QueueSignal(k_signals->update_debug_info, GenerateDebugInfo());
 		}
 	}
 
@@ -111,6 +114,8 @@ namespace voxel_game
 		EASY_FUNCTION();
 
 		SimulationUpdate(*m_simulation);
+
+		QueueSignal(k_signals->update_debug_info, GenerateDebugInfo());
 
 		// Publish updates to the info caches to be read on the main thread
 		m_info_updater.PublishUpdates();
@@ -147,6 +152,20 @@ namespace voxel_game
 		}
 	}
 #endif
+
+	godot::String UniverseServer::GenerateDebugInfo()
+	{
+		godot::String debug_info;
+
+		debug_info += godot::vformat("FPS: %d\n", godot::Engine::get_singleton()->get_frames_per_second());
+		debug_info += godot::vformat("Frame Index: %d\n", m_simulation->frame_index);
+		debug_info += godot::vformat("Spatial Worlds: %d\n", m_simulation->spatial_worlds.size());
+		debug_info += godot::vformat("Spatial Scales: %d\n", m_simulation->spatial_scales.size());
+		debug_info += godot::vformat("Universes: %d\n", m_simulation->universes.size());
+		debug_info += godot::vformat("Galaxies: %d\n", m_simulation->galaxies.size());
+
+		return debug_info;
+	}
 
 	void UniverseServer::_bind_methods()
 	{
@@ -307,6 +326,7 @@ namespace voxel_game
 		BIND_METHOD(godot::D_METHOD("get_spell_info", "spell_id"), &UniverseServer::GetSpellInfo);
 		BIND_METHOD(godot::D_METHOD("use_spell", "spell_index", "params"), &UniverseServer::UseSpell);
 
+		ADD_SIGNAL(godot::MethodInfo(k_signals->update_debug_info));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_galaxy_list));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->disconnected_from_galaxy_list));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_list_query_response));

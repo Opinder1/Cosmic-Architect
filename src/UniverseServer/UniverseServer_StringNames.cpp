@@ -9,6 +9,7 @@ namespace voxel_game
 	{
 		// ####### Universe #######
 
+		INITIALIZE_STRINGNAME(update_debug_info);
 		INITIALIZE_STRINGNAME(connected_to_galaxy_list);
 		INITIALIZE_STRINGNAME(disconnected_from_galaxy_list);
 		INITIALIZE_STRINGNAME(galaxy_list_query_response);
