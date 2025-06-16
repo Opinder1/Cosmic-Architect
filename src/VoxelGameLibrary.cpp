@@ -26,7 +26,7 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 {
 	if (p_level == godot::MODULE_INITIALIZATION_LEVEL_SCENE)
 	{
-		godot::UtilityFunctions::print("Loading voxel world extension");
+		godot::print_line("Loading voxel world extension");
 
 		godot::ClassDB::register_class<voxel_game::CommandWriter>();
 		godot::ClassDB::register_class<voxel_game::CommandServer>();
@@ -40,7 +40,7 @@ void initialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 
 		profiler::startListen();
 
-		godot::UtilityFunctions::print("Loaded voxel world extension");
+		godot::print_line("Loaded voxel world extension");
 	}
 }
 
@@ -48,7 +48,7 @@ void uninitialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 {
 	if (p_level == godot::MODULE_INITIALIZATION_LEVEL_SCENE)
 	{
-		godot::UtilityFunctions::print("Unloading voxel world extension");
+		godot::print_line("Unloading voxel world extension");
 
 		profiler::stopListen();
 
@@ -60,7 +60,7 @@ void uninitialize_voxelgame_module(godot::ModuleInitializationLevel p_level)
 		voxel_game::rendering::AllocatorServer::_cleanup_methods();
 		voxel_game::CommandServer::_cleanup_methods();
 
-		godot::UtilityFunctions::print("Unloaded voxel world extension");
+		godot::print_line("Unloaded voxel world extension");
 	}
 }
 

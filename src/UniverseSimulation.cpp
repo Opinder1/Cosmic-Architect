@@ -357,6 +357,8 @@ namespace voxel_game
 	void SimulationInitialize(Simulation& simulation)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
+		
+		godot::print_line("Initializing simulation");
 
 		simulation::Initialize(simulation);
 		spatial3d::Initialize(simulation);
@@ -368,6 +370,8 @@ namespace voxel_game
 	void SimulationUnload(Simulation& simulation)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
+
+		godot::print_line("Unloading simulation");
 
 		simulation.unloading = true;
 
