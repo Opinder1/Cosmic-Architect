@@ -44,7 +44,7 @@
     <DisplayString>size={archetype->m_total_size}</DisplayString>
     <Expand>
       <Item Name="name"         Condition="archetype->m_type_offsets[1] !=  65535">(voxel_game::entity::CName*                )((uint8_t*)this + archetype->m_type_offsets[1])</Item>
-      <Item Name="parent"       Condition="archetype->m_type_offsets[2] !=  65535">(voxel_game::entity::CParent*              )((uint8_t*)this + archetype->m_type_offsets[2])</Item>
+      <Item Name="relationship" Condition="archetype->m_type_offsets[2] !=  65535">(voxel_game::entity::CRelationship*        )((uint8_t*)this + archetype->m_type_offsets[2])</Item>
       <Item Name="context"      Condition="archetype->m_type_offsets[3] !=  65535">(voxel_game::rendering::CContext*          )((uint8_t*)this + archetype->m_type_offsets[3])</Item>
       <Item Name="transform"    Condition="archetype->m_type_offsets[4] !=  65535">(voxel_game::rendering::CTransform*        )((uint8_t*)this + archetype->m_type_offsets[4])</Item>
       <Item Name="scenario"     Condition="archetype->m_type_offsets[5] !=  65535">(voxel_game::rendering::CScenario*         )((uint8_t*)this + archetype->m_type_offsets[5])</Item>

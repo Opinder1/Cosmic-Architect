@@ -5,6 +5,7 @@
 #include "Galaxy/GalaxyModule.h"
 
 #include "UniverseComponents.h"
+#include "Entity/EntityComponents.h"
 #include "Galaxy/GalaxyComponents.h"
 #include "Spatial3D/SpatialComponents.h"
 #include "Physics3D/PhysicsComponents.h"
@@ -161,6 +162,7 @@ namespace voxel_game::universe
 		// Create the universe
 		simulation.entity_factory.AddTypes<
 			universe::CUniverse,
+			entity::CRelationship,
 			spatial3d::CWorld,
 			loading::CStreamable,
 			loading::CAutosave,

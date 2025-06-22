@@ -20,7 +20,7 @@ namespace voxel_game::simulation
 
 	void OnUnloadChildEntity(Simulation& simulation, entity::EventData& data)
 	{
-		data.entity->*&entity::CParent::parent = entity::Ref();
+		data.entity->*&entity::CRelationship::parent = entity::Ref();
 	}
 
 	void Initialize(Simulation& simulation)
@@ -30,7 +30,7 @@ namespace voxel_game::simulation
 
 		simulation.entity_factory.AddCallback<>(entity::Event::BeginLoad, cb::Bind<OnLoadEntity>());
 		simulation.entity_factory.AddCallback<>(entity::Event::BeginUnload, cb::Bind<OnUnloadEntity>());
-		simulation.entity_factory.AddCallback<entity::CParent>(entity::Event::BeginUnload, cb::Bind<OnUnloadChildEntity>());
+		simulation.entity_factory.AddCallback<entity::CRelationship>(entity::Event::BeginUnload, cb::Bind<OnUnloadChildEntity>());
 	}
 
 	void Uninitialize(Simulation& simulation)

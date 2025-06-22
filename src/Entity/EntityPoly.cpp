@@ -18,7 +18,7 @@ using namespace voxel_game;
 const size_t first = __LINE__ + 1;
 template<> template<> const size_t entity::Type::k_type_index<entity::Type::Header> =		__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<entity::CName> =				__LINE__ - first;
-template<> template<> const size_t entity::Type::k_type_index<entity::CParent> =			__LINE__ - first;
+template<> template<> const size_t entity::Type::k_type_index<entity::CRelationship> =		__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<rendering::CContext> =		__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<rendering::CTransform> =		__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<rendering::CScenario> =		__LINE__ - first;
@@ -61,7 +61,7 @@ const std::array<PolyTypeInfo, 40> PolyType<entity::Type, 40>::k_type_info =
 {
 	MakeTypeInfo<entity::Type::Header>(),
 	MakeTypeInfo<entity::CName>(),
-	MakeTypeInfo<entity::CParent>(),
+	MakeTypeInfo<entity::CRelationship>(),
 	MakeTypeInfo<rendering::CContext>(),
 	MakeTypeInfo<rendering::CTransform>(),
 	MakeTypeInfo<rendering::CScenario>(),

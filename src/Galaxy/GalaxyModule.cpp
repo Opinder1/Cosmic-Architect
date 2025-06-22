@@ -36,12 +36,14 @@ namespace voxel_game::galaxy
 
 		simulation.entity_factory.AddTypes<
 			CGalaxy,
-			entity::CParent,
+			entity::CRelationship,
 			physics3d::CPosition,
 			physics3d::CScale,
 			physics3d::CRotation,
 			spatial3d::CEntity
 		>(galaxy_entity.GetID());
+
+		galaxy_entity->*&entity::CRelationship::parent = entity::Ref(universe_entity);
 
 		galaxy_entity->*&physics3d::CPosition::position = position;
 		galaxy_entity->*&physics3d::CScale::scale = scale;
@@ -70,7 +72,7 @@ namespace voxel_game::galaxy
 
 		simulation.entity_factory.AddTypes<
 			CGalaxy,
-			entity::CParent,
+			entity::CRelationship,
 			physics3d::CPosition,
 			physics3d::CRotation,
 			spatial3d::CEntity,
@@ -88,7 +90,7 @@ namespace voxel_game::galaxy
 		galaxy_entity->*&entity::CName::name = "SimulatedGalaxy";
 #endif
 
-		galaxy_entity->*&entity::CParent::parent = entity::Ref(universe_entity);
+		galaxy_entity->*&entity::CRelationship::parent = entity::Ref(universe_entity);
 
 		galaxy_entity->*&CGalaxy::path = path;
 
