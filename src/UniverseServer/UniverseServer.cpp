@@ -159,10 +159,21 @@ namespace voxel_game
 
 		debug_info += godot::vformat("FPS: %d\n", godot::Engine::get_singleton()->get_frames_per_second());
 		debug_info += godot::vformat("Frame Index: %d\n", m_simulation->frame_index);
+		debug_info += "\n";
+
+		size_t node_count = 0;
+		for (spatial3d::ScalePtr scale : m_simulation->spatial_scales)
+		{
+			node_count += (scale->*&spatial3d::Scale::nodes).size();
+		}
 		debug_info += godot::vformat("Spatial Worlds: %d\n", m_simulation->spatial_worlds.size());
 		debug_info += godot::vformat("Spatial Scales: %d\n", m_simulation->spatial_scales.size());
+		debug_info += godot::vformat("Nodes: %d\n", node_count);
+		debug_info += "\n";
+
 		debug_info += godot::vformat("Universes: %d\n", m_simulation->universes.size());
 		debug_info += godot::vformat("Galaxies: %d\n", m_simulation->galaxies.size());
+		debug_info += "\n";
 
 		return debug_info;
 	}
