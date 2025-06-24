@@ -12,10 +12,10 @@ namespace voxel_game::entity
 	struct CRelationship
 	{
 		Ref parent;
-		Ref prev_neighbour;
-		Ref next_neighbour;
+		WRef prev_neighbour;
+		WRef next_neighbour;
 
 		size_t children = 0;
-		Ref first_child;
+		WRef first_child;
 	};
 }
