@@ -4,6 +4,8 @@
 
 #include "UniverseSimulation.h"
 
+#include "Entity/EntityComponents.h"
+
 #include "Physics3D/PhysicsComponents.h"
 
 #include "Util/Debug.h"
@@ -28,10 +30,27 @@ namespace voxel_game::spatial3d
 		UnloadWorld(data.entity->*&CWorld::world);
 	}
 
+	void OnLoaderParentChange(Simulation& simulation, entity::EventData& data)
+	{
+		entity::WRef old_parent = static_cast<entity::ParentChangeData&>(data).old_parent;
+		entity::WRef new_parent = data.entity->*&entity::CRelationship::parent;
+
+		if (new_parent != old_parent)
+		{
+			(old_parent->*&CWorld::world->*&PartialWorld::loaders).erase(entity::Ref(data.entity));
+		}
+
+		if (new_parent)
+		{
+			(new_parent->*&CWorld::world->*&PartialWorld::loaders).emplace(data.entity);
+		}
+	}
+
 	void Initialize(Simulation& simulation)
 	{
 		simulation.entity_factory.AddCallback<CWorld>(entity::Event::BeginLoad, cb::Bind<OnLoadSpatialEntity>());
 		simulation.entity_factory.AddCallback<CWorld>(entity::Event::BeginUnload, cb::Bind<OnUnloadSpatialEntity>());
+		simulation.entity_factory.AddCallback<CLoader, entity::CRelationship>(entity::Event::UpdateParent, cb::Bind<OnLoaderParentChange>());
 	}
 
 	void Uninitialize(Simulation& simulation)
