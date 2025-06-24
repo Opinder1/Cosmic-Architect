@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Render/RenderContext.h"
+
 #include "Spatial3D/SpatialPoly.h"
 #include "Spatial3D/SpatialWorld.h"
 

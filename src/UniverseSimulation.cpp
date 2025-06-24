@@ -8,6 +8,7 @@
 #include "Voxel/VoxelModule.h"
 #include "VoxelRender/VoxelRenderModule.h"
 #include "Render/RenderModule.h"
+#include "DebugRender/DebugRenderModule.h"
 #include "Simulation/SimulationModule.h"
 #include "Physics3D/PhysicsModule.h"
 #include "Loading/LoadingModule.h"
@@ -105,6 +106,7 @@ namespace voxel_game
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 
 		spatial3d::WorldUpdate(simulation, world);
+		debugrender::WorldUpdate(simulation, world);
 		loading::WorldUpdate(simulation, world);
 		universe::WorldUpdate(simulation, world);
 	}
@@ -116,6 +118,7 @@ namespace voxel_game
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 
 		spatial3d::WorldUpdate(simulation, world);
+		debugrender::WorldUpdate(simulation, world);
 		loading::WorldUpdate(simulation, world);
 		galaxy::WorldUpdate(simulation, world);
 	}
@@ -127,6 +130,7 @@ namespace voxel_game
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 
 		spatial3d::WorldUpdate(simulation, world);
+		debugrender::WorldUpdate(simulation, world);
 		loading::WorldUpdate(simulation, world);
 	}
 
@@ -137,6 +141,7 @@ namespace voxel_game
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 
 		spatial3d::WorldUpdate(simulation, world);
+		debugrender::WorldUpdate(simulation, world);
 		loading::WorldUpdate(simulation, world);
 	}
 
@@ -147,6 +152,7 @@ namespace voxel_game
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 
 		spatial3d::WorldUpdate(simulation, world);
+		debugrender::WorldUpdate(simulation, world);
 		loading::WorldUpdate(simulation, world);
 	}
 
@@ -157,6 +163,7 @@ namespace voxel_game
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 
 		spatial3d::WorldUpdate(simulation, world);
+		debugrender::WorldUpdate(simulation, world);
 		loading::WorldUpdate(simulation, world);
 	}
 
@@ -167,6 +174,7 @@ namespace voxel_game
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 
 		spatial3d::WorldUpdate(simulation, world);
+		debugrender::WorldUpdate(simulation, world);
 		loading::WorldUpdate(simulation, world);
 	}
 
@@ -193,6 +201,7 @@ namespace voxel_game
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 
 		spatial3d::ScaleUpdate(simulation, scale);
+		debugrender::ScaleUpdate(simulation, scale);
 		loading::ScaleUpdate(simulation, scale);
 		universe::ScaleUpdate(simulation, scale);
 	}
@@ -204,6 +213,7 @@ namespace voxel_game
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 
 		spatial3d::ScaleUpdate(simulation, scale);
+		debugrender::ScaleUpdate(simulation, scale);
 		loading::ScaleUpdate(simulation, scale);
 		galaxy::ScaleUpdate(simulation, scale);
 	}
@@ -215,6 +225,7 @@ namespace voxel_game
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 
 		spatial3d::ScaleUpdate(simulation, scale);
+		debugrender::ScaleUpdate(simulation, scale);
 		loading::ScaleUpdate(simulation, scale);
 	}
 
@@ -225,6 +236,7 @@ namespace voxel_game
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 
 		spatial3d::ScaleUpdate(simulation, scale);
+		debugrender::ScaleUpdate(simulation, scale);
 		loading::ScaleUpdate(simulation, scale);
 	}
 
@@ -235,6 +247,7 @@ namespace voxel_game
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 
 		spatial3d::ScaleUpdate(simulation, scale);
+		debugrender::ScaleUpdate(simulation, scale);
 		loading::ScaleUpdate(simulation, scale);
 	}
 
@@ -245,6 +258,7 @@ namespace voxel_game
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 
 		spatial3d::ScaleUpdate(simulation, scale);
+		debugrender::ScaleUpdate(simulation, scale);
 		loading::ScaleUpdate(simulation, scale);
 	}
 
@@ -255,6 +269,7 @@ namespace voxel_game
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 
 		spatial3d::ScaleUpdate(simulation, scale);
+		debugrender::ScaleUpdate(simulation, scale);
 		loading::ScaleUpdate(simulation, scale);
 	}
 
@@ -316,6 +331,8 @@ namespace voxel_game
 	void SimulationWorkerUpdateTask(Simulation& simulation, size_t index)
 	{
 		simulation::WorkerUpdate(simulation, index);
+		rendering::WorkerUpdate(simulation, index);
+		debugrender::WorkerUpdate(simulation, index);
 		loading::WorkerUpdate(simulation, index);
 		spatial3d::WorkerUpdate(simulation, index);
 		universe::WorkerUpdate(simulation, index);
@@ -333,6 +350,7 @@ namespace voxel_game
 	bool IsSimulationUnloadDone(Simulation& simulation)
 	{
 		return	simulation::IsUnloadDone(simulation) &&
+				debugrender::IsUnloadDone(simulation) &&
 				spatial3d::IsUnloadDone(simulation) &&
 				loading::IsUnloadDone(simulation) &&
 				universe::IsUnloadDone(simulation) &&
@@ -343,6 +361,8 @@ namespace voxel_game
 	void SimulationSingleUpdate(Simulation& simulation)
 	{
 		simulation::Update(simulation);
+		rendering::Update(simulation);
+		debugrender::Update(simulation);
 		spatial3d::Update(simulation);
 		loading::Update(simulation);
 		universe::Update(simulation);
@@ -361,6 +381,8 @@ namespace voxel_game
 		godot::print_line("Initializing simulation");
 
 		simulation::Initialize(simulation);
+		rendering::Initialize(simulation);
+		debugrender::Initialize(simulation);
 		spatial3d::Initialize(simulation);
 		loading::Initialize(simulation);
 		universe::Initialize(simulation);
@@ -401,6 +423,8 @@ namespace voxel_game
 		universe::Uninitialize(simulation);
 		loading::Uninitialize(simulation);
 		spatial3d::Uninitialize(simulation);
+		debugrender::Uninitialize(simulation);
+		rendering::Uninitialize(simulation);
 		simulation::Uninitialize(simulation);
 
 		// Finally cleanup the entity factory after all references should have been removed
