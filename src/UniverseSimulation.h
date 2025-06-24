@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Render/RenderContext.h"
 #include "Spatial3D/SpatialPoly.h"
 #include "Spatial3D/SpatialWorld.h"
 
@@ -58,6 +59,9 @@ namespace voxel_game
 		// Loading
 		std::vector<entity::Ref> loading_entities; // These entities are being loaded first before being updated normally
 		std::vector<entity::Ref> unloading_entities; // These entities no longer being updated and are having their resources unloaded
+
+		// Rendering
+		std::vector<rendering::ThreadContext> rendering_contexts;
 
 		// Universe
 		std::vector<entity::Ref> universes;

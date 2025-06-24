@@ -2,6 +2,8 @@
 #include "RenderComponents.h"
 #include "RenderContext.h"
 
+#include "UniverseSimulation.h"
+
 #include "Physics3D/PhysicsComponents.h"
 
 #include "Commands/CommandServer.h"
@@ -271,6 +273,29 @@ namespace voxel_game::rendering
         InitBase(world);
 	}
     */
+	void Initialize(Simulation& simulation)
+    {
+        AllocatorServer::get_singleton()->RequestRIDs(true);
+
+        simulation.rendering_contexts.resize(simulation.processor_count);
+
+        SetContext(simulation.rendering_contexts[0]);
+    }
+
+	void Uninitialize(Simulation& simulation)
+    {
+
+    }
+
+	void Update(Simulation& simulation)
+    {
+
+    }
+
+    void WorkerUpdate(Simulation& simulation, size_t index)
+    {
+        SetContext(simulation.rendering_contexts[index]);
+    }
 
     bool IsEnabled()
     {

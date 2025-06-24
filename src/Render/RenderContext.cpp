@@ -11,7 +11,7 @@ namespace voxel_game::rendering
 
     ThreadContext& GetContext()
     {
-        DEBUG_ASSERT(thread_context != nullptr, "This thread doesn't have a context set");
+        DEBUG_ASSERT(thread_context != nullptr, "This thread doesn't have a context yet");
         return *thread_context;
     }
 }
