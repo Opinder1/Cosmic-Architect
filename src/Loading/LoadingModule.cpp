@@ -4,6 +4,7 @@
 
 #include "Entity/EntityPoly.h"
 #include "Entity/EntityComponents.h"
+#include "Entity/EntityModule.h"
 
 #include "UniverseSimulation.h"
 
@@ -67,7 +68,7 @@ namespace voxel_game::loading
 			// Unload all entities in the world. The entities memory still exists while there are references
 			for (entity::WRef entity : simulation.loading_entities)
 			{
-				SimulationUnloadEntity(simulation, entity);
+				entity::OnUnloadEntity(simulation, entity);
 			}
 		}
 

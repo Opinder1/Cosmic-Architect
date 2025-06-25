@@ -132,7 +132,7 @@ namespace voxel_game::entity
 		m_type_callbacks[to_underlying(event)].push_back(callback);
 	}
 	
-	void Type::DoEvent(Simulation& simulation, EventData& data, Event event) const
+	void Type::DoEvent(Simulation& simulation, Event event, EventData data) const
 	{
 		for (const EventCallback& callback : m_type_callbacks[to_underlying(event)])
 		{
@@ -154,9 +154,9 @@ namespace voxel_game::entity
 		});
 	}
 
-	void Factory::DoEvent(Simulation& simulation, WeakRef poly, Event event) const
+	void Factory::DoEvent(Simulation& simulation, Event event, EventData data) const
 	{
-		poly.GetType()->DoEvent(simulation, EventData{ poly }, event);
+		data.entity.GetType()->DoEvent(simulation, event, data);
 	}
 }
 

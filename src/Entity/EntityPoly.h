@@ -44,7 +44,7 @@ namespace voxel_game::entity
 
 		void AddCallback(Event event, EventCallback callback);
 
-		void DoEvent(Simulation& simulation, EventData& data, Event event) const;
+		void DoEvent(Simulation& simulation, Event event, EventData data) const;
 
 	private:
 		// Callbacks that are listening to types that this archetype has
@@ -77,7 +77,7 @@ namespace voxel_game::entity
 			AddCallback(Type::CreateTypeID<Types...>(), event, callback);
 		}
 
-		void DoEvent(Simulation& simulation, WeakRef poly, Event event) const;
+		void DoEvent(Simulation& simulation, Event event, EventData data) const;
 
 	private:
 		// Callbacks that will be added to archetypes based on what types they have
@@ -91,11 +91,20 @@ namespace voxel_game::entity
 	// Data that is passed for an event. Derive from this class for event specific data
 	struct EventData
 	{
+		EventData(WRef entity) :
+			entity(entity)
+		{}
+
 		WRef entity;
 	};
 
 	struct ParentChangeData : EventData
 	{
+		ParentChangeData(WRef old_parent, WRef entity) :
+			old_parent(old_parent),
+			EventData(entity)
+		{}
+
 		WRef old_parent;
 	};
 }

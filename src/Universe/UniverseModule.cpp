@@ -3,6 +3,8 @@
 
 #include "Render/RenderModule.h"
 #include "Galaxy/GalaxyModule.h"
+#include "Entity/EntityModule.h"
+#include "Spatial3D/SpatialModule.h"
 
 #include "UniverseComponents.h"
 #include "Entity/EntityComponents.h"
@@ -186,9 +188,9 @@ namespace voxel_game::universe
 
 		loading::WorldOpenDatabase(simulation, world, path.path_join("galaxies.db"));
 
-		universe_entity->*&spatial3d::CWorld::world = world;
+		spatial3d::EntitySetWorld(simulation, universe_entity, world);
 
-		SimulationLoadEntity(simulation, universe_entity);
+		entity::OnLoadEntity(simulation, universe_entity);
 
 		return universe_entity;
 	}

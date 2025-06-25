@@ -5,6 +5,7 @@
 
 #include "Player/PlayerModule.h"
 #include "Galaxy/GalaxyModule.h"
+#include "Entity/EntityModule.h"
 
 #include "UniverseSimulation.h"
 
@@ -79,7 +80,7 @@ namespace voxel_game
 			return;
 		}
 
-		SimulationUnloadEntity(*m_simulation, m_galaxy_entity);
+		entity::OnUnloadEntity(*m_simulation, m_galaxy_entity);
 
 		QueueSignal(k_signals->disconnected_from_galaxy);
 	}

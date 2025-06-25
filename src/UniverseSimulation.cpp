@@ -12,6 +12,9 @@
 #include "Simulation/SimulationModule.h"
 #include "Physics3D/PhysicsModule.h"
 #include "Loading/LoadingModule.h"
+#include "Entity/EntityModule.h"
+
+#include "Entity/EntityComponents.h"
 
 #include "Util/SmallVector.h"
 
@@ -295,7 +298,7 @@ namespace voxel_game
 
 		DEBUG_THREAD_CHECK_WRITE(entity.Data());
 
-		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::UpdateTask);
+		simulation.entity_factory.DoEvent(simulation, entity::Event::UpdateTask, entity::EventData{ entity });
 	}
 
 	void SimulationEntityLoadTask(Simulation& simulation, size_t index)
@@ -304,7 +307,7 @@ namespace voxel_game
 
 		DEBUG_THREAD_CHECK_WRITE(entity.Data());
 
-		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::LoadTask);
+		simulation.entity_factory.DoEvent(simulation, entity::Event::LoadTask, entity::EventData{ entity });
 	}
 
 	void SimulationEntityUnloadTask(Simulation& simulation, size_t index)
@@ -313,7 +316,7 @@ namespace voxel_game
 
 		DEBUG_THREAD_CHECK_WRITE(entity.Data());
 
-		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::UnloadTask);
+		simulation.entity_factory.DoEvent(simulation, entity::Event::UnloadTask, entity::EventData{ entity });
 	}
 
 	// Run all entities in parallel doing entity specific code
@@ -370,7 +373,7 @@ namespace voxel_game
 
 		for (entity::WRef entity : simulation.updating_entities)
 		{
-			simulation.entity_factory.DoEvent(simulation, entity, entity::Event::Update);
+			simulation.entity_factory.DoEvent(simulation, entity::Event::Update, entity::EventData{ entity });
 		}
 	}
 
@@ -401,7 +404,7 @@ namespace voxel_game
 		std::vector<entity::Ref> updating_entities = std::move(simulation.updating_entities);
 		for (entity::WRef entity : updating_entities)
 		{
-			SimulationUnloadEntity(simulation, entity);
+			entity::OnUnloadEntity(simulation, entity);
 		}
 		updating_entities.clear();
 
@@ -443,19 +446,5 @@ namespace voxel_game
 		SimulationSingleUpdate(simulation);
 
 		simulation.entity_factory.Cleanup();
-	}
-
-	void SimulationLoadEntity(Simulation& simulation, entity::WRef entity)
-	{
-		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
-
-		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::BeginLoad);
-	}
-
-	void SimulationUnloadEntity(Simulation& simulation, entity::WRef entity)
-	{
-		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
-
-		simulation.entity_factory.DoEvent(simulation, entity, entity::Event::BeginUnload);
 	}
 }

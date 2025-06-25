@@ -5,6 +5,7 @@
 
 #include "Spatial3D/SpatialModule.h"
 #include "Render/RenderModule.h"
+#include "Entity/EntityModule.h"
 
 #include "Universe/UniverseComponents.h"
 #include "Physics3D/PhysicsComponents.h"
@@ -43,7 +44,7 @@ namespace voxel_game::galaxy
 			spatial3d::CEntity
 		>(galaxy_entity.GetID());
 
-		galaxy_entity->*&entity::CRelationship::parent = entity::Ref(universe_entity);
+		entity::OnUpdateEntityParent(simulation, galaxy_entity, universe_entity);
 
 		galaxy_entity->*&physics3d::CPosition::position = position;
 		galaxy_entity->*&physics3d::CScale::scale = scale;
@@ -51,7 +52,7 @@ namespace voxel_game::galaxy
 		(node->*&spatial3d::Node::entities).insert(galaxy_entity.Reference());
 		(node->*&universe::Node::galaxies).push_back(galaxy_entity.Reference());
 
-		SimulationLoadEntity(simulation, galaxy_entity);
+		entity::OnLoadEntity(simulation, galaxy_entity);
 
 		return galaxy_entity;
 	}
@@ -86,11 +87,10 @@ namespace voxel_game::galaxy
 		}
 
 #if defined(DEBUG_ENABLED)
-		simulation.entity_factory.AddTypes<entity::CName>(galaxy_entity.GetID());
-		galaxy_entity->*&entity::CName::name = "SimulatedGalaxy";
+		entity::SetDebugName(simulation, galaxy_entity, "SimulatedGalaxy");
 #endif
 
-		galaxy_entity->*&entity::CRelationship::parent = entity::Ref(universe_entity);
+		entity::OnUpdateEntityParent(simulation, galaxy_entity, universe_entity);
 
 		galaxy_entity->*&CGalaxy::path = path;
 
@@ -98,14 +98,14 @@ namespace voxel_game::galaxy
 
 		loading::WorldOpenDatabase(simulation, world, path.path_join("stars.db"));
 
-		galaxy_entity->*&spatial3d::CWorld::world = world;
+		spatial3d::EntitySetWorld(simulation, galaxy_entity, world);
 
 		// We want the simulated galaxy to load all galaxies around it
 		galaxy_entity->*&spatial3d::CLoader::dist_per_lod = 3;
 		galaxy_entity->*&spatial3d::CLoader::min_lod = 0;
 		galaxy_entity->*&spatial3d::CLoader::max_lod = spatial3d::k_max_world_scale;
 
-		SimulationLoadEntity(simulation, galaxy_entity);
+		entity::OnLoadEntity(simulation, galaxy_entity);
 
 		return galaxy_entity;
 	}
