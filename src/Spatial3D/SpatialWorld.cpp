@@ -287,24 +287,24 @@ namespace voxel_game::spatial3d
 		return nodes;
 	}
 
-	void AddLoader(WorldPtr world, entity::Ref loader)
+	void AddEntity(WorldPtr world, entity::WRef entity)
 	{
+		(world->*&World::entities).emplace(entity);
 
+		if (entity.Has<CLoader>())
+		{
+			(world->*&PartialWorld::loaders).emplace(entity);
+		}
 	}
 
-	void RemoveLoader(WorldPtr world, entity::Ref loader)
+	void RemoveEntity(WorldPtr world, entity::WRef entity)
 	{
+		(world->*&World::entities).erase(entity::Ref(entity));
 
-	}
-
-	void AddEntity(WorldPtr world, entity::Ref entity)
-	{
-
-	}
-
-	void RemoveEntity(WorldPtr world, entity::Ref entity)
-	{
-
+		if (entity.Has<CLoader>())
+		{
+			(world->*&PartialWorld::loaders).erase(entity::Ref(entity));
+		}
 	}
 
 	void WorldDoNodeLoadCommands(WorldPtr world, Clock::time_point frame_start_time)
@@ -408,7 +408,7 @@ namespace voxel_game::spatial3d
 			NodePtr node = it->second;
 
 			// Stop if we are still creating this node
-			if (node)
+			if (!node)
 			{
 				return;
 			}

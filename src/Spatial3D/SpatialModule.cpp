@@ -120,6 +120,11 @@ namespace voxel_game::spatial3d
 		ScaleUpdateEntityNodes(scale);
 	}
 
+	WorldPtr GetEntityWorld(entity::WRef entity)
+	{
+		return entity->*&spatial3d::CWorld::world;
+	}
+
 	WorldPtr EntitySetWorld(Simulation& simulation, entity::WRef entity, WorldPtr world)
 	{
 		WorldPtr old_world = entity->*&spatial3d::CWorld::world;

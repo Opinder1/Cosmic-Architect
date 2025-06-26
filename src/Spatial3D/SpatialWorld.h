@@ -156,13 +156,9 @@ namespace voxel_game::spatial3d
 
 	size_t GetNodeCount(WorldPtr world);
 
-	void AddLoader(WorldPtr world, entity::Ref loader);
+	void AddEntity(WorldPtr world, entity::WRef entity);
 
-	void RemoveLoader(WorldPtr world, entity::Ref loader);
-
-	void AddEntity(WorldPtr world, entity::Ref entity);
-
-	void RemoveEntity(WorldPtr world, entity::Ref entity);
+	void RemoveEntity(WorldPtr world, entity::WRef entity);
 
 	void WorldForEachScale(WorldPtr world, ScaleCB callback);
 

@@ -114,7 +114,7 @@ namespace voxel_game::universe
 				position.y += godot::UtilityFunctions::randf_range(0, scale_node_step);
 				position.z += godot::UtilityFunctions::randf_range(0, scale_node_step);
 
-				galaxy::CreateGalaxy(simulation, node, position, godot::Vector3(box_size, box_size, box_size), entity::Ref());
+				galaxy::CreateGalaxy(simulation, node, position, godot::Vector3(box_size, box_size, box_size), world);
 			}
 		}
 
@@ -133,7 +133,7 @@ namespace voxel_game::universe
 
 			position.y -= node->*&spatial3d::Node::scale_index - 1;
 
-			galaxy::CreateGalaxy(simulation, node, position, godot::Vector3i{ scale_node_step / 4, 1, scale_node_step / 4 }, entity::Ref());
+			galaxy::CreateGalaxy(simulation, node, position, godot::Vector3i{ scale_node_step / 4, 1, scale_node_step / 4 }, world);
 		}
 
 		void UnloadNode(spatial3d::NodePtr node)
@@ -265,7 +265,20 @@ namespace voxel_game::universe
 
 	void Update(Simulation& simulation)
 	{
+		for (spatial3d::ScalePtr scale : simulation.spatial_scales)
+		{
+			UniverseNodeLoaderTest loader{ simulation, scale->*&spatial3d::Scale::world };
 
+			for (const spatial3d::NodeCommand& command : scale->*&spatial3d::PartialScale::load_commands)
+			{
+				loader.LoadNodePlane(command.node);
+			}
+
+			for (const spatial3d::NodeCommand& command : scale->*&spatial3d::PartialScale::unload_commands)
+			{
+				loader.UnloadNode(command.node);
+			}
+		}
 	}
 
 	void WorkerUpdate(Simulation& simulation, size_t index)
@@ -280,16 +293,6 @@ namespace voxel_game::universe
 
 	void ScaleUpdate(Simulation& simulation, spatial3d::ScalePtr scale)
 	{
-		UniverseNodeLoaderTest loader{ simulation, scale->*&spatial3d::Scale::world };
 
-		for (const spatial3d::NodeCommand& command : scale->*&spatial3d::PartialScale::load_commands)
-		{
-			loader.LoadNodePlane(command.node);
-		}
-
-		for (const spatial3d::NodeCommand& command : scale->*&spatial3d::PartialScale::unload_commands)
-		{
-			loader.UnloadNode(command.node);
-		}
 	}
 }

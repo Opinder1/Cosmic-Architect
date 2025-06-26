@@ -22,7 +22,7 @@
 
 namespace voxel_game::galaxy
 {
-	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale, entity::WRef universe_entity)
+	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale, spatial3d::WorldPtr universe_world)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
 		DEBUG_ASSERT(!simulation.unloading, "We shouldn't create an entity while unloading");
@@ -44,7 +44,7 @@ namespace voxel_game::galaxy
 			spatial3d::CEntity
 		>(galaxy_entity.GetID());
 
-		entity::OnUpdateEntityParent(simulation, galaxy_entity, universe_entity);
+		spatial3d::AddEntity(universe_world, galaxy_entity);
 
 		galaxy_entity->*&physics3d::CPosition::position = position;
 		galaxy_entity->*&physics3d::CScale::scale = scale;
@@ -57,7 +57,7 @@ namespace voxel_game::galaxy
 		return galaxy_entity;
 	}
 
-	entity::Ref CreateSimulatedGalaxy(Simulation& simulation, const godot::String& path, entity::WRef universe_entity)
+	entity::Ref CreateSimulatedGalaxy(Simulation& simulation, const godot::String& path, spatial3d::WorldPtr universe_world)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
 		DEBUG_ASSERT(!simulation.unloading, "We shouldn't create an entity while unloading");
@@ -90,7 +90,7 @@ namespace voxel_game::galaxy
 		entity::SetDebugName(simulation, galaxy_entity, "SimulatedGalaxy");
 #endif
 
-		entity::OnUpdateEntityParent(simulation, galaxy_entity, universe_entity);
+		spatial3d::AddEntity(universe_world, galaxy_entity);
 
 		galaxy_entity->*&CGalaxy::path = path;
 
