@@ -10,6 +10,7 @@
 #include <vector>
 #include <memory>
 #include <bitset>
+#include <mutex>
 
 // A type that can be described as a runtime struct. One block of memory is allocated for each poly
 // but the memory is made up of multiple structs that are easily accessed
@@ -206,14 +207,20 @@ public:
 	~PolyType()
 	{
 #if defined(POLY_DEBUG)
-		DEBUG_ASSERT(m_created.empty(), "We should have destroyed all instances of this poly type");
+		{
+			std::lock_guard lock(m_created_mutex);
+			DEBUG_ASSERT(m_created.empty(), "We should have destroyed all instances of this poly type");
+		}
 #endif
 	}
 
 	void AddType(size_t index)
 	{
 #if defined(POLY_DEBUG)
-		DEBUG_ASSERT(m_created.size() == 0, "We can't add types once we have created polys in existence");
+		{
+			std::lock_guard lock(m_created_mutex);
+			DEBUG_ASSERT(m_created.size() == 0, "We can't add types once we have created polys in existence");
+		}
 #endif
 		DEBUG_ASSERT(index < k_num_types, "This types index is too large");
 		DEBUG_ASSERT(m_type_offsets[index] == k_invalid_offset, "This type is clashing with another");
@@ -249,7 +256,10 @@ public:
 		DEBUG_ASSERT(m_type_offsets[k_type_index<T>] != 0, "Either T == HeaderT or this poly doesn't have this type");
 
 #if defined(POLY_DEBUG)
-		DEBUG_ASSERT(m_created.contains(poly), "We didn't create this poly");
+		{
+			std::lock_guard lock(m_created_mutex);
+			DEBUG_ASSERT(m_created.contains(poly), "We didn't create this poly");
+		}
 #endif
 
 		std::byte* ptr = reinterpret_cast<std::byte*>(poly);
@@ -276,7 +286,10 @@ public:
 		Header* poly = reinterpret_cast<Header*>(malloc(m_total_size));
 
 #if defined(POLY_DEBUG)
-		m_created.insert(poly);
+		{
+			std::lock_guard lock(m_created_mutex);
+			m_created.insert(poly);
+		}
 #endif
 
 		poly->archetype = static_cast<DerivedT*>(this);
@@ -289,8 +302,11 @@ public:
 		DEBUG_ASSERT(poly != nullptr, "A valid poly should be provided for deallocation");
 
 #if defined(POLY_DEBUG)
-		DEBUG_ASSERT(m_created.contains(poly), "We didn't create this poly");
-		m_created.erase(poly);
+		{
+			std::lock_guard lock(m_created_mutex);
+			DEBUG_ASSERT(m_created.contains(poly), "We didn't create this poly");
+			m_created.erase(poly);
+		}
 #endif
 
 		free(poly);
@@ -300,7 +316,10 @@ public:
 	{
 		DEBUG_ASSERT(poly != nullptr, "A valid poly should be provided for construction");
 #if defined(POLY_DEBUG)
-		DEBUG_ASSERT(m_created.contains(poly), "We didn't create this poly");
+		{
+			std::lock_guard lock(m_created_mutex);
+			DEBUG_ASSERT(m_created.contains(poly), "We didn't create this poly");
+		}
 #endif
 
 		std::byte* ptr = reinterpret_cast<std::byte*>(poly);
@@ -318,7 +337,10 @@ public:
 	{
 		DEBUG_ASSERT(poly != nullptr, "A valid poly should be provided for destruction");
 #if defined(POLY_DEBUG)
-		DEBUG_ASSERT(m_created.contains(poly), "We didn't create this poly");
+		{
+			std::lock_guard lock(m_created_mutex);
+			DEBUG_ASSERT(m_created.contains(poly), "We didn't create this poly");
+		}
 #endif
 
 		std::byte* ptr = reinterpret_cast<std::byte*>(poly);
@@ -364,5 +386,6 @@ private:
 #if defined(POLY_DEBUG)
 	// A list of all polys created to check we own polys
 	robin_hood::unordered_set<const Header*> m_created;
+	mutable std::mutex m_created_mutex;
 #endif
 };
