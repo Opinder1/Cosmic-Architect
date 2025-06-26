@@ -23,8 +23,6 @@ namespace voxel_game::entity
 		UnloadTask, // Entity being unloaded in its own task
 		UpdateTask, // Entity being updated in its own task
 
-		UpdateParent,
-
 		Count,
 	};
 
@@ -96,16 +94,6 @@ namespace voxel_game::entity
 		{}
 
 		WRef entity;
-	};
-
-	struct ParentChangeData : EventData
-	{
-		ParentChangeData(WRef old_parent, WRef entity) :
-			old_parent(old_parent),
-			EventData(entity)
-		{}
-
-		WRef old_parent;
 	};
 }
 
