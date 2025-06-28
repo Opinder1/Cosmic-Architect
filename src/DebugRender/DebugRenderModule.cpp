@@ -77,30 +77,38 @@ namespace voxel_game::debugrender
 
 		godot::PackedFloat32Array instance_data;
 
+		uint64_t node_size = world->*&spatial3d::World::node_size;
+
 		spatial3d::WorldForEachScale(world, [&](spatial3d::ScalePtr scale)
 		{
+			int64_t scale_mod = (uint64_t(1) << scale->*&spatial3d::Scale::index) * node_size;
+
 			// For each create command
-			spatial3d::ScaleDoNodeCommands(scale, spatial3d::NodeState::Loading, [&](spatial3d::NodePtr node, uint16_t& task_count)
+			for (auto&& [pos, node] : scale->*&spatial3d::Scale::nodes)
 			{
+				if (!node || node->*&spatial3d::Node::children_mask != 0)
+				{
+					continue;
+				}
+
 				// Push transform
-				instance_data.push_back(1);
+				instance_data.push_back(scale_mod);
 				instance_data.push_back(0);
 				instance_data.push_back(0);
+				instance_data.push_back(pos.x * scale_mod);
 
 				instance_data.push_back(0);
-				instance_data.push_back(1);
+				instance_data.push_back(scale_mod);
 				instance_data.push_back(0);
+				instance_data.push_back(pos.y * scale_mod);
 
 				instance_data.push_back(0);
 				instance_data.push_back(0);
-				instance_data.push_back(1);
-
-				instance_data.push_back((node->*&spatial3d::Node::position).x);
-				instance_data.push_back((node->*&spatial3d::Node::position).y);
-				instance_data.push_back((node->*&spatial3d::Node::position).z);
+				instance_data.push_back(scale_mod);
+				instance_data.push_back(pos.z * scale_mod);
 
 				node_count++;
-			});
+			}
 		});
 
 		if (debug_world->buffer_size < node_count)

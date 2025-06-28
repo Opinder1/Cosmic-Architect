@@ -269,15 +269,19 @@ namespace voxel_game::universe
 		{
 			UniverseNodeLoaderTest loader{ simulation, scale->*&spatial3d::Scale::world };
 
-			for (const spatial3d::NodeCommand& command : scale->*&spatial3d::PartialScale::load_commands)
+			spatial3d::ScaleDoNodeCommands(scale, spatial3d::NodeState::Loading, [&](spatial3d::NodePtr node)
 			{
-				loader.LoadNodePlane(command.node);
-			}
+				loader.LoadNodePlane(node);
 
-			for (const spatial3d::NodeCommand& command : scale->*&spatial3d::PartialScale::unload_commands)
+				return false;
+			});
+
+			spatial3d::ScaleDoNodeCommands(scale, spatial3d::NodeState::Unloading, [&](spatial3d::NodePtr node)
 			{
-				loader.UnloadNode(command.node);
-			}
+				loader.UnloadNode(node);
+
+				return false;
+			});
 		}
 	}
 

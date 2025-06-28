@@ -8,13 +8,11 @@ namespace voxel_game::loading
 {
 	std::string_view LoadTask::ProcessFull(std::string_view key, std::string_view value)
 	{
-		finished = true;
 		return NOOP;
 	}
 
 	std::string_view LoadTask::ProcessEmpty(std::string_view key)
 	{
-		finished = true;
 		return NOOP;
 	}
 
@@ -49,25 +47,29 @@ namespace voxel_game::loading
 		DEBUG_ASSERT((world->*&World::database).IsOpen(), "The world should be open");
 
 		spatial3d::ScaleDoNodeCommands(scale, spatial3d::NodeState::Loading,
-			[&](spatial3d::NodePtr node, uint16_t& task_count)
+			[&](spatial3d::NodePtr node)
 		{
+			if (node->*&Node::task == nullptr)
+			{	
+				node->*&Node::task = std::make_unique<Task>();
+				(node->*&Node::task)->state = TaskState::Loading;
+				(node->*&spatial3d::PartialNode::task_count)++;
+			}
+
 			Task& task = *(node->*&Node::task);
 
-			switch(node->*&Node::state)
+			switch(task.state)
 			{
-			case NodeState::Unloaded:
-				task_count++;
-				node->*&Node::state = NodeState::Loading;
+			case TaskState::Loading:
+				task.state = TaskState::Loaded;
 				break;
 
-			case NodeState::Loading:
-				if (task.finished == true)
-				{
-					task_count--;
-					node->*&Node::state = NodeState::Loaded;
-				}
+			case TaskState::Loaded:
+				(node->*&spatial3d::PartialNode::task_count)--;
 				break;
 			}
+
+			return false;
 		});
 	}
 }

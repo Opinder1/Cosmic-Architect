@@ -33,12 +33,6 @@ namespace voxel_game::spatial3d
 		Unloading, // Node is taking up space in the world but is no longer accessible
 	};
 
-	struct NodeCommand
-	{
-		NodePtr node;
-		uint16_t task_count = 0;
-	};
-
 	// A single node in a spatial world. This is meant to be inherited from for custom data
 	struct Node : Nocopy, Nomove
 	{
@@ -61,7 +55,7 @@ namespace voxel_game::spatial3d
 	struct PartialNode
 	{
 		NodeState state = NodeState::Invalid;
-		uint32_t num_observers = 0; // Number of observers looking at me (1 for write, more than 1 means shared read)
+		uint16_t task_count = 0;
 		Clock::time_point last_update_time; // Time since a loader last updated our unload timer
 	};
 
@@ -86,9 +80,9 @@ namespace voxel_game::spatial3d
 
 	struct PartialScale : Nocopy, Nomove
 	{
-		// Command lists. We use these to limit operations currently in progress
-		std::vector<NodeCommand> load_commands;
-		std::vector<NodeCommand> unload_commands;
+		// We use these to limit operations currently in progress
+		std::vector<godot::Vector3i> loading_nodes;
+		std::vector<godot::Vector3i> unloading_nodes;
 	};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
@@ -133,7 +127,7 @@ namespace voxel_game::spatial3d
 	};
 
 	using ScaleCB = cb::Callback<void(ScalePtr)>;
-	using NodeCommandCB = cb::Callback<void(NodePtr, uint16_t&)>;
+	using NodeCommandCB = cb::Callback<bool(NodePtr)>;
 
 	// Get the scale of a world
 	WorldPtr GetWorld(ScalePtr scale);

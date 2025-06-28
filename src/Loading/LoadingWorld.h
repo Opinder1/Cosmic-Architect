@@ -16,9 +16,18 @@ namespace voxel_game::loading
 {
 	using LoadFunc = void(*)(Simulation& simulation, spatial3d::WorldPtr world, spatial3d::NodePtr node);
 
+	enum class TaskState
+	{
+		Unloaded,
+		Loaded,
+		Loading,
+		Saving,
+		Unloading
+	};
+
 	struct Task : tkrzw::DBM::RecordProcessor
 	{
-		bool finished = false;
+		TaskState state = TaskState::Unloaded;
 	};
 
 	struct LoadTask : Task
@@ -42,18 +51,8 @@ namespace voxel_game::loading
 		std::string_view ProcessEmpty(std::string_view key) override;
 	};
 
-	enum class NodeState
-	{
-		Unloaded,
-		Loaded,
-		Loading,
-		Saving,
-		Unloading
-	};
-
 	struct Node
 	{
-		NodeState state = NodeState::Unloaded;
 		std::unique_ptr<Task> task;
 	};
 
