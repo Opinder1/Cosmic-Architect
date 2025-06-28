@@ -1,6 +1,8 @@
 #include "SpatialComponents.h"
 #include "SpatialTraverse.h"
 
+#include "Util/GodotOperators.h"
+
 #include <easy/profiler.h>
 
 namespace voxel_game::spatial3d
@@ -130,7 +132,7 @@ namespace voxel_game::spatial3d
 		{
 			ScalePtr parent_scale = GetScale(world, scale_index + 1);
 
-			godot::Vector3i parent_pos = node->*&Node::position / 2;
+			godot::Vector3i parent_pos = node->*&Node::position >> 1;
 
 			NodeMap::iterator it = (parent_scale->*&Scale::nodes).find(parent_pos);
 
@@ -154,7 +156,7 @@ namespace voxel_game::spatial3d
 
 			for (uint8_t child_index = 0; child_index < 8; child_index++)
 			{
-				godot::Vector3i child_pos = node->*&Node::position * 2;
+				godot::Vector3i child_pos = node->*&Node::position << 1;
 				child_pos += node_child_offsets[child_index];
 
 				NodeMap::iterator it = (child_scale->*&Scale::nodes).find(child_pos);
