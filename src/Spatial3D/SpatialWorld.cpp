@@ -15,18 +15,20 @@ namespace voxel_game::spatial3d
 		{1, 0, 0},
 	};
 
+	// Convert a nodes index in the parent into a position in the parent. Does the opposite of GetNodeParentIndex().
 	const godot::Vector3i node_child_offsets[8] =
 	{
 		{0, 0, 0},
-		{0, 0, 1},
-		{0, 1, 0},
-		{0, 1, 1},
 		{1, 0, 0},
-		{1, 0, 1},
+		{0, 1, 0},
 		{1, 1, 0},
+		{0, 0, 1},
+		{1, 0, 1},
+		{0, 1, 1},
 		{1, 1, 1},
 	};
 
+	// Convert a node child pos to an index in the parent. Does the opposite of node_child_offsets[].
 	uint8_t GetNodeParentIndex(godot::Vector3i pos)
 	{
 		return (pos.x & 0x1) + ((pos.y & 0x1) * 2) + ((pos.z & 0x1) * 4);
