@@ -2,7 +2,9 @@
 
 #include "UniverseSimulation.h"
 
+#include "Render/RenderComponents.h"
 #include "Spatial3D/SpatialComponents.h"
+
 #include "Spatial3D/SpatialWorld.h"
 
 #include "Render/RenderContext.h"
@@ -11,6 +13,7 @@
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/scene_tree.hpp>
 #include <godot_cpp/classes/window.hpp>
+#include <godot_cpp/classes/world3d.hpp>
 
 namespace voxel_game::debugrender
 {
@@ -25,14 +28,8 @@ namespace voxel_game::debugrender
 	
 	static std::unique_ptr<DebugWorld> debug_world;
 
-	void Initialize(Simulation& simulation)
+	godot::Array CreateLineBoxMesh()
 	{
-		debug_world = std::make_unique<DebugWorld>();
-
-		debug_world->mesh_rid = rendering::AllocRID(rendering::RIDType::Mesh);
-		debug_world->multimesh_rid = rendering::AllocRID(rendering::RIDType::MultiMesh);
-		debug_world->instance_rid = rendering::AllocRID(rendering::RIDType::Instance);
-
 		godot::PackedVector3Array vertexes;
 
 		vertexes.push_back({ 0, 0, 0 });
@@ -47,18 +44,58 @@ namespace voxel_game::debugrender
 		vertexes.push_back({ 0, 1, 0 });
 		vertexes.push_back({ 0, 0, 0 });
 
+		// Square 2
+		vertexes.push_back({ 1, 0, 0 });
+		vertexes.push_back({ 1, 0, 1 });
+
+		vertexes.push_back({ 1, 0, 1 });
+		vertexes.push_back({ 1, 1, 1 });
+
+		vertexes.push_back({ 1, 1, 1 });
+		vertexes.push_back({ 1, 1, 0 });
+
+		vertexes.push_back({ 1, 1, 0 });
+		vertexes.push_back({ 1, 0, 0 });
+
+		// Connectors
+		vertexes.push_back({ 0, 0, 0 });
+		vertexes.push_back({ 1, 0, 0 });
+
+		vertexes.push_back({ 0, 0, 1 });
+		vertexes.push_back({ 1, 0, 1 });
+
+		vertexes.push_back({ 0, 1, 1 });
+		vertexes.push_back({ 1, 1, 1 });
+
+		vertexes.push_back({ 0, 1, 0 });
+		vertexes.push_back({ 1, 1, 0 });
+
 		godot::Array arrays;
 		arrays.resize(RS::ARRAY_MAX);
 
 		arrays[RS::ARRAY_VERTEX] = vertexes;
 
-		rendering::AddCommand<&RS::mesh_add_surface_from_arrays>(debug_world->mesh_rid, RS::PRIMITIVE_LINES, arrays, godot::Array{}, godot::Dictionary{}, 0);
+		return arrays;
+	}
+
+	void Initialize(Simulation& simulation)
+	{
+		debug_world = std::make_unique<DebugWorld>();
+
+		debug_world->mesh_rid = rendering::AllocRID(rendering::RIDType::Mesh);
+		debug_world->multimesh_rid = rendering::AllocRID(rendering::RIDType::MultiMesh);
+		debug_world->instance_rid = rendering::AllocRID(rendering::RIDType::Instance);
+
+		rendering::AddCommand<&RS::mesh_add_surface_from_arrays>(debug_world->mesh_rid, RS::PRIMITIVE_LINES, CreateLineBoxMesh(), godot::Array{}, godot::Dictionary{}, 0);
 
 		rendering::AddCommand<&RS::multimesh_set_mesh>(debug_world->multimesh_rid, debug_world->mesh_rid);
+		//rendering::AddCommand<&RS::multimesh_set_mesh>(debug_world->multimesh_rid, RS::get_singleton()->get_test_cube());
 
-		rendering::AddCommand<&RS::instance_set_base>(debug_world->instance_rid, debug_world->mesh_rid);
-		godot::SceneTree* scene_tree = static_cast<godot::SceneTree*>(godot::Engine::get_singleton()->get_main_loop());
-		rendering::AddCommand<&RS::instance_set_scenario>(debug_world->instance_rid, scene_tree->get_root()->get_viewport_rid());
+		rendering::AddCommand<&RS::instance_set_base>(debug_world->instance_rid, debug_world->multimesh_rid);
+
+		godot::Transform3D transform;
+		transform.set_origin({ 0, 0, 2 });
+		rendering::AddCommand<&RS::instance_set_transform>(debug_world->instance_rid, transform);
 	}
 
 	void Uninitialize(Simulation& simulation)
@@ -111,8 +148,14 @@ namespace voxel_game::debugrender
 			}
 		});
 
+		// Allocate new data if we run out of buffer space
 		if (debug_world->buffer_size < node_count)
 		{
+			if (debug_world->buffer_size == 0)
+			{
+				debug_world->buffer_size = 1;
+			}
+
 			do
 			{
 				debug_world->buffer_size *= 2;
@@ -121,15 +164,26 @@ namespace voxel_game::debugrender
 			rendering::AddCommand<&RS::multimesh_allocate_data>(debug_world->multimesh_rid, debug_world->buffer_size, RS::MULTIMESH_TRANSFORM_3D, false, false, false);
 		}
 
-		rendering::AddCommand<&RS::multimesh_set_visible_instances>(debug_world->multimesh_rid, node_count);
-		rendering::AddCommand<&RS::multimesh_set_buffer>(debug_world->multimesh_rid, instance_data);
+		if (node_count > 0)
+		{
+			instance_data.resize(debug_world->buffer_size * 12);
+
+			rendering::AddCommand<&RS::multimesh_set_visible_instances>(debug_world->multimesh_rid, node_count);
+
+			rendering::AddCommand<&RS::multimesh_set_buffer>(debug_world->multimesh_rid, instance_data);
+		}
 	}
 
 	void Update(Simulation& simulation)
 	{
-		if (simulation.universes.size() > 0)
+		if (simulation.frame_index % 100 == 0)
 		{
-			BuildWorldDebugVisualization(simulation.universes[0]->*&spatial3d::CWorld::world);
+			if (simulation.universes.size() > 0)
+			{
+				rendering::AddCommand<&RS::instance_set_scenario>(debug_world->instance_rid, simulation.universes[0]->*&rendering::CScenario::id);
+
+				BuildWorldDebugVisualization(simulation.universes[0]->*&spatial3d::CWorld::world);
+			}
 		}
 	}
 
