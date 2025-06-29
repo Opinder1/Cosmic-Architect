@@ -187,13 +187,18 @@ public:
 			return m_poly != nullptr;
 		}
 
+		bool operator==(Ptr other) const
+		{
+			return m_poly == other.m_poly;
+		}
+
 		uint64_t Hash() const
 		{
 			return reinterpret_cast<uint64_t>(m_poly);
 		}
 
 	private:
-		Header* m_poly;
+		Header* m_poly = nullptr;
 	};
 
 public:

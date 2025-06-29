@@ -274,6 +274,11 @@ public:
 			return m_entry != nullptr;
 		}
 
+		bool operator==(Ptr other) const
+		{
+			return m_entry == other.m_entry;
+		}
+
 		uint64_t Hash() const
 		{
 			return reinterpret_cast<uint64_t>(m_entry);
