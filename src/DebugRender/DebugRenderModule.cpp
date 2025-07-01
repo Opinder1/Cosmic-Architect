@@ -100,6 +100,7 @@ namespace voxel_game::debugrender
 		rendering::AddCommand<&RS::free_rid>(debug_world->mesh_rid);
 		rendering::AddCommand<&RS::free_rid>(debug_world->multimesh_rid);
 		rendering::AddCommand<&RS::free_rid>(debug_world->instance_rid);
+		debug_world->entity = entity::Ref();
 	}
 
 	bool IsUnloadDone(Simulation& simulation)
