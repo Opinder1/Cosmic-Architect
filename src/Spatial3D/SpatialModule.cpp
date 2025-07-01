@@ -81,26 +81,22 @@ namespace voxel_game::spatial3d
 	{
 		WorldDoNodeUnloadCommands(world);
 
-		if (simulation.unloading)
+		if (!simulation.unloading)
 		{
-			return;
+			WorldDoNodeLoadCommands(world, simulation.frame_start_time);
 		}
-
-		WorldDoNodeLoadCommands(world, simulation.frame_start_time);
 	}
 
 	void ScaleUpdate(Simulation& simulation, ScalePtr scale)
 	{
 		ScaleUnloadUnutilizedNodes(scale, simulation.frame_start_time);
 
-		if (simulation.unloading)
+		if (!simulation.unloading)
 		{
-			return;
+			ScaleLoadNodesAroundLoaders(scale, simulation.frame_start_time);
+
+			ScaleUpdateEntityNodes(scale);
 		}
-
-		ScaleLoadNodesAroundLoaders(scale, simulation.frame_start_time);
-
-		ScaleUpdateEntityNodes(scale);
 	}
 
 	WorldPtr GetEntityWorld(entity::WRef entity)
