@@ -23,6 +23,8 @@ namespace voxel_game::debugrender
 		godot::RID multimesh_rid;
 		godot::RID instance_rid;
 
+		entity::Ref entity;
+
 		size_t buffer_size = 0;
 	};
 	
@@ -89,18 +91,15 @@ namespace voxel_game::debugrender
 		rendering::AddCommand<&RS::mesh_add_surface_from_arrays>(debug_world->mesh_rid, RS::PRIMITIVE_LINES, CreateLineBoxMesh(), godot::Array{}, godot::Dictionary{}, 0);
 
 		rendering::AddCommand<&RS::multimesh_set_mesh>(debug_world->multimesh_rid, debug_world->mesh_rid);
-		//rendering::AddCommand<&RS::multimesh_set_mesh>(debug_world->multimesh_rid, RS::get_singleton()->get_test_cube());
 
 		rendering::AddCommand<&RS::instance_set_base>(debug_world->instance_rid, debug_world->multimesh_rid);
-
-		godot::Transform3D transform;
-		transform.set_origin({ 0, 0, 2 });
-		rendering::AddCommand<&RS::instance_set_transform>(debug_world->instance_rid, transform);
 	}
 
 	void Uninitialize(Simulation& simulation)
 	{
-
+		rendering::AddCommand<&RS::free_rid>(debug_world->mesh_rid);
+		rendering::AddCommand<&RS::free_rid>(debug_world->multimesh_rid);
+		rendering::AddCommand<&RS::free_rid>(debug_world->instance_rid);
 	}
 
 	bool IsUnloadDone(Simulation& simulation)
@@ -178,11 +177,41 @@ namespace voxel_game::debugrender
 	{
 		if (simulation.frame_index % 100 == 0)
 		{
-			if (simulation.universes.size() > 0)
+			if (!debug_world->entity && simulation.universes.size() > 0)
 			{
+				debug_world->entity = simulation.universes[0].Reference();
+			}
+
+			if (debug_world->entity)
+			{
+				godot::Transform3D transform;
+
+				if (debug_world->entity.Has<physics3d::CPosition>())
+				{
+					const godot::Vector3& position = debug_world->entity->*&physics3d::CPosition::position;
+
+					transform.set_origin(position);
+				}
+
+				if (debug_world->entity.Has<physics3d::CRotation>())
+				{
+					const godot::Quaternion& rotation = debug_world->entity->*&physics3d::CRotation::rotation;
+
+					transform.rotate(rotation.get_axis(), rotation.get_angle());
+				}
+
+				if (debug_world->entity.Has<physics3d::CScale>())
+				{
+					const godot::Vector3& scale = debug_world->entity->*&physics3d::CScale::scale;
+
+					transform.scale(scale);
+				}
+
+				rendering::AddCommand<&RS::instance_set_transform>(debug_world->instance_rid, transform);
+
 				rendering::AddCommand<&RS::instance_set_scenario>(debug_world->instance_rid, simulation.universes[0]->*&rendering::CScenario::id);
 
-				BuildWorldDebugVisualization(simulation.universes[0]->*&spatial3d::CWorld::world);
+				BuildWorldDebugVisualization(debug_world->entity->*&spatial3d::CWorld::world);
 			}
 		}
 	}
