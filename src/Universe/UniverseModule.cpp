@@ -205,14 +205,21 @@ namespace voxel_game::universe
 		unordered_erase(simulation.universes, entity::Ref(data.entity));
 	}
 
-	void OnSerialzeUniverseNode(spatial3d::NodePtr node, std::string& data)
+	void OnSerializeUniverseNode(Simulation& simulation, spatial3d::NodePtr node, std::string& data)
 	{
-
+		data += "UniverseNode";
 	}
 
-	size_t OnDeserialzeUniverseNode(spatial3d::NodePtr node, std::string_view data)
+	size_t OnDeserializeUniverseNode(Simulation& simulation, spatial3d::NodePtr node, std::string_view data)
 	{
-		return 0;
+		if (data.size() == 0)
+		{
+			return 0;
+		}
+
+		DEBUG_ASSERT(data == "UniverseNode", "Invalid");
+
+		return data.size();
 	}
 
 	void Initialize(Simulation& simulation)
@@ -221,6 +228,7 @@ namespace voxel_game::universe
 
 		simulation.universe_type.node_type.AddType<spatial3d::Node>();
 		simulation.universe_type.node_type.AddType<spatial3d::PartialNode>();
+		simulation.universe_type.node_type.AddType<spatial3d::LocalNode>();
 		simulation.universe_type.node_type.AddType<Node>();
 
 		simulation.universe_type.scale_type.AddType<spatial3d::Scale>();
@@ -229,10 +237,11 @@ namespace voxel_game::universe
 
 		simulation.universe_type.world_type.AddType<spatial3d::World>();
 		simulation.universe_type.world_type.AddType<spatial3d::PartialWorld>();
+		simulation.universe_type.world_type.AddType<spatial3d::LocalWorld>();
 		simulation.universe_type.world_type.AddType<World>();
 
-		simulation.universe_type.serialize_callbacks.push_back(cb::Bind<&OnSerialzeUniverseNode>());
-		simulation.universe_type.deserialize_callbacks.push_back(cb::Bind<&OnDeserialzeUniverseNode>());
+		simulation.universe_type.serialize_callbacks.push_back(cb::BindArg<&OnSerializeUniverseNode>(simulation));
+		simulation.universe_type.deserialize_callbacks.push_back(cb::BindArg<&OnDeserializeUniverseNode>(simulation));
 
 		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::MainUpdate, cb::Bind<&OnUpdateUniverseEntity>());
 		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::BeginLoad, cb::Bind<&OnLoadUniverseEntity>());
@@ -251,24 +260,7 @@ namespace voxel_game::universe
 
 	void Update(Simulation& simulation)
 	{
-		for (spatial3d::ScalePtr scale : simulation.spatial_scales)
-		{
-			UniverseNodeLoaderTest loader{ simulation, scale->*&spatial3d::Scale::world };
 
-			spatial3d::ScaleDoNodeCommands(scale, spatial3d::NodeState::Loading, [&](spatial3d::NodePtr node)
-			{
-				loader.LoadNodePlane(node);
-
-				return false;
-			});
-
-			spatial3d::ScaleDoNodeCommands(scale, spatial3d::NodeState::Unloading, [&](spatial3d::NodePtr node)
-			{
-				loader.UnloadNode(node);
-
-				return false;
-			});
-		}
 	}
 
 	void WorkerUpdate(Simulation& simulation, size_t index)

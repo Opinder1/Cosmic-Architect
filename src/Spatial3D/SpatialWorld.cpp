@@ -6,6 +6,7 @@
 #include <easy/profiler.h>
 
 #include <godot_cpp/classes/project_settings.hpp>
+#include <godot_cpp/classes/worker_thread_pool.hpp>
 
 namespace voxel_game::spatial3d
 {
@@ -64,43 +65,6 @@ namespace voxel_game::spatial3d
 		}
 
 		return it->second;
-	}
-
-	std::string_view LoadIOTask::ProcessFull(std::string_view key, std::string_view value)
-	{
-		exists = true;
-		data = value;
-		return NOOP;
-	}
-
-	std::string_view LoadIOTask::ProcessEmpty(std::string_view key)
-	{
-		exists = false;
-		return NOOP;
-	}
-
-	std::string_view SaveIOTask::ProcessFull(std::string_view key, std::string_view value)
-	{
-		exists = true;
-		return data;
-	}
-
-	std::string_view SaveIOTask::ProcessEmpty(std::string_view key)
-	{
-		exists = false;
-		return NOOP;
-	}
-
-	std::string_view UnloadIOTask::ProcessFull(std::string_view key, std::string_view value)
-	{
-		exists = true;
-		return data;
-	}
-
-	std::string_view UnloadIOTask::ProcessEmpty(std::string_view key)
-	{
-		exists = false;
-		return NOOP;
 	}
 
 	void WorldForEachScale(WorldPtr world, ScaleCB callback)
@@ -384,14 +348,123 @@ namespace voxel_game::spatial3d
 		}
 	}
 
+	void NodeReadTask(void* data)
+	{
+		IOTask* task = reinterpret_cast<IOTask*>(data);
+
+		task->database->Get(ToData(task->coord), &task->data);
+
+		task->finished = true;
+	}
+
+	void NodeWriteTask(void* data)
+	{
+		IOTask* task = reinterpret_cast<IOTask*>(data);
+
+		task->database->Set(ToData(task->coord), task->data);
+
+		task->finished = true;
+	}
+
+	// Keep calling this function on a node until it returns true. When it returns true it means a read was done.
+	bool ProgressNodeReadTask(NodePtr node, WorldPtr world)
+	{
+		TypeData& type = *(world->*&World::type);
+
+		switch (node->*&LocalNode::task_state)
+		{
+		case TaskState::Idle:
+			if (node->*&LocalNode::task == nullptr)
+			{
+				node->*&LocalNode::task = std::make_unique<IOTask>();
+				(node->*&LocalNode::task)->coord = NodeCoord{ node->*&Node::position, node->*&Node::scale_index };
+				(node->*&LocalNode::task)->database = &(world->*&LocalWorld::database);
+
+				uint64_t id = godot::WorkerThreadPool::get_singleton()->add_native_task(&NodeReadTask, (node->*&LocalNode::task).get());
+				node->*&LocalNode::task_state = TaskState::ReadInProgress;
+			}
+			return false;
+
+		case TaskState::ReadInProgress:
+			if ((node->*&LocalNode::task)->finished)
+			{
+				size_t ptr = 0;
+
+				const std::string& data = (node->*&LocalNode::task)->data;
+
+				for (const NodeDeserializeCB& callback : type.deserialize_callbacks)
+				{
+					ptr += callback(node, std::string_view(data.data() + ptr, data.size() - ptr));
+				}
+				DEBUG_ASSERT(ptr == data.size(), "We should have read all the node data");
+
+				node->*&LocalNode::task_state = TaskState::ReadDone;
+				(node->*&LocalNode::task).reset();
+				return false;
+			}
+			else
+			{
+				return true;
+			}
+
+		case TaskState::ReadDone:
+			return true;
+		}
+
+		return false;
+	}
+
+	// Keep calling this function on a node until it returns true. When it returns true it means a write was done.
+	bool ProgressNodeWriteTask(NodePtr node, WorldPtr world)
+	{
+		TypeData& type = *(world->*&World::type);
+
+		switch (node->*&LocalNode::task_state)
+		{
+		case TaskState::Idle:
+			if (node->*&LocalNode::task == nullptr)
+			{
+				node->*&LocalNode::task = std::make_unique<IOTask>();
+				(node->*&LocalNode::task)->coord = NodeCoord{ node->*&Node::position, node->*&Node::scale_index };
+				(node->*&LocalNode::task)->database = &(world->*&LocalWorld::database);
+
+				std::string& data = (node->*&LocalNode::task)->data;
+
+				for (const NodeSerializeCB& callback : type.serialize_callbacks)
+				{
+					callback(node, data);
+				}
+
+				uint64_t id = godot::WorkerThreadPool::get_singleton()->add_native_task(&NodeWriteTask, (node->* & LocalNode::task).get());
+				node->*&LocalNode::task_state = TaskState::WriteInProgress;
+			}
+			return false;
+
+		case TaskState::WriteInProgress:
+			if ((node->*&LocalNode::task)->finished)
+			{
+				node->*&LocalNode::task_state = TaskState::WriteDone;
+				(node->*&LocalNode::task).reset();
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+
+		case TaskState::WriteDone:
+			return true;
+		}
+
+		return false;
+	}
+
 	void WorldDoNodeLoadCommands(WorldPtr world, Clock::time_point frame_start_time)
 	{
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 		EASY_BLOCK("WorldDoNodeLoadCommands");
 
 		DEBUG_ASSERT(world->*&World::max_scale > 0, "The spatial world should have at least one scale");
-
-		TypeData& type = *(world->*&World::type);
 
 		WorldForEachScale(world, [&](ScalePtr scale)
 		{
@@ -401,39 +474,26 @@ namespace voxel_game::spatial3d
 				DEBUG_ASSERT(node->*&Node::state == NodeState::Loading, "Node should be in loading state");
 
 				// If we are a local world then wait for IO tasks first
-				if (world.Has<LocalWorld>())
+				if (node.Has<LocalNode>())
 				{
-					switch (node->*&LocalNode::task_state)
+					if (!ProgressNodeReadTask(node, world))
 					{
-					case TaskState::Waiting:
-						node->*&LocalNode::task = std::make_unique<LoadIOTask>();
-						(world->*&LocalWorld::database).Process(ToData(node->*&Node::position), (node->*&LocalNode::task).get(), false);
 						return false;
-
-					case TaskState::TaskInProgress:
-						return false;
-
-					case TaskState::Done:
-						size_t ptr = 0;
-
-						const std::string& data = (node->*&LocalNode::task)->data;
-
-						for (const NodeDeserializeCB& callback : type.deserialize_callbacks)
-						{
-							ptr += callback(node, std::string_view(data.data() + ptr, data.size() - ptr));
-						}
-						DEBUG_ASSERT(ptr == data.size(), "We should have read all the node data");
-						break;
 					}
 				}
 
 				// If we are a remote world then wait for network tasks first
-				if (world.Has<RemoteWorld>())
+				if (node.Has<RemoteNode>())
 				{
 
 				}
 
 				// All parts of the node have finished so we can stop loading
+
+				if (node.Has<LocalNode>())
+				{
+					node->*&LocalNode::task_state = TaskState::Idle;
+				}
 
 				node->*&Node::state = NodeState::Loaded;
 				node->*&PartialNode::last_update_time = frame_start_time;
@@ -465,33 +525,16 @@ namespace voxel_game::spatial3d
 				DEBUG_ASSERT(node->*&Node::state == NodeState::Unloading, "Node should be in unloading state");
 
 				// If we are a remote world then wait for network tasks first
-				if (world.Has<RemoteWorld>())
+				if (node.Has<RemoteNode>())
 				{
 
 				}
 
 				// If we are a local world then wait for IO tasks first
-				if (world.Has<LocalWorld>())
+				if (node.Has<LocalNode>())
 				{
-					switch (node->*&LocalNode::task_state)
+					if (!ProgressNodeWriteTask(node, world))
 					{
-					case TaskState::TaskInProgress:
-						return false;
-
-					case TaskState::Done:
-						break;
-
-					case TaskState::Waiting:
-						node->*&LocalNode::task = std::make_unique<UnloadIOTask>();
-
-						std::string& data = (node->*&LocalNode::task)->data;
-
-						for (const NodeSerializeCB& callback : type.serialize_callbacks)
-						{
-							callback(node, data);
-						}
-
-						(world->*&LocalWorld::database).Process(ToData(node->*&Node::position), (node->*&LocalNode::task).get(), true);
 						return false;
 					}
 				}
@@ -500,9 +543,14 @@ namespace voxel_game::spatial3d
 				
 				UnlinkNode(world, node, scale->*&Scale::index);
 
-				(scale->*&Scale::nodes).erase(node->*&Node::position);
-
 				node->*&Node::state = NodeState::Invalid;
+
+				if (node.Has<LocalNode>())
+				{
+					node->*&LocalNode::task_state = TaskState::Idle;
+				}
+
+				(scale->*&Scale::nodes).erase(node->*&Node::position);
 
 				type.node_type.DestroyPoly(node);
 

@@ -27,6 +27,12 @@ namespace voxel_game::spatial3d
 	constexpr const uint8_t k_max_world_scale = 16;
 	constexpr const uint8_t k_node_no_parent = UINT8_MAX;
 
+	struct NodeCoord
+	{
+		godot::Vector3i position;
+		uint8_t scale_index = 0;
+	};
+
 	// ----- Bounded -----
 
 	struct BoundedWorld : Nocopy, Nomove
@@ -60,41 +66,24 @@ namespace voxel_game::spatial3d
 
 	enum class TaskState
 	{
-		Waiting,
-		TaskInProgress,
-		Done
+		Idle,
+		ReadInProgress,
+		WriteInProgress,
+		ReadDone,
+		WriteDone,
 	};
 
-	struct IOTask : tkrzw::DBM::RecordProcessor
+	struct IOTask
 	{
-		bool exists = false;
+		tkrzw::ShardDBM* database;
+		NodeCoord coord;
+		bool finished = false;
 		std::string data;
-	};
-
-	struct LoadIOTask : IOTask
-	{
-		std::string_view ProcessFull(std::string_view key, std::string_view value) override;
-
-		std::string_view ProcessEmpty(std::string_view key) override;
-	};
-
-	struct SaveIOTask : IOTask
-	{
-		std::string_view ProcessFull(std::string_view key, std::string_view value) override;
-
-		std::string_view ProcessEmpty(std::string_view key) override;
-	};
-
-	struct UnloadIOTask : IOTask
-	{
-		std::string_view ProcessFull(std::string_view key, std::string_view value) override;
-
-		std::string_view ProcessEmpty(std::string_view key) override;
 	};
 
 	struct LocalNode : Nocopy, Nomove
 	{
-		TaskState task_state = TaskState::Waiting;
+		TaskState task_state = TaskState::Idle;
 		std::unique_ptr<IOTask> task;
 	};
 
@@ -225,8 +214,6 @@ namespace voxel_game::spatial3d
 	void RemoveEntity(WorldPtr world, entity::WRef entity);
 
 	void WorldForEachScale(WorldPtr world, ScaleCB callback);
-
-	void ScaleDoNodeCommands(ScalePtr scale, NodeState state, NodeCommandCB callback);
 
 	// Execute all node create commands a world has. Thread safe for that world
 	void WorldDoNodeLoadCommands(WorldPtr world, Clock::time_point frame_start_time);
