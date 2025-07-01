@@ -14,6 +14,8 @@
 
 #include <robin_hood/robin_hood.h>
 
+#include <TKRZW/tkrzw_dbm_shard.h>
+
 #include <array>
 #include <vector>
 
@@ -25,11 +27,102 @@ namespace voxel_game::spatial3d
 	constexpr const uint8_t k_max_world_scale = 16;
 	constexpr const uint8_t k_node_no_parent = UINT8_MAX;
 
+	// ----- Bounded -----
+
+	struct BoundedWorld : Nocopy, Nomove
+	{
+		godot::AABB bounds;
+	};
+
+	// ----- Partial -----
+
+	struct PartialNode : Nocopy, Nomove
+	{
+		Clock::time_point last_update_time; // Time since a loader last updated our unload timer
+	};
+
+	struct PartialScale : Nocopy, Nomove
+	{
+		// We use these to limit operations currently in progress
+		std::vector<godot::Vector3i> loading_nodes;
+		std::vector<godot::Vector3i> unloading_nodes;
+	};
+
+	struct PartialWorld : Nocopy, Nomove
+	{
+		Clock::duration node_keepalive = 10s;
+
+		// Optional entities that act as areas where nodes are loaded around
+		robin_hood::unordered_set<entity::Ref> loaders;
+	};
+
+	// ----- Local -----
+
+	enum class TaskState
+	{
+		Waiting,
+		TaskInProgress,
+		Done
+	};
+
+	struct IOTask : tkrzw::DBM::RecordProcessor
+	{
+		bool exists = false;
+		std::string data;
+	};
+
+	struct LoadIOTask : IOTask
+	{
+		std::string_view ProcessFull(std::string_view key, std::string_view value) override;
+
+		std::string_view ProcessEmpty(std::string_view key) override;
+	};
+
+	struct SaveIOTask : IOTask
+	{
+		std::string_view ProcessFull(std::string_view key, std::string_view value) override;
+
+		std::string_view ProcessEmpty(std::string_view key) override;
+	};
+
+	struct UnloadIOTask : IOTask
+	{
+		std::string_view ProcessFull(std::string_view key, std::string_view value) override;
+
+		std::string_view ProcessEmpty(std::string_view key) override;
+	};
+
+	struct LocalNode : Nocopy, Nomove
+	{
+		TaskState task_state = TaskState::Waiting;
+		std::unique_ptr<IOTask> task;
+	};
+
+	struct LocalWorld : Nocopy, Nomove
+	{
+		tkrzw::ShardDBM database; // Database to load nodes from
+	};
+
+	// ----- Remote -----
+
+	struct RemoteNode : Nocopy, Nomove
+	{
+		uint32_t network_version = 0; // The version of this node. We use this to check if we should update to a newer version if there is one
+	};
+
+	struct RemoteWorld : Nocopy, Nomove
+	{
+
+	};
+
+	// ----- Spatial -----
+
 	enum class NodeState : uint8_t
 	{
 		Invalid,
 		Loading, // Node is taken up its space in the world but is not accessable yet
 		Loaded, // Fully loaded
+		Saving,
 		Unloading, // Node is taking up space in the world but is no longer accessible
 	};
 
@@ -50,18 +143,8 @@ namespace voxel_game::spatial3d
 		NodePtr neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
 
 		robin_hood::unordered_set<entity::Ref> entities;
-	};
 
-	struct PartialNode
-	{
 		NodeState state = NodeState::Invalid;
-		uint16_t task_count = 0;
-		Clock::time_point last_update_time; // Time since a loader last updated our unload timer
-	};
-
-	struct NetworkNode
-	{
-		uint32_t network_version = 0; // The version of this node. We use this to check if we should update to a newer version if there is one
 	};
 
 	using NodeMap = robin_hood::unordered_map<godot::Vector3i, NodePtr>;
@@ -76,13 +159,6 @@ namespace voxel_game::spatial3d
 		NodeMap nodes;
 
 		robin_hood::unordered_set<entity::Ref> entities;
-	};
-
-	struct PartialScale : Nocopy, Nomove
-	{
-		// We use these to limit operations currently in progress
-		std::vector<godot::Vector3i> loading_nodes;
-		std::vector<godot::Vector3i> unloading_nodes;
 	};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
@@ -100,18 +176,9 @@ namespace voxel_game::spatial3d
 		robin_hood::unordered_set<entity::Ref> entities;
 	};
 
-	struct BoundedWorld : Nocopy, Nomove
-	{
-		godot::AABB bounds;
-	};
-
-	struct PartialWorld : Nocopy, Nomove
-	{
-		Clock::duration node_keepalive = 10s;
-
-		// Optional entities that act as areas where nodes are loaded around
-		robin_hood::unordered_set<entity::Ref> loaders;
-	};
+	// Callbacks for serializing/deserializing nodes. Should return the amount of bytes used when deserializing.
+	using NodeSerializeCB = cb::Callback<void(NodePtr, std::string&)>;
+	using NodeDeserializeCB = cb::Callback<size_t(NodePtr, std::string_view)>;
 
 	struct TypeData
 	{
@@ -121,6 +188,9 @@ namespace voxel_game::spatial3d
 
 		size_t max_scale = k_max_world_scale;
 		size_t node_size = 0;
+
+		std::vector<NodeSerializeCB> serialize_callbacks;
+		std::vector<NodeDeserializeCB> deserialize_callbacks;
 
 		std::vector<WorldPtr> worlds;
 		std::vector<ScalePtr> scales;
@@ -139,7 +209,7 @@ namespace voxel_game::spatial3d
 	NodePtr GetNode(WorldPtr world, godot::Vector3i position, uint8_t scale_index);
 
 	// Create a new spatial world given provided types
-	WorldPtr CreateWorld(TypeData& type);
+	WorldPtr CreateWorld(TypeData& type, const godot::String& path);
 
 	void UnloadWorld(WorldPtr world);
 

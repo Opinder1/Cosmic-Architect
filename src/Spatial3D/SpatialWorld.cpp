@@ -5,6 +5,8 @@
 
 #include <easy/profiler.h>
 
+#include <godot_cpp/classes/project_settings.hpp>
+
 namespace voxel_game::spatial3d
 {
 	const godot::Vector3i node_neighbour_offsets[6] =
@@ -64,6 +66,43 @@ namespace voxel_game::spatial3d
 		return it->second;
 	}
 
+	std::string_view LoadIOTask::ProcessFull(std::string_view key, std::string_view value)
+	{
+		exists = true;
+		data = value;
+		return NOOP;
+	}
+
+	std::string_view LoadIOTask::ProcessEmpty(std::string_view key)
+	{
+		exists = false;
+		return NOOP;
+	}
+
+	std::string_view SaveIOTask::ProcessFull(std::string_view key, std::string_view value)
+	{
+		exists = true;
+		return data;
+	}
+
+	std::string_view SaveIOTask::ProcessEmpty(std::string_view key)
+	{
+		exists = false;
+		return NOOP;
+	}
+
+	std::string_view UnloadIOTask::ProcessFull(std::string_view key, std::string_view value)
+	{
+		exists = true;
+		return data;
+	}
+
+	std::string_view UnloadIOTask::ProcessEmpty(std::string_view key)
+	{
+		exists = false;
+		return NOOP;
+	}
+
 	void WorldForEachScale(WorldPtr world, ScaleCB callback)
 	{
 		DEBUG_THREAD_CHECK_READ(world.Data());
@@ -101,13 +140,13 @@ namespace voxel_game::spatial3d
 			break;
 
 		case NodeState::Unloading:
-			for (auto it = (scale->* & PartialScale::unloading_nodes).begin(); it != (scale->* & PartialScale::unloading_nodes).end();)
+			for (auto it = (scale->* & PartialScale::unloading_nodes).begin(); it != (scale->*&PartialScale::unloading_nodes).end();)
 			{
-				NodePtr node = (scale->* & Scale::nodes)[*it];
+				NodePtr node = (scale->*&Scale::nodes)[*it];
 
 				if (callback(node))
 				{
-					it = (scale->* & PartialScale::unloading_nodes).erase(it);
+					it = (scale->*&PartialScale::unloading_nodes).erase(it);
 				}
 				else
 				{
@@ -224,7 +263,7 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	WorldPtr CreateWorld(TypeData& type)
+	WorldPtr CreateWorld(TypeData& type, const godot::String& path)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&type);
 
@@ -248,6 +287,26 @@ namespace voxel_game::spatial3d
 		}
 
 		world->*&World::max_scale = type.max_scale;
+
+		if (world.Has<LocalWorld>())
+		{
+			std::map<std::string, std::string> params;
+
+			params.emplace("num_shards", "4");
+			params.emplace("dbm", "HashDBM");
+
+			int32_t options = tkrzw::File::OPEN_NO_WAIT | tkrzw::File::OPEN_SYNC_HARD;
+
+			std::string os_path = godot::ProjectSettings::get_singleton()->globalize_path(path).utf8();
+
+			tkrzw::Status status = (world->*&LocalWorld::database).OpenAdvanced(os_path, true, options, params);
+
+			if (status != tkrzw::Status::SUCCESS)
+			{
+				DestroyWorld(world);
+				return nullptr;
+			}
+		}
 
 		return world;
 	}
@@ -332,20 +391,51 @@ namespace voxel_game::spatial3d
 
 		DEBUG_ASSERT(world->*&World::max_scale > 0, "The spatial world should have at least one scale");
 
+		TypeData& type = *(world->*&World::type);
+
 		WorldForEachScale(world, [&](ScalePtr scale)
 		{
 			// For each create command
 			ScaleDoNodeCommands(scale, NodeState::Loading, [&](NodePtr node)
 			{
-				DEBUG_ASSERT(node->*&PartialNode::state == NodeState::Loading, "Node should be in loading state");
+				DEBUG_ASSERT(node->*&Node::state == NodeState::Loading, "Node should be in loading state");
 
-				if (node->*&PartialNode::task_count > 0)
+				// If we are a local world then wait for IO tasks first
+				if (world.Has<LocalWorld>())
 				{
-					return false;
+					switch (node->*&LocalNode::task_state)
+					{
+					case TaskState::Waiting:
+						node->*&LocalNode::task = std::make_unique<LoadIOTask>();
+						(world->*&LocalWorld::database).Process(ToData(node->*&Node::position), (node->*&LocalNode::task).get(), false);
+						return false;
+
+					case TaskState::TaskInProgress:
+						return false;
+
+					case TaskState::Done:
+						size_t ptr = 0;
+
+						const std::string& data = (node->*&LocalNode::task)->data;
+
+						for (const NodeDeserializeCB& callback : type.deserialize_callbacks)
+						{
+							ptr += callback(node, std::string_view(data.data() + ptr, data.size() - ptr));
+						}
+						DEBUG_ASSERT(ptr == data.size(), "We should have read all the node data");
+						break;
+					}
 				}
 
-				// Initialize the node
-				node->*&PartialNode::state = NodeState::Loaded;
+				// If we are a remote world then wait for network tasks first
+				if (world.Has<RemoteWorld>())
+				{
+
+				}
+
+				// All parts of the node have finished so we can stop loading
+
+				node->*&Node::state = NodeState::Loaded;
 				node->*&PartialNode::last_update_time = frame_start_time;
 
 				NodeMap::iterator it = (scale->*&Scale::nodes).find(node->*&Node::position);
@@ -372,24 +462,81 @@ namespace voxel_game::spatial3d
 			// For each destroy command of the scale
 			ScaleDoNodeCommands(scale, NodeState::Unloading, [&](NodePtr node)
 			{
-				DEBUG_ASSERT(node->*&PartialNode::state == NodeState::Unloading, "Node should be in unloading state");
+				DEBUG_ASSERT(node->*&Node::state == NodeState::Unloading, "Node should be in unloading state");
 
-				if (node->*&PartialNode::task_count > 0)
+				// If we are a remote world then wait for network tasks first
+				if (world.Has<RemoteWorld>())
 				{
-					return false;
+
 				}
 
+				// If we are a local world then wait for IO tasks first
+				if (world.Has<LocalWorld>())
+				{
+					switch (node->*&LocalNode::task_state)
+					{
+					case TaskState::TaskInProgress:
+						return false;
+
+					case TaskState::Done:
+						break;
+
+					case TaskState::Waiting:
+						node->*&LocalNode::task = std::make_unique<UnloadIOTask>();
+
+						std::string& data = (node->*&LocalNode::task)->data;
+
+						for (const NodeSerializeCB& callback : type.serialize_callbacks)
+						{
+							callback(node, data);
+						}
+
+						(world->*&LocalWorld::database).Process(ToData(node->*&Node::position), (node->*&LocalNode::task).get(), true);
+						return false;
+					}
+				}
+
+				// All parts of the node have finished so we can stop unloading
+				
 				UnlinkNode(world, node, scale->*&Scale::index);
 
 				(scale->*&Scale::nodes).erase(node->*&Node::position);
 
-				node->*&PartialNode::state = NodeState::Invalid;
+				node->*&Node::state = NodeState::Invalid;
 
 				type.node_type.DestroyPoly(node);
 
 				return true;
 			});
 		});
+	}
+
+	void TouchNode(ScalePtr scale, godot::Vector3i pos, Clock::time_point frame_start_time)
+	{
+		DEBUG_THREAD_CHECK_WRITE(scale.Data());
+
+		WorldPtr world = scale->*&Scale::world;
+
+		TypeData& type = *(world->*&World::type);
+
+		// Try and create the node
+		auto&& [it, emplaced] = (scale->*&Scale::nodes).try_emplace(pos, nullptr);
+
+		NodePtr& node = it->second;
+
+		if (emplaced) // Node didn't already exist
+		{
+			node = type.node_type.CreatePoly();
+
+			node->*&Node::position = pos;
+			node->*&Node::scale_index = scale->*&Scale::index;
+			node->*&Node::state = NodeState::Loading;
+
+			(scale->*&PartialScale::loading_nodes).push_back(pos);
+		}
+
+		// Touch the node so it stays loaded
+		node->*&PartialNode::last_update_time = frame_start_time;
 	}
 
 	void LoaderLoadNodes(ScalePtr scale, entity::WRef loader, Clock::time_point frame_start_time, double scale_node_step)
@@ -402,33 +549,10 @@ namespace voxel_game::spatial3d
 			return;
 		}
 
-		WorldPtr world = scale->*&Scale::world;
-
-		TypeData& type = *(world->*&World::type);
-
 		// For each node in the sphere of the loader
 		ForEachCoordInSphere(loader->*&physics3d::CPosition::position / scale_node_step, loader->*&CLoader::dist_per_lod, [&](godot::Vector3i pos)
 		{
-			// Try and create the node
-			auto&& [it, emplaced] = (scale->*&Scale::nodes).try_emplace(pos, nullptr);
-
-			NodePtr& node = it->second;
-
-			if (emplaced) // Node didn't already exist
-			{
-				node = type.node_type.CreatePoly();
-
-				node->*&Node::position = pos;
-				node->*&Node::scale_index = scale->*&Scale::index;
-				node->*&PartialNode::state = NodeState::Loading;
-				node->*&PartialNode::last_update_time = frame_start_time;
-
-				(scale->*&PartialScale::loading_nodes).push_back(pos);
-			}
-
-			// Touch the node so it stays loaded
-			node->*&PartialNode::last_update_time = frame_start_time;
-
+			TouchNode(scale, pos, frame_start_time);
 		});
 	}
 
@@ -468,10 +592,10 @@ namespace voxel_game::spatial3d
 			if (world->*&World::unloading || node_untouched)
 			{
 				// Move the entity along to deletion
-				switch (node->*&PartialNode::state)
+				switch (node->*&Node::state)
 				{
 				case NodeState::Loaded:
-					node->*&PartialNode::state = NodeState::Unloading;
+					node->*&Node::state = NodeState::Unloading;
 					(scale->*&PartialScale::unloading_nodes).push_back(node->*&Node::position);
 					break;
 				}

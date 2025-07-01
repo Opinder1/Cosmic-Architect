@@ -94,9 +94,7 @@ namespace voxel_game::galaxy
 
 		galaxy_entity->*&CGalaxy::path = path;
 
-		spatial3d::WorldPtr world = spatial3d::CreateWorld(simulation.galaxy_type);
-
-		loading::WorldOpenDatabase(simulation, world, path.path_join("stars.db"));
+		spatial3d::WorldPtr world = spatial3d::CreateWorld(simulation.galaxy_type, path.path_join("stars.db"));
 
 		spatial3d::EntitySetWorld(simulation, galaxy_entity, world);
 

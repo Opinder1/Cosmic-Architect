@@ -181,12 +181,10 @@ namespace voxel_game::universe
 		simulation::InitializeConfig(universe_entity->*&CUniverse::config, path.path_join("config.json"), g_config_defaults);
 		universe_entity->*&CUniverse::last_config_save = simulation.frame_start_time;
 
-		spatial3d::WorldPtr world = spatial3d::CreateWorld(simulation.universe_type);
+		spatial3d::WorldPtr world = spatial3d::CreateWorld(simulation.universe_type, path.path_join("galaxies.db"));
 
 		world->*&spatial3d::World::node_size = 16;
 		world->*&spatial3d::PartialWorld::node_keepalive = 1s;
-
-		loading::WorldOpenDatabase(simulation, world, path.path_join("galaxies.db"));
 
 		spatial3d::EntitySetWorld(simulation, universe_entity, world);
 
