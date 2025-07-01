@@ -92,7 +92,7 @@ bool unordered_erase(VectorT& vector, ItemT&& item)
 }
 
 template<class T>
-std::string_view UUIDToData(const T& data)
+std::string_view ToData(const T& data)
 {
 	return std::string_view(reinterpret_cast<const char*>(&data), sizeof(T));
 }
