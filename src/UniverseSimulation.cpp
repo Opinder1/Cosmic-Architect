@@ -11,7 +11,6 @@
 #include "DebugRender/DebugRenderModule.h"
 #include "Simulation/SimulationModule.h"
 #include "Physics3D/PhysicsModule.h"
-#include "Loading/LoadingModule.h"
 #include "Entity/EntityModule.h"
 
 #include "Entity/EntityComponents.h"
@@ -110,7 +109,6 @@ namespace voxel_game
 
 		spatial3d::WorldUpdate(simulation, world);
 		debugrender::WorldUpdate(simulation, world);
-		loading::WorldUpdate(simulation, world);
 		universe::WorldUpdate(simulation, world);
 	}
 
@@ -122,7 +120,6 @@ namespace voxel_game
 
 		spatial3d::WorldUpdate(simulation, world);
 		debugrender::WorldUpdate(simulation, world);
-		loading::WorldUpdate(simulation, world);
 		galaxy::WorldUpdate(simulation, world);
 	}
 
@@ -134,7 +131,6 @@ namespace voxel_game
 
 		spatial3d::WorldUpdate(simulation, world);
 		debugrender::WorldUpdate(simulation, world);
-		loading::WorldUpdate(simulation, world);
 	}
 
 	void SimulationPlanetWorldUpdateTask(Simulation& simulation, size_t index)
@@ -145,7 +141,6 @@ namespace voxel_game
 
 		spatial3d::WorldUpdate(simulation, world);
 		debugrender::WorldUpdate(simulation, world);
-		loading::WorldUpdate(simulation, world);
 	}
 
 	void SimulationSpaceStationWorldUpdateTask(Simulation& simulation, size_t index)
@@ -156,7 +151,6 @@ namespace voxel_game
 
 		spatial3d::WorldUpdate(simulation, world);
 		debugrender::WorldUpdate(simulation, world);
-		loading::WorldUpdate(simulation, world);
 	}
 
 	void SimulationSpaceShipWorldUpdateTask(Simulation& simulation, size_t index)
@@ -167,7 +161,6 @@ namespace voxel_game
 
 		spatial3d::WorldUpdate(simulation, world);
 		debugrender::WorldUpdate(simulation, world);
-		loading::WorldUpdate(simulation, world);
 	}
 
 	void SimulationVehicleWorldUpdateTask(Simulation& simulation, size_t index)
@@ -178,7 +171,6 @@ namespace voxel_game
 
 		spatial3d::WorldUpdate(simulation, world);
 		debugrender::WorldUpdate(simulation, world);
-		loading::WorldUpdate(simulation, world);
 	}
 
 	// Do parallel spatial world updates
@@ -205,7 +197,6 @@ namespace voxel_game
 
 		spatial3d::ScaleUpdate(simulation, scale);
 		debugrender::ScaleUpdate(simulation, scale);
-		loading::ScaleUpdate(simulation, scale);
 		universe::ScaleUpdate(simulation, scale);
 	}
 
@@ -217,7 +208,6 @@ namespace voxel_game
 
 		spatial3d::ScaleUpdate(simulation, scale);
 		debugrender::ScaleUpdate(simulation, scale);
-		loading::ScaleUpdate(simulation, scale);
 		galaxy::ScaleUpdate(simulation, scale);
 	}
 
@@ -229,7 +219,6 @@ namespace voxel_game
 
 		spatial3d::ScaleUpdate(simulation, scale);
 		debugrender::ScaleUpdate(simulation, scale);
-		loading::ScaleUpdate(simulation, scale);
 	}
 
 	void SimulationPlanetScaleUpdateTask(Simulation& simulation, size_t index)
@@ -240,7 +229,6 @@ namespace voxel_game
 
 		spatial3d::ScaleUpdate(simulation, scale);
 		debugrender::ScaleUpdate(simulation, scale);
-		loading::ScaleUpdate(simulation, scale);
 	}
 
 	void SimulationSpaceStationScaleUpdateTask(Simulation& simulation, size_t index)
@@ -251,7 +239,6 @@ namespace voxel_game
 
 		spatial3d::ScaleUpdate(simulation, scale);
 		debugrender::ScaleUpdate(simulation, scale);
-		loading::ScaleUpdate(simulation, scale);
 	}
 
 	void SimulationSpaceShipScaleUpdateTask(Simulation& simulation, size_t index)
@@ -262,7 +249,6 @@ namespace voxel_game
 
 		spatial3d::ScaleUpdate(simulation, scale);
 		debugrender::ScaleUpdate(simulation, scale);
-		loading::ScaleUpdate(simulation, scale);
 	}
 
 	void SimulationVehicleScaleUpdateTask(Simulation& simulation, size_t index)
@@ -273,7 +259,6 @@ namespace voxel_game
 
 		spatial3d::ScaleUpdate(simulation, scale);
 		debugrender::ScaleUpdate(simulation, scale);
-		loading::ScaleUpdate(simulation, scale);
 	}
 
 	// Do parallel spatial scale updates
@@ -298,37 +283,15 @@ namespace voxel_game
 
 		DEBUG_THREAD_CHECK_WRITE(entity.Data());
 
-		simulation.entity_factory.DoEvent(simulation, entity::Event::UpdateTask, entity::EventData{ entity });
-	}
-
-	void SimulationEntityLoadTask(Simulation& simulation, size_t index)
-	{
-		entity::WRef entity = simulation.loading_entities[index];
-
-		DEBUG_THREAD_CHECK_WRITE(entity.Data());
-
-		simulation.entity_factory.DoEvent(simulation, entity::Event::LoadTask, entity::EventData{ entity });
-	}
-
-	void SimulationEntityUnloadTask(Simulation& simulation, size_t index)
-	{
-		entity::WRef entity = simulation.unloading_entities[index];
-
-		DEBUG_THREAD_CHECK_WRITE(entity.Data());
-
-		simulation.entity_factory.DoEvent(simulation, entity::Event::UnloadTask, entity::EventData{ entity });
+		simulation.entity_factory.DoEvent(simulation, entity::Event::TaskUpdate, entity::EventData{ entity });
 	}
 
 	// Run all entities in parallel doing entity specific code
 	void SimulationEntityUpdate(Simulation& simulation)
 	{
-		TaskData entity_tasks[3] = {
-			{ simulation, &SimulationEntityUpdateTask, simulation.updating_entities.size() },
-			{ simulation, &SimulationEntityLoadTask, simulation.loading_entities.size() },
-			{ simulation, &SimulationEntityUnloadTask, simulation.unloading_entities.size() },
-		};
+		TaskData entity_task = { simulation, &SimulationEntityUpdateTask, simulation.updating_entities.size() };
 
-		SimulationDoMultitasks(simulation, entity_tasks);
+		SimulationDoTasks(simulation, entity_task);
 	}
 	
 	void SimulationWorkerUpdateTask(Simulation& simulation, size_t index)
@@ -336,7 +299,6 @@ namespace voxel_game
 		simulation::WorkerUpdate(simulation, index);
 		rendering::WorkerUpdate(simulation, index);
 		debugrender::WorkerUpdate(simulation, index);
-		loading::WorkerUpdate(simulation, index);
 		spatial3d::WorkerUpdate(simulation, index);
 		universe::WorkerUpdate(simulation, index);
 		galaxy::WorkerUpdate(simulation, index);
@@ -355,7 +317,6 @@ namespace voxel_game
 		return	simulation::IsUnloadDone(simulation) &&
 				debugrender::IsUnloadDone(simulation) &&
 				spatial3d::IsUnloadDone(simulation) &&
-				loading::IsUnloadDone(simulation) &&
 				universe::IsUnloadDone(simulation) &&
 				galaxy::IsUnloadDone(simulation);
 	}
@@ -367,13 +328,12 @@ namespace voxel_game
 		rendering::Update(simulation);
 		debugrender::Update(simulation);
 		spatial3d::Update(simulation);
-		loading::Update(simulation);
 		universe::Update(simulation);
 		galaxy::Update(simulation);
 
 		for (entity::WRef entity : simulation.updating_entities)
 		{
-			simulation.entity_factory.DoEvent(simulation, entity::Event::Update, entity::EventData{ entity });
+			simulation.entity_factory.DoEvent(simulation, entity::Event::MainUpdate, entity::EventData{ entity });
 		}
 	}
 
@@ -387,7 +347,6 @@ namespace voxel_game
 		rendering::Initialize(simulation);
 		debugrender::Initialize(simulation);
 		spatial3d::Initialize(simulation);
-		loading::Initialize(simulation);
 		universe::Initialize(simulation);
 		galaxy::Initialize(simulation);
 	}
@@ -424,7 +383,6 @@ namespace voxel_game
 		// Unload modules
 		galaxy::Uninitialize(simulation);
 		universe::Uninitialize(simulation);
-		loading::Uninitialize(simulation);
 		spatial3d::Uninitialize(simulation);
 		debugrender::Uninitialize(simulation);
 		rendering::Uninitialize(simulation);

@@ -4,7 +4,6 @@
 #include "Render/RenderComponents.h"
 #include "Physics3D/PhysicsComponents.h"
 #include "Networking/NetworkingComponents.h"
-#include "Loading/LoadingComponents.h"
 #include "Player/PlayerComponents.h"
 #include "Spatial3D/SpatialComponents.h"
 #include "Universe/UniverseComponents.h"
@@ -39,8 +38,6 @@ template<> template<> const size_t entity::Type::k_type_index<physics3d::CSphere
 template<> template<> const size_t entity::Type::k_type_index<network::CCertificate> =		__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<network::CServer> =			__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<network::CPeer> =				__LINE__ - first;
-template<> template<> const size_t entity::Type::k_type_index<loading::CStreamable> =		__LINE__ - first;
-template<> template<> const size_t entity::Type::k_type_index<loading::CAutosave> =			__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<player::EntityPtr> =			__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<player::AvatarPath> =			__LINE__ - first;
 template<> template<> const size_t entity::Type::k_type_index<player::CPlayer> =			__LINE__ - first;
@@ -82,8 +79,6 @@ const std::array<PolyTypeInfo, 40> PolyType<entity::Type, 40>::k_type_info =
 	MakeTypeInfo<network::CCertificate>(),
 	MakeTypeInfo<network::CServer>(),
 	MakeTypeInfo<network::CPeer>(),
-	MakeTypeInfo<loading::CStreamable>(),
-	MakeTypeInfo<loading::CAutosave>(),
 	MakeTypeInfo<player::EntityPtr>(),
 	MakeTypeInfo<player::AvatarPath>(),
 	MakeTypeInfo<player::CPlayer>(),

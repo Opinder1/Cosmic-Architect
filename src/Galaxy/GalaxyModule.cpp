@@ -9,14 +9,12 @@
 
 #include "Universe/UniverseComponents.h"
 #include "Physics3D/PhysicsComponents.h"
-#include "Loading/LoadingComponents.h"
 #include "Spatial3D/SpatialComponents.h"
 #include "Render/RenderComponents.h"
 #include "Entity/EntityComponents.h"
 
 #include "GalaxyWorld.h"
 #include "Universe/UniverseWorld.h"
-#include "Loading/LoadingWorld.h"
 
 #include "Util/Debug.h"
 
@@ -122,17 +120,14 @@ namespace voxel_game::galaxy
 	{
 		simulation.galaxy_type.node_type.AddType<spatial3d::Node>();
 		simulation.galaxy_type.node_type.AddType<spatial3d::PartialNode>();
-		simulation.galaxy_type.node_type.AddType<loading::Node>();
 		simulation.galaxy_type.node_type.AddType<Node>();
 
 		simulation.galaxy_type.scale_type.AddType<spatial3d::Scale>();
 		simulation.galaxy_type.scale_type.AddType<spatial3d::PartialScale>();
-		simulation.galaxy_type.scale_type.AddType<loading::Scale>();
 		simulation.galaxy_type.scale_type.AddType<Scale>();
 
 		simulation.galaxy_type.world_type.AddType<spatial3d::World>();
 		simulation.galaxy_type.world_type.AddType<spatial3d::PartialWorld>();
-		simulation.galaxy_type.world_type.AddType<loading::World>();
 		simulation.galaxy_type.world_type.AddType<World>();
 
 		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::BeginLoad, cb::Bind<&OnLoadGalaxyEntity>());

@@ -14,14 +14,11 @@ namespace voxel_game::entity
 {
 	enum class Event : uint32_t
 	{
-		Update, // Entity is being updated in singlethreaded mode
-
 		BeginLoad, // Entity has started loading
 		BeginUnload, // Entity has started unloading
 
-		LoadTask, // Entity being loaded in its own task
-		UnloadTask, // Entity being unloaded in its own task
-		UpdateTask, // Entity being updated in its own task
+		MainUpdate, // Entity is being updated in singlethreaded mode
+		TaskUpdate, // Entity being updated in its own task
 
 		Count,
 	};

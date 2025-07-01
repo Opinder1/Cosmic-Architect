@@ -11,11 +11,9 @@
 #include "Galaxy/GalaxyComponents.h"
 #include "Spatial3D/SpatialComponents.h"
 #include "Physics3D/PhysicsComponents.h"
-#include "Loading/LoadingComponents.h"
 #include "Render/RenderComponents.h"
 
 #include "UniverseWorld.h"
-#include "Loading/LoadingWorld.h"
 
 #include "Util/Debug.h"
 
@@ -166,8 +164,6 @@ namespace voxel_game::universe
 			universe::CUniverse,
 			entity::CRelationship,
 			spatial3d::CWorld,
-			loading::CStreamable,
-			loading::CAutosave,
 			rendering::CScenario
 		>(universe_entity.GetID());
 
@@ -200,21 +196,6 @@ namespace voxel_game::universe
 			simulation::SaveJsonConfig(data.entity->*&CUniverse::config);
 			data.entity->*&CUniverse::last_config_save = simulation.frame_start_time;
 		}
-
-		switch (data.entity->*&loading::CStreamable::state)
-		{
-		case loading::State::Unloaded:
-			break;
-
-		case loading::State::Loading:
-			break;
-
-		case loading::State::Loaded:
-			break;
-
-		case loading::State::Unloading:
-			break;
-		}
 	}
 
 	void OnLoadUniverseEntity(Simulation& simulation, entity::EventData& data)
@@ -227,26 +208,36 @@ namespace voxel_game::universe
 		unordered_erase(simulation.universes, entity::Ref(data.entity));
 	}
 
+	void OnSerialzeUniverseNode(spatial3d::NodePtr node, std::string& data)
+	{
+
+	}
+
+	size_t OnDeserialzeUniverseNode(spatial3d::NodePtr node, std::string_view data)
+	{
+		return 0;
+	}
+
 	void Initialize(Simulation& simulation)
 	{
 		InitializeConfigDefaults();
 
 		simulation.universe_type.node_type.AddType<spatial3d::Node>();
 		simulation.universe_type.node_type.AddType<spatial3d::PartialNode>();
-		simulation.universe_type.node_type.AddType<loading::Node>();
 		simulation.universe_type.node_type.AddType<Node>();
 
 		simulation.universe_type.scale_type.AddType<spatial3d::Scale>();
 		simulation.universe_type.scale_type.AddType<spatial3d::PartialScale>();
-		simulation.universe_type.scale_type.AddType<loading::Scale>();
 		simulation.universe_type.scale_type.AddType<Scale>();
 
 		simulation.universe_type.world_type.AddType<spatial3d::World>();
 		simulation.universe_type.world_type.AddType<spatial3d::PartialWorld>();
-		simulation.universe_type.world_type.AddType<loading::World>();
 		simulation.universe_type.world_type.AddType<World>();
 
-		simulation.entity_factory.AddCallback<CUniverse, loading::CStreamable>(entity::Event::Update, cb::Bind<&OnUpdateUniverseEntity>());
+		simulation.universe_type.serialize_callbacks.push_back(cb::Bind<&OnSerialzeUniverseNode>());
+		simulation.universe_type.deserialize_callbacks.push_back(cb::Bind<&OnDeserialzeUniverseNode>());
+
+		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::MainUpdate, cb::Bind<&OnUpdateUniverseEntity>());
 		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::BeginLoad, cb::Bind<&OnLoadUniverseEntity>());
 		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::BeginUnload, cb::Bind<&OnUnloadUniverseEntity>());
 	}

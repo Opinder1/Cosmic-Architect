@@ -57,10 +57,6 @@ namespace voxel_game
 
 		std::vector<entity::Ref> updating_entities;
 
-		// Loading
-		std::vector<entity::Ref> loading_entities; // These entities are being loaded first before being updated normally
-		std::vector<entity::Ref> unloading_entities; // These entities no longer being updated and are having their resources unloaded
-
 		// Rendering
 		std::vector<rendering::ThreadContext> rendering_contexts;
 
