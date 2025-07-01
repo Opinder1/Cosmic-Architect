@@ -58,7 +58,7 @@ namespace voxel_game
 
 		SimulationInitialize(*m_simulation);
 
-		m_universe_entity = universe::LoadUniverse(*m_simulation, g_universe_uuid, godot::ProjectSettings::get_singleton()->get_setting("voxel_game/universe/path"));
+		m_universe_entity = universe::AddUniverse(*m_simulation, g_universe_uuid, godot::ProjectSettings::get_singleton()->get_setting("voxel_game/universe/path"));
 
 #if defined(DEBUG_ENABLED)
 		m_info_updater.SetWriterThread(std::this_thread::get_id());

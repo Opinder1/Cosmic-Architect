@@ -147,17 +147,14 @@ namespace voxel_game::universe
 		}
 	};
 
-	entity::Ref LoadUniverse(Simulation& simulation, UUID id, const godot::String& path)
+	entity::Ref AddUniverse(Simulation& simulation, UUID id, const godot::String& path)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
 
 		bool created;
 		entity::Ref universe_entity = simulation.entity_factory.GetPoly(id, created);
 
-		if (!created)
-		{
-			return universe_entity;
-		}
+		DEBUG_ASSERT(created, "Failed to get the universe");
 
 		// Create the universe
 		simulation.entity_factory.AddTypes<
