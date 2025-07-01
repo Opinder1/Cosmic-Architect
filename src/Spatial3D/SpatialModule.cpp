@@ -44,7 +44,7 @@ namespace voxel_game::spatial3d
 
 	bool IsUnloadDone(Simulation& simulation)
 	{
-		return simulation.spatial_worlds.empty();
+		return simulation.spatial_worlds.empty() && simulation.spatial_scales.empty();
 	}
 
 	void Update(Simulation& simulation)
