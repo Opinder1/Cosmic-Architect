@@ -205,21 +205,44 @@ namespace voxel_game::universe
 		unordered_erase(simulation.universes, entity::Ref(data.entity));
 	}
 
-	void OnSerializeUniverseNode(Simulation& simulation, spatial3d::NodePtr node, std::string& data)
+	void SerializeUniverseNode(Simulation& simulation, spatial3d::WorldPtr world, spatial3d::NodePtr node, serialize::Writer& writer)
 	{
-		data += "UniverseNode";
+		size_t version = 0;
+		writer.Write(version);
+
+		writer.Write(node->*&spatial3d::Node::scale_index);
+
+		writer.Write((node->*&Node::galaxies).size());
+
+		for (entity::WRef galaxy : node->*&Node::galaxies)
+		{
+			writer.Write(galaxy.GetID());
+		}
 	}
 
-	size_t OnDeserializeUniverseNode(Simulation& simulation, spatial3d::NodePtr node, std::string_view data)
+	void DeserializeUniverseNode(Simulation& simulation, spatial3d::WorldPtr world, spatial3d::NodePtr node, serialize::Reader& reader)
 	{
-		if (data.size() == 0)
+		size_t version = 0;
+		reader.Read(version);
+
+		reader.Read(node->*&spatial3d::Node::scale_index);
+
+		size_t galaxy_count;
+		reader.Read(galaxy_count);
+
+		for (size_t i = 0; i < galaxy_count; i++)
 		{
-			return 0;
+			UUID galaxy_id;
+			reader.Read(galaxy_id);
+
+			bool created;
+			(node->*&Node::galaxies).push_back(simulation.entity_factory.GetPoly(galaxy_id, created));
 		}
+	}
 
-		DEBUG_ASSERT(data == "UniverseNode", "Invalid");
+	void GenerateUniverseNode(Simulation& simulation, spatial3d::WorldPtr world, spatial3d::NodePtr node)
+	{
 
-		return data.size();
 	}
 
 	void Initialize(Simulation& simulation)
@@ -240,8 +263,9 @@ namespace voxel_game::universe
 		simulation.universe_type.world_type.AddType<spatial3d::LocalWorld>();
 		simulation.universe_type.world_type.AddType<World>();
 
-		simulation.universe_type.serialize_callbacks.push_back(cb::BindArg<&OnSerializeUniverseNode>(simulation));
-		simulation.universe_type.deserialize_callbacks.push_back(cb::BindArg<&OnDeserializeUniverseNode>(simulation));
+		simulation.universe_type.serialize_callbacks.push_back(cb::BindArg<&SerializeUniverseNode>(simulation));
+		simulation.universe_type.deserialize_callbacks.push_back(cb::BindArg<&DeserializeUniverseNode>(simulation));
+		simulation.universe_type.generate_callbacks.push_back(cb::BindArg<&GenerateUniverseNode>(simulation));
 
 		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::MainUpdate, cb::Bind<&OnUpdateUniverseEntity>());
 		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::BeginLoad, cb::Bind<&OnLoadUniverseEntity>());

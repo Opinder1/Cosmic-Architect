@@ -8,6 +8,7 @@
 #include "Util/Util.h"
 #include "Util/GodotHash.h"
 #include "Util/Callback.h"
+#include "Util/Serialize.h"
 
 #include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/variant/vector3i.hpp>
@@ -75,10 +76,16 @@ namespace voxel_game::spatial3d
 
 	struct IOTask
 	{
+		// Database to read from
 		tkrzw::ShardDBM* database;
-		NodeCoord coord;
-		bool finished = false;
 		std::string data;
+		
+		// Flag to set when finished
+		bool finished = false;
+
+		NodePtr node;
+		WorldPtr world;
+		TypeData* type;
 	};
 
 	struct LocalNode : Nocopy, Nomove
@@ -165,9 +172,13 @@ namespace voxel_game::spatial3d
 		robin_hood::unordered_set<entity::Ref> entities;
 	};
 
+	using NodeLoadCB = cb::Callback<bool(WorldPtr, NodePtr)>;
+	using NodeUnloadCB = cb::Callback<bool(WorldPtr, NodePtr)>;
+
 	// Callbacks for serializing/deserializing nodes. Should return the amount of bytes used when deserializing.
-	using NodeSerializeCB = cb::Callback<void(NodePtr, std::string&)>;
-	using NodeDeserializeCB = cb::Callback<size_t(NodePtr, std::string_view)>;
+	using NodeSerializeCB = cb::Callback<void(WorldPtr, NodePtr, serialize::Writer&)>;
+	using NodeDeserializeCB = cb::Callback<void(WorldPtr, NodePtr, serialize::Reader&)>;
+	using NodeGenerateCB = cb::Callback<void(WorldPtr, NodePtr)>;
 
 	struct TypeData
 	{
@@ -178,8 +189,11 @@ namespace voxel_game::spatial3d
 		size_t max_scale = k_max_world_scale;
 		size_t node_size = 0;
 
+		std::vector<NodeLoadCB> load_callbacks;
+		std::vector<NodeLoadCB> unload_callbacks;
 		std::vector<NodeSerializeCB> serialize_callbacks;
 		std::vector<NodeDeserializeCB> deserialize_callbacks;
+		std::vector<NodeGenerateCB> generate_callbacks;
 
 		std::vector<WorldPtr> worlds;
 		std::vector<ScalePtr> scales;

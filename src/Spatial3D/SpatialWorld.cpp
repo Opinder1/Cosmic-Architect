@@ -352,7 +352,26 @@ namespace voxel_game::spatial3d
 	{
 		IOTask* task = reinterpret_cast<IOTask*>(data);
 
-		task->database->Get(ToData(task->coord), &task->data);
+		NodeCoord coord{ task->node->*&Node::position, task->node->*&Node::scale_index };
+
+		tkrzw::Status status = task->database->Get(ToData(coord), &task->data);
+
+		if (status == tkrzw::Status::NOT_FOUND_ERROR)
+		{
+			for (const NodeGenerateCB& callback : task->type->generate_callbacks)
+			{
+				callback(task->world, task->node);
+			}
+		}
+		else
+		{
+			serialize::Reader reader{ task->data };
+
+			for (const NodeDeserializeCB& callback : task->type->deserialize_callbacks)
+			{
+				callback(task->world, task->node, reader);
+			}
+		}
 
 		task->finished = true;
 	}
@@ -361,7 +380,16 @@ namespace voxel_game::spatial3d
 	{
 		IOTask* task = reinterpret_cast<IOTask*>(data);
 
-		task->database->Set(ToData(task->coord), task->data);
+		serialize::Writer writer{ task->data };
+
+		for (const NodeSerializeCB& callback : task->type->serialize_callbacks)
+		{
+			callback(task->world, task->node, writer);
+		}
+
+		NodeCoord coord{ task->node->*&Node::position, task->node->*&Node::scale_index };
+
+		task->database->Set(ToData(coord), task->data);
 
 		task->finished = true;
 	}
@@ -371,14 +399,18 @@ namespace voxel_game::spatial3d
 	{
 		TypeData& type = *(world->*&World::type);
 
+		std::unique_ptr<IOTask>& task = node->*&LocalNode::task;
+
 		switch (node->*&LocalNode::task_state)
 		{
 		case TaskState::Idle:
-			if (node->*&LocalNode::task == nullptr)
+			if (task == nullptr)
 			{
-				node->*&LocalNode::task = std::make_unique<IOTask>();
-				(node->*&LocalNode::task)->coord = NodeCoord{ node->*&Node::position, node->*&Node::scale_index };
-				(node->*&LocalNode::task)->database = &(world->*&LocalWorld::database);
+				task = std::make_unique<IOTask>();
+				task->database = &(world->*&LocalWorld::database);
+				task->node = node;
+				task->world = world;
+				task->type = &type;
 
 				uint64_t id = godot::WorkerThreadPool::get_singleton()->add_native_task(&NodeReadTask, (node->*&LocalNode::task).get());
 				node->*&LocalNode::task_state = TaskState::ReadInProgress;
@@ -386,20 +418,10 @@ namespace voxel_game::spatial3d
 			return false;
 
 		case TaskState::ReadInProgress:
-			if ((node->*&LocalNode::task)->finished)
+			if (task->finished)
 			{
-				size_t ptr = 0;
-
-				const std::string& data = (node->*&LocalNode::task)->data;
-
-				for (const NodeDeserializeCB& callback : type.deserialize_callbacks)
-				{
-					ptr += callback(node, std::string_view(data.data() + ptr, data.size() - ptr));
-				}
-				DEBUG_ASSERT(ptr == data.size(), "We should have read all the node data");
-
 				node->*&LocalNode::task_state = TaskState::ReadDone;
-				(node->*&LocalNode::task).reset();
+				task.reset();
 				return false;
 			}
 			else
@@ -419,32 +441,29 @@ namespace voxel_game::spatial3d
 	{
 		TypeData& type = *(world->*&World::type);
 
+		std::unique_ptr<IOTask>& task = node->*&LocalNode::task;
+
 		switch (node->*&LocalNode::task_state)
 		{
 		case TaskState::Idle:
-			if (node->*&LocalNode::task == nullptr)
+			if (task == nullptr)
 			{
-				node->*&LocalNode::task = std::make_unique<IOTask>();
-				(node->*&LocalNode::task)->coord = NodeCoord{ node->*&Node::position, node->*&Node::scale_index };
-				(node->*&LocalNode::task)->database = &(world->*&LocalWorld::database);
+				task = std::make_unique<IOTask>();
+				task->database = &(world->*&LocalWorld::database);
+				task->node = node;
+				task->world = world;
+				task->type = &type;
 
-				std::string& data = (node->*&LocalNode::task)->data;
-
-				for (const NodeSerializeCB& callback : type.serialize_callbacks)
-				{
-					callback(node, data);
-				}
-
-				uint64_t id = godot::WorkerThreadPool::get_singleton()->add_native_task(&NodeWriteTask, (node->* & LocalNode::task).get());
+				uint64_t id = godot::WorkerThreadPool::get_singleton()->add_native_task(&NodeWriteTask, (node->*&LocalNode::task).get());
 				node->*&LocalNode::task_state = TaskState::WriteInProgress;
 			}
 			return false;
 
 		case TaskState::WriteInProgress:
-			if ((node->*&LocalNode::task)->finished)
+			if (task->finished)
 			{
 				node->*&LocalNode::task_state = TaskState::WriteDone;
-				(node->*&LocalNode::task).reset();
+				task.reset();
 				return true;
 			}
 			else
