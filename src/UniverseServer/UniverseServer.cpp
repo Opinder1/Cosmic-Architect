@@ -189,13 +189,13 @@ namespace voxel_game
 		BIND_METHOD(godot::D_METHOD("debug_command", "command", "arguments"), &UniverseServer::DebugCommand);
 #endif
 		BIND_METHOD(godot::D_METHOD("get_universe_info"), &UniverseServer::GetUniverseInfo);
-		BIND_METHOD(godot::D_METHOD("connect_to_galaxy_list", "ip"), &UniverseServer::ConnectToGalaxyList);
-		BIND_METHOD(godot::D_METHOD("disconnect_from_galaxy_list"), &UniverseServer::DisconnectFromGalaxyList);
-		BIND_METHOD(godot::D_METHOD("query_galaxy_list", "query"), &UniverseServer::QueryGalaxyList);
-		BIND_METHOD(godot::D_METHOD("ping_remote_galaxy", "ip"), &UniverseServer::PingRemoteGalaxy);
-		BIND_METHOD(godot::D_METHOD("start_local_galaxy", "path", "fragment_type", "server_type", "scenario"), &UniverseServer::StartLocalGalaxy);
-		BIND_METHOD(godot::D_METHOD("connect_to_galaxy", "path", "ip", "scenario"), &UniverseServer::ConnectToGalaxy);
-		BIND_METHOD(godot::D_METHOD("disconnect_from_galaxy"), &UniverseServer::DisconnectFromGalaxy);
+		BIND_METHOD(godot::D_METHOD("connect_to_universe_list", "ip"), &UniverseServer::ConnectToUniverseList);
+		BIND_METHOD(godot::D_METHOD("disconnect_from_universe_list"), &UniverseServer::DisconnectFromUniverseList);
+		BIND_METHOD(godot::D_METHOD("query_universe_list", "query"), &UniverseServer::QueryUniverseList);
+		BIND_METHOD(godot::D_METHOD("ping_remote_universe", "ip"), &UniverseServer::PingRemoteUniverse);
+		BIND_METHOD(godot::D_METHOD("start_local_universe", "path", "fragment_type", "server_type", "scenario"), &UniverseServer::StartLocalUniverse);
+		BIND_METHOD(godot::D_METHOD("connect_to_universe", "path", "ip", "scenario"), &UniverseServer::ConnectToUniverse);
+		BIND_METHOD(godot::D_METHOD("disconnect_from_universe"), &UniverseServer::DisconnectFromUniverse);
 		BIND_METHOD(godot::D_METHOD("get_fragment_info", "fragment_id"), &UniverseServer::GetFragmentInfo);
 		BIND_METHOD(godot::D_METHOD("get_current_fragment"), &UniverseServer::GetCurrentFragment);
 		BIND_METHOD(godot::D_METHOD("enter_fragment", "fragment_id", "method"), &UniverseServer::EnterFragment);
@@ -338,12 +338,12 @@ namespace voxel_game
 		BIND_METHOD(godot::D_METHOD("use_spell", "spell_index", "params"), &UniverseServer::UseSpell);
 
 		ADD_SIGNAL(godot::MethodInfo(k_signals->update_debug_info));
-		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_galaxy_list));
-		ADD_SIGNAL(godot::MethodInfo(k_signals->disconnected_from_galaxy_list));
-		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_list_query_response));
-		ADD_SIGNAL(godot::MethodInfo(k_signals->galaxy_ping_response));
-		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_galaxy));
-		ADD_SIGNAL(godot::MethodInfo(k_signals->disconnected_from_galaxy));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_universe_list));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->disconnected_from_universe_list));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->universe_list_query_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->universe_ping_response));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_universe));
+		ADD_SIGNAL(godot::MethodInfo(k_signals->disconnected_from_universe));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->connected_to_remote));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->disonnected_from_remote));
 		ADD_SIGNAL(godot::MethodInfo(k_signals->fragment_added));

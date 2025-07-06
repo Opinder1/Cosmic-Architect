@@ -61,13 +61,13 @@ namespace voxel_game
 		// ####### Universe #######
 
 		godot::Dictionary GetUniverseInfo();
-		void ConnectToGalaxyList(const godot::String& ip);
-		void DisconnectFromGalaxyList();
-		void QueryGalaxyList(const godot::Dictionary& query);
-		void PingRemoteGalaxy(const godot::String& ip);
-		void StartLocalGalaxy(const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario);
-		void ConnectToGalaxy(const godot::String& path, const godot::String& ip, godot::RID scenario);
-		void DisconnectFromGalaxy();
+		void ConnectToUniverseList(const godot::String& ip);
+		void DisconnectFromUniverseList();
+		void QueryUniverseList(const godot::Dictionary& query);
+		void PingRemoteUniverse(const godot::String& ip);
+		void StartLocalUniverse(const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario);
+		void ConnectToUniverse(const godot::String& path, const godot::String& ip, godot::RID scenario);
+		void DisconnectFromUniverse();
 
 		// ####### Account #######
 

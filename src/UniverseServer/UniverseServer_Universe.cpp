@@ -18,41 +18,41 @@ namespace voxel_game
 		return m_info_cache.universe_info;
 	}
 
-	void UniverseServer::ConnectToGalaxyList(const godot::String& ip)
+	void UniverseServer::ConnectToUniverseList(const godot::String& ip)
 	{
-		if (DeferCommand<&UniverseServer::ConnectToGalaxyList>(ip))
+		if (DeferCommand<&UniverseServer::ConnectToUniverseList>(ip))
 		{
 			return;
 		}
 	}
 
-	void UniverseServer::DisconnectFromGalaxyList()
+	void UniverseServer::DisconnectFromUniverseList()
 	{
-		if (DeferCommand<&UniverseServer::DisconnectFromGalaxyList>())
+		if (DeferCommand<&UniverseServer::DisconnectFromUniverseList>())
 		{
 			return;
 		}
 	}
 
-	void UniverseServer::QueryGalaxyList(const godot::Dictionary& query)
+	void UniverseServer::QueryUniverseList(const godot::Dictionary& query)
 	{
-		if (DeferCommand<&UniverseServer::QueryGalaxyList>(query))
+		if (DeferCommand<&UniverseServer::QueryUniverseList>(query))
 		{
 			return;
 		}
 	}
 
-	void UniverseServer::PingRemoteGalaxy(const godot::String& ip)
+	void UniverseServer::PingRemoteUniverse(const godot::String& ip)
 	{
-		if (DeferCommand<&UniverseServer::PingRemoteGalaxy>(ip))
+		if (DeferCommand<&UniverseServer::PingRemoteUniverse>(ip))
 		{
 			return;
 		}
 	}
 
-	void UniverseServer::StartLocalGalaxy(const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario)
+	void UniverseServer::StartLocalUniverse(const godot::String& path, const godot::String& fragment_type, ServerType server_type, godot::RID scenario)
 	{
-		if (DeferCommand<&UniverseServer::StartLocalGalaxy>(path, fragment_type, server_type, scenario))
+		if (DeferCommand<&UniverseServer::StartLocalUniverse>(path, fragment_type, server_type, scenario))
 		{
 			return;
 		}
@@ -63,26 +63,26 @@ namespace voxel_game
 
 		m_player_entity = player::CreateLocalPlayer(*m_simulation, m_galaxy_entity, "localuser");
 
-		QueueSignal(k_signals->connected_to_galaxy);
+		QueueSignal(k_signals->connected_to_universe);
 	}
 
-	void UniverseServer::ConnectToGalaxy(const godot::String& path, const godot::String& ip, godot::RID scenario)
+	void UniverseServer::ConnectToUniverse(const godot::String& path, const godot::String& ip, godot::RID scenario)
 	{
-		if (DeferCommand<&UniverseServer::ConnectToGalaxy>(path, ip, scenario))
+		if (DeferCommand<&UniverseServer::ConnectToUniverse>(path, ip, scenario))
 		{
 			return;
 		}
 	}
 
-	void UniverseServer::DisconnectFromGalaxy()
+	void UniverseServer::DisconnectFromUniverse()
 	{
-		if (DeferCommand<&UniverseServer::DisconnectFromGalaxy>())
+		if (DeferCommand<&UniverseServer::DisconnectFromUniverse>())
 		{
 			return;
 		}
 
 		entity::OnUnloadEntity(*m_simulation, m_galaxy_entity);
 
-		QueueSignal(k_signals->disconnected_from_galaxy);
+		QueueSignal(k_signals->disconnected_from_universe);
 	}
 }

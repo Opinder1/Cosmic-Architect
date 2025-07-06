@@ -10,12 +10,12 @@ namespace voxel_game
 		// ####### Universe #######
 
 		INITIALIZE_STRINGNAME(update_debug_info);
-		INITIALIZE_STRINGNAME(connected_to_galaxy_list);
-		INITIALIZE_STRINGNAME(disconnected_from_galaxy_list);
-		INITIALIZE_STRINGNAME(galaxy_list_query_response);
-		INITIALIZE_STRINGNAME(galaxy_ping_response);
-		INITIALIZE_STRINGNAME(connected_to_galaxy);
-		INITIALIZE_STRINGNAME(disconnected_from_galaxy);
+		INITIALIZE_STRINGNAME(connected_to_universe_list);
+		INITIALIZE_STRINGNAME(disconnected_from_universe_list);
+		INITIALIZE_STRINGNAME(universe_list_query_response);
+		INITIALIZE_STRINGNAME(universe_ping_response);
+		INITIALIZE_STRINGNAME(connected_to_universe);
+		INITIALIZE_STRINGNAME(disconnected_from_universe);
 
 		// ####### Galaxy #######
 
