@@ -27,5 +27,5 @@ namespace voxel_game::galaxy
 
 	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale, spatial3d::WorldPtr universe_world);
 
-	entity::Ref CreateSimulatedGalaxy(Simulation& simulation, const godot::String& path, spatial3d::WorldPtr universe_world);
+	entity::Ref CreateSimulatedGalaxy(Simulation& simulation, UUID id, spatial3d::WorldPtr universe_world);
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Simulation/Config.h"
+
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/color.hpp>
 
@@ -10,7 +12,7 @@ namespace voxel_game::galaxy
 	// This entity is a galaxy
 	struct CGalaxy
 	{
-		godot::String path;
+
 	};
 
 	// This entity is a star

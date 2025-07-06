@@ -18,6 +18,8 @@
 
 #include "Util/Debug.h"
 
+#include <godot_cpp/classes/dir_access.hpp>
+
 namespace voxel_game::galaxy
 {
 	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale, spatial3d::WorldPtr universe_world)
@@ -55,7 +57,7 @@ namespace voxel_game::galaxy
 		return galaxy_entity;
 	}
 
-	entity::Ref CreateSimulatedGalaxy(Simulation& simulation, const godot::String& path, spatial3d::WorldPtr universe_world)
+	entity::Ref CreateSimulatedGalaxy(Simulation& simulation, UUID id, spatial3d::WorldPtr universe_world)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
 		DEBUG_ASSERT(!simulation.unloading, "We shouldn't create an entity while unloading");
@@ -90,9 +92,11 @@ namespace voxel_game::galaxy
 
 		spatial3d::AddEntity(universe_world, galaxy_entity);
 
-		galaxy_entity->*&CGalaxy::path = path;
+		godot::String path = simulation.path.path_join("Galaxies").path_join(id.ToGodotString());
 
-		spatial3d::WorldPtr world = spatial3d::CreateWorld(simulation.galaxy_type, path.path_join("stars.db"));
+		godot::DirAccess::make_dir_recursive_absolute(path);
+
+		spatial3d::WorldPtr world = spatial3d::CreateWorld(simulation.galaxy_type, path);
 
 		spatial3d::EntitySetWorld(simulation, galaxy_entity, world);
 
@@ -104,6 +108,11 @@ namespace voxel_game::galaxy
 		entity::OnLoadEntity(simulation, galaxy_entity);
 
 		return galaxy_entity;
+	}
+
+	void OnUpdateGalaxyEntity(Simulation& simulation, entity::EventData& data)
+	{
+
 	}
 
 	void OnLoadGalaxyEntity(Simulation& simulation, entity::EventData& data)
@@ -120,6 +129,8 @@ namespace voxel_game::galaxy
 	{
 		simulation.galaxy_type.node_type.AddType<spatial3d::Node>();
 		simulation.galaxy_type.node_type.AddType<spatial3d::PartialNode>();
+		simulation.galaxy_type.node_type.AddType<spatial3d::LocalNode>();
+		simulation.galaxy_type.node_type.AddType<spatial3d::RemoteNode>();
 		simulation.galaxy_type.node_type.AddType<Node>();
 
 		simulation.galaxy_type.scale_type.AddType<spatial3d::Scale>();
@@ -128,8 +139,11 @@ namespace voxel_game::galaxy
 
 		simulation.galaxy_type.world_type.AddType<spatial3d::World>();
 		simulation.galaxy_type.world_type.AddType<spatial3d::PartialWorld>();
+		simulation.galaxy_type.world_type.AddType<spatial3d::LocalWorld>();
+		simulation.galaxy_type.world_type.AddType<spatial3d::RemoteWorld>();
 		simulation.galaxy_type.world_type.AddType<World>();
 
+		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::MainUpdate, cb::Bind<&OnUpdateGalaxyEntity>());
 		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::BeginLoad, cb::Bind<&OnLoadGalaxyEntity>());
 		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::BeginUnload, cb::Bind<&OnUnloadGalaxyEntity>());
 	}

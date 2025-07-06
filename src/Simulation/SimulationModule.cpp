@@ -1,4 +1,5 @@
 #include "SimulationModule.h"
+#include "Config.h"
 
 #include "Entity/EntityComponents.h"
 
@@ -46,10 +47,24 @@ namespace voxel_game::simulation
 	{
 		simulation.frame_index++;
 		simulation.frame_start_time = Clock::now();
+
+		if (simulation.frame_start_time - simulation.last_config_save > 10s)
+		{
+			simulation::SaveJsonConfig(simulation.config);
+			simulation.last_config_save = simulation.frame_start_time;
+		}
 	}
 
 	void WorkerUpdate(Simulation& simulation, size_t index)
 	{
 
+	}
+
+	void SetPath(Simulation& simulation, const godot::String& path)
+	{
+		simulation.path = path;
+
+		simulation::InitializeConfig(simulation.config, simulation.path.path_join("config.json"), GetConfigDefaults());
+		simulation.last_config_save = simulation.frame_start_time;
 	}
 }

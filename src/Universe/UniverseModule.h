@@ -20,5 +20,5 @@ namespace voxel_game::universe
 	void WorldUpdate(Simulation& simulation, spatial3d::WorldPtr world);
 	void ScaleUpdate(Simulation& simulation, spatial3d::ScalePtr scale);
 
-	entity::Ref AddUniverse(Simulation& simulation, UUID id, const godot::String& path);
+	entity::Ref CreateUniverse(Simulation& simulation, UUID id);
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <godot_cpp/variant/string.hpp>
+
 namespace voxel_game
 {
 	struct Simulation;
@@ -13,4 +15,6 @@ namespace voxel_game::simulation
 	bool IsUnloadDone(Simulation& simulation);
 	void Update(Simulation& simulation);
 	void WorkerUpdate(Simulation& simulation, size_t index);
+
+	void SetPath(Simulation& simulation, const godot::String& path);
 }

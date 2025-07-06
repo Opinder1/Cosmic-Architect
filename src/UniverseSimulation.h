@@ -7,6 +7,8 @@
 
 #include "Entity/EntityPoly.h"
 
+#include "Simulation/Config.h"
+
 #include "Util/Span.h"
 
 #include <godot_cpp/classes/x509_certificate.hpp>
@@ -39,6 +41,11 @@ namespace voxel_game
 
 		uint64_t frame_index = 0;
 		Clock::time_point frame_start_time;
+
+		godot::String path;
+
+		simulation::Config config;
+		Clock::time_point last_config_save;
 
 		// Spatial
 		std::vector<spatial3d::WorldPtr> spatial_worlds;
@@ -74,6 +81,8 @@ namespace voxel_game
 		godot::Ref<godot::UDPServer> server_udp;
 		godot::Ref<godot::DTLSServer> server_dtls;
 	};
+
+	simulation::ConfigDefaults GetConfigDefaults();
 
 	void SimulationDoTasks(Simulation& simulation, TaskData& task_data);
 	void SimulationDoMultitasks(Simulation& simulation, Span<TaskData> task_data);

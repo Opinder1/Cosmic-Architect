@@ -261,7 +261,7 @@ namespace voxel_game::spatial3d
 
 			int32_t options = tkrzw::File::OPEN_NO_WAIT | tkrzw::File::OPEN_SYNC_HARD;
 
-			std::string os_path = godot::ProjectSettings::get_singleton()->globalize_path(path).utf8();
+			std::string os_path = godot::ProjectSettings::get_singleton()->globalize_path(path.path_join("region.db")).utf8();
 
 			tkrzw::Status status = (world->*&LocalWorld::database).OpenAdvanced(os_path, true, options, params);
 

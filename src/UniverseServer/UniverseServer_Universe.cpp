@@ -1,8 +1,11 @@
 #include "UniverseServer.h"
 #include "UniverseServer_StringNames.h"
 
+#include "Universe/UniverseModule.h"
+#include "Galaxy/GalaxyModule.h"
 #include "Render/RenderComponents.h"
 
+#include "Simulation/SimulationModule.h"
 #include "Player/PlayerModule.h"
 #include "Galaxy/GalaxyModule.h"
 #include "Entity/EntityModule.h"
@@ -57,9 +60,13 @@ namespace voxel_game
 			return;
 		}
 
+		simulation::SetPath(*m_simulation, path);
+
+		m_universe_entity = universe::CreateUniverse(*m_simulation, UUID{ 0, 0 });
+
 		m_universe_entity->*&rendering::CScenario::id = scenario;
 
-		m_galaxy_entity = galaxy::CreateSimulatedGalaxy(*m_simulation, path, spatial3d::GetEntityWorld(m_universe_entity));
+		m_galaxy_entity = galaxy::CreateSimulatedGalaxy(*m_simulation, UUID{ 0, 0 }, spatial3d::GetEntityWorld(m_universe_entity));
 
 		m_player_entity = player::CreateLocalPlayer(*m_simulation, m_galaxy_entity, "localuser");
 
@@ -81,7 +88,7 @@ namespace voxel_game
 			return;
 		}
 
-		entity::OnUnloadEntity(*m_simulation, m_galaxy_entity);
+		entity::OnUnloadEntity(*m_simulation, m_universe_entity);
 
 		QueueSignal(k_signals->disconnected_from_universe);
 	}
