@@ -38,9 +38,6 @@ struct UUID
 
 UUID GenerateUUID();
 
-void UUIDToString(UUID id, char* buffer);
-bool UUIDFromString(UUID& id, const char* buffer);
-
 namespace std
 {
     template<>
