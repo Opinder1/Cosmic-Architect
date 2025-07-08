@@ -32,8 +32,8 @@ namespace voxel_game::spatial3d
 
 	void Initialize(Simulation& simulation)
 	{
-		simulation.entity_factory.AddCallback<CWorld>(entity::Event::BeginLoad, cb::Bind<OnLoadSpatialEntity>());
-		simulation.entity_factory.AddCallback<CWorld>(entity::Event::BeginUnload, cb::Bind<OnUnloadSpatialEntity>());
+		simulation.entity_factory.AddCallback<CWorld>(entity::Event::BeginLoad, cb::BindArg<OnLoadSpatialEntity>(simulation));
+		simulation.entity_factory.AddCallback<CWorld>(entity::Event::BeginUnload, cb::BindArg<OnUnloadSpatialEntity>(simulation));
 	}
 
 	void Uninitialize(Simulation& simulation)

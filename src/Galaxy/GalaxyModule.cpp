@@ -143,9 +143,9 @@ namespace voxel_game::galaxy
 		simulation.galaxy_type.world_type.AddType<spatial3d::RemoteWorld>();
 		simulation.galaxy_type.world_type.AddType<World>();
 
-		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::MainUpdate, cb::Bind<&OnUpdateGalaxyEntity>());
-		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::BeginLoad, cb::Bind<&OnLoadGalaxyEntity>());
-		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::BeginUnload, cb::Bind<&OnUnloadGalaxyEntity>());
+		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::MainUpdate, cb::BindArg<&OnUpdateGalaxyEntity>(simulation));
+		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::BeginLoad, cb::BindArg<&OnLoadGalaxyEntity>(simulation));
+		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::BeginUnload, cb::BindArg<&OnUnloadGalaxyEntity>(simulation));
 	}
 
 	void Uninitialize(Simulation& simulation)

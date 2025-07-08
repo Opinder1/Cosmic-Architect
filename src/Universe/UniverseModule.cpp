@@ -184,9 +184,9 @@ namespace voxel_game::universe
 		simulation.universe_type.deserialize_callbacks.push_back(cb::BindArg<&DeserializeUniverseNode>(simulation));
 		simulation.universe_type.generate_callbacks.push_back(cb::BindArg<&GenerateUniverseNode>(simulation));
 
-		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::MainUpdate, cb::Bind<&OnUpdateUniverseEntity>());
-		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::BeginLoad, cb::Bind<&OnLoadUniverseEntity>());
-		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::BeginUnload, cb::Bind<&OnUnloadUniverseEntity>());
+		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::MainUpdate, cb::BindArg<&OnUpdateUniverseEntity>(simulation));
+		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::BeginLoad, cb::BindArg<&OnLoadUniverseEntity>(simulation));
+		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::BeginUnload, cb::BindArg<&OnUnloadUniverseEntity>(simulation));
 	}
 
 	void Uninitialize(Simulation& simulation)

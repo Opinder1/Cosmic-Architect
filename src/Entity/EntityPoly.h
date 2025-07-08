@@ -5,11 +5,6 @@
 #include "Util/Callback.h"
 #include "Util/PolyFactory.h"
 
-namespace voxel_game
-{
-	struct Simulation;
-}
-
 namespace voxel_game::entity
 {
 	enum class Event : uint32_t
@@ -29,7 +24,7 @@ namespace voxel_game::entity
 	class Type : public PolyType<Type, 40>
 	{
 	public:
-		using EventCallback = cb::Callback<void(Simulation&, EventData&)>;
+		using EventCallback = cb::Callback<void(EventData&)>;
 		using EventCallbacks = std::vector<EventCallback>;
 		using TypeCallbacks = std::array<EventCallbacks, to_underlying(Event::Count)>;
 
@@ -39,7 +34,7 @@ namespace voxel_game::entity
 
 		void AddCallback(Event event, EventCallback callback);
 
-		void DoEvent(Simulation& simulation, Event event, EventData data) const;
+		void DoEvent(Event event, EventData data) const;
 
 	private:
 		// Callbacks that are listening to types that this archetype has
@@ -72,7 +67,7 @@ namespace voxel_game::entity
 			AddCallback(Type::CreateTypeID<Types...>(), event, callback);
 		}
 
-		void DoEvent(Simulation& simulation, Event event, EventData data) const;
+		void DoEvent(Event event, EventData data) const;
 
 	private:
 		// Callbacks that will be added to archetypes based on what types they have
@@ -86,10 +81,6 @@ namespace voxel_game::entity
 	// Data that is passed for an event. Derive from this class for event specific data
 	struct EventData
 	{
-		EventData(WRef entity) :
-			entity(entity)
-		{}
-
 		WRef entity;
 	};
 }

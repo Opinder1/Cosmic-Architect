@@ -127,11 +127,11 @@ namespace voxel_game::entity
 		m_type_callbacks[to_underlying(event)].push_back(callback);
 	}
 	
-	void Type::DoEvent(Simulation& simulation, Event event, EventData data) const
+	void Type::DoEvent(Event event, EventData data) const
 	{
 		for (const EventCallback& callback : m_type_callbacks[to_underlying(event)])
 		{
-			callback(simulation, data);
+			callback(data);
 		}
 	}
 
@@ -149,9 +149,9 @@ namespace voxel_game::entity
 		});
 	}
 
-	void Factory::DoEvent(Simulation& simulation, Event event, EventData data) const
+	void Factory::DoEvent(Event event, EventData data) const
 	{
-		data.entity.GetType()->DoEvent(simulation, event, data);
+		data.entity.GetType()->DoEvent(event, data);
 	}
 }
 
