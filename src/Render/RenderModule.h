@@ -1,14 +1,26 @@
 #pragma once
 
-#include <godot_cpp/variant/rid.hpp>
+#include "RenderAllocator.h"
 
-namespace voxel_game
-{
-	struct Simulation;
-}
+#include "Simulation/SimulationModule.h"
+
+#include "UniverseSimulation.h"
+
+#include <godot_cpp/variant/rid.hpp>
 
 namespace voxel_game::rendering
 {
+	template<auto Command, class... Args>
+	void AddCommand(Args&&... args)
+	{
+		simulation::GetContext().commands.AddCommand<Command>(args...);
+	}
+
+	inline godot::RID AllocRID(RIDType type)
+	{
+		return simulation::GetContext().allocator.GetRID(type);
+	}
+
 	// Module functions
 	void Initialize(Simulation& simulation);
 	void Uninitialize(Simulation& simulation);

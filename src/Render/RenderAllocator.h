@@ -6,12 +6,21 @@
 
 #include <godot_cpp/classes/object.hpp>
 #include <godot_cpp/variant/rid.hpp>
+#include <godot_cpp/variant/packed_byte_array.hpp>
+#include <godot_cpp/classes/rendering_device.hpp>
+#include <godot_cpp/classes/rendering_server.hpp>
 
 #include <TKRZW/tkrzw_thread_util.h>
 
 #include <robin_hood/robin_hood.h>
 
 #include <optional>
+
+namespace voxel_game
+{
+	using RD = godot::RenderingDevice;
+	using RS = godot::RenderingServer;
+}
 
 namespace voxel_game::rendering
 {

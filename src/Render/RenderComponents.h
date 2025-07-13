@@ -1,7 +1,6 @@
 #pragma once
 
 #include "RenderInstancer.h"
-#include "RenderContext.h"
 
 #include "Commands/TypedCommandBuffer.h"
 
@@ -19,8 +18,6 @@ namespace voxel_game::rendering
 	struct CContext : Nocopy, Nomove
 	{
 		godot::RID scenario;
-
-		PerThread<ThreadContext> threads;
 	};
 
 	struct CTransform

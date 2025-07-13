@@ -363,6 +363,8 @@ namespace voxel_game
 	
 	void SimulationWorkerUpdateTask(Simulation& simulation, size_t index)
 	{
+		simulation::SetContext(simulation.thread_contexts[index]);
+
 		simulation::WorkerUpdate(simulation, index);
 		rendering::WorkerUpdate(simulation, index);
 		debugrender::WorkerUpdate(simulation, index);

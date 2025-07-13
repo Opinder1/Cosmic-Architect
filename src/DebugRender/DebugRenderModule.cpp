@@ -7,7 +7,7 @@
 
 #include "Spatial3D/SpatialWorld.h"
 
-#include "Render/RenderContext.h"
+#include "Render/RenderModule.h"
 
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/engine.hpp>

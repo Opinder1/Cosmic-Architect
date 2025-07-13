@@ -5,10 +5,14 @@
 namespace voxel_game
 {
 	struct Simulation;
+	struct ThreadContext;
 }
 
 namespace voxel_game::simulation
 {
+	void SetContext(ThreadContext& context);
+	ThreadContext& GetContext();
+
 	// Module functions
 	void Initialize(Simulation& simulation);
 	void Uninitialize(Simulation& simulation);

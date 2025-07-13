@@ -9,6 +9,19 @@
 
 namespace voxel_game::simulation
 {
+	thread_local ThreadContext* thread_context = nullptr;
+
+	void SetContext(ThreadContext& context)
+	{
+		thread_context = &context;
+	}
+
+	ThreadContext& GetContext()
+	{
+		DEBUG_ASSERT(thread_context != nullptr, "This thread doesn't have a context yet");
+		return *thread_context;
+	}
+
 	void OnLoadEntity(Simulation& simulation, entity::WRef entity)
 	{
 		simulation.updating_entities.push_back(entity::Ref(entity));
@@ -28,6 +41,10 @@ namespace voxel_game::simulation
 	{
 		simulation.processor_count = godot::OS::get_singleton()->get_processor_count();
 		simulation.worker_count = simulation.processor_count;
+
+		simulation.thread_contexts.resize(simulation.worker_count);
+
+		SetContext(simulation.thread_contexts[0]);
 
 		simulation.entity_factory.AddCallback<>(PolyEvent::BeginLoad, cb::BindArg<OnLoadEntity>(simulation));
 		simulation.entity_factory.AddCallback<>(PolyEvent::BeginUnload, cb::BindArg<OnUnloadEntity>(simulation));

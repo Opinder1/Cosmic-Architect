@@ -1,7 +1,6 @@
 #pragma once
 
 #include "RenderInstancer.h"
-#include "RenderContext.h"
 
 namespace voxel_game::rendering
 {

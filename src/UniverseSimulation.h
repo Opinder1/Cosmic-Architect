@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Render/RenderContext.h"
+#include "Render/RenderAllocator.h"
 
 #include "Spatial3D/SpatialPoly.h"
 #include "Spatial3D/SpatialWorld.h"
@@ -8,6 +8,8 @@
 #include "Entity/EntityPoly.h"
 
 #include "Simulation/Config.h"
+
+#include "Commands/TypedCommandBuffer.h"
 
 #include "Util/Span.h"
 
@@ -29,6 +31,15 @@ namespace voxel_game
 		size_t count;
 	};
 
+	// Per thread data
+	struct ThreadContext
+	{
+		// Rendering
+		TCommandBuffer<RS> commands;
+
+		rendering::Allocator allocator;
+	};
+
 	struct Simulation
 	{
 		// Simulation
@@ -46,6 +57,8 @@ namespace voxel_game
 
 		simulation::Config config;
 		Clock::time_point last_config_save;
+
+		std::vector<ThreadContext> thread_contexts;
 
 		// Spatial
 		std::vector<spatial3d::WorldPtr> spatial_worlds;

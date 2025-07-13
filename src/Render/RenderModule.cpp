@@ -1,6 +1,5 @@
 #include "RenderModule.h"
 #include "RenderComponents.h"
-#include "RenderContext.h"
 
 #include "UniverseSimulation.h"
 
@@ -17,11 +16,14 @@ namespace voxel_game::rendering
 {
 	void Initialize(Simulation& simulation)
     {
+        // Get an initial batch of rids for rendering objects
         AllocatorServer::get_singleton()->RequestRIDs(true);
 
-        simulation.rendering_contexts.resize(simulation.processor_count);
-
-        SetContext(simulation.rendering_contexts[0]);
+        // Fill our allocators with that initial batch of rids
+        for (ThreadContext& thread_context : simulation.thread_contexts)
+        {
+            thread_context.allocator.Process();
+        }
     }
 
 	void Uninitialize(Simulation& simulation)
@@ -29,7 +31,7 @@ namespace voxel_game::rendering
         CommandServer* cqserver = CommandServer::get_singleton();
         uint64_t rserver_id = RS::get_singleton()->get_instance_id();
 
-        for (ThreadContext& thread_context : simulation.rendering_contexts)
+        for (ThreadContext& thread_context : simulation.thread_contexts)
         {
             cqserver->AddCommands(rserver_id, std::move(thread_context.commands));
         }
@@ -40,7 +42,7 @@ namespace voxel_game::rendering
         CommandServer* cqserver = CommandServer::get_singleton();
         uint64_t rserver_id = RS::get_singleton()->get_instance_id();
 
-        for (ThreadContext& thread_context : simulation.rendering_contexts)
+        for (ThreadContext& thread_context : simulation.thread_contexts)
         {
             thread_context.allocator.Process();
 
@@ -50,7 +52,7 @@ namespace voxel_game::rendering
 
     void WorkerUpdate(Simulation& simulation, size_t index)
     {
-        SetContext(simulation.rendering_contexts[index]);
+
     }
 
     bool IsEnabled()
