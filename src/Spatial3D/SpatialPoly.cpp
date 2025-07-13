@@ -19,7 +19,7 @@ template<> template<> const size_t spatial3d::NodeType::k_type_index<galaxy::Nod
 template<> template<> const size_t spatial3d::NodeType::k_type_index<voxel::Node>					= __LINE__ - node_first;
 template<> template<> const size_t spatial3d::NodeType::k_type_index<voxelrender::Node>				= __LINE__ - node_first;
 
-const std::array<PolyTypeInfo, 10> PolyType<spatial3d::NodeType, 10>::k_type_info =
+const std::array<PolyTypeInfo, 10> spatial3d::NodeType::k_type_info =
 {
 	MakeTypeInfo<spatial3d::NodeType::Header>(),
 	MakeTypeInfo<spatial3d::Node>(),
@@ -41,7 +41,7 @@ template<> template<> const size_t spatial3d::ScaleType::k_type_index<galaxy::Sc
 template<> template<> const size_t spatial3d::ScaleType::k_type_index<voxel::Scale>					= __LINE__ - scale_first;
 template<> template<> const size_t spatial3d::ScaleType::k_type_index<voxelrender::Scale>			= __LINE__ - scale_first;
 
-const std::array<PolyTypeInfo, 8> PolyType<spatial3d::ScaleType, 8>::k_type_info =
+const std::array<PolyTypeInfo, 8> spatial3d::ScaleType::k_type_info =
 {
 	MakeTypeInfo<spatial3d::ScaleType::Header>(),
 	MakeTypeInfo<spatial3d::Scale>(),
@@ -64,7 +64,7 @@ template<> template<> const size_t spatial3d::WorldType::k_type_index<galaxy::Wo
 template<> template<> const size_t spatial3d::WorldType::k_type_index<voxel::World>					= __LINE__ - world_first;
 template<> template<> const size_t spatial3d::WorldType::k_type_index<voxelrender::World>			= __LINE__ - world_first;
 
-const std::array<PolyTypeInfo, 11> PolyType<spatial3d::WorldType, 11>::k_type_info =
+const std::array<PolyTypeInfo, 11> spatial3d::WorldType::k_type_info =
 {
 	MakeTypeInfo<spatial3d::WorldType::Header>(),
 	MakeTypeInfo<spatial3d::World>(),

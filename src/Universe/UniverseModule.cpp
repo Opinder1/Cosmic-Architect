@@ -19,70 +19,30 @@
 
 namespace voxel_game::universe
 {
-	// Spawns a bunch of random cubes around the camera
-	struct UniverseNodeLoaderTest
+	void LoadNodeRandomly(Simulation& simulation, spatial3d::WorldPtr world, spatial3d::NodePtr node)
 	{
-		Simulation& simulation;
-		spatial3d::WorldPtr world;
+		const uint32_t entities_per_node = 4;
+		const uint32_t scale_step = 1 << node->*&spatial3d::Node::scale_index;
+		const uint32_t scale_node_step = scale_step * world->*&spatial3d::World::node_size;
+		const double box_size = double(scale_step) / 2.0;
 
-		void LoadNodeRandomly(spatial3d::NodePtr node)
+		for (size_t i = 0; i < entities_per_node; i++)
 		{
-			const uint32_t entities_per_node = 4;
-			const uint32_t scale_step = 1 << node->*&spatial3d::Node::scale_index;
-			const uint32_t scale_node_step = scale_step * world->*&spatial3d::World::node_size;
-			const double box_size = double(scale_step) / 2.0;
+			godot::Vector3 position = node->*&spatial3d::Node::position * scale_node_step;
 
-			for (size_t i = 0; i < entities_per_node; i++)
-			{
-				godot::Vector3 position = node->*&spatial3d::Node::position * scale_node_step;
+			position.x += godot::UtilityFunctions::randf_range(0, scale_node_step);
+			position.y += godot::UtilityFunctions::randf_range(0, scale_node_step);
+			position.z += godot::UtilityFunctions::randf_range(0, scale_node_step);
 
-				position.x += godot::UtilityFunctions::randf_range(0, scale_node_step);
-				position.y += godot::UtilityFunctions::randf_range(0, scale_node_step);
-				position.z += godot::UtilityFunctions::randf_range(0, scale_node_step);
-
-				galaxy::CreateGalaxy(simulation, node, position, godot::Vector3(box_size, box_size, box_size), world);
-			}
+			//galaxy::CreateGalaxy(simulation, node, position, godot::Vector3(box_size, box_size, box_size), world);
 		}
-
-		void LoadNodePlane(spatial3d::NodePtr node)
-		{
-			if ((node->*&spatial3d::Node::position).y != 0)
-			{
-				return;
-			}
-
-			const uint32_t scale_step = 1 << node->*&spatial3d::Node::scale_index;
-			const int32_t scale_node_step = scale_step * world->*&spatial3d::World::node_size;
-			const uint8_t box_shrink = 2;
-
-			godot::Vector3i position = node->*&spatial3d::Node::position * scale_node_step;
-
-			position.y -= node->*&spatial3d::Node::scale_index - 1;
-
-			galaxy::CreateGalaxy(simulation, node, position, godot::Vector3i{ scale_node_step / 4, 1, scale_node_step / 4 }, world);
-		}
-
-		void UnloadNode(spatial3d::NodePtr node)
-		{
-			const uint32_t entities_per_node = 4;
-			const uint32_t scale_step = 1 << node->*&spatial3d::Node::scale_index;
-			const uint32_t scale_node_step = scale_step * world->*&spatial3d::World::node_size;
-
-			for (entity::WRef galaxy : node->*&Node::galaxies)
-			{
-				// galaxy.unref();
-			}
-		}
-	};
+	}
 
 	entity::Ref CreateUniverse(Simulation& simulation, UUID id)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
 
-		bool created;
-		entity::Ref universe_entity = simulation.entity_factory.GetPoly(id, created);
-
-		DEBUG_ASSERT(created, "Failed to get the universe");
+		entity::Ref universe_entity = simulation.entity_factory.GetPoly(id);
 
 		// Create the universe
 		simulation.entity_factory.AddTypes<
@@ -109,19 +69,19 @@ namespace voxel_game::universe
 		return universe_entity;
 	}
 
-	void OnUpdateUniverseEntity(Simulation& simulation, entity::EventData& data)
+	void OnUpdateUniverseEntity(Simulation& simulation, entity::WRef entity)
 	{
 
 	}
 
-	void OnLoadUniverseEntity(Simulation& simulation, entity::EventData& data)
+	void OnLoadUniverseEntity(Simulation& simulation, entity::WRef entity)
 	{
-		simulation.universes.push_back(entity::Ref(data.entity));
+		simulation.universes.push_back(entity::Ref(entity));
 	}
 
-	void OnUnloadUniverseEntity(Simulation& simulation, entity::EventData& data)
+	void OnUnloadUniverseEntity(Simulation& simulation, entity::WRef entity)
 	{
-		unordered_erase(simulation.universes, entity::Ref(data.entity));
+		unordered_erase(simulation.universes, entity::Ref(entity));
 	}
 
 	void SerializeUniverseNode(Simulation& simulation, spatial3d::WorldPtr world, spatial3d::NodePtr node, serialize::Writer& writer)
@@ -151,17 +111,52 @@ namespace voxel_game::universe
 
 		for (size_t i = 0; i < galaxy_count; i++)
 		{
-			UUID galaxy_id;
-			reader.Read(galaxy_id);
+			UUID id;
+			reader.Read(id);
 
-			bool created;
-			(node->*&Node::galaxies).push_back(simulation.entity_factory.GetPoly(galaxy_id, created));
+			entity::TypeID types;
+			reader.Read(types);
+
+			entity::Ref entity = simulation.entity_factory.GetPoly(id);
+
+			simulation.entity_factory.AddTypes(id, types);
+
+			(node->*&spatial3d::Node::entities).insert(entity.Reference());
+			(node->*&Node::galaxies).push_back(entity.Reference());
 		}
 	}
 
+	const entity::TypeID galaxy_type = entity::Factory::Archetype::CreateTypeID<
+		galaxy::CGalaxy,
+		entity::CRelationship,
+		physics3d::CPosition,
+		physics3d::CScale,
+		physics3d::CRotation,
+		spatial3d::CEntity>();
+
 	void GenerateUniverseNode(Simulation& simulation, spatial3d::WorldPtr world, spatial3d::NodePtr node)
 	{
+		if ((node->*&spatial3d::Node::position).y != 0)
+		{
+			return;
+		}
 
+		const uint32_t scale_step = 1 << node->*&spatial3d::Node::scale_index;
+		const int32_t scale_node_step = scale_step * world->*&spatial3d::World::node_size;
+
+		godot::Vector3i position = node->*&spatial3d::Node::position * scale_node_step;
+
+		position.y -= node->*&spatial3d::Node::scale_index - 1;
+
+		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID());
+
+		simulation.entity_factory.AddTypes(galaxy_entity.GetID(), galaxy_type);
+		
+		galaxy_entity->*&physics3d::CPosition::position = position;
+		galaxy_entity->*&physics3d::CScale::scale = godot::Vector3i{ scale_node_step / 4, 1, scale_node_step / 4 };
+
+		(node->*&spatial3d::Node::entities).insert(galaxy_entity.Reference());
+		(node->*&Node::galaxies).push_back(galaxy_entity.Reference());
 	}
 
 	void Initialize(Simulation& simulation)
@@ -184,9 +179,9 @@ namespace voxel_game::universe
 		simulation.universe_type.deserialize_callbacks.push_back(cb::BindArg<&DeserializeUniverseNode>(simulation));
 		simulation.universe_type.generate_callbacks.push_back(cb::BindArg<&GenerateUniverseNode>(simulation));
 
-		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::MainUpdate, cb::BindArg<&OnUpdateUniverseEntity>(simulation));
-		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::BeginLoad, cb::BindArg<&OnLoadUniverseEntity>(simulation));
-		simulation.entity_factory.AddCallback<CUniverse>(entity::Event::BeginUnload, cb::BindArg<&OnUnloadUniverseEntity>(simulation));
+		simulation.entity_factory.AddCallback<CUniverse>(PolyEvent::MainUpdate, cb::BindArg<&OnUpdateUniverseEntity>(simulation));
+		simulation.entity_factory.AddCallback<CUniverse>(PolyEvent::BeginLoad, cb::BindArg<&OnLoadUniverseEntity>(simulation));
+		simulation.entity_factory.AddCallback<CUniverse>(PolyEvent::BeginUnload, cb::BindArg<&OnUnloadUniverseEntity>(simulation));
 	}
 
 	void Uninitialize(Simulation& simulation)

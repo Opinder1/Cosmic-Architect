@@ -10,14 +10,14 @@ namespace voxel_game::entity
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
 
-		simulation.entity_factory.DoEvent(entity::Event::BeginLoad, entity::EventData{ entity });
+		simulation.entity_factory.DoEvent(PolyEvent::BeginLoad, entity);
 	}
 
 	void OnUnloadEntity(Simulation& simulation, entity::WRef entity)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
 
-		simulation.entity_factory.DoEvent(entity::Event::BeginUnload, entity::EventData{ entity });
+		simulation.entity_factory.DoEvent(PolyEvent::BeginUnload, entity);
 	}
 
 #if defined(DEBUG_ENABLED)

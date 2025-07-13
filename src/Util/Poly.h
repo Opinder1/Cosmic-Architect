@@ -82,7 +82,7 @@ class PolyType : Nocopy, Nomove
 	template<class T>
 	friend class PolyArchetypeRegistry;
 
-	template<class T, class T2>
+	template<size_t N, class T>
 	friend class PolyFactory;
 
 private:

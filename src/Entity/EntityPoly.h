@@ -7,82 +7,16 @@
 
 namespace voxel_game::entity
 {
-	enum class Event : uint32_t
-	{
-		BeginLoad, // Entity has started loading
-		BeginUnload, // Entity has started unloading
-
-		MainUpdate, // Entity is being updated in singlethreaded mode
-		TaskUpdate, // Entity being updated in its own task
-
-		Count,
-	};
-
-	struct EventData;
-
-	// An entity archetype that also stores all callbacks that listen for a subset of this archetypes types
-	class Type : public PolyType<Type, 40>
-	{
-	public:
-		using EventCallback = cb::Callback<void(EventData&)>;
-		using EventCallbacks = std::vector<EventCallback>;
-		using TypeCallbacks = std::array<EventCallbacks, to_underlying(Event::Count)>;
-
-		Type();
-
-		void InitType(PolyArchetypeRegistry<Type>& factory, ID id);
-
-		void AddCallback(Event event, EventCallback callback);
-
-		void DoEvent(Event event, EventData data) const;
-
-	private:
-		// Callbacks that are listening to types that this archetype has
-		TypeCallbacks m_type_callbacks;
-	};
-
 	// A factory that creates entities and manages changing their archetype when types are added/removed
-	class Factory : public PolyFactory<Type, UUID>
+	struct Factory : public PolyFactory<40, UUID>
 	{
-		friend class Type;
-
-		using EventCallback = Type::EventCallback;
-
-		struct CallbackEntry
-		{
-			Event event;
-			EventCallback callback;
-		};
-
-		using CallbackEntries = std::vector<CallbackEntry>;
-
-	public:
-		Factory();
-
-		void AddCallback(TypeID types, Event event, EventCallback callback);
-
-		template<class... Types>
-		void AddCallback(Event event, EventCallback callback)
-		{
-			AddCallback(Type::CreateTypeID<Types...>(), event, callback);
-		}
-
-		void DoEvent(Event event, EventData data) const;
-
-	private:
-		// Callbacks that will be added to archetypes based on what types they have
-		robin_hood::unordered_map<TypeID, CallbackEntries> m_callbacks;
+		using PolyFactory::PolyFactory;
 	};
 
-	using Ptr = Type::Ptr;
+	using TypeID = Factory::TypeID;
+	using Ptr = Factory::Ptr;
 	using WRef = Factory::WeakRef;
 	using Ref = Factory::Ref;
-
-	// Data that is passed for an event. Derive from this class for event specific data
-	struct EventData
-	{
-		WRef entity;
-	};
 }
 
 namespace std

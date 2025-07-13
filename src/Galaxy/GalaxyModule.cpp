@@ -22,54 +22,13 @@
 
 namespace voxel_game::galaxy
 {
-	entity::Ref CreateGalaxy(Simulation& simulation, spatial3d::NodePtr node, godot::Vector3 position, godot::Vector3 scale, spatial3d::WorldPtr universe_world)
-	{
-		DEBUG_THREAD_CHECK_WRITE(&simulation);
-		DEBUG_ASSERT(!simulation.unloading, "We shouldn't create an entity while unloading");
-
-		bool created;
-		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID(), created);
-
-		if (!created)
-		{
-			return galaxy_entity;
-		}
-
-		simulation.entity_factory.AddTypes<
-			CGalaxy,
-			entity::CRelationship,
-			physics3d::CPosition,
-			physics3d::CScale,
-			physics3d::CRotation,
-			spatial3d::CEntity
-		>(galaxy_entity.GetID());
-
-		spatial3d::AddEntity(universe_world, galaxy_entity);
-
-		galaxy_entity->*&physics3d::CPosition::position = position;
-		galaxy_entity->*&physics3d::CScale::scale = scale;
-
-		(node->*&spatial3d::Node::entities).insert(galaxy_entity.Reference());
-		(node->*&universe::Node::galaxies).push_back(galaxy_entity.Reference());
-
-		entity::OnLoadEntity(simulation, galaxy_entity);
-
-		return galaxy_entity;
-	}
-
 	entity::Ref CreateSimulatedGalaxy(Simulation& simulation, UUID id, spatial3d::WorldPtr universe_world)
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation);
 		DEBUG_ASSERT(!simulation.unloading, "We shouldn't create an entity while unloading");
 
 		// Create the simulated galaxy
-		bool created;
-		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID(), created);
-
-		if (!created)
-		{
-			return galaxy_entity;
-		}
+		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID());
 
 		simulation.entity_factory.AddTypes<
 			CGalaxy,
@@ -110,19 +69,19 @@ namespace voxel_game::galaxy
 		return galaxy_entity;
 	}
 
-	void OnUpdateGalaxyEntity(Simulation& simulation, entity::EventData& data)
+	void OnUpdateGalaxyEntity(Simulation& simulation, entity::WRef entity)
 	{
 
 	}
 
-	void OnLoadGalaxyEntity(Simulation& simulation, entity::EventData& data)
+	void OnLoadGalaxyEntity(Simulation& simulation, entity::WRef entity)
 	{
-		simulation.galaxies.push_back(entity::Ref(data.entity));
+		simulation.galaxies.push_back(entity::Ref(entity));
 	}
 
-	void OnUnloadGalaxyEntity(Simulation& simulation, entity::EventData& data)
+	void OnUnloadGalaxyEntity(Simulation& simulation, entity::WRef entity)
 	{
-		unordered_erase(simulation.galaxies, entity::Ref(data.entity));
+		unordered_erase(simulation.galaxies, entity::Ref(entity));
 	}
 
 	void Initialize(Simulation& simulation)
@@ -143,9 +102,9 @@ namespace voxel_game::galaxy
 		simulation.galaxy_type.world_type.AddType<spatial3d::RemoteWorld>();
 		simulation.galaxy_type.world_type.AddType<World>();
 
-		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::MainUpdate, cb::BindArg<&OnUpdateGalaxyEntity>(simulation));
-		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::BeginLoad, cb::BindArg<&OnLoadGalaxyEntity>(simulation));
-		simulation.entity_factory.AddCallback<CGalaxy>(entity::Event::BeginUnload, cb::BindArg<&OnUnloadGalaxyEntity>(simulation));
+		simulation.entity_factory.AddCallback<CGalaxy>(PolyEvent::MainUpdate, cb::BindArg<&OnUpdateGalaxyEntity>(simulation));
+		simulation.entity_factory.AddCallback<CGalaxy>(PolyEvent::BeginLoad, cb::BindArg<&OnLoadGalaxyEntity>(simulation));
+		simulation.entity_factory.AddCallback<CGalaxy>(PolyEvent::BeginUnload, cb::BindArg<&OnUnloadGalaxyEntity>(simulation));
 	}
 
 	void Uninitialize(Simulation& simulation)

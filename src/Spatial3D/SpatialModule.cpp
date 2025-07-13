@@ -15,25 +15,25 @@
 
 namespace voxel_game::spatial3d
 {
-	void OnLoadSpatialEntity(Simulation& simulation, entity::EventData& data)
+	void OnLoadSpatialEntity(Simulation& simulation, entity::WRef entity)
 	{
-		simulation.spatial_worlds.push_back(data.entity->*&CWorld::world);
+		simulation.spatial_worlds.push_back(entity->*&CWorld::world);
 
-		WorldForEachScale(data.entity->*&CWorld::world, [&simulation](ScalePtr scale)
+		WorldForEachScale(entity->*&CWorld::world, [&simulation](ScalePtr scale)
 		{
 			simulation.spatial_scales.push_back(scale);
 		});
 	}
 
-	void OnUnloadSpatialEntity(Simulation& simulation, entity::EventData& data)
+	void OnUnloadSpatialEntity(Simulation& simulation, entity::WRef entity)
 	{
-		UnloadWorld(data.entity->*&CWorld::world);
+		UnloadWorld(entity->*&CWorld::world);
 	}
 
 	void Initialize(Simulation& simulation)
 	{
-		simulation.entity_factory.AddCallback<CWorld>(entity::Event::BeginLoad, cb::BindArg<OnLoadSpatialEntity>(simulation));
-		simulation.entity_factory.AddCallback<CWorld>(entity::Event::BeginUnload, cb::BindArg<OnUnloadSpatialEntity>(simulation));
+		simulation.entity_factory.AddCallback<CWorld>(PolyEvent::BeginLoad, cb::BindArg<OnLoadSpatialEntity>(simulation));
+		simulation.entity_factory.AddCallback<CWorld>(PolyEvent::BeginUnload, cb::BindArg<OnUnloadSpatialEntity>(simulation));
 	}
 
 	void Uninitialize(Simulation& simulation)

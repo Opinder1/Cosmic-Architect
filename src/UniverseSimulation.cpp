@@ -350,7 +350,7 @@ namespace voxel_game
 
 		DEBUG_THREAD_CHECK_WRITE(entity.Data());
 
-		simulation.entity_factory.DoEvent(entity::Event::TaskUpdate, entity::EventData{ entity });
+		simulation.entity_factory.DoEvent(PolyEvent::TaskUpdate, entity);
 	}
 
 	// Run all entities in parallel doing entity specific code
@@ -400,7 +400,7 @@ namespace voxel_game
 
 		for (entity::WRef entity : simulation.updating_entities)
 		{
-			simulation.entity_factory.DoEvent(entity::Event::MainUpdate, entity::EventData{ entity });
+			simulation.entity_factory.DoEvent(PolyEvent::MainUpdate, entity);
 		}
 	}
 
