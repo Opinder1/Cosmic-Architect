@@ -37,6 +37,7 @@ namespace voxel_game::spatial3d
 	// An entity which is in a spatial world. It will be given a node its part of and loaded/unloaded with that node
 	struct CEntity
 	{
+		WorldPtr world;
 		uint8_t scale = 0;
 		godot::Vector3 position;
 

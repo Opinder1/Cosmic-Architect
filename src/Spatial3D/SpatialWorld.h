@@ -148,13 +148,12 @@ namespace voxel_game::spatial3d
 	// A level of detail map for a world. The world will have multiple of these
 	struct Scale : Nocopy, Nomove
 	{
+		// A reference to the world for use when we iterate over scales without references to the world.
 		WorldPtr world;
 
 		uint8_t index = 0;
 
 		NodeMap nodes;
-
-		robin_hood::unordered_set<entity::Ref> entities;
 	};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
@@ -165,11 +164,10 @@ namespace voxel_game::spatial3d
 		uint8_t max_scale = 0;
 		uint8_t node_size = 1;
 
+		// Setting this flag means that all nodes in the world should be unloaded.
 		bool unloading = false;
 
 		std::array<ScalePtr, k_max_world_scale> scales;
-
-		robin_hood::unordered_set<entity::Ref> entities;
 	};
 
 	using NodeLoadCB = cb::Callback<bool(WorldPtr, NodePtr)>;
@@ -180,6 +178,7 @@ namespace voxel_game::spatial3d
 	using NodeDeserializeCB = cb::Callback<void(WorldPtr, NodePtr, serialize::Reader&)>;
 	using NodeGenerateCB = cb::Callback<void(WorldPtr, NodePtr)>;
 
+	// A spatial world type
 	struct TypeData
 	{
 		WorldType world_type;
@@ -195,10 +194,12 @@ namespace voxel_game::spatial3d
 		std::vector<NodeDeserializeCB> deserialize_callbacks;
 		std::vector<NodeGenerateCB> generate_callbacks;
 
+		// Arrays of worlds and scales of this type for tasks to reference
 		std::vector<WorldPtr> worlds;
 		std::vector<ScalePtr> scales;
 	};
 
+	using EntityCB = cb::Callback<void(entity::WRef)>;
 	using ScaleCB = cb::Callback<void(ScalePtr)>;
 	using NodeCommandCB = cb::Callback<bool(NodePtr)>;
 
@@ -215,17 +216,18 @@ namespace voxel_game::spatial3d
 	WorldPtr CreateWorld(TypeData& type, const godot::String& path);
 
 	void UnloadWorld(WorldPtr world);
+	bool IsWorldUnloading(WorldPtr world);
 
 	// Destroy a spatial world
 	void DestroyWorld(WorldPtr world);
 
-	bool IsWorldUnloading(WorldPtr world);
+	size_t WorldGetNodeCount(WorldPtr world);
+	size_t ScaleGetNodeCount(ScalePtr scale);
+	size_t WorldGetEntityCount(WorldPtr world);
+	size_t ScaleGetEntityCount(ScalePtr scale);
 
-	size_t GetNodeCount(WorldPtr world);
-
-	void AddEntity(WorldPtr world, entity::WRef entity);
-
-	void RemoveEntity(WorldPtr world, entity::WRef entity);
+	void WorldForEachEntity(WorldPtr world, EntityCB callback);
+	void ScaleForEachEntity(ScalePtr scale, EntityCB callback);
 
 	void WorldForEachScale(WorldPtr world, ScaleCB callback);
 

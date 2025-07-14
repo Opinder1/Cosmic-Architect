@@ -30,10 +30,22 @@ namespace voxel_game::spatial3d
 		UnloadWorld(entity->*&CWorld::world);
 	}
 
+	void OnLoadLoaderEntity(Simulation& simulation, entity::WRef entity)
+	{
+		((entity->*&CEntity::world)->*&PartialWorld::loaders).emplace(entity);
+	}
+
+	void OnUnloadLoaderEntity(Simulation& simulation, entity::WRef entity)
+	{
+		((entity->*&CEntity::world)->*&PartialWorld::loaders).erase(entity::Ref(entity));
+	}
+
 	void Initialize(Simulation& simulation)
 	{
 		simulation.entity_factory.AddCallback<CWorld>(PolyEvent::BeginLoad, cb::BindArg<OnLoadSpatialEntity>(simulation));
 		simulation.entity_factory.AddCallback<CWorld>(PolyEvent::BeginUnload, cb::BindArg<OnUnloadSpatialEntity>(simulation));
+		simulation.entity_factory.AddCallback<CLoader>(PolyEvent::BeginLoad, cb::BindArg<OnLoadLoaderEntity>(simulation));
+		simulation.entity_factory.AddCallback<CLoader>(PolyEvent::BeginUnload, cb::BindArg<OnUnloadLoaderEntity>(simulation));
 	}
 
 	void Uninitialize(Simulation& simulation)
@@ -54,7 +66,7 @@ namespace voxel_game::spatial3d
 		{
 			WorldPtr world = *it;
 
-			if (IsWorldUnloading(world) && GetNodeCount(world) == 0)
+			if (IsWorldUnloading(world) && WorldGetNodeCount(world) == 0)
 			{
 				WorldForEachScale(world, [&simulation](ScalePtr scale)
 				{
