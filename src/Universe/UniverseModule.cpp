@@ -19,6 +19,14 @@
 
 namespace voxel_game::universe
 {
+	const entity::TypeID k_universe_type = entity::Factory::Archetype::CreateTypeID<
+		universe::CUniverse,
+		entity::CRelationship,
+		spatial3d::CWorld,
+		rendering::CScenario,
+		rendering::CTransform
+	>();
+
 	void LoadNodeRandomly(Simulation& simulation, spatial3d::WorldPtr world, spatial3d::NodePtr node)
 	{
 		const uint32_t entities_per_node = 4;
@@ -38,37 +46,6 @@ namespace voxel_game::universe
 		}
 	}
 
-	entity::Ref CreateUniverse(Simulation& simulation, UUID id)
-	{
-		DEBUG_THREAD_CHECK_WRITE(&simulation);
-
-		entity::Ref universe_entity = simulation.entity_factory.GetPoly(id);
-
-		// Create the universe
-		simulation.entity_factory.AddTypes<
-			universe::CUniverse,
-			entity::CRelationship,
-			spatial3d::CWorld,
-			rendering::CScenario
-		>(universe_entity.GetID());
-
-		if (rendering::IsEnabled())
-		{
-			simulation.entity_factory.AddTypes<rendering::CTransform>(universe_entity.GetID());
-		}
-
-		spatial3d::WorldPtr world = spatial3d::CreateWorld(simulation.universe_type, simulation.path);
-
-		world->*&spatial3d::World::node_size = 16;
-		world->*&spatial3d::PartialWorld::node_keepalive = 1s;
-
-		spatial3d::EntitySetWorld(simulation, universe_entity, world);
-
-		entity::OnLoadEntity(simulation, universe_entity);
-
-		return universe_entity;
-	}
-
 	void OnUpdateUniverseEntity(Simulation& simulation, entity::WRef entity)
 	{
 
@@ -77,6 +54,13 @@ namespace voxel_game::universe
 	void OnLoadUniverseEntity(Simulation& simulation, entity::WRef entity)
 	{
 		simulation.universes.push_back(entity::Ref(entity));
+
+		spatial3d::WorldPtr world = spatial3d::CreateWorld(simulation.universe_type, simulation.path);
+
+		world->*&spatial3d::World::node_size = 16;
+		world->*&spatial3d::PartialWorld::node_keepalive = 1s;
+
+		spatial3d::EntitySetWorld(simulation, entity, world);
 	}
 
 	void OnUnloadUniverseEntity(Simulation& simulation, entity::WRef entity)
@@ -96,6 +80,7 @@ namespace voxel_game::universe
 		for (entity::WRef galaxy : node->*&Node::galaxies)
 		{
 			writer.Write(galaxy.GetID());
+			writer.Write(galaxy.GetTypeID());
 		}
 	}
 
@@ -112,27 +97,17 @@ namespace voxel_game::universe
 		for (size_t i = 0; i < galaxy_count; i++)
 		{
 			UUID id;
-			reader.Read(id);
-
 			entity::TypeID types;
+
+			reader.Read(id);
 			reader.Read(types);
 
-			entity::Ref entity = simulation.entity_factory.GetPoly(id);
-
-			simulation.entity_factory.AddTypes(id, types);
+			entity::Ref entity = SimulationCreateEntity(simulation, id, types);
 
 			(node->*&spatial3d::Node::entities).insert(entity.Reference());
 			(node->*&Node::galaxies).push_back(entity.Reference());
 		}
 	}
-
-	const entity::TypeID galaxy_type = entity::Factory::Archetype::CreateTypeID<
-		galaxy::CGalaxy,
-		entity::CRelationship,
-		physics3d::CPosition,
-		physics3d::CScale,
-		physics3d::CRotation,
-		spatial3d::CEntity>();
 
 	void GenerateUniverseNode(Simulation& simulation, spatial3d::WorldPtr world, spatial3d::NodePtr node)
 	{
@@ -148,15 +123,18 @@ namespace voxel_game::universe
 
 		position.y -= node->*&spatial3d::Node::scale_index - 1;
 
-		entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID());
+		for (size_t i = 0; i < 4; i++)
+		{
+			entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID());
 
-		simulation.entity_factory.AddTypes(galaxy_entity.GetID(), galaxy_type);
-		
-		galaxy_entity->*&physics3d::CPosition::position = position;
-		galaxy_entity->*&physics3d::CScale::scale = godot::Vector3i{ scale_node_step / 4, 1, scale_node_step / 4 };
+			simulation.entity_factory.AddTypes(galaxy_entity.GetID(), galaxy::k_galaxy_type);
 
-		(node->*&spatial3d::Node::entities).insert(galaxy_entity.Reference());
-		(node->*&Node::galaxies).push_back(galaxy_entity.Reference());
+			galaxy_entity->*&physics3d::CPosition::position = position;
+			galaxy_entity->*&physics3d::CScale::scale = godot::Vector3i{ scale_node_step / 4, 1, scale_node_step / 4 };
+
+			(node->*&spatial3d::Node::entities).insert(galaxy_entity.Reference());
+			(node->*&Node::galaxies).push_back(galaxy_entity.Reference());
+		}
 	}
 
 	void Initialize(Simulation& simulation)

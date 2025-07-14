@@ -400,6 +400,23 @@ namespace voxel_game
 		universe::Update(simulation);
 		galaxy::Update(simulation);
 
+		for (ThreadContext& context : simulation.thread_contexts)
+		{
+			for (entity::WRef entity : context.load_commands)
+			{
+				simulation.entity_factory.DoEvent(PolyEvent::BeginLoad, entity);
+			}
+
+			context.load_commands.clear();
+
+			for (entity::WRef entity : context.unload_commands)
+			{
+				simulation.entity_factory.DoEvent(PolyEvent::BeginUnload, entity);
+			}
+
+			context.unload_commands.clear();
+		}
+
 		for (entity::WRef entity : simulation.updating_entities)
 		{
 			simulation.entity_factory.DoEvent(PolyEvent::MainUpdate, entity);
@@ -432,7 +449,7 @@ namespace voxel_game
 		std::vector<entity::Ref> updating_entities = std::move(simulation.updating_entities);
 		for (entity::WRef entity : updating_entities)
 		{
-			entity::OnUnloadEntity(simulation, entity);
+			SimulationUnloadEntity(simulation, entity);
 		}
 		updating_entities.clear();
 
@@ -473,5 +490,21 @@ namespace voxel_game
 		SimulationSingleUpdate(simulation);
 
 		simulation.entity_factory.Cleanup();
+	}
+
+	entity::Ref SimulationCreateEntity(Simulation& simulation, UUID id, entity::TypeID types)
+	{
+		entity::Ref entity = simulation.entity_factory.GetPoly(id);
+
+		simulation.entity_factory.AddTypes(entity.GetID(), types);
+
+		simulation::GetContext().load_commands.push_back(entity.Reference());
+
+		return entity;
+	}
+
+	void SimulationUnloadEntity(Simulation& simulation, entity::WRef entity)
+	{
+		simulation::GetContext().unload_commands.push_back(entity::Ref(entity));
 	}
 }

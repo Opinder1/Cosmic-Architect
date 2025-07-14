@@ -11,6 +11,8 @@ namespace voxel_game
 
 namespace voxel_game::universe
 {
+	extern const entity::TypeID k_universe_type;
+
 	// Module functions
 	void Initialize(Simulation& simulation);
 	void Uninitialize(Simulation& simulation);
@@ -19,6 +21,4 @@ namespace voxel_game::universe
 	void WorkerUpdate(Simulation& simulation, size_t index);
 	void WorldUpdate(Simulation& simulation, spatial3d::WorldPtr world);
 	void ScaleUpdate(Simulation& simulation, spatial3d::ScalePtr scale);
-
-	entity::Ref CreateUniverse(Simulation& simulation, UUID id);
 }

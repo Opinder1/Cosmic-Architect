@@ -34,6 +34,10 @@ namespace voxel_game
 	// Per thread data
 	struct ThreadContext
 	{
+		// Entity
+		std::vector<entity::Ref> load_commands;
+		std::vector<entity::Ref> unload_commands;
+
 		// Rendering
 		TCommandBuffer<RS> commands;
 
@@ -77,17 +81,14 @@ namespace voxel_game
 
 		std::vector<entity::Ref> updating_entities;
 
-		// Rendering
-		std::vector<rendering::ThreadContext> rendering_contexts;
-
-		// Universe
-		std::vector<entity::Ref> universes;
-
-		// Galaxy
-		std::vector<entity::Ref> galaxies;
-
-		// StarSystem
-		std::vector<entity::Ref> star_systems;
+		// Entity lists
+		std::vector<entity::WRef> universes;
+		std::vector<entity::WRef> galaxies;
+		std::vector<entity::WRef> star_systems;
+		std::vector<entity::WRef> planets;
+		std::vector<entity::WRef> space_stations;
+		std::vector<entity::WRef> space_ships;
+		std::vector<entity::WRef> vehicles;
 
 		// Network
 		godot::Ref<godot::X509Certificate> server_certificate;
@@ -104,4 +105,7 @@ namespace voxel_game
 	void SimulationUnload(Simulation& simulation);
 	void SimulationUninitialize(Simulation& simulation);
 	void SimulationUpdate(Simulation& simulation);
+
+	entity::Ref SimulationCreateEntity(Simulation& simulation, UUID id, entity::TypeID types);
+	void SimulationUnloadEntity(Simulation& simulation, entity::WRef entity);
 }
