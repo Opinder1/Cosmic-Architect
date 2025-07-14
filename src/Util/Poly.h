@@ -79,9 +79,6 @@ constexpr PolyTypeInfo MakeTypeInfo()
 template<class DerivedT, size_t N>
 class PolyType : Nocopy, Nomove
 {
-	template<class T>
-	friend class PolyArchetypeRegistry;
-
 	template<size_t N, class T>
 	friend class PolyFactory;
 

@@ -289,6 +289,8 @@ public:
 
 		PolyEntry& entry = it->second;
 
+		new_type_id |= Archetype::CreateTypeID<Header>();
+
 		Header* new_poly = UpdatePolyType(entry.header, entry.type_id, new_type_id);
 
 		entry.type_id = new_type_id;
@@ -323,7 +325,7 @@ public:
 	// Iterate over all polys that have the given components
 	void Iterate(TypeID types, cb::Callback<void(Ptr)> callback) const
 	{
-		std::lock_guard lock(m_mutex);
+		std::shared_lock lock(m_mutex);
 
 		for (auto&& [type_id, entry] : m_archetypes)
 		{
