@@ -16,7 +16,7 @@ namespace
 	{
 		std::thread::id write;
 		size_t write_recursion = 0;
-		SmallVector<std::thread::id, 16> read;
+		GrowingSmallVector<std::thread::id, 32> read;
 	};
 
 	struct ThreadObjectMap
