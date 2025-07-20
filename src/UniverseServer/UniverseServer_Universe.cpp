@@ -62,7 +62,7 @@ namespace voxel_game
 
 		simulation::SetPath(*m_simulation, path);
 
-		m_universe_entity = SimulationCreateEntity(*m_simulation, UUID{ 0, 0 }, universe::k_universe_type);
+		m_universe_entity = universe::CreateUniverse(*m_simulation, UUID{ 0, 0 });
 
 		m_universe_entity->*&rendering::CScenario::id = scenario;
 

@@ -755,7 +755,7 @@ namespace voxel_game::spatial3d
 
 			NodeMap scale_nodes = scale->*&Scale::nodes;
 
-			auto old_it = scale_nodes.find(entity->* & CEntity::last_node_pos);
+			auto old_it = scale_nodes.find(entity->*&CEntity::last_node_pos);
 			auto new_it = scale_nodes.find(required_node_pos);
 
 			DEBUG_ASSERT(old_it != scale_nodes.end(), "The current node should be loaded. If the node was unloaded it should have detached this entity");

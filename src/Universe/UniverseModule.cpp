@@ -54,13 +54,6 @@ namespace voxel_game::universe
 	void OnLoadUniverseEntity(Simulation& simulation, entity::WRef entity)
 	{
 		simulation.universes.push_back(entity::Ref(entity));
-
-		spatial3d::WorldPtr world = spatial3d::CreateWorld(simulation.universe_type, simulation.path);
-
-		world->*&spatial3d::World::node_size = 16;
-		world->*&spatial3d::PartialWorld::node_keepalive = 1s;
-
-		spatial3d::EntitySetWorld(simulation, entity, world);
 	}
 
 	void OnUnloadUniverseEntity(Simulation& simulation, entity::WRef entity)
@@ -86,6 +79,7 @@ namespace voxel_game::universe
 
 	void DeserializeUniverseNode(Simulation& simulation, spatial3d::WorldPtr world, spatial3d::NodePtr node, serialize::Reader& reader)
 	{
+		return;
 		size_t version = 0;
 		reader.Read(version);
 
@@ -125,12 +119,9 @@ namespace voxel_game::universe
 
 		for (size_t i = 0; i < 4; i++)
 		{
-			entity::Ref galaxy_entity = simulation.entity_factory.GetPoly(GenerateUUID());
-
-			simulation.entity_factory.AddTypes(galaxy_entity.GetID(), galaxy::k_galaxy_type);
+			entity::Ref galaxy_entity = SimulationCreateEntity(simulation, GenerateUUID(), galaxy::k_galaxy_type);
 
 			galaxy_entity->*&physics3d::CPosition::position = position;
-			galaxy_entity->*&physics3d::CScale::scale = godot::Vector3i{ scale_node_step / 4, 1, scale_node_step / 4 };
 
 			(node->*&spatial3d::Node::entities).insert(galaxy_entity.Reference());
 			(node->*&Node::galaxies).push_back(galaxy_entity.Reference());
@@ -190,5 +181,19 @@ namespace voxel_game::universe
 	void ScaleUpdate(Simulation& simulation, spatial3d::ScalePtr scale)
 	{
 
+	}
+
+	entity::Ref CreateUniverse(Simulation& simulation, UUID id)
+	{
+		entity::Ref entity = SimulationCreateEntity(simulation, id, k_universe_type);
+
+		spatial3d::WorldPtr world = spatial3d::CreateWorld(simulation.universe_type, simulation.path);
+
+		world->*&spatial3d::World::node_size = 16;
+		world->*&spatial3d::PartialWorld::node_keepalive = 1s;
+
+		spatial3d::EntitySetWorld(simulation, entity, world);
+
+		return entity;
 	}
 }

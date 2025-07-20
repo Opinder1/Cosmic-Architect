@@ -16,6 +16,8 @@ namespace voxel_game
 
 namespace voxel_game::galaxy
 {
+	extern const entity::TypeID k_galaxy_type;
+
 	// Module functions
 	void Initialize(Simulation& simulation);
 	void Uninitialize(Simulation& simulation);
