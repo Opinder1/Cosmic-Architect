@@ -180,7 +180,7 @@ namespace voxel_game::debugrender
 		{
 			if (!debug_world->entity && simulation.universes.size() > 0)
 			{
-				debug_world->entity = simulation.universes[0].Reference();
+				debug_world->entity = entity::Ref(simulation.universes[0]);
 			}
 
 			if (debug_world->entity)
