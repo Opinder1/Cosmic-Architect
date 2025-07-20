@@ -33,6 +33,24 @@ namespace voxel_game::spatial3d
 		{1, 1, 1},
 	};
 
+	void NodeReadIOTask(void* data)
+	{
+		IOTask* task = reinterpret_cast<IOTask*>(data);
+
+		task->status = task->database->Get(ToData(task->coord), &task->data);
+
+		task->finished = true;
+	}
+
+	void NodeWriteIOTask(void* data)
+	{
+		IOTask* task = reinterpret_cast<IOTask*>(data);
+
+		task->status = task->database->Set(ToData(task->coord), task->data);
+
+		task->finished = true;
+	}
+
 	// Convert a node child pos to an index in the parent. Does the opposite of node_child_offsets[].
 	uint8_t GetNodeParentIndex(godot::Vector3i pos)
 	{
@@ -85,39 +103,36 @@ namespace voxel_game::spatial3d
 	{
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 
+		std::vector<godot::Vector3i>* commands = nullptr;
+
 		switch (state)
 		{
 		case NodeState::Loading:
-			for (auto it = (scale->*&PartialScale::loading_nodes).begin(); it != (scale->*&PartialScale::loading_nodes).end();)
-			{
-				NodePtr node = (scale->*&Scale::nodes)[*it];
-
-				if (callback(node))
-				{
-					it = (scale->*&PartialScale::loading_nodes).erase(it);
-				}
-				else
-				{
-					it++;
-				}
-			}
+			commands = &(scale->*&PartialScale::loading_nodes);
 			break;
 
 		case NodeState::Unloading:
-			for (auto it = (scale->* & PartialScale::unloading_nodes).begin(); it != (scale->*&PartialScale::unloading_nodes).end();)
-			{
-				NodePtr node = (scale->*&Scale::nodes)[*it];
-
-				if (callback(node))
-				{
-					it = (scale->*&PartialScale::unloading_nodes).erase(it);
-				}
-				else
-				{
-					it++;
-				}
-			}
+			commands = &(scale->*&PartialScale::unloading_nodes);
 			break;
+
+		default:
+			DEBUG_PRINT_ERROR("Node state has no related command list");
+			DEBUG_CRASH();
+			return;
+		}
+
+		for (auto it = commands->begin(); it != commands->end();)
+		{
+			NodePtr node = (scale->*&Scale::nodes)[*it];
+
+			if (callback(node))
+			{
+				it = commands->erase(it);
+			}
+			else
+			{
+				it++;
+			}
 		}
 	}
 
@@ -294,7 +309,6 @@ namespace voxel_game::spatial3d
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 
 		TypeData& type = *(world->*&World::type);
-
 		DEBUG_THREAD_CHECK_WRITE(&type);
 
 		WorldForEachScale(world, [&](ScalePtr scale)
@@ -382,56 +396,11 @@ namespace voxel_game::spatial3d
 		}
 	}
 
-	void NodeReadTask(void* data)
-	{
-		IOTask* task = reinterpret_cast<IOTask*>(data);
-
-		NodeCoord coord{ task->node->*&Node::position, task->node->*&Node::scale_index };
-
-		tkrzw::Status status = task->database->Get(ToData(coord), &task->data);
-
-		if (status == tkrzw::Status::NOT_FOUND_ERROR)
-		{
-			for (const NodeGenerateCB& callback : task->type->generate_callbacks)
-			{
-				callback(task->world, task->node);
-			}
-		}
-		else
-		{
-			serialize::Reader reader{ task->data };
-
-			for (const NodeDeserializeCB& callback : task->type->deserialize_callbacks)
-			{
-				callback(task->world, task->node, reader);
-			}
-		}
-
-		task->finished = true;
-	}
-
-	void NodeWriteTask(void* data)
-	{
-		IOTask* task = reinterpret_cast<IOTask*>(data);
-
-		serialize::Writer writer{ task->data };
-
-		for (const NodeSerializeCB& callback : task->type->serialize_callbacks)
-		{
-			callback(task->world, task->node, writer);
-		}
-
-		NodeCoord coord{ task->node->*&Node::position, task->node->*&Node::scale_index };
-
-		task->database->Set(ToData(coord), task->data);
-
-		task->finished = true;
-	}
-
 	// Keep calling this function on a node until it returns true. When it returns true it means a read was done.
 	bool ProgressNodeReadTask(NodePtr node, WorldPtr world)
 	{
 		TypeData& type = *(world->*&World::type);
+		DEBUG_THREAD_CHECK_READ(&type);
 
 		std::unique_ptr<IOTask>& task = node->*&LocalNode::task;
 
@@ -442,11 +411,9 @@ namespace voxel_game::spatial3d
 			{
 				task = std::make_unique<IOTask>();
 				task->database = &(world->*&LocalWorld::database);
-				task->node = node;
-				task->world = world;
-				task->type = &type;
+				task->coord = NodeCoord{ node->*&Node::position, node->*&Node::scale_index };
 
-				uint64_t id = godot::WorkerThreadPool::get_singleton()->add_native_task(&NodeReadTask, (node->*&LocalNode::task).get());
+				godot::WorkerThreadPool::get_singleton()->add_native_task(&NodeReadIOTask, (node->*&LocalNode::task).get());
 				node->*&LocalNode::task_state = TaskState::ReadInProgress;
 			}
 			return false;
@@ -454,6 +421,28 @@ namespace voxel_game::spatial3d
 		case TaskState::ReadInProgress:
 			if (task->finished)
 			{
+				if (task->status == tkrzw::Status::SUCCESS)
+				{
+					serialize::Reader reader{ task->data };
+
+					for (const NodeDeserializeCB& callback : type.deserialize_callbacks)
+					{
+						callback(world, node, reader);
+					}
+				}
+				else if (task->status == tkrzw::Status::NOT_FOUND_ERROR)
+				{
+					for (const NodeGenerateCB& callback : type.generate_callbacks)
+					{
+						callback(world, node);
+					}
+				}
+				else
+				{
+					DEBUG_PRINT_ERROR("Failed to read a node from the database");
+					DEBUG_CRASH();
+				}
+
 				node->*&LocalNode::task_state = TaskState::ReadDone;
 				task.reset();
 				return false;
@@ -474,6 +463,7 @@ namespace voxel_game::spatial3d
 	bool ProgressNodeWriteTask(NodePtr node, WorldPtr world)
 	{
 		TypeData& type = *(world->*&World::type);
+		DEBUG_THREAD_CHECK_READ(&type);
 
 		std::unique_ptr<IOTask>& task = node->*&LocalNode::task;
 
@@ -484,11 +474,16 @@ namespace voxel_game::spatial3d
 			{
 				task = std::make_unique<IOTask>();
 				task->database = &(world->*&LocalWorld::database);
-				task->node = node;
-				task->world = world;
-				task->type = &type;
+				task->coord = NodeCoord{ node->*&Node::position, node->*&Node::scale_index };
 
-				uint64_t id = godot::WorkerThreadPool::get_singleton()->add_native_task(&NodeWriteTask, (node->*&LocalNode::task).get());
+				serialize::Writer writer{ task->data };
+
+				for (const NodeSerializeCB& callback : type.serialize_callbacks)
+				{
+					callback(world, node, writer);
+				}
+
+				godot::WorkerThreadPool::get_singleton()->add_native_task(&NodeWriteIOTask, (node->*&LocalNode::task).get());
 				node->*&LocalNode::task_state = TaskState::WriteInProgress;
 			}
 			return false;
@@ -496,6 +491,12 @@ namespace voxel_game::spatial3d
 		case TaskState::WriteInProgress:
 			if (task->finished)
 			{
+				if (task->status != tkrzw::Status::SUCCESS)
+				{
+					DEBUG_PRINT_ERROR("Failed to write a node to the database");
+					DEBUG_CRASH();
+				}
+
 				node->*&LocalNode::task_state = TaskState::WriteDone;
 				task.reset();
 				return true;
@@ -620,6 +621,7 @@ namespace voxel_game::spatial3d
 		DEBUG_THREAD_CHECK_READ(world.Data());
 
 		TypeData& type = *(world->*&World::type);
+		DEBUG_THREAD_CHECK_READ(&type);
 
 		// Try and create the node
 		auto&& [it, emplaced] = (scale->*&Scale::nodes).try_emplace(pos, nullptr);

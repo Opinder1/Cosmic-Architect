@@ -78,14 +78,14 @@ namespace voxel_game::spatial3d
 	{
 		// Database to read from
 		tkrzw::ShardDBM* database;
+
+		// Data
+		NodeCoord coord;
 		std::string data;
 		
-		// Flag to set when finished
+		// Set when finished
+		tkrzw::Status status;
 		bool finished = false;
-
-		NodePtr node;
-		WorldPtr world;
-		TypeData* type;
 	};
 
 	struct LocalNode : Nocopy, Nomove
