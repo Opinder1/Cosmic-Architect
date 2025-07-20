@@ -7,7 +7,7 @@
 
 // Small vector interface that is implemented with a static and growing buffer. Has the same api as a std::vector
 template<class DataT, class DerivedT>
-class SmallVectorBase
+class SmallVectorBase : Nocopy, Nomove
 {
 public:
     using iterator = DataT*;
@@ -149,7 +149,7 @@ public:
 
         for (size_t i = 0; i < count; i++)
         {
-            new (pos + i) DataT(first + i);
+            new (pos + i) DataT(*(first + i));
         }
 
         m_size += count;
@@ -324,6 +324,16 @@ class SmallVector : public SmallVectorBase<DataT, SmallVector<DataT, k_capacity>
 public:
     SmallVector() {}
 
+    SmallVector(const SmallVector& other)
+    {
+        insert(begin(), other.begin(), other.end());
+    }
+
+    SmallVector(SmallVector&& other)
+    {
+        swap(other);
+    }
+
     size_t max_size()
     {
         return k_capacity;
@@ -390,6 +400,16 @@ public:
         {
             delete[] m_buffer;
         }
+    }
+
+    GrowingSmallVector(const GrowingSmallVector& other)
+    {
+        insert(begin(), other.begin(), other.end());
+    }
+
+    GrowingSmallVector(GrowingSmallVector&& other)
+    {
+        swap(other);
     }
 
     size_t max_size()

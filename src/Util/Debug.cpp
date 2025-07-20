@@ -26,12 +26,13 @@ namespace
 	}
 	thread_object_map;
 
+	// Return true if the storage only contains instances of the target
 	template<class T, class Storage>
-	bool OnlyPresent(Storage storage, T o)
+	bool OnlyPresent(const Storage& storage, T target)
 	{
-		for (T i : storage)
+		for (T item : storage)
 		{
-			if (i != o)
+			if (item != target)
 			{
 				return false;
 			}
