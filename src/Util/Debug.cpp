@@ -25,6 +25,20 @@ namespace
 		robin_hood::unordered_map<const void*, ThreadObject> objects;
 	}
 	thread_object_map;
+
+	template<class T, class Storage>
+	bool OnlyPresent(Storage storage, T o)
+	{
+		for (T i : storage)
+		{
+			if (i != o)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
 }
 
 DebugThreadChecker::DebugThreadChecker(const void* object, bool write) :
@@ -39,10 +53,7 @@ DebugThreadChecker::DebugThreadChecker(const void* object, bool write) :
 
 	if (write)
 	{
-		if (!(object_data.read.size() == 1 && object_data.read.back() == thread_id)) // If we are the only one reading then we can write
-		{
-			DEBUG_ASSERT(object_data.read.size() == 0, "No other thread should be reading if we want to write");
-		}
+		DEBUG_ASSERT(OnlyPresent(object_data.read, thread_id), "No other thread should be reading if we want to write");
 
 		if (object_data.write_recursion++ == 0)
 		{
