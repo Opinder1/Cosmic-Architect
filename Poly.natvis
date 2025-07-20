@@ -3,10 +3,10 @@
   <Type Name="PolyType&lt;voxel_game::spatial3d::NodeType,*&gt;::Header">
     <DisplayString>size={archetype->m_total_size}</DisplayString>
     <Expand>
-      <Item Name="spatial3d"    Condition="archetype->m_type_offsets[1] != 65535">(voxel_game::spatial3d::Node*             )((uint8_t*)this + archetype->m_type_offsets[1])</Item>
-      <Item Name="spatial3d"    Condition="archetype->m_type_offsets[2] != 65535">(voxel_game::spatial3d::PartialNode*      )((uint8_t*)this + archetype->m_type_offsets[2])</Item>
-      <Item Name="spatial3d"    Condition="archetype->m_type_offsets[3] != 65535">(voxel_game::spatial3d::LocalNode*        )((uint8_t*)this + archetype->m_type_offsets[3])</Item>
-      <Item Name="spatial3d"    Condition="archetype->m_type_offsets[4] != 65535">(voxel_game::spatial3d::RemoteNode*       )((uint8_t*)this + archetype->m_type_offsets[4])</Item>
+      <Item Name="node"         Condition="archetype->m_type_offsets[1] != 65535">(voxel_game::spatial3d::Node*             )((uint8_t*)this + archetype->m_type_offsets[1])</Item>
+      <Item Name="partial"      Condition="archetype->m_type_offsets[2] != 65535">(voxel_game::spatial3d::PartialNode*      )((uint8_t*)this + archetype->m_type_offsets[2])</Item>
+      <Item Name="local"        Condition="archetype->m_type_offsets[3] != 65535">(voxel_game::spatial3d::LocalNode*        )((uint8_t*)this + archetype->m_type_offsets[3])</Item>
+      <Item Name="remote"       Condition="archetype->m_type_offsets[4] != 65535">(voxel_game::spatial3d::RemoteNode*       )((uint8_t*)this + archetype->m_type_offsets[4])</Item>
       <Item Name="universe"     Condition="archetype->m_type_offsets[5] != 65535">(voxel_game::universe::Node*              )((uint8_t*)this + archetype->m_type_offsets[5])</Item>
       <Item Name="galaxy"       Condition="archetype->m_type_offsets[6] != 65535">(voxel_game::galaxy::Node*                )((uint8_t*)this + archetype->m_type_offsets[6])</Item>
       <Item Name="voxel"        Condition="archetype->m_type_offsets[7] != 65535">(voxel_game::voxel::Node*                 )((uint8_t*)this + archetype->m_type_offsets[7])</Item>
@@ -17,7 +17,7 @@
   <Type Name="PolyType&lt;voxel_game::spatial3d::ScaleType,*&gt;::Header">
     <DisplayString>size={archetype->m_total_size}</DisplayString>
     <Expand>
-      <Item Name="spatial3d"    Condition="archetype->m_type_offsets[1] != 65535">(voxel_game::spatial3d::Scale*            )((uint8_t*)this + archetype->m_type_offsets[1])</Item>
+      <Item Name="scale"        Condition="archetype->m_type_offsets[1] != 65535">(voxel_game::spatial3d::Scale*            )((uint8_t*)this + archetype->m_type_offsets[1])</Item>
       <Item Name="partial"      Condition="archetype->m_type_offsets[2] != 65535">(voxel_game::spatial3d::PartialScale*     )((uint8_t*)this + archetype->m_type_offsets[2])</Item>
       <Item Name="universe"     Condition="archetype->m_type_offsets[3] != 65535">(voxel_game::universe::Scale*             )((uint8_t*)this + archetype->m_type_offsets[3])</Item>
       <Item Name="galaxy"       Condition="archetype->m_type_offsets[4] != 65535">(voxel_game::galaxy::Scale*               )((uint8_t*)this + archetype->m_type_offsets[4])</Item>
@@ -29,11 +29,11 @@
   <Type Name="PolyType&lt;voxel_game::spatial3d::WorldType,*&gt;::Header">
     <DisplayString>size={archetype->m_total_size}</DisplayString>
     <Expand>
-      <Item Name="spatial3d"    Condition="archetype->m_type_offsets[1] != 65535">(voxel_game::spatial3d::World*            )((uint8_t*)this + archetype->m_type_offsets[1])</Item>
+      <Item Name="world"        Condition="archetype->m_type_offsets[1] != 65535">(voxel_game::spatial3d::World*            )((uint8_t*)this + archetype->m_type_offsets[1])</Item>
       <Item Name="bounded"      Condition="archetype->m_type_offsets[2] != 65535">(voxel_game::spatial3d::BoundedWorld*     )((uint8_t*)this + archetype->m_type_offsets[2])</Item>
       <Item Name="partial"      Condition="archetype->m_type_offsets[3] != 65535">(voxel_game::spatial3d::PartialWorld*     )((uint8_t*)this + archetype->m_type_offsets[3])</Item>
-      <Item Name="partial"      Condition="archetype->m_type_offsets[4] != 65535">(voxel_game::spatial3d::LocalWorld*       )((uint8_t*)this + archetype->m_type_offsets[4])</Item>
-      <Item Name="partial"      Condition="archetype->m_type_offsets[5] != 65535">(voxel_game::spatial3d::RemoteWorld*      )((uint8_t*)this + archetype->m_type_offsets[5])</Item>
+      <Item Name="local"        Condition="archetype->m_type_offsets[4] != 65535">(voxel_game::spatial3d::LocalWorld*       )((uint8_t*)this + archetype->m_type_offsets[4])</Item>
+      <Item Name="remote"       Condition="archetype->m_type_offsets[5] != 65535">(voxel_game::spatial3d::RemoteWorld*      )((uint8_t*)this + archetype->m_type_offsets[5])</Item>
       <Item Name="universe"     Condition="archetype->m_type_offsets[6] != 65535">(voxel_game::universe::World*             )((uint8_t*)this + archetype->m_type_offsets[6])</Item>
       <Item Name="galaxy"       Condition="archetype->m_type_offsets[7] != 65535">(voxel_game::galaxy::World*               )((uint8_t*)this + archetype->m_type_offsets[7])</Item>
       <Item Name="voxel"        Condition="archetype->m_type_offsets[8] != 65535">(voxel_game::voxel::World*                )((uint8_t*)this + archetype->m_type_offsets[8])</Item>
@@ -41,7 +41,7 @@
     </Expand>
   </Type>
 
-  <Type Name="PolyType&lt;voxel_game::entity::Type,*&gt;::Header">
+  <Type Name="PolyType&lt;voxel_game::entity::Factory::Archetype,*&gt;::Header">
     <DisplayString>size={archetype->m_total_size}</DisplayString>
     <Expand>
       <Item Name="name"         Condition="archetype->m_type_offsets[1] !=  65535">(voxel_game::entity::CName*                )((uint8_t*)this + archetype->m_type_offsets[1])</Item>
