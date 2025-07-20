@@ -193,10 +193,6 @@ namespace voxel_game::spatial3d
 		std::vector<NodeSerializeCB> serialize_callbacks;
 		std::vector<NodeDeserializeCB> deserialize_callbacks;
 		std::vector<NodeGenerateCB> generate_callbacks;
-
-		// Arrays of worlds and scales of this type for tasks to reference
-		std::vector<WorldPtr> worlds;
-		std::vector<ScalePtr> scales;
 	};
 
 	using EntityCB = cb::Callback<void(entity::WRef)>;
@@ -219,7 +215,7 @@ namespace voxel_game::spatial3d
 	bool IsWorldUnloading(WorldPtr world);
 
 	// Destroy a spatial world
-	void DestroyWorld(WorldPtr world);
+	void DestroyWorld(TypeData& type, WorldPtr world);
 
 	size_t WorldGetNodeCount(WorldPtr world);
 	size_t ScaleGetNodeCount(ScalePtr scale);

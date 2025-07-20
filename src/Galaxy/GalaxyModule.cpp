@@ -3,9 +3,11 @@
 
 #include "UniverseSimulation.h"
 
+#include "Entity/EntityModule.h"
 #include "Spatial3D/SpatialModule.h"
 #include "Render/RenderModule.h"
-#include "Entity/EntityModule.h"
+#include "DebugRender/DebugRenderModule.h"
+#include "Universe/UniverseModule.h"
 
 #include "Universe/UniverseComponents.h"
 #include "Physics3D/PhysicsComponents.h"
@@ -95,6 +97,14 @@ namespace voxel_game::galaxy
 		simulation.galaxy_type.world_type.AddType<spatial3d::LocalWorld>();
 		simulation.galaxy_type.world_type.AddType<spatial3d::RemoteWorld>();
 		simulation.galaxy_type.world_type.AddType<World>();
+
+		simulation.galaxy_type.world_updates.push_back(&spatial3d::WorldUpdate);
+		simulation.galaxy_type.world_updates.push_back(&debugrender::WorldUpdate);
+		simulation.galaxy_type.world_updates.push_back(&universe::WorldUpdate);
+
+		simulation.galaxy_type.scale_updates.push_back(&spatial3d::ScaleUpdate);
+		simulation.galaxy_type.scale_updates.push_back(&debugrender::ScaleUpdate);
+		simulation.galaxy_type.scale_updates.push_back(&universe::ScaleUpdate);
 
 		simulation.entity_factory.AddCallback<CGalaxy>(PolyEvent::MainUpdate, cb::BindArg<&OnUpdateGalaxyEntity>(simulation));
 		simulation.entity_factory.AddCallback<CGalaxy>(PolyEvent::BeginLoad, cb::BindArg<&OnLoadGalaxyEntity>(simulation));

@@ -168,180 +168,30 @@ namespace voxel_game
 		}
 	}
 
-	void SimulationUniverseWorldUpdateTask(Simulation& simulation, size_t index)
+	template<SpatialTypeData Simulation::* type>
+	void SimulationWorldUpdateTask(Simulation& simulation, size_t index)
 	{
-		spatial3d::WorldPtr world = simulation.universe_type.worlds[index];
+		spatial3d::WorldPtr world = (simulation.*type).worlds[index];
 
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 
-		spatial3d::WorldUpdate(simulation, world);
-		debugrender::WorldUpdate(simulation, world);
-		universe::WorldUpdate(simulation, world);
+		for (auto callback : (simulation.*type).world_updates)
+		{
+			callback(simulation, world);
+		}
 	}
 
-	void SimulationGalaxyWorldUpdateTask(Simulation& simulation, size_t index)
+	template<SpatialTypeData Simulation::* type>
+	void SimulationScaleUpdateTask(Simulation& simulation, size_t index)
 	{
-		spatial3d::WorldPtr world = simulation.galaxy_type.worlds[index];
-
-		DEBUG_THREAD_CHECK_WRITE(world.Data());
-
-		spatial3d::WorldUpdate(simulation, world);
-		debugrender::WorldUpdate(simulation, world);
-		galaxy::WorldUpdate(simulation, world);
-	}
-
-	void SimulationStarSystemWorldUpdateTask(Simulation& simulation, size_t index)
-	{
-		spatial3d::WorldPtr world = simulation.star_system_type.worlds[index];
-
-		DEBUG_THREAD_CHECK_WRITE(world.Data());
-
-		spatial3d::WorldUpdate(simulation, world);
-		debugrender::WorldUpdate(simulation, world);
-	}
-
-	void SimulationPlanetWorldUpdateTask(Simulation& simulation, size_t index)
-	{
-		spatial3d::WorldPtr world = simulation.planet_type.worlds[index];
-
-		DEBUG_THREAD_CHECK_WRITE(world.Data());
-
-		spatial3d::WorldUpdate(simulation, world);
-		debugrender::WorldUpdate(simulation, world);
-	}
-
-	void SimulationSpaceStationWorldUpdateTask(Simulation& simulation, size_t index)
-	{
-		spatial3d::WorldPtr world = simulation.space_station_type.worlds[index];
-
-		DEBUG_THREAD_CHECK_WRITE(world.Data());
-
-		spatial3d::WorldUpdate(simulation, world);
-		debugrender::WorldUpdate(simulation, world);
-	}
-
-	void SimulationSpaceShipWorldUpdateTask(Simulation& simulation, size_t index)
-	{
-		spatial3d::WorldPtr world = simulation.space_ship_type.worlds[index];
-
-		DEBUG_THREAD_CHECK_WRITE(world.Data());
-
-		spatial3d::WorldUpdate(simulation, world);
-		debugrender::WorldUpdate(simulation, world);
-	}
-
-	void SimulationVehicleWorldUpdateTask(Simulation& simulation, size_t index)
-	{
-		spatial3d::WorldPtr world = simulation.vehicle_type.worlds[index];
-
-		DEBUG_THREAD_CHECK_WRITE(world.Data());
-
-		spatial3d::WorldUpdate(simulation, world);
-		debugrender::WorldUpdate(simulation, world);
-	}
-
-	// Do parallel spatial world updates
-	void SimulationWorldUpdate(Simulation& simulation)
-	{
-		TaskData world_tasks[7] = {
-			{ simulation, &SimulationUniverseWorldUpdateTask, simulation.universe_type.worlds.size() },
-			{ simulation, &SimulationGalaxyWorldUpdateTask, simulation.galaxy_type.worlds.size() },
-			{ simulation, &SimulationStarSystemWorldUpdateTask, simulation.star_system_type.worlds.size() },
-			{ simulation, &SimulationPlanetWorldUpdateTask, simulation.planet_type.worlds.size() },
-			{ simulation, &SimulationSpaceStationWorldUpdateTask, simulation.space_station_type.worlds.size() },
-			{ simulation, &SimulationSpaceShipWorldUpdateTask, simulation.space_ship_type.worlds.size() },
-			{ simulation, &SimulationVehicleWorldUpdateTask, simulation.vehicle_type.worlds.size() },
-		};
-
-		SimulationDoMultitasks(simulation, world_tasks);
-	}
-
-	void SimulationUniverseScaleUpdateTask(Simulation& simulation, size_t index)
-	{
-		spatial3d::ScalePtr scale = simulation.universe_type.scales[index];
+		spatial3d::ScalePtr scale = (simulation.*type).scales[index];
 
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
 
-		spatial3d::ScaleUpdate(simulation, scale);
-		debugrender::ScaleUpdate(simulation, scale);
-		universe::ScaleUpdate(simulation, scale);
-	}
-
-	void SimulationGalaxyScaleUpdateTask(Simulation& simulation, size_t index)
-	{
-		spatial3d::ScalePtr scale = simulation.galaxy_type.scales[index];
-
-		DEBUG_THREAD_CHECK_WRITE(scale.Data());
-
-		spatial3d::ScaleUpdate(simulation, scale);
-		debugrender::ScaleUpdate(simulation, scale);
-		galaxy::ScaleUpdate(simulation, scale);
-	}
-
-	void SimulationStarSystemScaleUpdateTask(Simulation& simulation, size_t index)
-	{
-		spatial3d::ScalePtr scale = simulation.star_system_type.scales[index];
-
-		DEBUG_THREAD_CHECK_WRITE(scale.Data());
-
-		spatial3d::ScaleUpdate(simulation, scale);
-		debugrender::ScaleUpdate(simulation, scale);
-	}
-
-	void SimulationPlanetScaleUpdateTask(Simulation& simulation, size_t index)
-	{
-		spatial3d::ScalePtr scale = simulation.planet_type.scales[index];
-
-		DEBUG_THREAD_CHECK_WRITE(scale.Data());
-
-		spatial3d::ScaleUpdate(simulation, scale);
-		debugrender::ScaleUpdate(simulation, scale);
-	}
-
-	void SimulationSpaceStationScaleUpdateTask(Simulation& simulation, size_t index)
-	{
-		spatial3d::ScalePtr scale = simulation.space_station_type.scales[index];
-
-		DEBUG_THREAD_CHECK_WRITE(scale.Data());
-
-		spatial3d::ScaleUpdate(simulation, scale);
-		debugrender::ScaleUpdate(simulation, scale);
-	}
-
-	void SimulationSpaceShipScaleUpdateTask(Simulation& simulation, size_t index)
-	{
-		spatial3d::ScalePtr scale = simulation.space_ship_type.scales[index];
-
-		DEBUG_THREAD_CHECK_WRITE(scale.Data());
-
-		spatial3d::ScaleUpdate(simulation, scale);
-		debugrender::ScaleUpdate(simulation, scale);
-	}
-
-	void SimulationVehicleScaleUpdateTask(Simulation& simulation, size_t index)
-	{
-		spatial3d::ScalePtr scale = simulation.vehicle_type.scales[index];
-
-		DEBUG_THREAD_CHECK_WRITE(scale.Data());
-
-		spatial3d::ScaleUpdate(simulation, scale);
-		debugrender::ScaleUpdate(simulation, scale);
-	}
-
-	// Do parallel spatial scale updates
-	void SimulationScaleUpdate(Simulation& simulation)
-	{
-		TaskData scale_tasks[7] = {
-			{ simulation, &SimulationUniverseScaleUpdateTask, simulation.universe_type.scales.size() },
-			{ simulation, &SimulationGalaxyScaleUpdateTask, simulation.galaxy_type.scales.size() },
-			{ simulation, &SimulationStarSystemScaleUpdateTask, simulation.star_system_type.scales.size() },
-			{ simulation, &SimulationPlanetScaleUpdateTask, simulation.planet_type.scales.size() },
-			{ simulation, &SimulationSpaceStationScaleUpdateTask, simulation.space_station_type.scales.size() },
-			{ simulation, &SimulationSpaceShipScaleUpdateTask, simulation.space_ship_type.scales.size() },
-			{ simulation, &SimulationVehicleScaleUpdateTask, simulation.vehicle_type.scales.size() },
-		};
-
-		SimulationDoMultitasks(simulation, scale_tasks);
+		for (auto callback : (simulation.*type).scale_updates)
+		{
+			callback(simulation, scale);
+		}
 	}
 
 	void SimulationEntityUpdateTask(Simulation& simulation, size_t index)
@@ -352,75 +202,27 @@ namespace voxel_game
 
 		simulation.entity_factory.DoEvent(PolyEvent::TaskUpdate, entity);
 	}
-
-	// Run all entities in parallel doing entity specific code
-	void SimulationEntityUpdate(Simulation& simulation)
-	{
-		TaskData entity_task = { simulation, &SimulationEntityUpdateTask, simulation.updating_entities.size() };
-
-		SimulationDoTasks(simulation, entity_task);
-	}
 	
 	void SimulationWorkerUpdateTask(Simulation& simulation, size_t index)
 	{
 		simulation::SetContext(simulation.thread_contexts[index]);
 
-		simulation::WorkerUpdate(simulation, index);
-		rendering::WorkerUpdate(simulation, index);
-		debugrender::WorkerUpdate(simulation, index);
-		spatial3d::WorkerUpdate(simulation, index);
-		universe::WorkerUpdate(simulation, index);
-		galaxy::WorkerUpdate(simulation, index);
-	}
-
-	// Run worker tasks in parallel for systems that need them. There is usually one per CPU core
-	void SimulationWorkerUpdate(Simulation& simulation)
-	{
-		TaskData worker_task{ simulation, &SimulationWorkerUpdateTask, simulation.worker_count };
-
-		SimulationDoTasks(simulation, worker_task);
+		for (Module& module : simulation.modules)
+		{
+			module.worker_update(simulation, index);
+		}
 	}
 
 	bool IsSimulationUnloadDone(Simulation& simulation)
 	{
-		return	simulation::IsUnloadDone(simulation) &&
-				debugrender::IsUnloadDone(simulation) &&
-				spatial3d::IsUnloadDone(simulation) &&
-				universe::IsUnloadDone(simulation) &&
-				galaxy::IsUnloadDone(simulation);
-	}
+		bool unload_done = true;
 
-	// Do singlethreaded update
-	void SimulationSingleUpdate(Simulation& simulation)
-	{
-		simulation::Update(simulation);
-		rendering::Update(simulation);
-		debugrender::Update(simulation);
-		spatial3d::Update(simulation);
-		universe::Update(simulation);
-		galaxy::Update(simulation);
-
-		for (ThreadContext& context : simulation.thread_contexts)
+		for (Module& module : simulation.modules)
 		{
-			for (entity::WRef entity : context.load_commands)
-			{
-				simulation.entity_factory.DoEvent(PolyEvent::BeginLoad, entity);
-			}
-
-			context.load_commands.clear();
-
-			for (entity::WRef entity : context.unload_commands)
-			{
-				simulation.entity_factory.DoEvent(PolyEvent::BeginUnload, entity);
-			}
-
-			context.unload_commands.clear();
+			unload_done &= module.is_unload_done(simulation);
 		}
 
-		for (entity::WRef entity : simulation.updating_entities)
-		{
-			simulation.entity_factory.DoEvent(PolyEvent::MainUpdate, entity);
-		}
+		return unload_done;
 	}
 
 	void SimulationInitialize(Simulation& simulation)
@@ -429,12 +231,10 @@ namespace voxel_game
 		
 		godot::print_line("Initializing simulation");
 
-		simulation::Initialize(simulation);
-		rendering::Initialize(simulation);
-		debugrender::Initialize(simulation);
-		spatial3d::Initialize(simulation);
-		universe::Initialize(simulation);
-		galaxy::Initialize(simulation);
+		for (Module& module : simulation.modules)
+		{
+			module.initialize(simulation);
+		}
 	}
 
 	void SimulationUnload(Simulation& simulation)
@@ -467,12 +267,10 @@ namespace voxel_game
 		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
 
 		// Unload modules
-		galaxy::Uninitialize(simulation);
-		universe::Uninitialize(simulation);
-		spatial3d::Uninitialize(simulation);
-		debugrender::Uninitialize(simulation);
-		rendering::Uninitialize(simulation);
-		simulation::Uninitialize(simulation);
+		for (auto it = simulation.modules.rbegin(); it != simulation.modules.rend(); it++)
+		{
+			it->uninitialize(simulation);
+		}
 
 		// Finally cleanup the entity factory after all references should have been removed
 		simulation.entity_factory.Cleanup();
@@ -483,11 +281,69 @@ namespace voxel_game
 	{
 		DEBUG_THREAD_CHECK_WRITE(&simulation); // Should be called singlethreaded
 
-		SimulationWorldUpdate(simulation);
-		SimulationScaleUpdate(simulation);
-		SimulationEntityUpdate(simulation);
-		SimulationWorkerUpdate(simulation);
-		SimulationSingleUpdate(simulation);
+		// Do parallel spatial world updates
+		TaskData world_tasks[7] = {
+			{ simulation, &SimulationWorldUpdateTask<&Simulation::universe_type>, simulation.universe_type.worlds.size() },
+			{ simulation, &SimulationWorldUpdateTask<&Simulation::galaxy_type>, simulation.galaxy_type.worlds.size() },
+			{ simulation, &SimulationWorldUpdateTask<&Simulation::star_system_type>, simulation.star_system_type.worlds.size() },
+			{ simulation, &SimulationWorldUpdateTask<&Simulation::planet_type>, simulation.planet_type.worlds.size() },
+			{ simulation, &SimulationWorldUpdateTask<&Simulation::space_station_type>, simulation.space_station_type.worlds.size() },
+			{ simulation, &SimulationWorldUpdateTask<&Simulation::space_ship_type>, simulation.space_ship_type.worlds.size() },
+			{ simulation, &SimulationWorldUpdateTask<&Simulation::vehicle_type>, simulation.vehicle_type.worlds.size() },
+		};
+
+		SimulationDoMultitasks(simulation, world_tasks);
+
+		// Do parallel spatial scale updates
+		TaskData scale_tasks[7] = {
+			{ simulation, &SimulationScaleUpdateTask<&Simulation::universe_type>, simulation.universe_type.scales.size() },
+			{ simulation, &SimulationScaleUpdateTask<&Simulation::galaxy_type>, simulation.galaxy_type.scales.size() },
+			{ simulation, &SimulationScaleUpdateTask<&Simulation::star_system_type>, simulation.star_system_type.scales.size() },
+			{ simulation, &SimulationScaleUpdateTask<&Simulation::planet_type>, simulation.planet_type.scales.size() },
+			{ simulation, &SimulationScaleUpdateTask<&Simulation::space_station_type>, simulation.space_station_type.scales.size() },
+			{ simulation, &SimulationScaleUpdateTask<&Simulation::space_ship_type>, simulation.space_ship_type.scales.size() },
+			{ simulation, &SimulationScaleUpdateTask<&Simulation::vehicle_type>, simulation.vehicle_type.scales.size() },
+		};
+
+		SimulationDoMultitasks(simulation, scale_tasks);
+
+		// Run all entities in parallel doing entity specific code
+		TaskData entity_task = { simulation, &SimulationEntityUpdateTask, simulation.updating_entities.size() };
+
+		SimulationDoTasks(simulation, entity_task);
+
+		// Run worker tasks in parallel for systems that need them. There is usually one per CPU core
+		TaskData worker_task{ simulation, &SimulationWorkerUpdateTask, simulation.worker_count };
+
+		SimulationDoTasks(simulation, worker_task);
+
+		// Do singlethreaded update
+		for (Module& module : simulation.modules)
+		{
+			module.update(simulation);
+		}
+
+		for (ThreadContext& context : simulation.thread_contexts)
+		{
+			for (entity::WRef entity : context.load_commands)
+			{
+				simulation.entity_factory.DoEvent(PolyEvent::BeginLoad, entity);
+			}
+
+			context.load_commands.clear();
+
+			for (entity::WRef entity : context.unload_commands)
+			{
+				simulation.entity_factory.DoEvent(PolyEvent::BeginUnload, entity);
+			}
+
+			context.unload_commands.clear();
+		}
+
+		for (entity::WRef entity : simulation.updating_entities)
+		{
+			simulation.entity_factory.DoEvent(PolyEvent::MainUpdate, entity);
+		}
 
 		simulation.entity_factory.Cleanup();
 	}

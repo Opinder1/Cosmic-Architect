@@ -1,9 +1,10 @@
 #include "UniverseModule.h"
 #include "UniverseSimulation.h"
 
+#include "Entity/EntityModule.h"
+#include "DebugRender/DebugRenderModule.h"
 #include "Render/RenderModule.h"
 #include "Galaxy/GalaxyModule.h"
-#include "Entity/EntityModule.h"
 #include "Spatial3D/SpatialModule.h"
 
 #include "UniverseComponents.h"
@@ -105,6 +106,7 @@ namespace voxel_game::universe
 
 	void GenerateUniverseNode(Simulation& simulation, spatial3d::WorldPtr world, spatial3d::NodePtr node)
 	{
+		return;
 		if ((node->*&spatial3d::Node::position).y != 0)
 		{
 			return;
@@ -143,6 +145,14 @@ namespace voxel_game::universe
 		simulation.universe_type.world_type.AddType<spatial3d::PartialWorld>();
 		simulation.universe_type.world_type.AddType<spatial3d::LocalWorld>();
 		simulation.universe_type.world_type.AddType<World>();
+
+		simulation.universe_type.world_updates.push_back(&spatial3d::WorldUpdate);
+		simulation.universe_type.world_updates.push_back(&debugrender::WorldUpdate);
+		simulation.universe_type.world_updates.push_back(&universe::WorldUpdate);
+
+		simulation.universe_type.scale_updates.push_back(&spatial3d::ScaleUpdate);
+		simulation.universe_type.scale_updates.push_back(&debugrender::ScaleUpdate);
+		simulation.universe_type.scale_updates.push_back(&universe::ScaleUpdate);
 
 		simulation.universe_type.serialize_callbacks.push_back(cb::BindArg<&SerializeUniverseNode>(simulation));
 		simulation.universe_type.deserialize_callbacks.push_back(cb::BindArg<&DeserializeUniverseNode>(simulation));

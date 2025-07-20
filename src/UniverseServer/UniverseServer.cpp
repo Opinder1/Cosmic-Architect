@@ -2,6 +2,7 @@
 #include "UniverseServer_StringNames.h"
 
 #include "UniverseSimulation.h"
+#include "Modules.h"
 
 #include "Physics3D/PhysicsComponents.h"
 
@@ -50,6 +51,13 @@ namespace voxel_game
 	void UniverseServer::DoSimulationLoad()
 	{
 		m_simulation = std::make_unique<Simulation>();
+
+		m_simulation->modules.push_back(simulation_module_schematic);
+		m_simulation->modules.push_back(rendering_module_schematic);
+		m_simulation->modules.push_back(debugrender_module_schematic);
+		m_simulation->modules.push_back(spatial3d_module_schematic);
+		m_simulation->modules.push_back(universe_module_schematic);
+		m_simulation->modules.push_back(galaxy_module_schematic);
 
 		SimulationInitialize(*m_simulation);
 

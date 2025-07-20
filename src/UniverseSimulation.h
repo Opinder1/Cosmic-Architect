@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Modules.h"
+
 #include "Render/RenderAllocator.h"
 
 #include "Spatial3D/SpatialPoly.h"
@@ -44,6 +46,17 @@ namespace voxel_game
 		rendering::Allocator allocator;
 	};
 
+	// Extra for spatial types
+	struct SpatialTypeData : spatial3d::TypeData
+	{
+		std::vector<void(*)(Simulation&, spatial3d::WorldPtr)> world_updates;
+		std::vector<void(*)(Simulation&, spatial3d::ScalePtr)> scale_updates;
+
+		// Arrays of worlds and scales of this type for tasks to reference
+		std::vector<spatial3d::WorldPtr> worlds;
+		std::vector<spatial3d::ScalePtr> scales;
+	};
+
 	struct Simulation
 	{
 		// Simulation
@@ -64,17 +77,19 @@ namespace voxel_game
 
 		std::vector<ThreadContext> thread_contexts;
 
+		std::vector<Module> modules;
+
 		// Spatial
 		std::vector<spatial3d::WorldPtr> spatial_worlds;
 		std::vector<spatial3d::ScalePtr> spatial_scales;
 
-		spatial3d::TypeData universe_type;
-		spatial3d::TypeData galaxy_type;
-		spatial3d::TypeData star_system_type;
-		spatial3d::TypeData planet_type;
-		spatial3d::TypeData space_station_type;
-		spatial3d::TypeData space_ship_type;
-		spatial3d::TypeData vehicle_type;
+		SpatialTypeData universe_type;
+		SpatialTypeData galaxy_type;
+		SpatialTypeData star_system_type;
+		SpatialTypeData planet_type;
+		SpatialTypeData space_station_type;
+		SpatialTypeData space_ship_type;
+		SpatialTypeData vehicle_type;
 
 		// Entity
 		entity::Factory entity_factory; // These entities are being updated every frame

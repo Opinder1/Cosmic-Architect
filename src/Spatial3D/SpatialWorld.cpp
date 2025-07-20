@@ -244,13 +244,11 @@ namespace voxel_game::spatial3d
 
 	WorldPtr CreateWorld(TypeData& type, const godot::String& path)
 	{
-		DEBUG_THREAD_CHECK_WRITE(&type);
+		DEBUG_THREAD_CHECK_READ(&type);
 
 		WorldPtr world = type.world_type.CreatePoly();
 
 		world->*&World::type = &type;
-
-		type.worlds.push_back(world);
 
 		for (uint8_t scale_index = world->*&World::max_scale; scale_index < type.max_scale; scale_index++)
 		{
@@ -261,8 +259,6 @@ namespace voxel_game::spatial3d
 			scale->*&Scale::index = scale_index;
 
 			(world->*&World::scales)[scale_index] = scale;
-
-			type.scales.push_back(scale);
 		}
 
 		world->*&World::max_scale = type.max_scale;
@@ -282,7 +278,7 @@ namespace voxel_game::spatial3d
 
 			if (status != tkrzw::Status::SUCCESS)
 			{
-				DestroyWorld(world);
+				DestroyWorld(type, world);
 				return nullptr;
 			}
 		}
@@ -304,12 +300,10 @@ namespace voxel_game::spatial3d
 		return world->*&World::unloading;
 	}
 
-	void DestroyWorld(WorldPtr world)
+	void DestroyWorld(TypeData& type, WorldPtr world)
 	{
+		DEBUG_THREAD_CHECK_READ(&type);
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
-
-		TypeData& type = *(world->*&World::type);
-		DEBUG_THREAD_CHECK_WRITE(&type);
 
 		WorldForEachScale(world, [&](ScalePtr scale)
 		{
@@ -320,12 +314,8 @@ namespace voxel_game::spatial3d
 				DEBUG_ASSERT((scale->*&PartialScale::unloading_nodes).empty(), "All commands should have been destroyed before destroying the world");
 			}
 
-			unordered_erase(type.scales, scale);
-
 			type.scale_type.DestroyPoly(scale);
 		});
-
-		unordered_erase(type.worlds, world);
 
 		type.world_type.DestroyPoly(world);
 	}

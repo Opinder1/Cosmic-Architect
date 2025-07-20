@@ -37,6 +37,11 @@ namespace voxel_game::rendering
         }
     }
 
+    bool IsUnloadDone(Simulation& simulation)
+    {
+        return true;
+    }
+
 	void Update(Simulation& simulation)
     {
         CommandServer* cqserver = CommandServer::get_singleton();

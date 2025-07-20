@@ -17,11 +17,19 @@ namespace voxel_game::spatial3d
 {
 	void OnLoadSpatialEntity(Simulation& simulation, entity::WRef entity)
 	{
-		simulation.spatial_worlds.push_back(entity->*&CWorld::world);
+		WorldPtr world = entity->*&CWorld::world;
 
-		WorldForEachScale(entity->*&CWorld::world, [&simulation](ScalePtr scale)
+		SpatialTypeData& type = *static_cast<SpatialTypeData*>(world->*&World::type);
+
+		simulation.spatial_worlds.push_back(world);
+
+		type.worlds.push_back(world);
+
+		WorldForEachScale(world, [&](ScalePtr scale)
 		{
 			simulation.spatial_scales.push_back(scale);
+
+			type.scales.push_back(scale);
 		});
 	}
 
@@ -68,14 +76,20 @@ namespace voxel_game::spatial3d
 
 			if (IsWorldUnloading(world) && WorldGetNodeCount(world) == 0)
 			{
-				WorldForEachScale(world, [&simulation](ScalePtr scale)
+				SpatialTypeData& type = *static_cast<SpatialTypeData*>(world->*&World::type);
+
+				WorldForEachScale(world, [&](ScalePtr scale)
 				{
 					unordered_erase(simulation.spatial_scales, scale);
+
+					unordered_erase(type.scales, scale);
 				});
+
+				unordered_erase(type.worlds, world);
 
 				unordered_erase_it(simulation.spatial_worlds, it);
 
-				DestroyWorld(world);
+				DestroyWorld(type, world);
 			}
 			else
 			{
