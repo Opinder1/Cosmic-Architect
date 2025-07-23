@@ -1,5 +1,5 @@
 #include "UniverseModule.h"
-#include "UniverseSimulation.h"
+#include "UniverseWorld.h"
 
 #include "Entity/EntityModule.h"
 #include "DebugRender/DebugRenderModule.h"
@@ -7,25 +7,19 @@
 #include "Galaxy/GalaxyModule.h"
 #include "Spatial3D/SpatialModule.h"
 
-#include "UniverseComponents.h"
-#include "Entity/EntityComponents.h"
-#include "Galaxy/GalaxyComponents.h"
-#include "Spatial3D/SpatialComponents.h"
-#include "Physics3D/PhysicsComponents.h"
-#include "Render/RenderComponents.h"
-
-#include "UniverseWorld.h"
+#include "UniverseSimulation.h"
+#include "Components.h"
 
 #include "Util/Debug.h"
 
 namespace voxel_game::universe
 {
 	const entity::TypeID k_universe_type = entity::Factory::Archetype::CreateTypeID<
-		universe::CUniverse,
-		entity::CRelationship,
-		spatial3d::CWorld,
-		rendering::CScenario,
-		rendering::CTransform
+		CUniverse,
+		CRelationship,
+		CWorld,
+		CScenario,
+		CTransform
 	>();
 
 	void LoadNodeRandomly(Simulation& simulation, spatial3d::WorldPtr world, spatial3d::NodePtr node)
@@ -80,7 +74,6 @@ namespace voxel_game::universe
 
 	void DeserializeUniverseNode(Simulation& simulation, spatial3d::WorldPtr world, spatial3d::NodePtr node, serialize::Reader& reader)
 	{
-		return;
 		size_t version = 0;
 		reader.Read(version);
 
@@ -99,14 +92,13 @@ namespace voxel_game::universe
 
 			entity::Ref entity = SimulationCreateEntity(simulation, id, types);
 
-			(node->*&spatial3d::Node::entities).insert(entity.Reference());
-			(node->*&Node::galaxies).push_back(entity.Reference());
+			(node->*&spatial3d::Node::entities).push_back(entity.Reference());
+			(node->*&Node::galaxies).push_back(entity);
 		}
 	}
 
 	void GenerateUniverseNode(Simulation& simulation, spatial3d::WorldPtr world, spatial3d::NodePtr node)
 	{
-		return;
 		if ((node->*&spatial3d::Node::position).y != 0)
 		{
 			return;
@@ -123,10 +115,10 @@ namespace voxel_game::universe
 		{
 			entity::Ref galaxy_entity = SimulationCreateEntity(simulation, GenerateUUID(), galaxy::k_galaxy_type);
 
-			galaxy_entity->*&physics3d::CPosition::position = position;
+			galaxy_entity->*&CPosition::position = position;
 
-			(node->*&spatial3d::Node::entities).insert(galaxy_entity.Reference());
-			(node->*&Node::galaxies).push_back(galaxy_entity.Reference());
+			(node->*&spatial3d::Node::entities).push_back(galaxy_entity.Reference());
+			(node->*&Node::galaxies).push_back(galaxy_entity);
 		}
 	}
 

@@ -1,14 +1,10 @@
 #include "VoxelRenderModule.h"
-#include "VoxelRenderComponents.h"
 #include "VoxelRenderWorld.h"
 
-#include "Voxel/VoxelComponents.h"
-
-#include "Spatial3D/SpatialComponents.h"
 #include "Spatial3D/SpatialModule.h"
-
-#include "Render/RenderComponents.h"
 #include "Render/RenderModule.h"
+
+#include "Components.h"
 
 #include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/variant/packed_vector3_array.hpp>

@@ -1,13 +1,11 @@
 #include "DebugRenderModule.h"
 
-#include "UniverseSimulation.h"
-
-#include "Render/RenderComponents.h"
-#include "Spatial3D/SpatialComponents.h"
-
 #include "Spatial3D/SpatialWorld.h"
 
 #include "Render/RenderModule.h"
+
+#include "UniverseSimulation.h"
+#include "Components.h"
 
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/engine.hpp>
@@ -187,32 +185,32 @@ namespace voxel_game::debugrender
 			{
 				godot::Transform3D transform;
 
-				if (debug_world->entity.Has<physics3d::CPosition>())
+				if (debug_world->entity.Has<CPosition>())
 				{
-					const godot::Vector3& position = debug_world->entity->*&physics3d::CPosition::position;
+					const godot::Vector3& position = debug_world->entity->*&CPosition::position;
 
 					transform.set_origin(position);
 				}
 
-				if (debug_world->entity.Has<physics3d::CRotation>())
+				if (debug_world->entity.Has<CRotation>())
 				{
-					const godot::Quaternion& rotation = debug_world->entity->*&physics3d::CRotation::rotation;
+					const godot::Quaternion& rotation = debug_world->entity->*&CRotation::rotation;
 
 					transform.rotate(rotation.get_axis(), rotation.get_angle());
 				}
 
-				if (debug_world->entity.Has<physics3d::CScale>())
+				if (debug_world->entity.Has<CScale>())
 				{
-					const godot::Vector3& scale = debug_world->entity->*&physics3d::CScale::scale;
+					const godot::Vector3& scale = debug_world->entity->*&CScale::scale;
 
 					transform.scale(scale);
 				}
 
 				rendering::AddCommand<&RS::instance_set_transform>(debug_world->instance_rid, transform);
 
-				rendering::AddCommand<&RS::instance_set_scenario>(debug_world->instance_rid, simulation.universes[0]->*&rendering::CScenario::id);
+				rendering::AddCommand<&RS::instance_set_scenario>(debug_world->instance_rid, simulation.universes[0]->*&CScenario::id);
 
-				BuildWorldDebugVisualization(debug_world->entity->*&spatial3d::CWorld::world);
+				BuildWorldDebugVisualization(debug_world->entity->*&CWorld::world);
 			}
 		}
 	}

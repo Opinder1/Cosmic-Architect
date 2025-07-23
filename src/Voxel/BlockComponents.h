@@ -1,6 +1,8 @@
 #pragma once
 
-#include <flecs/flecs.h>
+#include "Entity/EntityPoly.h"
+
+#include <vector>
 
 namespace voxel_game::voxel
 {
@@ -35,7 +37,7 @@ namespace voxel_game::voxel
 
 	struct CBlockDroppable
 	{
-		flecs::entity_t drop_type = 0;
+		entity::Ref drop_type;
 	};
 
 	struct CBlockLiquid
@@ -51,6 +53,6 @@ namespace voxel_game::voxel
 
 	struct CBlockAfflicing
 	{
-		flecs::entity_t effect = 0;
+		entity::Ref effect;
 	};
 }

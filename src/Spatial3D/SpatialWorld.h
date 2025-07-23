@@ -60,7 +60,7 @@ namespace voxel_game::spatial3d
 		Clock::duration node_keepalive = 10s;
 
 		// Optional entities that act as areas where nodes are loaded around
-		std::vector<entity::Ref> loaders;
+		std::vector<entity::WRef> loaders;
 	};
 
 	// ----- Local -----

@@ -1,9 +1,7 @@
 #include "RenderModule.h"
-#include "RenderComponents.h"
 
 #include "UniverseSimulation.h"
-
-#include "Physics3D/PhysicsComponents.h"
+#include "Components.h"
 
 #include "Commands/CommandServer.h"
 

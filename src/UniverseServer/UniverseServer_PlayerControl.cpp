@@ -1,7 +1,7 @@
 #include "UniverseServer.h"
 #include "UniverseServer_StringNames.h"
 
-#include "Physics3D/PhysicsComponents.h"
+#include "Components.h"
 
 namespace voxel_game
 {
@@ -42,7 +42,7 @@ namespace voxel_game
 			return;
 		}
 
-		m_player_entity->*&physics3d::CVelocity::velocity = velocity;
+		m_player_entity->*&CVelocity::velocity = velocity;
 	}
 
 	void UniverseServer::DoLook(const godot::Quaternion& direction)
@@ -57,7 +57,7 @@ namespace voxel_game
 			return;
 		}
 
-		m_player_entity->*&physics3d::CRotation::rotation = direction;
+		m_player_entity->*&CRotation::rotation = direction;
 	}
 
 	void UniverseServer::DoJump(double power)
@@ -72,6 +72,6 @@ namespace voxel_game
 			return;
 		}
 
-		m_player_entity->*&physics3d::CVelocity::velocity = m_player_entity->*&physics3d::CGravity::force * power * -1;
+		m_player_entity->*&CVelocity::velocity = m_player_entity->*&CGravity::force * power * -1;
 	}
 }

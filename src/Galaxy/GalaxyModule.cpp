@@ -1,6 +1,6 @@
 #include "GalaxyModule.h"
-#include "GalaxyComponents.h"
 
+#include "Components.h"
 #include "UniverseSimulation.h"
 
 #include "Entity/EntityModule.h"
@@ -8,12 +8,6 @@
 #include "Render/RenderModule.h"
 #include "DebugRender/DebugRenderModule.h"
 #include "Universe/UniverseModule.h"
-
-#include "Universe/UniverseComponents.h"
-#include "Physics3D/PhysicsComponents.h"
-#include "Spatial3D/SpatialComponents.h"
-#include "Render/RenderComponents.h"
-#include "Entity/EntityComponents.h"
 
 #include "GalaxyWorld.h"
 #include "Universe/UniverseWorld.h"
@@ -26,13 +20,13 @@ namespace voxel_game::galaxy
 {
 	const entity::TypeID k_galaxy_type = entity::Factory::Archetype::CreateTypeID<
 		CGalaxy,
-		entity::CRelationship,
-		physics3d::CPosition,
-		physics3d::CRotation,
-		spatial3d::CEntity,
-		spatial3d::CWorld,
-		spatial3d::CLoader,
-		rendering::CTransform
+		CRelationship,
+		CPosition,
+		CRotation,
+		CEntity,
+		CWorld,
+		CLoader,
+		CTransform
 	>();
 
 	entity::Ref CreateSimulatedGalaxy(Simulation& simulation, UUID id, spatial3d::WorldPtr universe_world)
@@ -55,12 +49,12 @@ namespace voxel_game::galaxy
 
 		spatial3d::EntitySetWorld(simulation, galaxy_entity, world);
 
-		galaxy_entity->*&spatial3d::CEntity::world = universe_world;
+		galaxy_entity->*&CEntity::world = universe_world;
 
 		// We want the simulated galaxy to load all galaxies around it
-		galaxy_entity->*&spatial3d::CLoader::dist_per_lod = 3;
-		galaxy_entity->*&spatial3d::CLoader::min_lod = 0;
-		galaxy_entity->*&spatial3d::CLoader::max_lod = spatial3d::k_max_world_scale;
+		galaxy_entity->*&CLoader::dist_per_lod = 3;
+		galaxy_entity->*&CLoader::min_lod = 0;
+		galaxy_entity->*&CLoader::max_lod = spatial3d::k_max_world_scale;
 
 		return galaxy_entity;
 	}

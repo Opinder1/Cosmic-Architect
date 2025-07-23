@@ -1,6 +1,8 @@
 #pragma once
 
-#include "SpatialComponents.h"
+#include "SpatialWorld.h"
+
+#include <godot_cpp/variant/vector3i.hpp>
 
 namespace voxel_game::spatial3d
 {

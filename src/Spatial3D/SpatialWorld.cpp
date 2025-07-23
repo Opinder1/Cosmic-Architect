@@ -1,5 +1,7 @@
-#include "SpatialComponents.h"
+#include "SpatialWorld.h"
 #include "SpatialTraverse.h"
+
+#include "Components.h"
 
 #include "Util/GodotOperators.h"
 
@@ -644,7 +646,7 @@ namespace voxel_game::spatial3d
 		}
 
 		// For each node in the sphere of the loader
-		ForEachCoordInSphere(loader->*&physics3d::CPosition::position / scale_node_step, loader->*&CLoader::dist_per_lod, [&](godot::Vector3i pos)
+		ForEachCoordInSphere(loader->*&CPosition::position / scale_node_step, loader->*&CLoader::dist_per_lod, [&](godot::Vector3i pos)
 		{
 			TouchNode(scale, pos, frame_start_time);
 		});
@@ -713,14 +715,14 @@ namespace voxel_game::spatial3d
 				{
 					entity::WRef entity = *node_it;
 
-					if (scale->*&Scale::index == entity->*&CEntity::scale)
+					if (scale->*&Scale::index == entity->*&CPosition::scale)
 					{
 						return;
 					}
 
-					godot::Vector3i required_node_pos = entity->*&CEntity::position / (1 >> entity->*&CEntity::scale);
+					godot::Vector3i required_node_pos = entity->*& CPosition::position / (1 >> entity->*& CPosition::scale);
 
-					NodeMap new_scale_nodes = GetScale(world, entity->*&CEntity::scale)->*&Scale::nodes;
+					NodeMap new_scale_nodes = GetScale(world, entity->*& CPosition::scale)->*&Scale::nodes;
 
 					auto new_it = new_scale_nodes.find(required_node_pos);
 
@@ -730,7 +732,7 @@ namespace voxel_game::spatial3d
 						NodePtr new_node = new_it->second;
 
 						node_it = (node->*&Node::entities).erase(node_it);
-						(new_node->*&Node::entities).insert(entity::Ref(entity));
+						(new_node->*&Node::entities).push_back(entity::Ref(entity));
 					}
 				}
 			}
@@ -749,7 +751,7 @@ namespace voxel_game::spatial3d
 			{
 				entity::WRef entity = *node_it;
 
-				godot::Vector3i required_node_pos = entity->*&CEntity::position / (1 >> scale->*&Scale::index);
+				godot::Vector3i required_node_pos = entity->*&CPosition::position / (1 >> scale->*&Scale::index);
 
 				if (node->*&Node::position == required_node_pos)
 				{
@@ -764,7 +766,7 @@ namespace voxel_game::spatial3d
 					NodePtr new_node = new_it->second;
 
 					node_it = (node->*&Node::entities).erase(node_it);
-					(new_node->*&Node::entities).insert(entity::Ref(entity));
+					(new_node->*&Node::entities).push_back(entity::Ref(entity));
 				}
 			}
 		}

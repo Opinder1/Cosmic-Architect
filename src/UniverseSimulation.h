@@ -9,11 +9,11 @@
 
 #include "Entity/EntityPoly.h"
 
+#include "Player/Player.h"
+
 #include "Simulation/Config.h"
 
 #include "Commands/TypedCommandBuffer.h"
-
-#include "Util/Span.h"
 
 #include <godot_cpp/classes/x509_certificate.hpp>
 #include <godot_cpp/classes/crypto_key.hpp>
@@ -109,6 +109,9 @@ namespace voxel_game
 		godot::Ref<godot::X509Certificate> server_certificate;
 		godot::Ref<godot::UDPServer> server_udp;
 		godot::Ref<godot::DTLSServer> server_dtls;
+
+		// Players
+		robin_hood::unordered_map<UUID, player::Player> players;
 	};
 
 	simulation::ConfigDefaults GetConfigDefaults();

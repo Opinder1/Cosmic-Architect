@@ -1,5 +1,5 @@
 #include "PlayerModule.h"
-#include "PlayerComponents.h"
+#include "Player.h"
 
 namespace voxel_game::player
 {

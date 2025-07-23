@@ -1,12 +1,8 @@
 #include "SpatialModule.h"
-#include "SpatialComponents.h"
 #include "SpatialTraverse.h"
 
+#include "Components.h"
 #include "UniverseSimulation.h"
-
-#include "Entity/EntityComponents.h"
-
-#include "Physics3D/PhysicsComponents.h"
 
 #include "Util/Debug.h"
 #include "Util/Callback.h"
@@ -40,12 +36,12 @@ namespace voxel_game::spatial3d
 
 	void OnLoadLoaderEntity(Simulation& simulation, entity::WRef entity)
 	{
-		((entity->*&CEntity::world)->*&PartialWorld::loaders).emplace(entity);
+		((entity->*&CEntity::world)->*&PartialWorld::loaders).push_back(entity);
 	}
 
 	void OnUnloadLoaderEntity(Simulation& simulation, entity::WRef entity)
 	{
-		((entity->*&CEntity::world)->*&PartialWorld::loaders).erase(entity::Ref(entity));
+		unordered_erase((entity->*&CEntity::world)->*&PartialWorld::loaders, entity::Ref(entity));
 	}
 
 	void Initialize(Simulation& simulation)
@@ -127,14 +123,14 @@ namespace voxel_game::spatial3d
 
 	WorldPtr GetEntityWorld(entity::WRef entity)
 	{
-		return entity->*&spatial3d::CWorld::world;
+		return entity->*&CWorld::world;
 	}
 
 	WorldPtr EntitySetWorld(Simulation& simulation, entity::WRef entity, WorldPtr world)
 	{
-		WorldPtr old_world = entity->*&spatial3d::CWorld::world;
+		WorldPtr old_world = entity->*&CWorld::world;
 
-		entity->*&spatial3d::CWorld::world = world;
+		entity->*&CWorld::world = world;
 
 		return old_world;
 	}

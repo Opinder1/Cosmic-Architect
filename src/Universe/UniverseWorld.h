@@ -11,7 +11,7 @@ namespace voxel_game::universe
 	// This is a specialised node for a universe
 	struct Node
 	{
-		std::vector<entity::Ref> galaxies;
+		std::vector<entity::WRef> galaxies;
 	};
 
 	// This is a specialised scale for a universe

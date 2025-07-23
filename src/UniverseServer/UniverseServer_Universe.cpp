@@ -3,7 +3,6 @@
 
 #include "Universe/UniverseModule.h"
 #include "Galaxy/GalaxyModule.h"
-#include "Render/RenderComponents.h"
 
 #include "Simulation/SimulationModule.h"
 #include "Player/PlayerModule.h"
@@ -11,6 +10,7 @@
 #include "Entity/EntityModule.h"
 #include "Spatial3D/SpatialModule.h"
 
+#include "Components.h"
 #include "UniverseSimulation.h"
 
 namespace voxel_game
@@ -64,11 +64,11 @@ namespace voxel_game
 
 		m_universe_entity = universe::CreateUniverse(*m_simulation, UUID{ 0, 0 });
 
-		m_universe_entity->*&rendering::CScenario::id = scenario;
+		m_universe_entity->*&CScenario::id = scenario;
 
 		m_galaxy_entity = galaxy::CreateSimulatedGalaxy(*m_simulation, UUID{ 0, 0 }, spatial3d::GetEntityWorld(m_universe_entity));
 
-		m_player_entity = player::CreateLocalPlayer(*m_simulation, m_galaxy_entity, "localuser");
+		m_player_entity = player::CreateLocalPlayer(*m_simulation, m_universe_entity, "localuser");
 
 		QueueSignal(k_signals->connected_to_universe);
 	}

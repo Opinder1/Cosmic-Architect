@@ -1,8 +1,7 @@
 #include "SimulationModule.h"
 #include "Config.h"
 
-#include "Entity/EntityComponents.h"
-
+#include "Components.h"
 #include "UniverseSimulation.h"
 
 #include <godot_cpp/classes/os.hpp>
@@ -34,7 +33,7 @@ namespace voxel_game::simulation
 
 	void OnUnloadChildEntity(Simulation& simulation, entity::WRef entity)
 	{
-		entity->*&entity::CRelationship::parent = entity::Ref();
+		entity->*&CRelationship::parent = entity::Ref();
 	}
 
 	void Initialize(Simulation& simulation)
@@ -48,7 +47,7 @@ namespace voxel_game::simulation
 
 		simulation.entity_factory.AddCallback<>(PolyEvent::BeginLoad, cb::BindArg<OnLoadEntity>(simulation));
 		simulation.entity_factory.AddCallback<>(PolyEvent::BeginUnload, cb::BindArg<OnUnloadEntity>(simulation));
-		simulation.entity_factory.AddCallback<entity::CRelationship>(PolyEvent::BeginUnload, cb::BindArg<OnUnloadChildEntity>(simulation));
+		simulation.entity_factory.AddCallback<CRelationship>(PolyEvent::BeginUnload, cb::BindArg<OnUnloadChildEntity>(simulation));
 	}
 
 	void Uninitialize(Simulation& simulation)

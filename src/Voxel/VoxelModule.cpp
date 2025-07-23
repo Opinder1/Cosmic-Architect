@@ -2,8 +2,9 @@
 #include "VoxelComponents.h"
 #include "VoxelWorld.h"
 
-#include "Spatial3D/SpatialComponents.h"
-#include "Spatial3D/SpatialModule.h"
+#include "Components.h"
+
+#include "Spatial3D/Spatialworld.h"
 
 #include "Util/Debug.h"
 

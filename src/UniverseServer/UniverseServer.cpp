@@ -2,9 +2,8 @@
 #include "UniverseServer_StringNames.h"
 
 #include "UniverseSimulation.h"
+#include "Components.h"
 #include "Modules.h"
-
-#include "Physics3D/PhysicsComponents.h"
 
 #include "Commands/CommandServer.h"
 
@@ -145,7 +144,7 @@ namespace voxel_game
 
 			godot::Transform3D transform = args[0];
 
-			m_galaxy_entity->*&physics3d::CPosition::position = transform.origin;
+			m_galaxy_entity->*&CPosition::position = transform.origin;
 		}
 		else
 		{
