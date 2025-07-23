@@ -703,31 +703,36 @@ namespace voxel_game::spatial3d
 	{
 		DEBUG_THREAD_CHECK_WRITE(world.Data());
 
-		WorldForEachEntity(world, [world](entity::WRef entity)
+		WorldForEachScale(world, [&](ScalePtr scale)
 		{
-			if (entity->*&CEntity::last_scale == entity->*&CEntity::scale)
+			NodeMap scale_nodes = scale->*&Scale::nodes;
+
+			for (auto&& [pos, node] : scale_nodes)
 			{
-				return;
-			}
+				for (auto node_it = (node->*&Node::entities).begin(); node_it != (node->*&Node::entities).end(); node_it++)
+				{
+					entity::WRef entity = *node_it;
 
-			godot::Vector3i required_node_pos = entity->*&CEntity::position / (1 >> entity->*&CEntity::scale);
+					if (scale->*&Scale::index == entity->*&CEntity::scale)
+					{
+						return;
+					}
 
-			NodeMap old_scale_nodes = GetScale(world, entity->*&CEntity::last_scale)->*&Scale::nodes;
-			NodeMap new_scale_nodes = GetScale(world, entity->*&CEntity::scale)->*&Scale::nodes;
+					godot::Vector3i required_node_pos = entity->*&CEntity::position / (1 >> entity->*&CEntity::scale);
 
-			auto old_it = old_scale_nodes.find(entity->*&CEntity::last_node_pos);
-			auto new_it = new_scale_nodes.find(required_node_pos);
+					NodeMap new_scale_nodes = GetScale(world, entity->*&CEntity::scale)->*&Scale::nodes;
 
-			DEBUG_ASSERT(old_it != old_scale_nodes.end(), "The current node should be loaded. If the node was unloaded it should have detached this entity");
+					auto new_it = new_scale_nodes.find(required_node_pos);
 
-			// If the required node is not loaded then wait until it is loaded
-			if (new_it != new_scale_nodes.end())
-			{
-				(old_it->second->*&Node::entities).erase(entity::Ref(entity));
-				(new_it->second->*&Node::entities).insert(entity::Ref(entity));
+					// If the required node is not loaded then wait until it is loaded
+					if (new_it != new_scale_nodes.end())
+					{
+						NodePtr new_node = new_it->second;
 
-				entity->*&CEntity::scale = entity->*&CEntity::last_scale;
-				entity->*&CEntity::last_node_pos = required_node_pos;
+						node_it = (node->*&Node::entities).erase(node_it);
+						(new_node->*&Node::entities).insert(entity::Ref(entity));
+					}
+				}
 			}
 		});
 	}
@@ -735,31 +740,33 @@ namespace voxel_game::spatial3d
 	void ScaleUpdateEntityNodes(ScalePtr scale)
 	{
 		DEBUG_THREAD_CHECK_WRITE(scale.Data());
-		
-		ScaleForEachEntity(scale, [scale](entity::WRef entity)
+
+		NodeMap scale_nodes = scale->*&Scale::nodes;
+
+		for (auto&& [pos, node] : scale_nodes)
 		{
-			godot::Vector3i required_node_pos = entity->*&CEntity::position / (1 >> scale->*&Scale::index);
-
-			if (entity->*&CEntity::last_node_pos == required_node_pos)
+			for (auto node_it = (node->*&Node::entities).begin(); node_it != (node->*&Node::entities).end(); node_it++)
 			{
-				return;
+				entity::WRef entity = *node_it;
+
+				godot::Vector3i required_node_pos = entity->*&CEntity::position / (1 >> scale->*&Scale::index);
+
+				if (node->*&Node::position == required_node_pos)
+				{
+					return;
+				}
+
+				auto new_it = scale_nodes.find(required_node_pos);
+
+				// If the required node is not loaded then wait until it is loaded
+				if (new_it != scale_nodes.end())
+				{
+					NodePtr new_node = new_it->second;
+
+					node_it = (node->*&Node::entities).erase(node_it);
+					(new_node->*&Node::entities).insert(entity::Ref(entity));
+				}
 			}
-
-			NodeMap scale_nodes = scale->*&Scale::nodes;
-
-			auto old_it = scale_nodes.find(entity->*&CEntity::last_node_pos);
-			auto new_it = scale_nodes.find(required_node_pos);
-
-			DEBUG_ASSERT(old_it != scale_nodes.end(), "The current node should be loaded. If the node was unloaded it should have detached this entity");
-
-			// If the required node is not loaded then wait until it is loaded
-			if (new_it != scale_nodes.end())
-			{
-				(old_it->second->*&Node::entities).erase(entity::Ref(entity));
-				(new_it->second->*&Node::entities).insert(entity::Ref(entity));
-
-				entity->*&CEntity::last_node_pos = required_node_pos;
-			}
-		});
+		}
 	}
 }

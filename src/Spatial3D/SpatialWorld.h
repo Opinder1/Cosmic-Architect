@@ -60,7 +60,7 @@ namespace voxel_game::spatial3d
 		Clock::duration node_keepalive = 10s;
 
 		// Optional entities that act as areas where nodes are loaded around
-		robin_hood::unordered_set<entity::Ref> loaders;
+		std::vector<entity::Ref> loaders;
 	};
 
 	// ----- Local -----
@@ -138,7 +138,7 @@ namespace voxel_game::spatial3d
 
 		NodePtr neighbours[6] = { nullptr }; // Fast access of neighbours of same scale
 
-		robin_hood::unordered_set<entity::Ref> entities;
+		std::vector<entity::Ref> entities;
 
 		NodeState state = NodeState::Invalid;
 	};
