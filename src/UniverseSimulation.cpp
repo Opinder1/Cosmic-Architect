@@ -1,4 +1,5 @@
 #include "UniverseSimulation.h"
+#include "Components.h"
 
 #include "Universe/UniverseModule.h"
 #include "Galaxy/GalaxyModule.h"
@@ -12,8 +13,6 @@
 #include "Simulation/SimulationModule.h"
 #include "Physics3D/PhysicsModule.h"
 #include "Entity/EntityModule.h"
-
-#include "Entity/EntityComponents.h"
 
 #include "Simulation/Config.h"
 
