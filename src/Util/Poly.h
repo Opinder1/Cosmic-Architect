@@ -79,7 +79,7 @@ constexpr PolyTypeInfo MakeTypeInfo()
 template<class DerivedT, size_t N>
 class PolyType : Nocopy, Nomove
 {
-	template<size_t N, class T>
+	template<class DerivedT, size_t N, class T>
 	friend class PolyFactory;
 
 private:

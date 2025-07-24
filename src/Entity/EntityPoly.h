@@ -8,7 +8,7 @@
 namespace voxel_game::entity
 {
 	// A factory that creates entities and manages changing their archetype when types are added/removed
-	struct Factory : public PolyFactory<40, UUID>
+	struct Factory : public PolyFactory<Factory, 40, UUID>
 	{
 		using PolyFactory::PolyFactory;
 	};

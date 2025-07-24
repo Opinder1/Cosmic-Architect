@@ -25,8 +25,8 @@ enum class PolyEvent : uint32_t
 
 // A factory that handles polys of multiple archetypes of the given poly type.
 // It uses PolyID values to reference individual polys.
-template<size_t N, class PolyID>
-class PolyFactory
+template<class DerivedT, size_t N, class PolyID>
+class PolyFactory : Nocopy, Nomove
 {
 public:
 	class Ref;
