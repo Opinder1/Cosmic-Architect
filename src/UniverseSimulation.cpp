@@ -145,6 +145,7 @@ namespace voxel_game
 			godot::WorkerThreadPool* thread_pool = godot::WorkerThreadPool::get_singleton();
 
 			GrowingSmallVector<uint64_t, 16> ids;
+			ids.reserve(task_data.Size());
 
 			for (TaskData& data : task_data)
 			{
@@ -158,9 +159,9 @@ namespace voxel_game
 				ids.push_back(id);
 			}
 
-			for (size_t index = 0; index < task_data.Size(); index++)
+			for (uint64_t id : ids)
 			{
-				thread_pool->wait_for_group_task_completion(ids[index]);
+				thread_pool->wait_for_group_task_completion(id);
 			}
 
 			simulation.thread_mode = false;
@@ -349,9 +350,7 @@ namespace voxel_game
 
 	entity::Ref SimulationCreateEntity(Simulation& simulation, UUID id, entity::TypeID types)
 	{
-		entity::Ref entity = simulation.entity_factory.GetPoly(id);
-
-		simulation.entity_factory.AddTypes(entity.GetID(), types);
+		entity::Ref entity = simulation.entity_factory.GetPoly(id, types);
 
 		simulation::GetContext().load_commands.push_back(entity.Reference());
 
