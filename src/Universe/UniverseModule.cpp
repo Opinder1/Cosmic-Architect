@@ -124,6 +124,8 @@ namespace voxel_game::universe
 
 	void Initialize(Simulation& simulation)
 	{
+		simulation.universe_type.node_size = 16;
+
 		simulation.universe_type.node_type.AddType<spatial3d::Node>();
 		simulation.universe_type.node_type.AddType<spatial3d::PartialNode>();
 		simulation.universe_type.node_type.AddType<spatial3d::LocalNode>();
@@ -189,12 +191,8 @@ namespace voxel_game::universe
 	{
 		entity::Ref entity = SimulationCreateEntity(simulation, id, k_universe_type);
 
-		spatial3d::WorldPtr world = spatial3d::CreateWorld(simulation.universe_type, simulation.path);
-
-		world->*&spatial3d::World::node_size = 16;
-		world->*&spatial3d::PartialWorld::node_keepalive = 1s;
-
-		spatial3d::EntitySetWorld(simulation, entity, world);
+		entity->*&CWorld::path = simulation.path;
+		entity->*&CWorld::type = WorldConstructType::Universe;
 
 		return entity;
 	}

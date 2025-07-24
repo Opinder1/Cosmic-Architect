@@ -162,7 +162,7 @@ namespace voxel_game::spatial3d
 		TypeData* type = nullptr;
 
 		uint8_t max_scale = 0;
-		uint8_t node_size = 1;
+		uint8_t node_size = 0;
 
 		// Setting this flag means that all nodes in the world should be unloaded.
 		bool unloading = false;
@@ -186,7 +186,7 @@ namespace voxel_game::spatial3d
 		NodeType node_type;
 
 		size_t max_scale = k_max_world_scale;
-		size_t node_size = 0;
+		size_t node_size = 1;
 
 		std::vector<NodeLoadCB> load_callbacks;
 		std::vector<NodeLoadCB> unload_callbacks;

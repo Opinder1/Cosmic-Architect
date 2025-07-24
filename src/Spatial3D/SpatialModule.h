@@ -21,6 +21,4 @@ namespace voxel_game::spatial3d
 	void ScaleUpdate(Simulation& simulation, ScalePtr scale);
 
 	WorldPtr GetEntityWorld(entity::WRef entity);
-
-	WorldPtr EntitySetWorld(Simulation& simulation, entity::WRef entity, WorldPtr world);
 }

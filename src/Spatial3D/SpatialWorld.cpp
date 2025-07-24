@@ -251,8 +251,10 @@ namespace voxel_game::spatial3d
 		WorldPtr world = type.world_type.CreatePoly();
 
 		world->*&World::type = &type;
+		world->*&World::node_size = type.node_size;
+		world->*&World::max_scale = type.max_scale;
 
-		for (uint8_t scale_index = world->*&World::max_scale; scale_index < type.max_scale; scale_index++)
+		for (uint8_t scale_index = 0; scale_index < type.max_scale; scale_index++)
 		{
 			ScalePtr scale = (world->*&World::type)->scale_type.CreatePoly();
 
@@ -262,8 +264,6 @@ namespace voxel_game::spatial3d
 
 			(world->*&World::scales)[scale_index] = scale;
 		}
-
-		world->*&World::max_scale = type.max_scale;
 
 		if (world.Has<LocalWorld>())
 		{

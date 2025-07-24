@@ -14,11 +14,12 @@
 
 #include "Util/Debug.h"
 
-#include <godot_cpp/classes/dir_access.hpp>
-
 namespace voxel_game::galaxy
 {
 	const entity::TypeID k_galaxy_type = entity::Factory::Archetype::CreateTypeID<
+#if defined(DEBUG_ENABLED)
+		CName,
+#endif
 		CGalaxy,
 		CRelationship,
 		CPosition,
@@ -37,19 +38,15 @@ namespace voxel_game::galaxy
 		// Create the simulated galaxy
 		entity::Ref galaxy_entity = SimulationCreateEntity(simulation, GenerateUUID(), k_galaxy_type);
 
-#if defined(DEBUG_ENABLED)
-		entity::SetDebugName(simulation, galaxy_entity, "SimulatedGalaxy");
-#endif
-
 		godot::String path = simulation.path.path_join("Galaxies").path_join(id.ToGodotString());
 
-		godot::DirAccess::make_dir_recursive_absolute(path);
+#if defined(DEBUG_ENABLED)
+		galaxy_entity->*&CName::name = "SimulatedGalaxy";
+#endif
+		galaxy_entity->*&CWorld::path = path;
+		galaxy_entity->*&CWorld::type = WorldConstructType::Galaxy;
 
-		spatial3d::WorldPtr world = spatial3d::CreateWorld(simulation.galaxy_type, path);
-
-		spatial3d::EntitySetWorld(simulation, galaxy_entity, world);
-
-		galaxy_entity->*&CEntity::world = universe_world;
+		galaxy_entity->*&CEntity::parent_world = universe_world;
 
 		// We want the simulated galaxy to load all galaxies around it
 		galaxy_entity->*&CLoader::dist_per_lod = 3;

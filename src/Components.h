@@ -26,6 +26,19 @@
 
 namespace voxel_game
 {
+	struct SpatialTypeData;
+
+	enum class WorldConstructType
+	{
+		Universe,
+		Galaxy,
+		StarSystem,
+		Planet,
+		SpaceStation,
+		SpaceShip,
+		Vehicle,
+	};
+
 	struct CName
 	{
 		godot::String name;
@@ -192,12 +205,14 @@ namespace voxel_game
 	// An entity which is in a spatial world. It will be given a node its part of and loaded/unloaded with that node
 	struct CEntity
 	{
-		spatial3d::WorldPtr world;
+		spatial3d::WorldPtr parent_world;
 	};
 
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct CWorld
 	{
+		godot::String path;
+		WorldConstructType type;
 		spatial3d::WorldPtr world;
 	};
 

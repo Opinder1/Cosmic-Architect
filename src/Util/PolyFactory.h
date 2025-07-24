@@ -252,7 +252,7 @@ public:
 	PolyFactory() {}
 
 	// Get a reference to a poly with the given PolyID or create one if needed.
-	Ref GetPoly(PolyID id)
+	Ref GetPoly(PolyID id, TypeID initial_types = TypeID{})
 	{
 		std::lock_guard lock(m_mutex);
 
@@ -262,7 +262,7 @@ public:
 
 		if (created)
 		{
-			entry.type_id = Archetype::CreateTypeID<Header>();
+			entry.type_id = initial_types | Archetype::CreateTypeID<Header>();
 			entry.header = AllocatePoly(entry.type_id);
 			entry.archetype = entry.header->archetype;
 

@@ -9,13 +9,46 @@
 
 #include <easy/profiler.h>
 
+#include <godot_cpp/classes/dir_access.hpp>
+
 namespace voxel_game::spatial3d
 {
+	SpatialTypeData& GetType(Simulation& simulation, WorldConstructType type)
+	{
+		switch (type)
+		{
+		case WorldConstructType::Universe:
+			return simulation.universe_type;
+
+		case WorldConstructType::Galaxy:
+			return simulation.galaxy_type;
+
+		case WorldConstructType::StarSystem:
+			return simulation.star_system_type;
+
+		case WorldConstructType::Planet:
+			return simulation.planet_type;
+
+		case WorldConstructType::SpaceStation:
+			return simulation.space_station_type;
+
+		case WorldConstructType::SpaceShip:
+			return simulation.space_ship_type;
+
+		case WorldConstructType::Vehicle:
+			return simulation.vehicle_type;
+		}
+	}
+
 	void OnLoadSpatialEntity(Simulation& simulation, entity::WRef entity)
 	{
-		WorldPtr world = entity->*&CWorld::world;
+		SpatialTypeData& type = GetType(simulation, entity->*&CWorld::type);
 
-		SpatialTypeData& type = *static_cast<SpatialTypeData*>(world->*&World::type);
+		godot::DirAccess::make_dir_recursive_absolute(entity->*&CWorld::path);
+
+		spatial3d::WorldPtr world = spatial3d::CreateWorld(type, entity->*&CWorld::path);
+
+		entity->*&CWorld::world = world;
 
 		simulation.spatial_worlds.push_back(world);
 
@@ -32,24 +65,30 @@ namespace voxel_game::spatial3d
 	void OnUnloadSpatialEntity(Simulation& simulation, entity::WRef entity)
 	{
 		UnloadWorld(entity->*&CWorld::world);
+
+		entity->*&CWorld::world = nullptr;
 	}
 
 	void OnLoadLoaderEntity(Simulation& simulation, entity::WRef entity)
 	{
-		((entity->*&CEntity::world)->*&PartialWorld::loaders).push_back(entity);
+		std::vector<entity::WRef>& loaders = (entity->*&CEntity::parent_world)->*&PartialWorld::loaders;
+
+		loaders.push_back(entity);
 	}
 
 	void OnUnloadLoaderEntity(Simulation& simulation, entity::WRef entity)
 	{
-		unordered_erase((entity->*&CEntity::world)->*&PartialWorld::loaders, entity::Ref(entity));
+		std::vector<entity::WRef>& loaders = (entity->*&CEntity::parent_world)->*&PartialWorld::loaders;
+
+		unordered_erase(loaders, entity::Ref(entity));
 	}
 
 	void Initialize(Simulation& simulation)
 	{
 		simulation.entity_factory.AddCallback<CWorld>(PolyEvent::BeginLoad, cb::BindArg<OnLoadSpatialEntity>(simulation));
 		simulation.entity_factory.AddCallback<CWorld>(PolyEvent::BeginUnload, cb::BindArg<OnUnloadSpatialEntity>(simulation));
-		simulation.entity_factory.AddCallback<CLoader>(PolyEvent::BeginLoad, cb::BindArg<OnLoadLoaderEntity>(simulation));
-		simulation.entity_factory.AddCallback<CLoader>(PolyEvent::BeginUnload, cb::BindArg<OnUnloadLoaderEntity>(simulation));
+		simulation.entity_factory.AddCallback<CLoader, CEntity>(PolyEvent::BeginLoad, cb::BindArg<OnLoadLoaderEntity>(simulation));
+		simulation.entity_factory.AddCallback<CLoader, CEntity>(PolyEvent::BeginUnload, cb::BindArg<OnUnloadLoaderEntity>(simulation));
 	}
 
 	void Uninitialize(Simulation& simulation)
@@ -124,14 +163,5 @@ namespace voxel_game::spatial3d
 	WorldPtr GetEntityWorld(entity::WRef entity)
 	{
 		return entity->*&CWorld::world;
-	}
-
-	WorldPtr EntitySetWorld(Simulation& simulation, entity::WRef entity, WorldPtr world)
-	{
-		WorldPtr old_world = entity->*&CWorld::world;
-
-		entity->*&CWorld::world = world;
-
-		return old_world;
 	}
 }
