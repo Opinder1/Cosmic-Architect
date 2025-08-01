@@ -321,8 +321,7 @@ namespace voxel_game::rendering
 
         if (!rid.is_valid())
         {
-            DEBUG_PRINT_WARN("Enough rids were allocated this frame that we are using the slow path");
-            DEBUG_CRASH();
+            DEBUG_CRASH("Enough rids were allocated this frame that we are using the slow path");
 
             godot::RenderingServer* rserver = godot::RenderingServer::get_singleton();
             RIDGenerator generator = k_rid_generators[to_underlying(type)];

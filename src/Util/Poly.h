@@ -38,8 +38,7 @@ static void ComponentMove(std::byte* from, std::byte* to)
 	}
 	else
 	{
-		DEBUG_PRINT_ERROR("Can't move type");
-		DEBUG_CRASH();
+		DEBUG_CRASH("Can't move type");
 	}
 }
 
@@ -52,8 +51,7 @@ static void ComponentMoveAssign(std::byte* from, std::byte* to)
 	}
 	else
 	{
-		DEBUG_PRINT_ERROR("Can't move type");
-		DEBUG_CRASH();
+		DEBUG_CRASH("Can't move assign type");
 	}
 }
 

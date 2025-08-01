@@ -9,8 +9,6 @@
 
 #include <easy/profiler.h>
 
-#include <godot_cpp/classes/dir_access.hpp>
-
 namespace voxel_game::spatial3d
 {
 	SpatialTypeData& GetType(Simulation& simulation, WorldConstructType type)
@@ -37,6 +35,10 @@ namespace voxel_game::spatial3d
 
 		case WorldConstructType::Vehicle:
 			return simulation.vehicle_type;
+
+		default:
+			DEBUG_CRASH("Invalid world construct type");
+			return simulation.universe_type;
 		}
 	}
 

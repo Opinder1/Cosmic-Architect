@@ -119,8 +119,7 @@ namespace voxel_game::spatial3d
 			break;
 
 		default:
-			DEBUG_PRINT_ERROR("Node state has no related command list");
-			DEBUG_CRASH();
+			DEBUG_CRASH("Node state has no related command list");
 			return;
 		}
 
@@ -439,8 +438,7 @@ namespace voxel_game::spatial3d
 				}
 				else
 				{
-					DEBUG_PRINT_ERROR("Failed to read a node from the database");
-					DEBUG_CRASH();
+					DEBUG_CRASH("Failed to read a node from the database");
 				}
 
 				node->*&LocalNode::task_state = TaskState::ReadDone;
@@ -493,8 +491,7 @@ namespace voxel_game::spatial3d
 			{
 				if (task->status != tkrzw::Status::SUCCESS)
 				{
-					DEBUG_PRINT_ERROR("Failed to write a node to the database");
-					DEBUG_CRASH();
+					DEBUG_CRASH("Failed to write a node to the database");
 				}
 
 				node->*&LocalNode::task_state = TaskState::WriteDone;
