@@ -75,12 +75,4 @@ namespace voxel_game::simulation
 	{
 
 	}
-
-	void SetPath(Simulation& simulation, const godot::String& path)
-	{
-		simulation.path = path;
-
-		simulation::InitializeConfig(simulation.config, simulation.path.path_join("config.json"), GetConfigDefaults());
-		simulation.last_config_save = simulation.frame_start_time;
-	}
 }

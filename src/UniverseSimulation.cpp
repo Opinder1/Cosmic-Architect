@@ -348,6 +348,22 @@ namespace voxel_game
 		simulation.entity_factory.Cleanup();
 	}
 
+	void SimulationSetPath(Simulation& simulation, const godot::String& path)
+	{
+		simulation.path = path;
+
+		simulation.universe_type.path = simulation.path.path_join("Universes");
+		simulation.galaxy_type.path = simulation.path.path_join("Galaxies");
+		simulation.star_system_type.path = simulation.path.path_join("StarSystems");
+		simulation.planet_type.path = simulation.path.path_join("Planets");
+		simulation.space_station_type.path = simulation.path.path_join("SpaceStations");
+		simulation.space_ship_type.path = simulation.path.path_join("SpaceShips");
+		simulation.vehicle_type.path = simulation.path.path_join("Vehicles");
+
+		simulation::InitializeConfig(simulation.config, simulation.path.path_join("config.json"), GetConfigDefaults());
+		simulation.last_config_save = simulation.frame_start_time;
+	}
+
 	entity::Ref SimulationCreateEntity(Simulation& simulation, UUID id, entity::TypeID types)
 	{
 		entity::Ref entity = simulation.entity_factory.GetPoly(id, types);

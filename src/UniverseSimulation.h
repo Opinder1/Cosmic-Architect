@@ -15,6 +15,8 @@
 
 #include "Commands/TypedCommandBuffer.h"
 
+#include <godot_cpp/variant/string.hpp>
+
 #include <godot_cpp/classes/x509_certificate.hpp>
 #include <godot_cpp/classes/crypto_key.hpp>
 #include <godot_cpp/classes/dtls_server.hpp>
@@ -49,6 +51,8 @@ namespace voxel_game
 	// Extra for spatial types
 	struct SpatialTypeData : spatial3d::TypeData
 	{
+		godot::String path;
+
 		std::vector<void(*)(Simulation&, spatial3d::WorldPtr)> world_updates;
 		std::vector<void(*)(Simulation&, spatial3d::ScalePtr)> scale_updates;
 
@@ -123,6 +127,8 @@ namespace voxel_game
 	void SimulationUnload(Simulation& simulation);
 	void SimulationUninitialize(Simulation& simulation);
 	void SimulationUpdate(Simulation& simulation);
+
+	void SimulationSetPath(Simulation& simulation, const godot::String& path);
 
 	entity::Ref SimulationCreateEntity(Simulation& simulation, UUID id, entity::TypeID types);
 	void SimulationUnloadEntity(Simulation& simulation, entity::WRef entity);

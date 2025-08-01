@@ -17,6 +17,16 @@
 namespace voxel_game::galaxy
 {
 	const entity::TypeID k_galaxy_type = entity::Factory::Archetype::CreateTypeID<
+		CGalaxy,
+		CRelationship,
+		CPosition,
+		CRotation,
+		CEntity,
+		CLoader,
+		CTransform
+	>();
+
+	const entity::TypeID k_simulated_galaxy_type = entity::Factory::Archetype::CreateTypeID<
 #if defined(DEBUG_ENABLED)
 		CName,
 #endif
@@ -36,14 +46,11 @@ namespace voxel_game::galaxy
 		DEBUG_ASSERT(!simulation.unloading, "We shouldn't create an entity while unloading");
 
 		// Create the simulated galaxy
-		entity::Ref galaxy_entity = SimulationCreateEntity(simulation, GenerateUUID(), k_galaxy_type);
-
-		godot::String path = simulation.path.path_join("Galaxies").path_join(id.ToGodotString());
+		entity::Ref galaxy_entity = SimulationCreateEntity(simulation, GenerateUUID(), k_simulated_galaxy_type);
 
 #if defined(DEBUG_ENABLED)
 		galaxy_entity->*&CName::name = "SimulatedGalaxy";
 #endif
-		galaxy_entity->*&CWorld::path = path;
 		galaxy_entity->*&CWorld::type = WorldConstructType::Galaxy;
 
 		galaxy_entity->*&CEntity::parent_world = universe_world;

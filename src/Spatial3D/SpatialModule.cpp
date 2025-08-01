@@ -44,20 +44,18 @@ namespace voxel_game::spatial3d
 	{
 		SpatialTypeData& type = GetType(simulation, entity->*&CWorld::type);
 
-		godot::DirAccess::make_dir_recursive_absolute(entity->*&CWorld::path);
+		godot::String path = type.path.path_join(entity.GetID().ToGodotString());
 
-		spatial3d::WorldPtr world = spatial3d::CreateWorld(type, entity->*&CWorld::path);
+		spatial3d::WorldPtr world = spatial3d::CreateWorld(type, path);
 
 		entity->*&CWorld::world = world;
 
 		simulation.spatial_worlds.push_back(world);
-
 		type.worlds.push_back(world);
 
 		WorldForEachScale(world, [&](ScalePtr scale)
 		{
 			simulation.spatial_scales.push_back(scale);
-
 			type.scales.push_back(scale);
 		});
 	}

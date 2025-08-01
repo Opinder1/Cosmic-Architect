@@ -4,7 +4,6 @@
 #include "Universe/UniverseModule.h"
 #include "Galaxy/GalaxyModule.h"
 
-#include "Simulation/SimulationModule.h"
 #include "Player/PlayerModule.h"
 #include "Galaxy/GalaxyModule.h"
 #include "Entity/EntityModule.h"
@@ -60,7 +59,7 @@ namespace voxel_game
 			return;
 		}
 
-		simulation::SetPath(*m_simulation, path);
+		SimulationSetPath(*m_simulation, path);
 
 		m_universe_entity = universe::CreateUniverse(*m_simulation, UUID{ 0, 0 });
 

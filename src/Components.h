@@ -211,7 +211,6 @@ namespace voxel_game
 	// A spatial database which has an octree like structure with neighbour pointers and hash maps for each lod. 
 	struct CWorld
 	{
-		godot::String path;
 		WorldConstructType type;
 		spatial3d::WorldPtr world;
 	};

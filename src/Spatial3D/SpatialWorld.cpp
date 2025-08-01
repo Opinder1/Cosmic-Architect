@@ -7,6 +7,7 @@
 
 #include <easy/profiler.h>
 
+#include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/worker_thread_pool.hpp>
 
@@ -253,6 +254,8 @@ namespace voxel_game::spatial3d
 		world->*&World::type = &type;
 		world->*&World::node_size = type.node_size;
 		world->*&World::max_scale = type.max_scale;
+
+		godot::DirAccess::make_dir_recursive_absolute(path);
 
 		for (uint8_t scale_index = 0; scale_index < type.max_scale; scale_index++)
 		{

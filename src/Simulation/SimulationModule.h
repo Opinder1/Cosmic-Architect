@@ -19,6 +19,4 @@ namespace voxel_game::simulation
 	bool IsUnloadDone(Simulation& simulation);
 	void Update(Simulation& simulation);
 	void WorkerUpdate(Simulation& simulation, size_t index);
-
-	void SetPath(Simulation& simulation, const godot::String& path);
 }
