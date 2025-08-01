@@ -125,6 +125,7 @@ namespace voxel_game::universe
 	void Initialize(Simulation& simulation)
 	{
 		simulation.universe_type.node_size = 16;
+		simulation.universe_type.node_keepalive = 1s;
 
 		simulation.universe_type.node_type.AddType<spatial3d::Node>();
 		simulation.universe_type.node_type.AddType<spatial3d::PartialNode>();

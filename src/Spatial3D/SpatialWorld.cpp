@@ -257,6 +257,11 @@ namespace voxel_game::spatial3d
 
 		godot::DirAccess::make_dir_recursive_absolute(path);
 
+		if (world.Has<PartialWorld>())
+		{
+			world->*&PartialWorld::node_keepalive = type.node_keepalive;
+		}
+
 		for (uint8_t scale_index = 0; scale_index < type.max_scale; scale_index++)
 		{
 			ScalePtr scale = (world->*&World::type)->scale_type.CreatePoly();

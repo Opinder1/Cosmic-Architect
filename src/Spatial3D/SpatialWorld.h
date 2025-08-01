@@ -57,7 +57,7 @@ namespace voxel_game::spatial3d
 
 	struct PartialWorld : Nocopy, Nomove
 	{
-		Clock::duration node_keepalive = 10s;
+		Clock::duration node_keepalive = 0s;
 
 		// Optional entities that act as areas where nodes are loaded around
 		std::vector<entity::WRef> loaders;
@@ -187,6 +187,7 @@ namespace voxel_game::spatial3d
 
 		size_t max_scale = k_max_world_scale;
 		size_t node_size = 1;
+		Clock::duration node_keepalive = 10s;
 
 		std::vector<NodeLoadCB> load_callbacks;
 		std::vector<NodeLoadCB> unload_callbacks;
